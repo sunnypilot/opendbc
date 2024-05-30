@@ -288,7 +288,7 @@ BO_ 342 STEERING_SENSORS: 6 EPS
  SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] "" EON
 
-CM_ "acura_mdx_2018_hybrid.dbc starts here";
+CM_ "acura_tlx_2018.dbc starts here";
 
 BO_ 228 STEERING_CONTROL: 5 ADAS
  SG_ STEER_TORQUE_REQUEST : 23|1@0+ (1,0) [0|1] "" EPS
