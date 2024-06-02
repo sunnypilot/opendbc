@@ -1,6 +1,6 @@
 CM_ "IMPORT _community.dbc";
 CM_ "IMPORT _honda_common.dbc";
-CM_ "IMPORT _dual_nidec_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
 CM_ "IMPORT _steering_sensors_b.dbc";
 
 BO_ 228 STEERING_CONTROL: 5 ADAS
