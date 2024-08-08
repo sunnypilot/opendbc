@@ -58,6 +58,8 @@ BO_ 962 VCLEFT_switchStatus: 8 VEH
  SG_ VCLEFT_switchStatusIndex M: 0|2@1+ (1,0) [0|2] "" X
  SG_ VCLEFT_btnWindowDownLR m1: 34|1@1+ (1,0) [0|1] "" gtw
  SG_ VCLEFT_rearHVACButtonPressed m0: 61|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_swcLeftDoublePress m1 : 41|1@1+ (1,0) [0|1] ""  gtw
+ SG_ VCLEFT_swcRightDoublePress m1 : 42|1@1+ (1,0) [0|1] ""  gtw
 
 BO_ 259 VCRIGHT_doorStatus: 8 VEH
  SG_ VCRIGHT_reservedForBackCompat : 28|2@1+ (1,0) [0|3] "" X
