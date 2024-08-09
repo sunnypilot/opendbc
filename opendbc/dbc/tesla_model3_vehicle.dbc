@@ -238,6 +238,48 @@ BO_ 1013 ID3F5VCFRONT_lighting: 8 VEH
  SG_ VCFRONT_indicatorRightRequest : 2|2@1+ (1,0) [0|2] ""  Receiver
  SG_ VCFRONT_indicatorLeftRequest : 0|2@1+ (1,0) [0|2] ""  Receiver
 
+BO_ 851 UI_status: 8 VehicleBus
+ SG_ UI_touchActive : 0|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_audioActive : 1|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_bluetoothActive : 2|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_cellActive : 3|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_displayReady : 4|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_displayOn : 5|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_wifiActive : 6|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_wifiConnected : 7|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_systemActive : 8|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_readyForDrive : 9|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_cellConnected : 10|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_vpnActive : 11|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_autopilotTrial : 12|2@1+ (1,0) [0|3] ""  VehicleBus
+ SG_ UI_factoryReset : 14|2@1+ (1,0) [0|3] ""  VehicleBus
+ SG_ UI_gpsActive : 16|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_screenshotActive : 17|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_radioActive : 18|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_cellNetworkTechnology : 19|4@1+ (1,0) [0|15] ""  VehicleBus
+ SG_ UI_cellReceiverPower : 24|8@1+ (1,-128) [-128|127] "dB"  VehicleBus
+ SG_ UI_falseTouchCounter : 32|8@1+ (1,0) [0|255] "1"  VehicleBus
+ SG_ UI_developmentCar : 40|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_cameraActive : 41|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_cellSignalBars : 42|3@1+ (1,0) [0|7] ""  VehicleBus
+ SG_ UI_trailerModeTelltale : 45|2@1+ (1,0) [0|3] ""  VehicleBus
+ SG_ UI_pcbTemperature : 48|8@1- (1,40) [-87|167] "degC"  VehicleBus
+ SG_ UI_cpuTemperature : 56|8@1- (1,40) [-87|167] "degC"  VehicleBus
+
+BO_ 991 UI_status2: 5 VehicleBus
+ SG_ UI_mobileAppStepCount : 0|16@1+ (1,0) [0|65535] ""  VehicleBus
+ SG_ UI_userRequestSnapshot : 16|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_touchDetected : 17|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_validDeviceForEUSummon : 18|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_locatedAtHome : 19|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_locatedAtWork : 20|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_locatedAtFavorite : 21|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_displayInDarkMode : 22|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_userActivity : 23|1@1+ (1,0) [0|1] ""  VehicleBus
+ SG_ UI_activeTouchPoints : 24|8@1+ (1,0) [0|255] ""  VehicleBus
+ SG_ UI_linkState : 32|2@1+ (1,0) [0|3] ""  VehicleBus
+ SG_ UI_sentryModeState : 34|3@1+ (1,0) [0|7] ""  VehicleBus
+
 VAL_ 568 SpdCtrlLvr_Stat 32 "DN_1ST" 16 "UP_1ST" 8 "DN_2ND" 4 "UP_2ND" 2 "RWD" 1 "FWD" 0 "IDLE" ;
 VAL_ 568 DTR_Dist_Rq 255 "SNA" 200 "ACC_DIST_7" 166 "ACC_DIST_6" 133 "ACC_DIST_5" 100 "ACC_DIST_4" 66 "ACC_DIST_3" 33 "ACC_DIST_2" 0 "ACC_DIST_1" ;
 VAL_ 568 TurnIndLvr_Stat 3 "SNA" 2 "RIGHT" 1 "LEFT" 0 "IDLE" ;
@@ -339,3 +381,11 @@ VAL_ 258 VCLEFT_mirrorState 3 "MIRROR_STATE_FOLD_UNFOLD" 1 "MIRROR_STATE_TILT_X"
 VAL_ 258 VCLEFT_mirrorHeatState 2 "HEATER_STATE_OFF" 4 "HEATER_STATE_FAULT" 1 "HEATER_STATE_ON" 0 "HEATER_STATE_SNA" 3 "HEATER_STATE_OFF_UNAVAILABLE";
 VAL_ 258 VCLEFT_frontLatchStatus 8 "LATCH_FAULT" 2 "LATCH_CLOSED" 1 "LATCH_OPENED" 3 "LATCH_CLOSING" 7 "LATCH_DEFAULT" 4 "LATCH_OPENING" 5 "LATCH_AJAR" 6 "LATCH_TIMEOUT" 0 "LATCH_SNA";
 VAL_ 258 VCLEFT_mirrorFoldState 4 "MIRROR_FOLD_STATE_UNFOLDING" 1 "MIRROR_FOLD_STATE_FOLDED" 3 "MIRROR_FOLD_STATE_FOLDING" 0 "MIRROR_FOLD_STATE_UNKNOWN" 2 "MIRROR_FOLD_STATE_UNFOLDED";
+VAL_ 851 UI_trailerModeTelltale 0 "OFF" 1 "BLUE" 2 "YELLOW" 3 "RED" ;
+VAL_ 851 UI_cellSignalBars 0 "ZERO" 1 "ONE" 2 "TWO" 3 "THREE" 4 "FOUR" 5 "FIVE" 7 "SNA" ;
+VAL_ 851 UI_cellNetworkTechnology 0 "NONE" 1 "GPRS" 2 "EDGE" 3 "UMTS" 4 "HSDPA" 5 "HSUPA" 6 "HSPA" 7 "LTE" 8 "GSM" 9 "CDMA" 10 "WCDMA" 15 "SNA" ;
+VAL_ 851 UI_factoryReset 0 "NONE_SNA" 1 "DEVELOPER" 2 "DIAGNOSTIC" 3 "CUSTOMER" ;
+VAL_ 851 UI_autopilotTrial 0 "NONE" 1 "START" 2 "STOP" 3 "ACTIVE" ;
+VAL_ 991 UI_sentryModeState 0 "OFF" 1 "IDLE" 2 "ARMED" 3 "AWARE" 4 "PANIC" 5 "QUIET" 6 "SNA" ;
+VAL_ 991 UI_linkState 0 "NONE" 1 "CELL" 2 "WIFI" ;
+VAL_ 991 UI_userActivity 0 "IDLE" 1 "ACTIVE" ;
