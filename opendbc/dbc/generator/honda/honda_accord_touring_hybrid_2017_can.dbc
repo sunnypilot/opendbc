@@ -1,6 +1,6 @@
-CM_ "IMPORT _comma.dbc";
+CM_ "IMPORT _community.dbc";
 CM_ "IMPORT _honda_common.dbc";
-CM_ "IMPORT _dual_nidec_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
 CM_ "IMPORT _steering_sensors_b.dbc";
 
 BO_ 228 STEERING_CONTROL: 5 ADAS
@@ -27,7 +27,7 @@ BO_ 400 STEER_STATUS: 5 EPS
  SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" XXX
  SG_ LKAS_ALLOWED : 9|1@0+ (1,0) [0|1] "" XXX
  SG_ STEER_APPLIED : 23|16@0- (1,0) [0|511] "" XXX
- 
+
 BO_ 422 SCM_BUTTONS: 8 SCM
  SG_ CRUISE_BUTTONS : 7|3@0+ (1,0) [0|7] "" NEO
  SG_ LIGHTS_SETTING : 1|2@0+ (1,0) [0|3] "" NEO
@@ -35,7 +35,7 @@ BO_ 422 SCM_BUTTONS: 8 SCM
  SG_ CRUISE_SETTING : 43|2@0+ (1,0) [0|3] "" NEO
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" NEO
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" NEO
- 
+
 BO_ 520 SS_STATUS: 3 XXX
  SG_ VERSION_NUM : 0|4@1+ (1,0) [0|15] "" XXX
  SG_ HARDWARE_REV : 7|4@0+ (1,0) [0|15] "" XXX
