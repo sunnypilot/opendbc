@@ -1,5 +1,6 @@
 import crcmod
 from opendbc.car.hyundai.values import CAR, HyundaiFlags
+from opendbc.sunnypilot.car.hyundai.escc import Escc
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
@@ -137,7 +138,7 @@ def get_scc11_values(enabled, set_speed, idx, hud_control):
   }
 
 
-def get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca):
+def get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca, ESCC: Escc = None):
   scc12_values = {
     "ACCMode": 2 if enabled and long_override else 1 if enabled else 0,
     "StopReq": 1 if stopping else 0,
@@ -151,8 +152,20 @@ def get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca):
   if not use_fca:
     scc12_values["CF_VSM_ConfMode"] = 1
     scc12_values["AEB_Status"] = 1 # AEB disabled
+
+  # Since we have ESCC available, we can update the SCC12 message with the ESCC values.
+  # TODO: SP: On original SP code this was under the condition of "not use_fca" but I am unsure if that made sense.
+  if ESCC and ESCC.enabled:
+    ESCC.update_scc12_message(scc12_values)
+
   return scc12_values
 
+def get_scc13_values():
+  return {
+    "SCCDrvModeRValue": 2,
+    "SCC_Equip": 1,
+    "Lead_Veh_Dep_Alert_USM": 2,
+  }
 
 def calculate_scc12_checksum(packer, scc12_values):
   scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[1]
@@ -183,21 +196,27 @@ def calculate_fca11_checksum(packer, fca11_values):
   fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
   return fca11_values
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca):
+def get_fca12_values():
+  return {
+      "FCA_DrvSetState": 2,
+      "FCA_USM": 1, # AEB disabled
+  }
+
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca, ESCC: Escc = None):
   commands = []
 
   scc11_values = get_scc11_values(enabled, set_speed, idx, hud_control)
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 
-  scc12_values = get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca)
+  scc12_values = get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca, ESCC)
   scc12_values = calculate_scc12_checksum(packer, scc12_values)
   commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
 
   scc14_values = get_scc14_values(enabled, upper_jerk, hud_control, long_override)
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
-  # Only send FCA11 on cars where it exists on the bus
-  if use_fca:
+  # Only send FCA11 on cars where it exists on the bus and if we don't use ESCC since ESCC does not block FCA11 from stock radar.
+  if use_fca and not (ESCC and ESCC.enabled):
     # note that some vehicles most likely have an alternate checksum/counter definition
     # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
     fca11_values = get_fca11_values(idx)
@@ -206,21 +225,24 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
 
   return commands
 
-def create_acc_opt(packer):
+def create_acc_opt(packer, ESCC: Escc = None):
+  """
+  This creates SCC13 and FCA12 messages. However, if ESCC is available and enabled, it will only create the SCC13 message since ESCC does NOT block FCA12.
+  :param packer:
+  :param ESCC:
+  :return:
+  """
   commands = []
 
-  scc13_values = {
-    "SCCDrvModeRValue": 2,
-    "SCC_Equip": 1,
-    "Lead_Veh_Dep_Alert_USM": 2,
-  }
+  scc13_values = get_scc13_values()
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
+  # If ESCC is available and enabled, we skip FCA12, since ESCC does NOT block FCA12. So we return the commands containing only SCC13.
+  if ESCC and ESCC.enabled:
+    return commands
+
   # TODO: this needs to be detected and conditionally sent on unsupported long cars
-  fca12_values = {
-    "FCA_DrvSetState": 2,
-    "FCA_USM": 1, # AEB disabled
-  }
+  fca12_values = get_fca12_values()
   commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
 
   return commands

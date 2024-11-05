@@ -7,6 +7,7 @@ from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, CAMERA_SCC_CAR, C
 from opendbc.car.hyundai.radar_interface import RADAR_START_ADDR
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.disable_ecu import disable_ecu
+from opendbc.sunnypilot.car.hyundai.flags import HyundaiFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
 Ecu = structs.CarParams.Ecu
@@ -18,6 +19,7 @@ ENABLE_BUTTONS = (ButtonType.accelCruise, ButtonType.decelCruise, ButtonType.can
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs) -> structs.CarParams:
+    is_escc_enabled = False
     ret.carName = "hyundai"
 
     cam_can = CanBus(None, fingerprint).CAM
@@ -79,6 +81,10 @@ class CarInterface(CarInterfaceBase):
       if 0x38d in fingerprint[0] or 0x38d in fingerprint[2]:
         ret.flags |= HyundaiFlags.USE_FCA.value
 
+      if 0x2AB in fingerprint[0]:
+        ret.flags |= HyundaiFlagsSP.SP_ENHANCED_SCC.value
+        is_escc_enabled = True
+
       if ret.flags & HyundaiFlags.LEGACY:
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
         ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.hyundaiLegacy)]
@@ -123,6 +129,10 @@ class CarInterface(CarInterfaceBase):
     # Dashcam cars are missing a test route, or otherwise need validation
     # TODO: Optima Hybrid 2017 uses a different SCC12 checksum
     ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
+
+    if is_escc_enabled:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_ESCC
+      ret.radarUnavailable = ret.radarUnavailable and not is_escc_enabled
 
     return ret
 

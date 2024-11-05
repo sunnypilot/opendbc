@@ -2,6 +2,8 @@ from collections import deque
 import copy
 import math
 
+
+from opendbc.sunnypilot.car.escc_state_base import EsccStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from opendbc.car import create_button_events, structs
@@ -20,9 +22,10 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
                 Buttons.GAP_DIST: ButtonType.gapAdjustCruise, Buttons.CANCEL: ButtonType.cancel}
 
 
-class CarState(CarStateBase):
+class CarState(CarStateBase, EsccStateBase):
   def __init__(self, CP):
-    super().__init__(CP)
+    CarStateBase.__init__(self, CP)
+    EsccStateBase.__init__(self)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
     self.cruise_buttons: deque = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
