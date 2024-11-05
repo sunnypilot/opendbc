@@ -123,10 +123,8 @@ def create_lfahda_mfc(packer, enabled):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca):
-  commands = []
-
-  scc11_values = {
+def get_scc11_values(enabled, set_speed, idx, hud_control):
+  return {
     "MainMode_ACC": 1,
     "TauGapSet": hud_control.leadDistanceBars,
     "VSetDis": set_speed if enabled else 0,
@@ -136,9 +134,10 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
     "ACC_ObjLatPos": 0,
     "ACC_ObjRelSpd": 0,
     "ACC_ObjDist": 1, # close lead makes controls tighter
-    }
-  commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
+  }
 
+
+def get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca):
   scc12_values = {
     "ACCMode": 2 if enabled and long_override else 1 if enabled else 0,
     "StopReq": 1 if stopping else 0,
@@ -151,14 +150,18 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
   # these signals also prevent a TCS fault on non-FCA cars with alpha longitudinal
   if not use_fca:
     scc12_values["CF_VSM_ConfMode"] = 1
-    scc12_values["AEB_Status"] = 1  # AEB disabled
+    scc12_values["AEB_Status"] = 1 # AEB disabled
+  return scc12_values
 
+
+def calculate_scc12_checksum(packer, scc12_values):
   scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[1]
   scc12_values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
+  return scc12_values
 
-  commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
 
-  scc14_values = {
+def get_scc14_values(enabled, upper_jerk, hud_control, long_override):
+  return {
     "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
     "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
     "JerkUpperLimit": upper_jerk, # stock usually is 1.0 but sometimes uses higher values
@@ -166,20 +169,39 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
     "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
     "ObjGap": 2 if hud_control.leadVisible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
   }
+
+def get_fca11_values(idx):
+  return {
+    "CR_FCA_Alive": idx % 0xF,
+    "PAINT1_Status": 1,
+    "FCA_DrvSetStatus": 1,
+    "FCA_Status": 1,
+  }
+
+def calculate_fca11_checksum(packer, fca11_values):
+  fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[1]
+  fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
+  return fca11_values
+
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca):
+  commands = []
+
+  scc11_values = get_scc11_values(enabled, set_speed, idx, hud_control)
+  commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
+
+  scc12_values = get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca)
+  scc12_values = calculate_scc12_checksum(packer, scc12_values)
+  commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
+
+  scc14_values = get_scc14_values(enabled, upper_jerk, hud_control, long_override)
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
   # Only send FCA11 on cars where it exists on the bus
   if use_fca:
     # note that some vehicles most likely have an alternate checksum/counter definition
     # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
-    fca11_values = {
-      "CR_FCA_Alive": idx % 0xF,
-      "PAINT1_Status": 1,
-      "FCA_DrvSetStatus": 1,
-      "FCA_Status": 1,  # AEB disabled
-    }
-    fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[1]
-    fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
+    fca11_values = get_fca11_values(idx)
+    fca11_values = calculate_fca11_checksum(packer, fca11_values)
     commands.append(packer.make_can_msg("FCA11", 0, fca11_values))
 
   return commands
