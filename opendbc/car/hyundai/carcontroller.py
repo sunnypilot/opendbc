@@ -7,7 +7,7 @@ from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CAR
 from opendbc.car.interfaces import CarControllerBase
-from opendbc.sunnypilot.car.hyundai.escc import Escc
+from opendbc.sunnypilot.car.hyundai.escc import EsccController
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -43,9 +43,10 @@ def process_hud_alert(enabled, fingerprint, hud_control):
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-class CarController(CarControllerBase):
+class CarController(CarControllerBase, EsccController):
   def __init__(self, dbc_name, CP):
-    super().__init__(dbc_name, CP)
+    CarControllerBase.__init__(self, dbc_name, CP)
+    EsccController.__init__(self, CP)
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
@@ -55,12 +56,11 @@ class CarController(CarControllerBase):
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
-    self.ESCC = Escc(CP)
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, CS: CarState, now_nanos):
+    EsccController.update(self, CC, CS, now_nanos)
     actuators = CC.actuators
     hud_control = CC.hudControl
-    self.ESCC.refresh_car_state(CS)
 
     # steering torque
     new_steer = int(round(actuators.steer * self.params.STEER_MAX))
@@ -94,7 +94,7 @@ class CarController(CarControllerBase):
 
     # tester present - w/ no response (keeps relevant ECU disabled when cat is not Camera SCC, and we are controlling the car and not ESCC)
     if self.frame % 100 == 0 and not (self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) and self.CP.openpilotLongitudinalControl\
-        and not (self.ESCC and self.ESCC.enabled):
+        and not self.ESCC.enabled:
       # for longitudinal control, either radar or ADAS driving ECU
       addr, bus = 0x7d0, 0
       if self.CP.flags & HyundaiFlags.CANFD_HDA2.value:
@@ -162,7 +162,7 @@ class CarController(CarControllerBase):
         can_sends.extend(hyundaican.create_acc_opt(self.packer))
 
       # 2 Hz front radar options (ignored if we don't have longitudinal control or we have ESCC)
-      if self.frame % 50 == 0 and self.CP.openpilotLongitudinalControl and not (self.ESCC and self.ESCC.enabled):
+      if self.frame % 50 == 0 and self.CP.openpilotLongitudinalControl and not self.ESCC.enabled:
         can_sends.append(hyundaican.create_frt_radar_opt(self.packer))
 
     new_actuators = actuators.as_builder()

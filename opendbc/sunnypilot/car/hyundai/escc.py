@@ -2,6 +2,7 @@ from opendbc.car.hyundai.carstate import CarState
 from opendbc.can.parser import CANParser
 from opendbc.car.hyundai.values import DBC
 from opendbc.sunnypilot.car.escc_base import EsccBase
+from opendbc.sunnypilot.car.escc_interfaces import EsccControllerBase
 
 
 class Escc(EsccBase):
@@ -41,3 +42,11 @@ class Escc(EsccBase):
       lead_src, bus = "ESCC", 0
       messages = [(lead_src, 50)]
       return CANParser(DBC[self.car_params.carFingerprint]['pt'], messages, bus)
+
+
+class EsccController(EsccControllerBase):
+    def init(self):
+        self.ESCC = Escc(self.CP)
+
+    def update(self, CC, CS: CarState, now_nanos):
+        self.ESCC.refresh_car_state(CS)
