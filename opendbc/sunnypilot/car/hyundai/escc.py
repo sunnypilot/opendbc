@@ -2,7 +2,6 @@ from opendbc.car.hyundai.carstate import CarState
 from opendbc.can.parser import CANParser
 from opendbc.car.hyundai.values import DBC
 from opendbc.sunnypilot.car.escc_base import EsccBase
-from sunnypilot import SP_DEBUG
 
 
 class Escc(EsccBase):
