@@ -2,15 +2,17 @@ from enum import IntFlag
 
 
 class HyundaiFlagsSP(IntFlag):
-  SP_ENHANCED_SCC = 1
-  SP_CAN_LFA_BTN = 2
-  SP_NAV_MSG = 2 ** 2
+  """
+  Sunnypilot flags for hyundai. We reuse CarParams from OP. So we define the flags in reverse order to avoid conflicts.
+  """
+  SP_ENHANCED_SCC = 2**32
+  SP_CAN_LFA_BTN = 2**31
+  SP_NAV_MSG = 2 ** 30
 
-  SP_NON_SCC = 2 ** 3
-  SP_NON_SCC_FCA = 2 ** 4
-  SP_NON_SCC_RADAR_FCA = 2 ** 5
+  SP_NON_SCC = 2 ** 29
+  SP_NON_SCC_FCA = 2 ** 28
+  SP_NON_SCC_RADAR_FCA = 2 ** 27
 
-  SP_CAMERA_SCC_LEAD = 2 ** 6
-  SP_LKAS12 = 2 ** 7
-  SP_RADAR_TRACKS = 2 ** 8
-  SP_UPSTREAM_TACO = 2 ** 9
+  SP_CAMERA_SCC_LEAD = 2 ** 26
+  SP_LKAS12 = 2 ** 25
+  SP_RADAR_TRACKS = 2 ** 24
