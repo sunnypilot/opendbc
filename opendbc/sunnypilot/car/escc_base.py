@@ -10,7 +10,7 @@ class EsccBase(ABC):
 
   @property
   def enabled(self):
-    return self.car_params.flags & HyundaiFlagsSP.SP_ENHANCED_SCC.value
+    return self.car_params.sunnyParams.flags & HyundaiFlagsSP.SP_ENHANCED_SCC.value
 
   @property
   @abstractmethod

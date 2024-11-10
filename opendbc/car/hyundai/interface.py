@@ -82,7 +82,7 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HyundaiFlags.USE_FCA.value
 
       if 0x2AB in fingerprint[0]:
-        ret.flags |= HyundaiFlagsSP.SP_ENHANCED_SCC.value
+        ret.sunnyParams.flags |= HyundaiFlagsSP.SP_ENHANCED_SCC.value
         is_escc_enabled = True
 
       if ret.flags & HyundaiFlags.LEGACY:
@@ -138,7 +138,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def init(CP, can_recv, can_send):
-    if CP.openpilotLongitudinalControl and not ((CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) or (CP.flags & HyundaiFlagsSP.SP_ENHANCED_SCC.value)):
+    if CP.openpilotLongitudinalControl and not ((CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) or (CP.sunnyParams.flags & HyundaiFlagsSP.SP_ENHANCED_SCC.value)):
       addr, bus = 0x7d0, 0
       if CP.flags & HyundaiFlags.CANFD_HDA2.value:
         addr, bus = 0x730, CanBus(CP).ECAN
