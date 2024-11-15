@@ -131,7 +131,7 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
     if is_escc_enabled:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_ESCC
+      ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_ESCC
       ret.radarUnavailable = ret.radarUnavailable and not is_escc_enabled
 
     return ret
