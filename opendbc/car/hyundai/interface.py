@@ -19,7 +19,6 @@ ENABLE_BUTTONS = (ButtonType.accelCruise, ButtonType.decelCruise, ButtonType.can
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs) -> structs.CarParams:
-    is_escc_enabled = False
     ret.carName = "hyundai"
 
     cam_can = CanBus(None, fingerprint).CAM
@@ -83,7 +82,6 @@ class CarInterface(CarInterfaceBase):
 
       if 0x2AB in fingerprint[0]:
         ret.sunnyParams.flags |= HyundaiFlagsSP.SP_ENHANCED_SCC.value
-        is_escc_enabled = True
 
       if ret.flags & HyundaiFlags.LEGACY:
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
@@ -130,9 +128,9 @@ class CarInterface(CarInterfaceBase):
     # TODO: Optima Hybrid 2017 uses a different SCC12 checksum
     ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
-    if is_escc_enabled:
+    if ret.sunnyParams.flags & HyundaiFlagsSP.SP_ENHANCED_SCC:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_ESCC
-      ret.radarUnavailable = ret.radarUnavailable and not is_escc_enabled
+      ret.radarUnavailable = False
 
     return ret
 

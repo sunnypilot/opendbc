@@ -1,11 +1,12 @@
 import math
 
 from opendbc.can.parser import CANParser
+from cereal import car
+
 from opendbc.car import structs
 from opendbc.car.interfaces import RadarInterfaceBase
 from opendbc.car.hyundai.values import DBC
 from opendbc.sunnypilot.car.hyundai.escc import Escc
-from cereal import car
 
 RADAR_START_ADDR = 0x500
 RADAR_MSG_COUNT = 32
