@@ -1,8 +1,5 @@
 from opendbc.car import Bus, structs, get_safety_config, uds
-from opendbc.car.toyota.carstate import CarState
-from opendbc.car.toyota.carcontroller import CarController
-from opendbc.car.toyota.radar_interface import RadarInterface
-from opendbc.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
+from opendbc.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, ToyotaFlagsSP, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                                   MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR, \
                                                   ToyotaSafetyFlags
 from opendbc.car.disable_ecu import disable_ecu
@@ -13,10 +10,6 @@ SteerControlType = structs.CarParams.SteerControlType
 
 
 class CarInterface(CarInterfaceBase):
-  CarState = CarState
-  CarController = CarController
-  RadarInterface = RadarInterface
-
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return CarControllerParams(CP).ACCEL_MIN, CarControllerParams(CP).ACCEL_MAX
@@ -105,6 +98,15 @@ class CarInterface(CarInterfaceBase):
     # TODO: Some TSS-P platforms have BSM, but are flipped based on region or driving direction.
     # Detect flipped signals and enable for C-HR and others
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
+
+    if Params().get_bool("ToyotaEnhancedBsm"):
+      ret.spFlags |= ToyotaFlagsSP.SP_ENHANCED_BSM.value
+
+    if candidate == CAR.TOYOTA_PRIUS_TSS2:
+      ret.spFlags |= ToyotaFlagsSP.SP_NEED_DEBUG_BSM.value
+
+    if Params().get_bool("ToyotaAutoHold") and candidate in (TSS2_CAR - RADAR_ACC_CAR):
+      ret.spFlags |= ToyotaFlagsSP.SP_AUTO_BRAKE_HOLD.value
 
     # No radar dbc for cars without DSU which are not TSS 2.0
     # TODO: make an adas dbc file for dsu-less models
