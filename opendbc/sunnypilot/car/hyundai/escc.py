@@ -1,4 +1,3 @@
-from opendbc.car.hyundai.carstate import CarState
 from opendbc.can.parser import CANParser
 from opendbc.car.hyundai.values import DBC
 from opendbc.sunnypilot.car.hyundai.flags import HyundaiFlagsSP
@@ -17,7 +16,7 @@ class Escc():
     def ESCC_MSG_ID(self):
         return 0x2AB
 
-    def refresh_car_state(self, car_state: CarState):
+    def refresh_car_state(self, car_state):
         """
         This method is called by the CarController to update the car state on the ESCC object.
         The new state is used to update the SCC12 message with the current values of the car state received via ESCC.
@@ -49,6 +48,7 @@ class Escc():
       messages = [(lead_src, 50)]
       return CANParser(DBC[self.car_params.carFingerprint]['pt'], messages, bus)
 
+
 class EsccStateBase():
   def __init__(self):
     self.escc_aeb_warning = 0
@@ -56,10 +56,11 @@ class EsccStateBase():
     self.escc_cmd_act = 0
     self.escc_aeb_dec_cmd = 0
 
+
 class EsccController():
     def __init__(self, CP):
       self.CP = CP
       self.ESCC = Escc(self.CP)
 
-    def update(self, CC, CS: CarState, now_nanos):
-        self.ESCC.refresh_car_state(CS)
+    def update(self, CC, car_state, now_nanos):
+        self.ESCC.refresh_car_state(car_state)
