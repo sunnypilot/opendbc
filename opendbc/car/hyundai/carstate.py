@@ -3,7 +3,7 @@ import copy
 import math
 
 
-from opendbc.sunnypilot.car.escc_interfaces import EsccStateBase
+from opendbc.sunnypilot.car.hyundai.escc import EsccStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from opendbc.car import create_button_events, structs

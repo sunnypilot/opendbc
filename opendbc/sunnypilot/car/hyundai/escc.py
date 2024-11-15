@@ -1,11 +1,17 @@
 from opendbc.car.hyundai.carstate import CarState
 from opendbc.can.parser import CANParser
 from opendbc.car.hyundai.values import DBC
-from opendbc.sunnypilot.car.escc_base import EsccBase
-from opendbc.sunnypilot.car.escc_interfaces import EsccControllerBase
+from opendbc.sunnypilot.car.hyundai.flags import HyundaiFlagsSP
+from opendbc.car.structs import CarParams
 
 
-class Escc(EsccBase):
+class Escc():
+    def __init__(self, car_params: CarParams):
+      self.car_params = car_params
+
+    @property
+    def enabled(self):
+      return self.car_params.sunnyParams.flags & HyundaiFlagsSP.SP_ENHANCED_SCC.value
 
     @property
     def ESCC_MSG_ID(self):
@@ -43,10 +49,17 @@ class Escc(EsccBase):
       messages = [(lead_src, 50)]
       return CANParser(DBC[self.car_params.carFingerprint]['pt'], messages, bus)
 
+class EsccStateBase():
+  def __init__(self):
+    self.escc_aeb_warning = 0
+    self.escc_aeb_dec_cmd_act = 0
+    self.escc_cmd_act = 0
+    self.escc_aeb_dec_cmd = 0
 
-class EsccController(EsccControllerBase):
-    def init(self):
-        self.ESCC = Escc(self.CP)
+class EsccController():
+    def __init__(self, CP):
+      self.CP = CP
+      self.ESCC = Escc(self.CP)
 
     def update(self, CC, CS: CarState, now_nanos):
         self.ESCC.refresh_car_state(CS)
