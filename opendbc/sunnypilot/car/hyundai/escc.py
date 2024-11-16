@@ -1,5 +1,3 @@
-from abc import ABC
-
 from opendbc.can.parser import CANParser
 from opendbc.car.hyundai.values import DBC
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP

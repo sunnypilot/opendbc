@@ -1,7 +1,6 @@
 import math
 
 from opendbc.can.parser import CANParser
-from cereal import car
 
 from opendbc.car import structs
 from opendbc.car.interfaces import RadarInterfaceBase
@@ -102,7 +101,7 @@ class RadarInterface(RadarInterfaceBase):
     for ii in range(1):
       if valid:
         if ii not in self.pts:
-          self.pts[ii] = car.RadarData.RadarPoint.new_message()
+          self.pts[ii] = structs.RadarData.RadarPoint.new_message()
           self.pts[ii].trackId = self.track_id
           self.track_id += 1
         self.pts[ii].measured = True
