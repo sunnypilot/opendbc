@@ -517,7 +517,7 @@ struct CarParams {
   secOcRequired @75 :Bool;  # Car requires SecOC message authentication to operate
   secOcKeyAvailable @76 :Bool;  # Stored SecOC key loaded from params
 
-  spFlags @10 :UInt32;  # sunnypilot specific params
+  safetyParamDEPRECATED @10 :UInt32;  # sunnypilot specific params
 
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
