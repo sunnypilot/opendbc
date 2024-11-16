@@ -20,7 +20,7 @@ class EnhancedSmartCruiseControl:
 
   @property
   def enabled(self):
-    return self.CP.sunnypilotCarParams.flags & HyundaiFlagsSP.ENHANCED_SCC
+    return self.CP.sunnypilotFlags & HyundaiFlagsSP.ENHANCED_SCC
 
   @property
   def trigger_msg(self):

@@ -10,7 +10,7 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 def CP():
   params = structs.CarParams()
   params.carFingerprint = "HYUNDAI_SONATA"
-  params.sunnypilotCarParams.flags = HyundaiFlagsSP.ENHANCED_SCC.value
+  params.sunnypilotFlags = HyundaiFlagsSP.ENHANCED_SCC.value
   return params
 
 
@@ -26,7 +26,7 @@ class TestEscc:
   @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
   @given(st.integers(min_value=0, max_value=255))
   def test_enabled_flag(self, CP, value):
-    CP.sunnypilotCarParams.flags = value
+    CP.sunnypilotFlags = value
     escc = EnhancedSmartCruiseControl(CP)
     assert escc.enabled == (value & HyundaiFlagsSP.ENHANCED_SCC)
 
