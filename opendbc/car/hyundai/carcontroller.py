@@ -59,7 +59,7 @@ class CarController(CarControllerBase, EsccCarController):
     self.last_button_frame = 0
 
   def update(self, CC, CS, now_nanos):
-    EsccCarController.update(CS)
+    EsccCarController.update(self, CS)
     actuators = CC.actuators
     hud_control = CC.hudControl
 
