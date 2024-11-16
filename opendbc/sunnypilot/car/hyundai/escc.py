@@ -16,14 +16,14 @@ class Escc:
   def ESCC_MSG_ID(self):
     return 0x2AB
 
-  def refresh_car_state(self, car_state):
+  def refresh_car_state(self, CS):
     """
     This method is called by the CarController to update the car state on the ESCC object.
     The new state is used to update the SCC12 message with the current values of the car state received via ESCC.
-    :param car_state:
+    :param CS:
     :return:
     """
-    self.car_state = car_state
+    self.car_state = CS
 
   def update_scc12_message(self, scc12_message):
     """
@@ -57,10 +57,10 @@ class EsccCarStateBase:
     self.escc_aeb_dec_cmd = 0
 
 
-class EsccController:
+class EsccCarController:
   def __init__(self, CP):
     self.CP = CP
     self.ESCC = Escc(self.CP)
 
-  def update(self, CC, car_state, now_nanos):
-      self.ESCC.refresh_car_state(car_state)
+  def update(self, CS):
+    self.ESCC.refresh_car_state(CS)
