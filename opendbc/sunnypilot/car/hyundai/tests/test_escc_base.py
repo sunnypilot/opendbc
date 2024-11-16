@@ -3,7 +3,8 @@ from hypothesis import given, strategies as st, settings, HealthCheck
 from opendbc.sunnypilot.car.hyundai.escc import Escc
 from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.structs import CarParams
-from opendbc.sunnypilot.car.hyundai.flags import HyundaiFlagsSP
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+
 
 @pytest.fixture
 def car_params():
@@ -12,9 +13,11 @@ def car_params():
   params.sunnypilotCarParams.flags = HyundaiFlagsSP.SP_ENHANCED_SCC.value
   return params
 
+
 @pytest.fixture
 def escc(car_params):
   return Escc(car_params)
+
 
 class TestEscc:
   def test_escc_msg_id(self, escc):

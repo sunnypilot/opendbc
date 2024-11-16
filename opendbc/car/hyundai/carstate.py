@@ -3,7 +3,6 @@ import copy
 import math
 
 
-from opendbc.sunnypilot.car.hyundai.escc import EsccStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from opendbc.car import create_button_events, structs
@@ -11,6 +10,8 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, Buttons, CarControllerParams
 from opendbc.car.interfaces import CarStateBase
+
+from opendbc.sunnypilot.car.hyundai.escc import EsccStateBase
 
 ButtonType = structs.CarState.ButtonEvent.Type
 

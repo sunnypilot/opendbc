@@ -7,4 +7,4 @@ class HyundaiFlagsSP(IntFlag):
   These flags will go into the `sunnypilotCarParams.flags` field of the `CarParams` (car.capnp)
   Max 32 flags can be defined in this class.
   """
-  SP_ENHANCED_SCC = 1 << 0
+  SP_ENHANCED_SCC = 1

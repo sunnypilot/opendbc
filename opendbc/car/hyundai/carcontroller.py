@@ -7,6 +7,7 @@ from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CAR
 from opendbc.car.interfaces import CarControllerBase
+
 from opendbc.sunnypilot.car.hyundai.escc import EsccController
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
