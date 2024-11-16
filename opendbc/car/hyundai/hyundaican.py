@@ -1,6 +1,6 @@
 import crcmod
 from opendbc.car.hyundai.values import CAR, HyundaiFlags
-from opendbc.sunnypilot.car.hyundai.escc import Escc
+from opendbc.sunnypilot.car.hyundai.escc import EnhancedSmartCruiseControl
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
@@ -125,7 +125,7 @@ def create_lfahda_mfc(packer, enabled):
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
 def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca,
-                        ESCC: Escc = None):
+                        ESCC: EnhancedSmartCruiseControl = None):
 
   def get_scc11_values():
     return {
@@ -212,7 +212,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
 
   return commands
 
-def create_acc_opt(packer, ESCC: Escc = None):
+def create_acc_opt(packer, ESCC: EnhancedSmartCruiseControl = None):
   """
   This creates SCC13 and FCA12 messages. However, if ESCC is available and enabled, it will only create SCC13
   since ESCC does not block FCA12.
