@@ -124,120 +124,122 @@ def create_lfahda_mfc(packer, enabled):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def get_scc11_values(enabled, set_speed, idx, hud_control):
-  return {
-    "MainMode_ACC": 1,
-    "TauGapSet": hud_control.leadDistanceBars,
-    "VSetDis": set_speed if enabled else 0,
-    "AliveCounterACC": idx % 0x10,
-    "ObjValid": 1, # close lead makes controls tighter
-    "ACC_ObjStatus": 1, # close lead makes controls tighter
-    "ACC_ObjLatPos": 0,
-    "ACC_ObjRelSpd": 0,
-    "ACC_ObjDist": 1, # close lead makes controls tighter
-  }
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca,
+                        ESCC: Escc = None):
 
+  def get_scc11_values():
+    return {
+      "MainMode_ACC": 1,
+      "TauGapSet": hud_control.leadDistanceBars,
+      "VSetDis": set_speed if enabled else 0,
+      "AliveCounterACC": idx % 0x10,
+      "ObjValid": 1, # close lead makes controls tighter
+      "ACC_ObjStatus": 1, # close lead makes controls tighter
+      "ACC_ObjLatPos": 0,
+      "ACC_ObjRelSpd": 0,
+      "ACC_ObjDist": 1, # close lead makes controls tighter
+    }
 
-def get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca, ESCC: Escc = None):
-  scc12_values = {
-    "ACCMode": 2 if enabled and long_override else 1 if enabled else 0,
-    "StopReq": 1 if stopping else 0,
-    "aReqRaw": accel,
-    "aReqValue": accel,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
-    "CR_VSM_Alive": idx % 0xF,
-  }
+  def get_scc12_values():
+    scc12_values = {
+      "ACCMode": 2 if enabled and long_override else 1 if enabled else 0,
+      "StopReq": 1 if stopping else 0,
+      "aReqRaw": accel,
+      "aReqValue": accel,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
+      "CR_VSM_Alive": idx % 0xF,
+    }
 
-  # show AEB disabled indicator on dash with SCC12 if not sending FCA messages.
-  # these signals also prevent a TCS fault on non-FCA cars with alpha longitudinal
-  if not use_fca:
-    scc12_values["CF_VSM_ConfMode"] = 1
-    scc12_values["AEB_Status"] = 1 # AEB disabled
+    # show AEB disabled indicator on dash with SCC12 if not sending FCA messages.
+    # these signals also prevent a TCS fault on non-FCA cars with alpha longitudinal
+    if not use_fca:
+      scc12_values["CF_VSM_ConfMode"] = 1
+      scc12_values["AEB_Status"] = 1 # AEB disabled
 
-  # Since we have ESCC available, we can update the SCC12 message with the ESCC values.
-  # TODO: SP: On original SP code this was under the condition of "not use_fca" but I am unsure if that made sense.
-  if ESCC and ESCC.enabled:
-    ESCC.update_scc12_message(scc12_values)
+    # Since we have ESCC available, we can update the SCC12 message with the ESCC values.
+    if ESCC and ESCC.enabled:
+      ESCC.update_scc12_message(scc12_values)
 
-  return scc12_values
+    return scc12_values
 
-def get_scc13_values():
-  return {
-    "SCCDrvModeRValue": 2,
-    "SCC_Equip": 1,
-    "Lead_Veh_Dep_Alert_USM": 2,
-  }
+  def calculate_scc12_checksum():
+    scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[1]
+    scc12_values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
+    return scc12_values
 
-def calculate_scc12_checksum(packer, scc12_values):
-  scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[1]
-  scc12_values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
-  return scc12_values
+  def get_scc14_values():
+    return {
+      "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
+      "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
+      "JerkUpperLimit": upper_jerk, # stock usually is 1.0 but sometimes uses higher values
+      "JerkLowerLimit": 5.0, # stock usually is 0.5 but sometimes uses higher values
+      "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
+      "ObjGap": 2 if hud_control.leadVisible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
+    }
 
+  def get_fca11_values():
+    return {
+      "CR_FCA_Alive": idx % 0xF,
+      "PAINT1_Status": 1,
+      "FCA_DrvSetStatus": 1,
+      "FCA_Status": 1,
+    }
 
-def get_scc14_values(enabled, upper_jerk, hud_control, long_override):
-  return {
-    "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
-    "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
-    "JerkUpperLimit": upper_jerk, # stock usually is 1.0 but sometimes uses higher values
-    "JerkLowerLimit": 5.0, # stock usually is 0.5 but sometimes uses higher values
-    "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
-    "ObjGap": 2 if hud_control.leadVisible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
-  }
+  def calculate_fca11_checksum():
+    fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[1]
+    fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
+    return fca11_values
 
-def get_fca11_values(idx):
-  return {
-    "CR_FCA_Alive": idx % 0xF,
-    "PAINT1_Status": 1,
-    "FCA_DrvSetStatus": 1,
-    "FCA_Status": 1,
-  }
-
-def calculate_fca11_checksum(packer, fca11_values):
-  fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[1]
-  fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
-  return fca11_values
-
-def get_fca12_values():
-  return {
-      "FCA_DrvSetState": 2,
-      "FCA_USM": 1, # AEB disabled
-  }
-
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca, ESCC: Escc = None):
   commands = []
 
-  scc11_values = get_scc11_values(enabled, set_speed, idx, hud_control)
+  scc11_values = get_scc11_values()
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 
-  scc12_values = get_scc12_values(enabled, accel, idx, stopping, long_override, use_fca, ESCC)
-  scc12_values = calculate_scc12_checksum(packer, scc12_values)
+  scc12_values = get_scc12_values()
+  scc12_values = calculate_scc12_checksum()
   commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
 
-  scc14_values = get_scc14_values(enabled, upper_jerk, hud_control, long_override)
+  scc14_values = get_scc14_values()
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
-  # Only send FCA11 on cars where it exists on the bus and if we don't use ESCC since ESCC does not block FCA11 from stock radar.
+  # Only send FCA11 on cars where it exists on the bus, and
+  # if we don't use ESCC since ESCC does not block FCA11 from stock radar
   if use_fca and not (ESCC and ESCC.enabled):
     # note that some vehicles most likely have an alternate checksum/counter definition
     # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
-    fca11_values = get_fca11_values(idx)
-    fca11_values = calculate_fca11_checksum(packer, fca11_values)
+    fca11_values = get_fca11_values()
+    fca11_values = calculate_fca11_checksum()
     commands.append(packer.make_can_msg("FCA11", 0, fca11_values))
 
   return commands
 
 def create_acc_opt(packer, ESCC: Escc = None):
   """
-  This creates SCC13 and FCA12 messages. However, if ESCC is available and enabled, it will only create the SCC13 message since ESCC does NOT block FCA12.
+  This creates SCC13 and FCA12 messages. However, if ESCC is available and enabled, it will only create SCC13
+  since ESCC does not block FCA12.
   :param packer:
   :param ESCC:
   :return:
   """
+
+  def get_scc13_values():
+    return {
+      "SCCDrvModeRValue": 2,
+      "SCC_Equip": 1,
+      "Lead_Veh_Dep_Alert_USM": 2,
+    }
+
+  def get_fca12_values():
+    return {
+      "FCA_DrvSetState": 2,
+      "FCA_USM": 1, # AEB disabled
+    }
+
   commands = []
 
   scc13_values = get_scc13_values()
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
-  # If ESCC is available and enabled, we skip FCA12, since ESCC does NOT block FCA12. So we return the commands containing only SCC13.
+  # If ESCC is available and enabled, we skip FCA12, since ESCC does not block FCA12
   if ESCC and ESCC.enabled:
     return commands
 
