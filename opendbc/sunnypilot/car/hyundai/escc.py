@@ -49,6 +49,14 @@ class Escc:
     return CANParser(DBC[self.car_params.carFingerprint]['pt'], messages, bus)
 
 
+class EsccStateBase:
+  def __init__(self):
+    self.escc_aeb_warning = 0
+    self.escc_aeb_dec_cmd_act = 0
+    self.escc_cmd_act = 0
+    self.escc_aeb_dec_cmd = 0
+
+
 class EsccController:
   def __init__(self, CP):
     self.CP = CP
