@@ -517,6 +517,8 @@ struct CarParams {
   secOcRequired @75 :Bool;  # Car requires SecOC message authentication to operate
   secOcKeyAvailable @76 :Bool;  # Stored SecOC key loaded from params
 
+  sunnypilotCarParams @9 :SunnypilotCarParams;  # sunnypilot specific params
+
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
     safetyParam @3 :UInt16;
@@ -696,6 +698,10 @@ struct CarParams {
     gateway @1;    # Integration at vehicle's CAN gateway
   }
 
+  struct SunnypilotCarParams {
+    flags @0 :UInt32;
+  }
+
   enableGasInterceptorDEPRECATED @2 :Bool;
   enableCameraDEPRECATED @4 :Bool;
   enableApgsDEPRECATED @6 :Bool;
@@ -703,7 +709,6 @@ struct CarParams {
   isPandaBlackDEPRECATED @39 :Bool;
   hasStockCameraDEPRECATED @57 :Bool;
   safetyParamDEPRECATED @10 :Int16;
-  safetyModelDEPRECATED @9 :SafetyModel;
   safetyModelPassiveDEPRECATED @42 :SafetyModel = silent;
   minSpeedCanDEPRECATED @51 :Float32;
   communityFeatureDEPRECATED @46: Bool;
