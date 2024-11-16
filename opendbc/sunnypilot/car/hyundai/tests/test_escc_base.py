@@ -9,7 +9,7 @@ from opendbc.sunnypilot.car.hyundai.flags import HyundaiFlagsSP
 def car_params():
   params = CarParams()
   params.carFingerprint = "HYUNDAI_SONATA"
-  params.sunnyParams.flags = HyundaiFlagsSP.SP_ENHANCED_SCC.value
+  params.sunnypilotCarParams.flags = HyundaiFlagsSP.SP_ENHANCED_SCC.value
   return params
 
 @pytest.fixture
@@ -23,7 +23,7 @@ class TestEscc:
   @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
   @given(st.integers(min_value=0, max_value=255))
   def test_enabled_flag(self, car_params, value):
-    car_params.sunnyParams.flags = value
+    car_params.sunnypilotCarParams.flags = value
     escc = Escc(car_params)
     assert escc.enabled == (value & HyundaiFlagsSP.SP_ENHANCED_SCC.value)
 

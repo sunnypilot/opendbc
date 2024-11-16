@@ -81,7 +81,7 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HyundaiFlags.USE_FCA.value
 
       if 0x2AB in fingerprint[0]:
-        ret.sunnyParams.flags |= HyundaiFlagsSP.SP_ENHANCED_SCC.value
+        ret.sunnypilotCarParams.flags |= HyundaiFlagsSP.SP_ENHANCED_SCC.value
 
       if ret.flags & HyundaiFlags.LEGACY:
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
@@ -128,7 +128,7 @@ class CarInterface(CarInterfaceBase):
     # TODO: Optima Hybrid 2017 uses a different SCC12 checksum
     ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
-    if ret.sunnyParams.flags & HyundaiFlagsSP.SP_ENHANCED_SCC:
+    if ret.sunnypilotCarParams.flags & HyundaiFlagsSP.SP_ENHANCED_SCC:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_ESCC
       ret.radarUnavailable = False
 
@@ -136,7 +136,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def init(CP, can_recv, can_send):
-    if CP.openpilotLongitudinalControl and not ((CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) or (CP.sunnyParams.flags & HyundaiFlagsSP.SP_ENHANCED_SCC.value)):
+    if CP.openpilotLongitudinalControl and not ((CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) or (CP.sunnypilotCarParams.flags & HyundaiFlagsSP.SP_ENHANCED_SCC.value)):
       addr, bus = 0x7d0, 0
       if CP.flags & HyundaiFlags.CANFD_HDA2.value:
         addr, bus = 0x730, CanBus(CP).ECAN
