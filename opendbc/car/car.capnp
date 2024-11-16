@@ -699,7 +699,7 @@ struct CarParams {
   }
 
   struct SunnypilotCarParams {
-    flags @0 :UInt32;
+    flags @0 :UInt32;  # flags for car specific quirks
   }
 
   enableGasInterceptorDEPRECATED @2 :Bool;
