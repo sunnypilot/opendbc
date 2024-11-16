@@ -11,7 +11,7 @@ from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, Buttons, CarControllerParams
 from opendbc.car.interfaces import CarStateBase
 
-from opendbc.sunnypilot.car.hyundai.escc import EsccStateBase
+from opendbc.sunnypilot.car.hyundai.carstate import CarStateSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
@@ -23,10 +23,10 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
                 Buttons.GAP_DIST: ButtonType.gapAdjustCruise, Buttons.CANCEL: ButtonType.cancel}
 
 
-class CarState(CarStateBase, EsccStateBase):
+class CarState(CarStateBase, CarStateSP):
   def __init__(self, CP):
-    CarStateBase.__init__(self, CP)
-    EsccStateBase.__init__(self)
+    super().__init__(CP)
+    CarStateSP().__init__()
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
     self.cruise_buttons: deque = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
