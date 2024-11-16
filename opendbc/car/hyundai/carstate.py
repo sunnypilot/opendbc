@@ -2,7 +2,6 @@ from collections import deque
 import copy
 import math
 
-
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from opendbc.car import create_button_events, structs
