@@ -7,7 +7,7 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 
 @pytest.fixture
-def CP():
+def car_params():
   params = structs.CarParams()
   params.carFingerprint = "HYUNDAI_SONATA"
   params.sunnypilotFlags = HyundaiFlagsSP.ENHANCED_SCC.value
@@ -15,8 +15,8 @@ def CP():
 
 
 @pytest.fixture
-def escc(CP):
-  return EnhancedSmartCruiseControl(CP)
+def escc(car_params):
+  return EnhancedSmartCruiseControl(car_params)
 
 
 class TestEscc:
@@ -25,13 +25,13 @@ class TestEscc:
 
   @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
   @given(st.integers(min_value=0, max_value=255))
-  def test_enabled_flag(self, CP, value):
-    CP.sunnypilotFlags = value
-    escc = EnhancedSmartCruiseControl(CP)
+  def test_enabled_flag(self, car_params, value):
+    car_params.sunnypilotFlags = value
+    escc = EnhancedSmartCruiseControl(car_params)
     assert escc.enabled == (value & HyundaiFlagsSP.ENHANCED_SCC)
 
-  def test_refresh_car_state(self, escc, CP):
-    car_state = CarState(CP)
+  def test_refresh_car_state(self, escc, car_params):
+    car_state = CarState(car_params)
     car_state.escc_cmd_act = 1
     car_state.escc_aeb_warning = 1
     car_state.escc_aeb_dec_cmd_act = 1
@@ -39,8 +39,8 @@ class TestEscc:
     escc.refresh_car_state(car_state)
     assert escc.car_state == car_state
 
-  def test_update_scc12_message(self, escc, CP):
-    car_state = CarState(CP)
+  def test_update_scc12_message(self, escc, car_params):
+    car_state = CarState(car_params)
     car_state.escc_cmd_act = 1
     car_state.escc_aeb_warning = 1
     car_state.escc_aeb_dec_cmd_act = 1
