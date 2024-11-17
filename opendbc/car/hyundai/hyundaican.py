@@ -161,7 +161,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
 
     return scc12_values
 
-  def calculate_scc12_checksum():
+  def calculate_scc12_checksum(scc12_values):
     scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[1]
     scc12_values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
     return scc12_values
@@ -184,7 +184,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
       "FCA_Status": 1,
     }
 
-  def calculate_fca11_checksum():
+  def calculate_fca11_checksum(fca11_values):
     fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[1]
     fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
     return fca11_values
@@ -195,7 +195,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 
   scc12_values = get_scc12_values()
-  scc12_values = calculate_scc12_checksum()
+  scc12_values = calculate_scc12_checksum(scc12_values)
   commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
 
   scc14_values = get_scc14_values()
@@ -207,7 +207,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
     # note that some vehicles most likely have an alternate checksum/counter definition
     # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
     fca11_values = get_fca11_values()
-    fca11_values = calculate_fca11_checksum()
+    fca11_values = calculate_fca11_checksum(fca11_values)
     commands.append(packer.make_can_msg("FCA11", 0, fca11_values))
 
   return commands

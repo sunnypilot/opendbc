@@ -31,13 +31,13 @@ class TestEscc:
     assert escc.enabled == (value & HyundaiFlagsSP.ENHANCED_SCC)
 
   def test_refresh_car_state(self, escc, CP):
-    CS = CarState(CP)
-    CS.escc_cmd_act = 1
-    CS.escc_aeb_warning = 1
-    CS.escc_aeb_dec_cmd_act = 1
-    CS.escc_aeb_dec_cmd = 1
-    escc.refresh_car_state(CS)
-    assert escc.CS == CS
+    car_state = CarState(CP)
+    car_state.escc_cmd_act = 1
+    car_state.escc_aeb_warning = 1
+    car_state.escc_aeb_dec_cmd_act = 1
+    car_state.escc_aeb_dec_cmd = 1
+    escc.refresh_car_state(car_state)
+    assert escc.car_state == car_state
 
   def test_update_scc12_message(self, escc, CP):
     car_state = CarState(CP)

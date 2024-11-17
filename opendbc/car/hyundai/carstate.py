@@ -24,7 +24,7 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
 
 class CarState(CarStateBase, EsccCarStateBase):
   def __init__(self, CP):
-    super().__init__(CP)
+    CarStateBase.__init__(self, CP)
     EsccCarStateBase.__init__(self)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 

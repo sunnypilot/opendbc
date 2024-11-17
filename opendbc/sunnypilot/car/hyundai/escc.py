@@ -26,14 +26,14 @@ class EnhancedSmartCruiseControl:
   def trigger_msg(self):
     return ESCC_MSG
 
-  def refresh_car_state(self, CS):
+  def refresh_car_state(self, car_state):
     """
     This method is called by the CarController to update the car state on the ESCC object.
     The new state is used to update the SCC12 message with the current values of the car state received via ESCC.
-    :param CS:
+    :param car_state:
     :return:
     """
-    self.CS = CS
+    self.car_state = car_state
 
   def update_scc12_message(self, values):
     """
@@ -43,10 +43,10 @@ class EnhancedSmartCruiseControl:
     :param values: the SCC12 message to be sent in dictionary form before being packed
     :return: Nothing. The scc12_message is updated in place.
     """
-    values["AEB_CmdAct"] = self.CS.escc_cmd_act
-    values["CF_VSM_Warn"] = self.CS.escc_aeb_warning
-    values["CF_VSM_DecCmdAct"] = self.CS.escc_aeb_dec_cmd_act
-    values["CR_VSM_DecCmd"] = self.CS.escc_aeb_dec_cmd
+    values["AEB_CmdAct"] = self.car_state.escc_cmd_act
+    values["CF_VSM_Warn"] = self.car_state.escc_aeb_warning
+    values["CF_VSM_DecCmdAct"] = self.car_state.escc_aeb_dec_cmd_act
+    values["CR_VSM_DecCmd"] = self.car_state.escc_aeb_dec_cmd
     # Active AEB. Although I don't think we should set it here ourselves.
     # It might differ from the user's config. Instead we should try to read it from the car and use that.
     # I saw flickering on the dashboard settings where it went to "deactivated" to "active assistance" when sengin AEB_Status 1.
