@@ -9,6 +9,7 @@ from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.disable_ecu import disable_ecu
 
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
 
 ButtonType = structs.CarState.ButtonEvent.Type
 Ecu = structs.CarParams.Ecu
@@ -81,7 +82,7 @@ class CarInterface(CarInterfaceBase):
       if 0x38d in fingerprint[0] or 0x38d in fingerprint[2]:
         ret.flags |= HyundaiFlags.USE_FCA.value
 
-      if 0x2AB in fingerprint[0]:
+      if ESCC_MSG in fingerprint[0]:
         ret.sunnypilotFlags |= HyundaiFlagsSP.ENHANCED_SCC.value
 
       if ret.flags & HyundaiFlags.LEGACY:
