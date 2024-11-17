@@ -63,5 +63,5 @@ class EsccCarController:
   def __init__(self, CP):
     self.ESCC = EnhancedSmartCruiseControl(CP)
 
-  def update(self, CS):
-    self.ESCC.refresh_car_state(CS)
+  def update(self, car_state):
+    self.ESCC.refresh_car_state(car_state)
