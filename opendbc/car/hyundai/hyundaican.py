@@ -161,10 +161,10 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
 
     return scc12_values
 
-  def calculate_scc12_checksum(scc12_values):
-    scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[1]
-    scc12_values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
-    return scc12_values
+  def calculate_scc12_checksum(values):
+    scc12_dat = packer.make_can_msg("SCC12", 0, values)[1]
+    values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
+    return values
 
   def get_scc14_values():
     return {
@@ -184,10 +184,10 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
       "FCA_Status": 1,
     }
 
-  def calculate_fca11_checksum(fca11_values):
-    fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[1]
-    fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
-    return fca11_values
+  def calculate_fca11_checksum(values):
+    fca11_dat = packer.make_can_msg("FCA11", 0, values)[1]
+    values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
+    return values
 
   commands = []
 
