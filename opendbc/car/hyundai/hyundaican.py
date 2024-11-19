@@ -155,7 +155,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
       scc12_values["CF_VSM_ConfMode"] = 1
       scc12_values["AEB_Status"] = 1 # AEB disabled
 
-    # Since we have ESCC available, we can update the SCC12 message with the ESCC values.
+    # Since we have ESCC available, we can update SCC12 with ESCC values.
     if ESCC and ESCC.enabled:
       ESCC.update_scc12(scc12_values)
 
@@ -214,11 +214,10 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
 
 def create_acc_opt(packer, ESCC: EnhancedSmartCruiseControl = None):
   """
-  This creates SCC13 and FCA12 messages. However, if ESCC is available and enabled, it will only create SCC13
-  since ESCC does not block FCA12.
-  :param packer:
-  :param ESCC:
-  :return:
+    Creates SCC13 and FCA12. If ESCC is enabled, it will only create SCC13 since ESCC does not block FCA12.
+    :param packer:
+    :param ESCC:
+    :return:
   """
 
   def get_scc13_values():
