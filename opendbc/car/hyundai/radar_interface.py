@@ -34,7 +34,7 @@ class RadarInterface(RadarInterfaceBase):
 
     # Override radar parser with the ESCC parser and trigger message if ESCC is enabled
     if self.ESCC.enabled:
-      self.rcp = self.ESCC.get_radar_parser_escc()
+      self.rcp = self.ESCC.get_radar_parser()
       self.trigger_msg = self.ESCC.trigger_msg
 
   def update(self, can_strings):

@@ -157,7 +157,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
 
     # Since we have ESCC available, we can update the SCC12 message with the ESCC values.
     if ESCC and ESCC.enabled:
-      ESCC.update_scc12_message(scc12_values)
+      ESCC.update_scc12(scc12_values)
 
     return scc12_values
 

@@ -82,6 +82,7 @@ class CarInterface(CarInterfaceBase):
       if 0x38d in fingerprint[0] or 0x38d in fingerprint[2]:
         ret.flags |= HyundaiFlags.USE_FCA.value
 
+      # TODO-SP: add route with ESCC message for process replay
       if ESCC_MSG in fingerprint[0]:
         ret.sunnypilotFlags |= HyundaiFlagsSP.ENHANCED_SCC.value
 

@@ -30,24 +30,24 @@ class TestEscc:
     escc = EnhancedSmartCruiseControl(car_params)
     assert escc.enabled == (value & HyundaiFlagsSP.ENHANCED_SCC)
 
-  def test_refresh_car_state(self, escc, car_params):
+  def test_update_car_state(self, escc, car_params):
     car_state = CarState(car_params)
     car_state.escc_cmd_act = 1
     car_state.escc_aeb_warning = 1
     car_state.escc_aeb_dec_cmd_act = 1
     car_state.escc_aeb_dec_cmd = 1
-    escc.refresh_car_state(car_state)
+    escc.update_car_state(car_state)
     assert escc.car_state == car_state
 
-  def test_update_scc12_message(self, escc, car_params):
+  def test_update_scc12(self, escc, car_params):
     car_state = CarState(car_params)
     car_state.escc_cmd_act = 1
     car_state.escc_aeb_warning = 1
     car_state.escc_aeb_dec_cmd_act = 1
     car_state.escc_aeb_dec_cmd = 1
-    escc.refresh_car_state(car_state)
+    escc.update_car_state(car_state)
     scc12_message = {}
-    escc.update_scc12_message(scc12_message)
+    escc.update_scc12(scc12_message)
     assert scc12_message["AEB_CmdAct"] == 1
     assert scc12_message["CF_VSM_Warn"] == 1
     assert scc12_message["CF_VSM_DecCmdAct"] == 1
@@ -55,6 +55,6 @@ class TestEscc:
     assert scc12_message["AEB_Status"] == 2
 
   def test_get_radar_escc_parser(self, escc):
-    parser = escc.get_radar_parser_escc()
+    parser = escc.get_radar_parser()
     assert parser is not None
     assert parser.dbc_name == b"hyundai_kia_generic"
