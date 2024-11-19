@@ -95,6 +95,9 @@ class CarInterface(CarInterfaceBase):
       if ret.flags & HyundaiFlags.CAMERA_SCC:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
 
+      if ret.sunnypilotFlags & HyundaiFlagsSP.ENHANCED_SCC:
+        ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_ESCC
+
     # Common lateral control setup
 
     ret.centerToFront = ret.wheelbase * 0.4
