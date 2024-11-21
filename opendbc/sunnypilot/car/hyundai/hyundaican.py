@@ -1,5 +1,8 @@
-from opendbc.car.hyundai.hyundaican import hyundai_checksum
+import crcmod
+
 from opendbc.sunnypilot.car.hyundai.escc import EnhancedSmartCruiseControl
+
+hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
 def create_acc_commands_escc(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca,
                              ESCC: EnhancedSmartCruiseControl = None):
