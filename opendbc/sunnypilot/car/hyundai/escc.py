@@ -81,7 +81,7 @@ class EsccRadarInterfaceBase:
       msg = self.rcp.vl[msg_src]
 
       if ii not in self.pts:
-        self.pts[ii] = structs.RadarData.RadarPoint
+        self.pts[ii] = structs.RadarData.RadarPoint()
         self.pts[ii].trackId = self.track_id
         self.track_id += 1
 
