@@ -46,7 +46,7 @@ class EnhancedSmartCruiseControl:
     #  This indicates that SCC12 likely displays it on the dashboard, and another FCA message may also cause it to appear.
     values["AEB_Status"] = 2  # AEB enabled
 
-  def get_radar_parser(self):
+  def get_radar_can_parser(self):
     lead_src, bus = "ESCC", 0
     messages = [(lead_src, 50)]
     return CANParser(DBC[self.CP.carFingerprint]['pt'], messages, bus)

@@ -55,6 +55,6 @@ class TestEscc:
     assert scc12_message["AEB_Status"] == 2
 
   def test_get_radar_escc_parser(self, escc):
-    parser = escc.get_radar_parser()
+    parser = escc.get_radar_can_parser()
     assert parser is not None
     assert parser.dbc_name == b"hyundai_kia_generic"

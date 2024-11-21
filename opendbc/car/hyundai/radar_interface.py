@@ -1,7 +1,6 @@
 import math
 
 from opendbc.can.parser import CANParser
-
 from opendbc.car import structs
 from opendbc.car.interfaces import RadarInterfaceBase
 from opendbc.car.hyundai.values import DBC
@@ -34,7 +33,7 @@ class RadarInterface(RadarInterfaceBase):
 
     # Override radar parser with the ESCC parser and trigger message if ESCC is enabled
     if self.ESCC.enabled:
-      self.rcp = self.ESCC.get_radar_parser()
+      self.rcp = self.ESCC.get_radar_can_parser()
       self.trigger_msg = self.ESCC.trigger_msg
 
   def update(self, can_strings):
