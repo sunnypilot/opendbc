@@ -5,7 +5,7 @@ from opendbc.car import structs
 from opendbc.car.interfaces import RadarInterfaceBase
 from opendbc.car.hyundai.values import DBC
 
-from opendbc.sunnypilot.car.hyundai.escc import EnhancedSmartCruiseControl, EsccRadarInterfaceBase
+from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
 
 RADAR_START_ADDR = 0x500
 RADAR_MSG_COUNT = 32
