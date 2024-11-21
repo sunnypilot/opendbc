@@ -5,7 +5,7 @@ from opendbc.car import structs
 from opendbc.car.interfaces import RadarInterfaceBase
 from opendbc.car.hyundai.values import DBC
 
-from opendbc.sunnypilot.car.hyundai.escc import EnhancedSmartCruiseControl
+from opendbc.sunnypilot.car.hyundai.escc import EnhancedSmartCruiseControl, EsccRadarInterfaceBase
 
 RADAR_START_ADDR = 0x500
 RADAR_MSG_COUNT = 32
@@ -20,16 +20,16 @@ def get_radar_can_parser(CP):
   return CANParser(DBC[CP.carFingerprint]['radar'], messages, 1)
 
 
-class RadarInterface(RadarInterfaceBase):
+class RadarInterface(RadarInterfaceBase, EsccRadarInterfaceBase):
   def __init__(self, CP):
-    super().__init__(CP)
+    RadarInterfaceBase.__init__(self, CP)
+    EsccRadarInterfaceBase.__init__(self, CP)
     self.updated_messages = set()
     self.trigger_msg = RADAR_START_ADDR + RADAR_MSG_COUNT - 1
     self.track_id = 0
 
     self.radar_off_can = CP.radarUnavailable
     self.rcp = get_radar_can_parser(CP)
-    self.ESCC = EnhancedSmartCruiseControl(CP)
 
     # Override radar parser with the ESCC parser and trigger message if ESCC is enabled
     if self.ESCC.enabled:
@@ -63,14 +63,8 @@ class RadarInterface(RadarInterfaceBase):
     ret.errors = errors
 
     if self.ESCC.enabled:
-      self._update_escc()
-    else:
-      self._update_radar_tracks()
+      return self.update_escc(ret)
 
-    ret.points = list(self.pts.values())
-    return ret
-
-  def _update_radar_tracks(self):
     for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
       msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
 
@@ -92,24 +86,5 @@ class RadarInterface(RadarInterfaceBase):
       else:
         del self.pts[addr]
 
-  def _update_escc(self):
-    msg_src = "ESCC"
-    msg = self.rcp.vl[msg_src]
-
-    valid = msg['ACC_ObjStatus']
-    for ii in range(1):
-      if valid:
-        if ii not in self.pts:
-          self.pts[ii] = structs.RadarData.RadarPoint.new_message()
-          self.pts[ii].trackId = self.track_id
-          self.track_id += 1
-        self.pts[ii].measured = True
-        self.pts[ii].dRel = msg['ACC_ObjDist']
-        self.pts[ii].yRel = -msg['ACC_ObjLatPos'] if self.ESCC.enabled else float('nan')
-        self.pts[ii].vRel = msg['ACC_ObjRelSpd']
-        self.pts[ii].aRel = float('nan')
-        self.pts[ii].yvRel = float('nan')
-
-      else:
-        if ii in self.pts:
-          del self.pts[ii]
+    ret.points = list(self.pts.values())
+    return ret

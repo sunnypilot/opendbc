@@ -66,3 +66,36 @@ class EsccCarControllerBase:
 
   def update(self, car_state):
     self.ESCC.update_car_state(car_state)
+
+
+class EsccRadarInterfaceBase:
+  def __init__(self, CP: structs.CarParams):
+    self.ESCC = EnhancedSmartCruiseControl(CP)
+    self.pts = None
+    self.rcp = None
+    self.track_id = 0
+
+  def update_escc(self, ret):
+    for ii in range(1):
+      msg_src = "ESCC"
+      msg = self.rcp.vl[msg_src]
+
+      if ii not in self.pts:
+        self.pts[ii] = structs.RadarData.RadarPoint
+        self.pts[ii].trackId = self.track_id
+        self.track_id += 1
+
+      valid = msg['ACC_ObjStatus']
+      if valid:
+        self.pts[ii].measured = True
+        self.pts[ii].dRel = msg['ACC_ObjDist']
+        self.pts[ii].yRel = -msg['ACC_ObjLatPos']
+        self.pts[ii].vRel = msg['ACC_ObjRelSpd']
+        self.pts[ii].aRel = float('nan')
+        self.pts[ii].yvRel = float('nan')
+
+      else:
+        del self.pts[ii]
+
+    ret.points = list(self.pts.values())
+    return ret
