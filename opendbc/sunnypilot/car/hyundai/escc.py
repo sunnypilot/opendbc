@@ -69,10 +69,11 @@ class EsccCarControllerBase:
 
 
 class EsccRadarInterfaceBase:
+  rcp: CANParser
+  pts: dict[int, structs.RadarData.RadarPoint]
+
   def __init__(self, CP: structs.CarParams):
     self.ESCC = EnhancedSmartCruiseControl(CP)
-    self.pts = None
-    self.rcp = None
     self.track_id = 0
 
   def update_escc(self, ret):
