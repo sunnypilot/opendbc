@@ -31,7 +31,7 @@ class RadarInterface(RadarInterfaceBase, EsccRadarInterfaceBase):
     self.radar_off_can = CP.radarUnavailable
     self.rcp = get_radar_can_parser(CP)
 
-    # Override radar parser with the ESCC parser and trigger message if ESCC is enabled
+    # If radar tracks are not available and ESCC is enabled, override radar parser with the ESCC parser and trigger message
     if self.rcp is None and self.ESCC.enabled:
       self.rcp = self.ESCC.get_radar_can_parser()
       self.trigger_msg = self.ESCC.trigger_msg
