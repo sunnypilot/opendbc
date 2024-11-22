@@ -32,9 +32,10 @@ class RadarInterface(RadarInterfaceBase, EsccRadarInterfaceBase):
     self.rcp = get_radar_can_parser(CP)
 
     # Override radar parser with the ESCC parser and trigger message if ESCC is enabled
-    if self.ESCC.enabled:
+    if self.rcp is None and self.ESCC.enabled:
       self.rcp = self.ESCC.get_radar_can_parser()
       self.trigger_msg = self.ESCC.trigger_msg
+      self.use_escc = True
 
   def update(self, can_strings):
     if self.radar_off_can or (self.rcp is None):
@@ -62,7 +63,7 @@ class RadarInterface(RadarInterfaceBase, EsccRadarInterfaceBase):
       errors.append("canError")
     ret.errors = errors
 
-    if self.ESCC.enabled:
+    if self.use_escc:
       return self.update_escc(ret)
 
     for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):

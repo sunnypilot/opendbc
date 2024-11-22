@@ -75,6 +75,7 @@ class EsccRadarInterfaceBase:
   def __init__(self, CP: structs.CarParams):
     self.ESCC = EnhancedSmartCruiseControl(CP)
     self.track_id = 0
+    self.use_escc = False
 
   def update_escc(self, ret):
     for ii in range(1):
