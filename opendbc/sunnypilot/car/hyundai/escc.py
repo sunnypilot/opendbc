@@ -60,7 +60,7 @@ class EsccCarStateBase:
     self.escc_aeb_dec_cmd = 0
 
 
-class EsccCarControllerBase:
+class EsccCarController:
   def __init__(self, CP: structs.CarParams):
     self.ESCC = EnhancedSmartCruiseControl(CP)
 
