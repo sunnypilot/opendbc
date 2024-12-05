@@ -23,4 +23,7 @@ class CarInterface(CarInterfaceBase):
       # Altima has EPS on C-CAN unlike the others that have it on V-CAN
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_NISSAN_ALT_EPS_BUS
 
+    if candidate in (CAR.NISSAN_LEAF, CAR.NISSAN_LEAF_IC):
+      ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_NISSAN_LEAF
+
     return ret
