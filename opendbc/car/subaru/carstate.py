@@ -11,6 +11,7 @@ from opendbc.sunnypilot.car.subaru.mads import MadsCarState
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
+
 class CarState(CarStateBase, MadsCarState):
   def __init__(self, CP):
     CarStateBase.__init__(self, CP)
