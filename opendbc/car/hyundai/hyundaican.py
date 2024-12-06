@@ -52,9 +52,10 @@ def create_lkas11(packer, frame, CP, apply_steer, steer_req,
     # FcwOpt_USM 1 = White car + lanes
     # FcwOpt_USM 0 = No car + lanes
     if mads.enable_mads:
-      values["CF_Lkas_FcwOpt_USM"] = 2 if mads.lat_active or mads.disengaging else 1
+      lkas_icon = 2 if mads.lat_active or mads.disengaging else 1
     else:
-      values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
+      lkas_icon = 2 if enabled else 1
+    values["CF_Lkas_FcwOpt_USM"] = lkas_icon
 
     # SysWarning 4 = keep hands on wheel
     # SysWarning 5 = keep hands on wheel (red)
