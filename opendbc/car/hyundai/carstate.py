@@ -63,12 +63,6 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState):
 
     self.params = CarControllerParams(CP)
 
-  def get_main_cruise(self, ret: structs.CarState) -> bool:
-    if any(be.type == ButtonType.mainCruise and be.pressed for be in ret.buttonEvents):
-      self.main_cruise_enabled = not self.main_cruise_enabled
-
-    return self.main_cruise_enabled if ret.cruiseState.available else False
-
   def update(self, can_parsers) -> structs.CarState:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
