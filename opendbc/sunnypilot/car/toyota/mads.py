@@ -22,7 +22,7 @@ class MadsCarState(MadsCarStateBase):
     self.lta_status = cp_cam.vl["LKAS_HUD"]["SET_ME_X02"]
     if ((self.prev_lta_status == 16 and self.lta_status == 0) or
         (self.prev_lta_status == 0 and self.lta_status == 16)) and \
-          not self.lta_status_active:
+       not self.lta_status_active:
       self.lta_status_active = True
 
     if self.lta_status_active:
