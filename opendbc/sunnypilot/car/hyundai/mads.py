@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 from opendbc.car import DT_CTRL, structs
+from opendbc.car.hyundai.values import CAR
 
 from opendbc.sunnypilot import SunnypilotParamFlags
 from opendbc.sunnypilot.mads_base import MadsCarStateBase
@@ -19,6 +20,9 @@ class MadsCarController:
     self.lat_disengage_blink = 0
     self.lat_disengage_init = False
     self.prev_lat_active = False
+
+    self.lkas_icon = 0
+    self.lfa_icon = 0
 
   # display LFA "white_wheel" and LKAS "White car + lanes" when not CC.latActive
   def mads_status_update(self, CC: structs.CarControl, frame: int) -> MadsDataSP:
@@ -39,8 +43,30 @@ class MadsCarController:
 
     return MadsDataSP(enable_mads, CC.latActive, disengaging, paused)
 
-  def update(self, CC: structs.CarControl, frame: int):
+  def create_lkas_icon(self, CP: structs.CarParams, enabled: bool) -> int:
+    if self.mads.enable_mads:
+      lkas_icon = 2 if self.mads.lat_active else 3 if self.mads.disengaging else 1 if self.mads.paused else 0
+    else:
+      lkas_icon = 2 if enabled else 1
+
+    # Override common signals for KIA_OPTIMA_G4 and KIA_OPTIMA_G4_FL
+    if CP.carFingerprint in (CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL):
+      lkas_icon = 3 if (self.mads.lat_active if self.mads.enable_mads else enabled) else 1
+
+    return lkas_icon
+
+  def create_lfa_icon(self, enabled: bool) -> int:
+    if self.mads.enable_mads:
+      lfa_icon = 2 if self.mads.lat_active else 3 if self.mads.disengaging else 1 if self.mads.paused else 0
+    else:
+      lfa_icon = 2 if enabled else 0
+
+    return lfa_icon
+
+  def update(self, CP: structs.CarParams, CC: structs.CarControl, frame: int):
     self.mads = self.mads_status_update(CC, frame)
+    self.lkas_icon = self.create_lkas_icon(CP, CC.enabled)
+    self.lfa_icon = self.create_lfa_icon(CC.enabled)
 
 
 class MadsCarState(MadsCarStateBase):

@@ -62,7 +62,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
 
   def update(self, CC, CS, now_nanos):
     EsccCarController.update(self, CS)
-    MadsCarController.update(self, CC, self.frame)
+    MadsCarController.update(self, self.CP, CC, self.frame)
     actuators = CC.actuators
     hud_control = CC.hudControl
 
@@ -115,7 +115,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
       hda2_long = hda2 and self.CP.openpilotLongitudinalControl
 
       # steering control
-      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_steer, self.mads))
+      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_steer, self.lkas_icon))
 
       # prevent LFA from activating on HDA2 by sending "no lane lines detected" to ADAS ECU
       if self.frame % 5 == 0 and hda2:
@@ -124,7 +124,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
 
       # LFA and HDA icons
       if self.frame % 5 == 0 and (not hda2 or hda2_long):
-        can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.mads))
+        can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
 
       # blinkers
       if hda2 and self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
@@ -146,7 +146,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
                                                 torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
                                                 hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                 left_lane_warning, right_lane_warning,
-                                                self.mads))
+                                                self.lkas_icon))
 
       if not self.CP.openpilotLongitudinalControl:
         can_sends.extend(self.create_button_messages(CC, CS, use_clu11=True))
@@ -162,7 +162,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
 
       # 20 Hz LFA MFA message
       if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
-        can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled, self.mads))
+        can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled, self.lfa_icon))
 
       # 5 Hz ACC options
       if self.frame % 20 == 0 and self.CP.openpilotLongitudinalControl:
