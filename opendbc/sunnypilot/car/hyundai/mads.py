@@ -75,7 +75,7 @@ class MadsCarState(MadsCarStateBase):
     self.main_cruise_enabled: bool = False
 
   def get_main_cruise(self, ret: structs.CarState) -> bool:
-    if any(be.type == ButtonType.mainCruise and be.pressed for be in ret.buttonEvents):
+    if any(be.type == ButtonType.mainCruise and not be.pressed for be in ret.buttonEvents):
       self.main_cruise_enabled = not self.main_cruise_enabled
 
     return self.main_cruise_enabled if ret.cruiseState.available else False
