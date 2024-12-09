@@ -164,4 +164,18 @@ FW_VERSIONS = {
       b'PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
+  CAR.FORD_MUSTANG_MK7: {
+    (Ecu.eps, 0x730, None): [
+      b'PR3C-14D003-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x760, None): [
+     b'PR3C-2D053-AG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'ML3T-14D049-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'PC3T-14H102-ABR\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
 }
