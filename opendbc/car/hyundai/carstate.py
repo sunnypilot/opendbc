@@ -190,7 +190,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState):
                         *create_button_events(self.lkas_button, prev_lkas_button, {1: ButtonType.lkas})]
 
     if self.CP.openpilotLongitudinalControl:
-      ret.cruiseState.available = self.get_main_cruise(ret)
+      ret.cruiseState.available = self.get_main_cruise(ret, self.CP)
 
     return ret
 
@@ -288,7 +288,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState):
                         *create_button_events(self.lkas_button, prev_lkas_button, {1: ButtonType.lkas})]
 
     if self.CP.openpilotLongitudinalControl:
-      ret.cruiseState.available = self.get_main_cruise(ret)
+      ret.cruiseState.available = self.get_main_cruise(ret, self.CP)
 
     return ret
 

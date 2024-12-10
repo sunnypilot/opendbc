@@ -4,6 +4,7 @@ from opendbc.car import DT_CTRL, structs
 from opendbc.car.hyundai.values import CAR
 
 from opendbc.sunnypilot import SunnypilotParamFlags
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.sunnypilot.mads_base import MadsCarStateBase
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -74,8 +75,9 @@ class MadsCarState(MadsCarStateBase):
     super().__init__()
     self.main_cruise_enabled: bool = False
 
-  def get_main_cruise(self, ret: structs.CarState) -> bool:
-    if any(be.type == ButtonType.mainCruise and be.pressed for be in ret.buttonEvents):
+  def get_main_cruise(self, ret: structs.CarState, CP: structs.CarParams) -> bool:
+    if any(be.type == ButtonType.mainCruise and be.pressed for be in ret.buttonEvents) and \
+          (CP.sunnypilotFlags & HyundaiFlagsSP.LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE):
       self.main_cruise_enabled = not self.main_cruise_enabled
 
     return self.main_cruise_enabled if ret.cruiseState.available else False
