@@ -72,7 +72,7 @@ class MadsCarController:
 
   def create_lkas_icon(self, CP: structs.CarParams, enabled: bool) -> int:
     if self.mads.enable_mads:
-      lkas_icon = 2 if self.mads.lat_active else 3 if self.mads.disengaging else 1 if self.mads.paused else 0
+      lkas_icon = 2 if self.mads.lat_active else 3 if self.mads.disengaging else 1
     else:
       lkas_icon = 2 if enabled else 1
 
