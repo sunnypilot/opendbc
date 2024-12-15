@@ -148,14 +148,11 @@ class CarState(CarStateBase, MadsCarState):
         ("ESP_8", 50),
         ("EPS_3", 50),
         ("Transmission_Status", 50),
-        ("Center_Stack_1", 1),
-        ("Center_Stack_2", 1),
       ]
     else:
       pt_messages += [
         ("GEAR", 50),
         ("SPEED_1", 100),
-        ("TRACTION_BUTTON", 1),
       ]
       pt_messages += CarState.get_cruise_messages()
 
@@ -165,8 +162,8 @@ class CarState(CarStateBase, MadsCarState):
 
     if CP.carFingerprint in RAM_CARS:
       cam_messages += CarState.get_cruise_messages()
-    else:
-      cam_messages.append(("LKAS_HEARTBIT", 1))
+
+    MadsCarState.get_parser(CP, pt_messages, cam_messages)
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),

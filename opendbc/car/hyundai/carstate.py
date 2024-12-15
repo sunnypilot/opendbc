@@ -391,9 +391,6 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState):
     else:
       pt_messages.append(("LVR12", 100))
 
-    if CP.sunnypilotFlags & HyundaiFlagsSP.HAS_LFA_BUTTON:
-      pt_messages.append(("BCM_PO_11", 50))
-
     cam_messages = [
       ("LKAS11", 100)
     ]
@@ -407,6 +404,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState):
       if CP.flags & HyundaiFlags.USE_FCA.value:
         cam_messages.append(("FCA11", 50))
 
+    MadsCarState.get_parser(CP, pt_messages)
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),

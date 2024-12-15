@@ -101,6 +101,11 @@ class MadsCarState(MadsCarStateBase):
     super().__init__()
     self.main_cruise_enabled: bool = False
 
+  @staticmethod
+  def get_parser(CP, pt_messages):
+    if CP.sunnypilotFlags & HyundaiFlagsSP.HAS_LFA_BUTTON:
+      pt_messages.append(("BCM_PO_11", 50))
+
   def get_main_cruise(self, ret: structs.CarState, CP: structs.CarParams) -> bool:
     if any(be.type == ButtonType.mainCruise and be.pressed for be in ret.buttonEvents) and \
           (CP.sunnypilotFlags & HyundaiFlagsSP.LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE):

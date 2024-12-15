@@ -80,6 +80,17 @@ class MadsCarState(MadsCarStateBase):
     self.init_lkas_disabled = False
     self.lkas_disabled = False
 
+  @staticmethod
+  def get_parser(CP, pt_messages, cam_messages):
+    if CP.carFingerprint in RAM_CARS:
+      pt_messages += [
+        ("Center_Stack_1", 1),
+        ("Center_Stack_2", 1),
+      ]
+    else:
+      pt_messages.append(("TRACTION_BUTTON", 1))
+      cam_messages.append(("LKAS_HEARTBIT", 1))
+
   def get_lkas_button(self, CP, cp, cp_cam):
     if CP.carFingerprint in RAM_CARS:
       lkas_button = cp.vl["Center_Stack_1"]["LKAS_Button"] or cp.vl["Center_Stack_2"]["LKAS_Button"]
