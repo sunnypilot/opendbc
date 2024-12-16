@@ -28,6 +28,7 @@ from enum import StrEnum
 from collections import namedtuple
 
 from opendbc.car import Bus, structs
+from opendbc.car.chrysler.carstate import CarState
 from opendbc.car.chrysler.values import RAM_CARS
 
 from opendbc.sunnypilot import SunnypilotParamFlags
@@ -61,7 +62,8 @@ class MadsCarController:
 
     return packer.make_can_msg("LKAS_HEARTBIT", 0, values)
 
-  def mads_status_update(self, CC: structs.CarControl, CS) -> MadsDataSP:
+  @staticmethod
+  def mads_status_update(CC: structs.CarControl, CS: CarState) -> MadsDataSP:
     enable_mads = CC.sunnypilotParams & SunnypilotParamFlags.ENABLE_MADS
     paused = CC.madsEnabled and not CC.latActive
 
