@@ -28,7 +28,6 @@ from enum import StrEnum
 from collections import namedtuple
 
 from opendbc.car import Bus, structs
-from opendbc.car.can_definitions import CanData
 from opendbc.car.chrysler.values import RAM_CARS
 
 from opendbc.sunnypilot import SunnypilotParamFlags
@@ -47,7 +46,7 @@ class MadsCarController:
     self.mads = MadsDataSP(False, False, False)
 
   @staticmethod
-  def create_lkas_heartbit(packer, lkas_heartbit, mads) -> list[CanData]:
+  def create_lkas_heartbit(packer, lkas_heartbit, mads):
     # LKAS_HEARTBIT (0x2D9) LKAS heartbeat
     values = {s: lkas_heartbit[s] for s in [
       "LKAS_DISABLED",
@@ -95,7 +94,7 @@ class MadsCarState(MadsCarStateBase):
       pt_messages.append(("TRACTION_BUTTON", 1))
       cam_messages.append(("LKAS_HEARTBIT", 1))
 
-  def get_lkas_button(self, cp, cp_cam) -> int:
+  def get_lkas_button(self, cp, cp_cam):
     if self.CP.carFingerprint in RAM_CARS:
       lkas_button = cp.vl["Center_Stack_1"]["LKAS_Button"] or cp.vl["Center_Stack_2"]["LKAS_Button"]
     else:
