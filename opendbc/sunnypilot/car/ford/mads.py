@@ -24,16 +24,19 @@ THE SOFTWARE.
 Last updated: July 29, 2024
 """
 
+from enum import StrEnum
+
 from opendbc.car import Bus,structs
 
 from opendbc.sunnypilot.mads_base import MadsCarStateBase
+from opendbc.can.parser import CANParser
 
 
 class MadsCarState(MadsCarStateBase):
   def __init__(self, CP: structs.CarParams):
     super().__init__(CP)
 
-  def update_mads(self, ret, can_parsers):
+  def update_mads(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp = can_parsers[Bus.pt]
 
     self.prev_lkas_button = self.lkas_button

@@ -24,6 +24,7 @@ THE SOFTWARE.
 Last updated: July 29, 2024
 """
 
+from enum import StrEnum
 from collections import namedtuple
 
 from opendbc.car import Bus, structs
@@ -31,6 +32,7 @@ from opendbc.car.chrysler.values import RAM_CARS
 
 from opendbc.sunnypilot import SunnypilotParamFlags
 from opendbc.sunnypilot.mads_base import MadsCarStateBase
+from opendbc.can.parser import CANParser
 
 MadsDataSP = namedtuple("MadsDataSP",
                         ["enable_mads", "paused", "lkas_disabled"])
@@ -103,7 +105,7 @@ class MadsCarState(MadsCarStateBase):
 
     return lkas_button
 
-  def update_mads(self, ret, can_parsers):
+  def update_mads(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 

@@ -24,10 +24,12 @@ THE SOFTWARE.
 Last updated: July 29, 2024
 """
 
+from enum import StrEnum
 from opendbc.car import Bus, structs
 
 from opendbc.car.subaru.values import SubaruFlags
 from opendbc.sunnypilot.mads_base import MadsCarStateBase
+from opendbc.can.parser import CANParser
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
@@ -55,7 +57,7 @@ class MadsCarState(MadsCarStateBase):
                                                    type=buttons_dict.get(cur_btn, ButtonType.unknown)))
     return events
 
-  def update_mads(self, ret, can_parsers):
+  def update_mads(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp_cam = can_parsers[Bus.cam]
 
     self.prev_lkas_button = self.lkas_button

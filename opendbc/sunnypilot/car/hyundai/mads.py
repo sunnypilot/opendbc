@@ -24,6 +24,7 @@ THE SOFTWARE.
 Last updated: July 29, 2024
 """
 
+from enum import StrEnum
 from collections import namedtuple
 
 from opendbc.car import Bus, DT_CTRL, structs
@@ -33,6 +34,7 @@ from opendbc.sunnypilot import SunnypilotParamFlags
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.sunnypilot.mads_base import MadsCarStateBase
+from opendbc.can.parser import CANParser
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
@@ -115,7 +117,7 @@ class MadsCarState(MadsCarStateBase):
 
     return self.main_cruise_enabled if ret.cruiseState.available else False
 
-  def update_mads(self, ret, can_parsers):
+  def update_mads(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp = can_parsers[Bus.pt]
 
     self.prev_lkas_button = self.lkas_button

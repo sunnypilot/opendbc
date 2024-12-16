@@ -70,7 +70,7 @@ class MadsCarState(MadsCarStateBase):
                                                    type=buttons_dict.get(cur_btn, ButtonType.unknown)))
     return events
 
-  def update_mads(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]):
+  def update_mads(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp_cam = can_parsers[Bus.cam]
 
     self.prev_lkas_button = self.lkas_button

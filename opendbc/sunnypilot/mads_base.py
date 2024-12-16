@@ -25,8 +25,10 @@ Last updated: July 29, 2024
 """
 
 from abc import abstractmethod, ABC
+from enum import StrEnum
 
 from opendbc.car import structs
+from opendbc.can.parser import CANParser
 
 
 class MadsCarStateBase(ABC):
@@ -37,5 +39,5 @@ class MadsCarStateBase(ABC):
     self.prev_lkas_button = 0
 
   @abstractmethod
-  def update_mads(self, ret, can_parsers) -> None:
+  def update_mads(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     pass
