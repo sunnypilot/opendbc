@@ -93,7 +93,7 @@ class MadsCarController:
 
     return lfa_icon
 
-  def update(self, CP: structs.CarParams, CC: structs.CarControl, frame: int):
+  def update(self, CP: structs.CarParams, CC: structs.CarControl, frame: int) -> None:
     self.mads = self.mads_status_update(CC, frame)
     self.lkas_icon = self.create_lkas_icon(CP, CC.enabled)
     self.lfa_icon = self.create_lfa_icon(CC.enabled)
@@ -106,7 +106,7 @@ class MadsCarState(MadsCarStateBase):
     self.cruise_btns_msg_canfd = None
 
   @staticmethod
-  def get_parser(CP, pt_messages):
+  def get_parser(CP, pt_messages) -> None:
     if CP.sunnypilotFlags & HyundaiFlagsSP.HAS_LFA_BUTTON:
       pt_messages.append(("BCM_PO_11", 50))
 
@@ -127,7 +127,7 @@ class MadsCarState(MadsCarStateBase):
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
 
-  def update_mads_canfd(self, ret, can_parsers):
+  def update_mads_canfd(self, ret, can_parsers) -> None:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 

@@ -46,7 +46,7 @@ class MadsCarState(MadsCarStateBase):
     self.lkas_button_events = []
 
   @staticmethod
-  def get_lkas_button(cp_cam):
+  def get_lkas_button(cp_cam) -> int:
     lkas_button = cp_cam.vl["LKAS_HUD"]["LKAS_STATUS"]
 
     return lkas_button

@@ -28,7 +28,7 @@ from enum import StrEnum
 from collections import namedtuple
 
 from opendbc.car import Bus, structs
-from opendbc.car.chrysler.carstate import CarState
+from opendbc.car.can_definitions import CanData
 from opendbc.car.chrysler.values import RAM_CARS
 
 from opendbc.sunnypilot import SunnypilotParamFlags
@@ -47,7 +47,7 @@ class MadsCarController:
     self.mads = MadsDataSP(False, False, False)
 
   @staticmethod
-  def create_lkas_heartbit(packer, lkas_heartbit, mads):
+  def create_lkas_heartbit(packer, lkas_heartbit, mads) -> list[CanData]:
     # LKAS_HEARTBIT (0x2D9) LKAS heartbeat
     values = {s: lkas_heartbit[s] for s in [
       "LKAS_DISABLED",
@@ -63,7 +63,7 @@ class MadsCarController:
     return packer.make_can_msg("LKAS_HEARTBIT", 0, values)
 
   @staticmethod
-  def mads_status_update(CC: structs.CarControl, CS: CarState) -> MadsDataSP:
+  def mads_status_update(CC: structs.CarControl, CS) -> MadsDataSP:
     enable_mads = CC.sunnypilotParams & SunnypilotParamFlags.ENABLE_MADS
     paused = CC.madsEnabled and not CC.latActive
 
@@ -72,7 +72,7 @@ class MadsCarController:
 
     return MadsDataSP(enable_mads, paused, CS.lkas_disabled)
 
-  def update(self, CC: structs.CarControl, CS):
+  def update(self, CC: structs.CarControl, CS) -> None:
     self.mads = self.mads_status_update(CC, CS)
 
 
@@ -85,7 +85,7 @@ class MadsCarState(MadsCarStateBase):
     self.lkas_disabled = False
 
   @staticmethod
-  def get_parser(CP, pt_messages, cam_messages):
+  def get_parser(CP, pt_messages, cam_messages) -> None:
     if CP.carFingerprint in RAM_CARS:
       pt_messages += [
         ("Center_Stack_1", 1),
@@ -95,7 +95,7 @@ class MadsCarState(MadsCarStateBase):
       pt_messages.append(("TRACTION_BUTTON", 1))
       cam_messages.append(("LKAS_HEARTBIT", 1))
 
-  def get_lkas_button(self, cp, cp_cam):
+  def get_lkas_button(self, cp, cp_cam) -> int:
     if self.CP.carFingerprint in RAM_CARS:
       lkas_button = cp.vl["Center_Stack_1"]["LKAS_Button"] or cp.vl["Center_Stack_2"]["LKAS_Button"]
     else:
