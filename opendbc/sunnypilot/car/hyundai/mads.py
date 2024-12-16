@@ -124,9 +124,6 @@ class MadsCarState(MadsCarStateBase):
     if self.CP.sunnypilotFlags & HyundaiFlagsSP.HAS_LFA_BUTTON:
       self.lkas_button = cp.vl["BCM_PO_11"]["LFA_Pressed"]
 
-    if self.CP.openpilotLongitudinalControl:
-      ret.cruiseState.available = self.get_main_cruise(ret)
-
   def update_mads_canfd(self, ret, can_parsers) -> None:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
@@ -138,6 +135,3 @@ class MadsCarState(MadsCarStateBase):
     self.prev_lkas_button = self.lkas_button
     lfa_button = "LFA_BTN" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "LKAS_BTN"
     self.lkas_button = cp.vl[self.cruise_btns_msg_canfd][lfa_button]
-
-    if self.CP.openpilotLongitudinalControl:
-      ret.cruiseState.available = self.get_main_cruise(ret)

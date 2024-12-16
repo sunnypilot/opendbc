@@ -186,6 +186,9 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState):
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
                         *create_button_events(self.lkas_button, self.prev_lkas_button, {1: ButtonType.lkas})]
 
+    if self.CP.openpilotLongitudinalControl:
+      ret.cruiseState.available = self.get_main_cruise(ret)
+
     return ret
 
   def update_canfd(self, can_parsers) -> structs.CarState:
@@ -277,6 +280,9 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState):
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
                         *create_button_events(self.lkas_button, self.prev_lkas_button, {1: ButtonType.lkas})]
+
+    if self.CP.openpilotLongitudinalControl:
+      ret.cruiseState.available = self.get_main_cruise(ret)
 
     return ret
 
