@@ -24,9 +24,17 @@ THE SOFTWARE.
 Last updated: July 29, 2024
 """
 
+from opendbc.car import Bus,structs
+
 from opendbc.sunnypilot.mads_base import MadsCarStateBase
 
 
 class MadsCarState(MadsCarStateBase):
-  def __init__(self):
-    super().__init__()
+  def __init__(self, CP: structs.CarParams):
+    super().__init__(CP)
+
+  def update_mads(self, ret, can_parsers):
+    cp = can_parsers[Bus.pt]
+
+    self.prev_lkas_button = self.lkas_button
+    self.lkas_button = cp.vl["Steering_Data_FD1"]["TjaButtnOnOffPress"]

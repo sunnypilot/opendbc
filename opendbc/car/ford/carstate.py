@@ -16,7 +16,7 @@ TransmissionType = structs.CarParams.TransmissionType
 class CarState(CarStateBase, MadsCarState):
   def __init__(self, CP):
     CarStateBase.__init__(self, CP)
-    MadsCarState.__init__(self)
+    MadsCarState.__init__(self, CP)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["PowertrainData_10"]["TrnRng_D_Rq"]
@@ -96,9 +96,6 @@ class CarState(CarStateBase, MadsCarState):
     prev_distance_button = self.distance_button
     self.distance_button = cp.vl["Steering_Data_FD1"]["AccButtnGapTogglePress"]
 
-    prev_lkas_button = self.lkas_button
-    self.lkas_button = cp.vl["Steering_Data_FD1"]["TjaButtnOnOffPress"]
-
     # lock info
     ret.doorOpen = any([cp.vl["BodyInfo_3_FD1"]["DrStatDrv_B_Actl"], cp.vl["BodyInfo_3_FD1"]["DrStatPsngr_B_Actl"],
                         cp.vl["BodyInfo_3_FD1"]["DrStatRl_B_Actl"], cp.vl["BodyInfo_3_FD1"]["DrStatRr_B_Actl"]])
@@ -116,9 +113,11 @@ class CarState(CarStateBase, MadsCarState):
     self.acc_tja_status_stock_values = cp_cam.vl["ACCDATA_3"]
     self.lkas_status_stock_values = cp_cam.vl["IPMA_Data"]
 
+    MadsCarState.update_mads(self, ret, can_parsers)
+
     ret.buttonEvents = [
       *create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise}),
-      *create_button_events(self.lkas_button, prev_lkas_button, {1: ButtonType.lkas})]
+      *create_button_events(self.lkas_button, self.prev_lkas_button, {1: ButtonType.lkas})]
 
     return ret
 

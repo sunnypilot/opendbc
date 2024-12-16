@@ -26,10 +26,11 @@ Last updated: July 29, 2024
 
 from collections import namedtuple
 
-from opendbc.car import DT_CTRL, structs
+from opendbc.car import Bus, DT_CTRL, structs
 from opendbc.car.hyundai.values import CAR
 
 from opendbc.sunnypilot import SunnypilotParamFlags
+from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.sunnypilot.mads_base import MadsCarStateBase
 
@@ -97,18 +98,44 @@ class MadsCarController:
 
 
 class MadsCarState(MadsCarStateBase):
-  def __init__(self):
-    super().__init__()
+  def __init__(self, CP: structs.CarParams):
+    super().__init__(CP)
     self.main_cruise_enabled: bool = False
+    self.cruise_btns_msg_canfd = None
 
   @staticmethod
   def get_parser(CP, pt_messages):
     if CP.sunnypilotFlags & HyundaiFlagsSP.HAS_LFA_BUTTON:
       pt_messages.append(("BCM_PO_11", 50))
 
-  def get_main_cruise(self, ret: structs.CarState, CP: structs.CarParams) -> bool:
+  def get_main_cruise(self, ret: structs.CarState) -> bool:
     if any(be.type == ButtonType.mainCruise and be.pressed for be in ret.buttonEvents) and \
-          (CP.sunnypilotFlags & HyundaiFlagsSP.LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE):
+          (self.CP.sunnypilotFlags & HyundaiFlagsSP.LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE):
       self.main_cruise_enabled = not self.main_cruise_enabled
 
     return self.main_cruise_enabled if ret.cruiseState.available else False
+
+  def update_mads(self, ret, can_parsers):
+    cp = can_parsers[Bus.pt]
+
+    self.prev_lkas_button = self.lkas_button
+    if self.CP.sunnypilotFlags & HyundaiFlagsSP.HAS_LFA_BUTTON:
+      self.lkas_button = cp.vl["BCM_PO_11"]["LFA_Pressed"]
+
+    if self.CP.openpilotLongitudinalControl:
+      ret.cruiseState.available = self.get_main_cruise(ret)
+
+  def update_mads_canfd(self, ret, can_parsers):
+    cp = can_parsers[Bus.pt]
+    cp_cam = can_parsers[Bus.cam]
+
+    if not self.CP.openpilotLongitudinalControl:
+      cp_cruise_info = cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp
+      ret.cruiseState.available = cp_cruise_info.vl["SCC_CONTROL"]["MainMode_ACC"] == 1
+
+    self.prev_lkas_button = self.lkas_button
+    lfa_button = "LFA_BTN" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "LKAS_BTN"
+    self.lkas_button = cp.vl[self.cruise_btns_msg_canfd][lfa_button]
+
+    if self.CP.openpilotLongitudinalControl:
+      ret.cruiseState.available = self.get_main_cruise(ret)

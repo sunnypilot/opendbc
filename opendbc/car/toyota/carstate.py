@@ -30,7 +30,7 @@ PERM_STEER_FAULTS = (3, 17)
 class CarState(CarStateBase, MadsCarState):
   def __init__(self, CP):
     CarStateBase.__init__(self, CP)
-    MadsCarState.__init__(self)
+    MadsCarState.__init__(self, CP)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.
     self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
@@ -193,11 +193,7 @@ class CarState(CarStateBase, MadsCarState):
 
       self.distance_button_events = create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
-    prev_lkas_button = self.lkas_button
-    if self.CP.carFingerprint != CAR.TOYOTA_PRIUS_V:
-      self.lkas_button = self.get_lkas_button(cp_cam)
-
-    self.lkas_button_events = self.create_lkas_button_events(self.lkas_button, prev_lkas_button, {1: ButtonType.lkas})
+    MadsCarState.update_mads(self, ret, can_parsers)
 
     ret.buttonEvents = [
       *self.distance_button_events,

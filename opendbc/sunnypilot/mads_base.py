@@ -24,9 +24,18 @@ THE SOFTWARE.
 Last updated: July 29, 2024
 """
 
-from abc import ABC
+from abc import abstractmethod, ABC
+
+from opendbc.car import structs
 
 
 class MadsCarStateBase(ABC):
-  def __init__(self):
+  def __init__(self, CP: structs.CarParams):
+    self.CP = CP
+
     self.lkas_button = 0
+    self.prev_lkas_button = 0
+
+  @abstractmethod
+  def update_mads(self, ret, can_parsers) -> None:
+    pass

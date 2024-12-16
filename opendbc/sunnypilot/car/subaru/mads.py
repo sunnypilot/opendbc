@@ -24,16 +24,17 @@ THE SOFTWARE.
 Last updated: July 29, 2024
 """
 
-from opendbc.car import structs
+from opendbc.car import Bus, structs
 
+from opendbc.car.subaru.values import SubaruFlags
 from opendbc.sunnypilot.mads_base import MadsCarStateBase
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
 
 class MadsCarState(MadsCarStateBase):
-  def __init__(self):
-    super().__init__()
+  def __init__(self, CP: structs.CarParams):
+    super().__init__(CP)
 
   @staticmethod
   def create_lkas_button_events(cur_btn: int, prev_btn: int,
@@ -53,3 +54,12 @@ class MadsCarState(MadsCarStateBase):
         events.append(structs.CarState.ButtonEvent(pressed=change["pressed"],
                                                    type=buttons_dict.get(cur_btn, ButtonType.unknown)))
     return events
+
+  def update_mads(self, ret, can_parsers):
+    cp_cam = can_parsers[Bus.cam]
+
+    self.prev_lkas_button = self.lkas_button
+    if not self.CP.flags & SubaruFlags.PREGLOBAL:
+      self.lkas_button = cp_cam.vl["ES_LKAS_State"]["LKAS_Dash_State"]
+
+    ret.buttonEvents = self.create_lkas_button_events(self.lkas_button, self.prev_lkas_button, {1: ButtonType.lkas})

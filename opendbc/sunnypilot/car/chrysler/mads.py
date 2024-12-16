@@ -26,7 +26,7 @@ Last updated: July 29, 2024
 
 from collections import namedtuple
 
-from opendbc.car import structs
+from opendbc.car import Bus, structs
 from opendbc.car.chrysler.values import RAM_CARS
 
 from opendbc.sunnypilot import SunnypilotParamFlags
@@ -73,8 +73,8 @@ class MadsCarController:
 
 
 class MadsCarState(MadsCarStateBase):
-  def __init__(self):
-    super().__init__()
+  def __init__(self, CP: structs.CarParams):
+    super().__init__(CP)
     self.lkas_heartbit = 0
 
     self.init_lkas_disabled = False
@@ -91,8 +91,8 @@ class MadsCarState(MadsCarStateBase):
       pt_messages.append(("TRACTION_BUTTON", 1))
       cam_messages.append(("LKAS_HEARTBIT", 1))
 
-  def get_lkas_button(self, CP, cp, cp_cam):
-    if CP.carFingerprint in RAM_CARS:
+  def get_lkas_button(self, cp, cp_cam):
+    if self.CP.carFingerprint in RAM_CARS:
       lkas_button = cp.vl["Center_Stack_1"]["LKAS_Button"] or cp.vl["Center_Stack_2"]["LKAS_Button"]
     else:
       lkas_button = cp.vl["TRACTION_BUTTON"]["TOGGLE_LKAS"]
@@ -102,3 +102,10 @@ class MadsCarState(MadsCarStateBase):
         self.init_lkas_disabled = True
 
     return lkas_button
+
+  def update_mads(self, ret, can_parsers):
+    cp = can_parsers[Bus.pt]
+    cp_cam = can_parsers[Bus.cam]
+
+    self.prev_lkas_button = self.lkas_button
+    self.lkas_button = self.get_lkas_button(cp, cp_cam)

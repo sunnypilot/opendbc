@@ -24,9 +24,14 @@ THE SOFTWARE.
 Last updated: July 29, 2024
 """
 
-from opendbc.car import structs
 
+from enum import StrEnum
+
+from opendbc.car import Bus, structs
+
+from opendbc.car.toyota.values import CAR
 from opendbc.sunnypilot.mads_base import MadsCarStateBase
+from opendbc.can.parser import CANParser
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
@@ -35,8 +40,8 @@ class MadsCarState(MadsCarStateBase):
   distance_button_events: list[structs.CarState.ButtonEvent]
   lkas_button_events: list[structs.CarState.ButtonEvent]
 
-  def __init__(self):
-    super().__init__()
+  def __init__(self, CP: structs.CarParams):
+    super().__init__(CP)
     self.distance_button_events = []
     self.lkas_button_events = []
 
@@ -64,3 +69,12 @@ class MadsCarState(MadsCarStateBase):
         events.append(structs.CarState.ButtonEvent(pressed=change["pressed"],
                                                    type=buttons_dict.get(cur_btn, ButtonType.unknown)))
     return events
+
+  def update_mads(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]):
+    cp_cam = can_parsers[Bus.cam]
+
+    self.prev_lkas_button = self.lkas_button
+    if self.CP.carFingerprint != CAR.TOYOTA_PRIUS_V:
+      self.lkas_button = self.get_lkas_button(cp_cam)
+
+    self.lkas_button_events = self.create_lkas_button_events(self.lkas_button, self.prev_lkas_button, {1: ButtonType.lkas})
