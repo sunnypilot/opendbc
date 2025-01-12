@@ -20,7 +20,7 @@ CONFIG_DATA_ID = bytes([0x01, 0x42])
 RADAR_TRACKS_CONFIG = bytes([0x00, 0x00, 0x00, 0x01, 0x00, 0x01])
 
 
-def enable_radar_points(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, retry=2, debug=False):
+def enable_radar_tracks(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, retry=2, debug=False):
   carlog.warning("radar_tracks: enabling ...")
 
   for i in range(retry):
@@ -52,5 +52,5 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   time.sleep(1)
 
-  enabled = enable_radar_points(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, debug=False)
+  enabled = enable_radar_tracks(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, debug=False)
   print(f"enabled: {enabled}")
