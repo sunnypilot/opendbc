@@ -20,7 +20,7 @@ CONFIG_DATA_ID = bytes([0x01, 0x42])
 RADAR_TRACKS_CONFIG = bytes([0x00, 0x00, 0x00, 0x01, 0x00, 0x01])
 
 
-def enable_radar_points(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, retry=10, debug=False):
+def enable_radar_points(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, retry=2, debug=False):
   carlog.warning("radar_tracks: enabling ...")
 
   for i in range(retry):
@@ -41,7 +41,7 @@ def enable_radar_points(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, retry=1
       carlog.exception(f"radar_tracks exception: {e}")
 
     carlog.error(f"radar_tracks retry ({i + 1}) ...")
-  carlog.error(f"radar_tracks: failed")
+  carlog.error("radar_tracks: failed")
   return False
 
 
