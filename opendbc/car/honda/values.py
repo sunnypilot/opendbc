@@ -246,6 +246,12 @@ class CAR(Platforms):
     radar_dbc_dict('acura_rdx_2018_can_generated'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
+  ACURA_RLX = HondaNidecPlatformConfig(
+    [HondaCarDocs("Acura RDX 2016-18", "AcuraWatch Plus", "All", min_steer_speed=0. * CV.MPH_TO_MS)],
+    CarSpecs(mass=1836.0 * CV.LB_TO_KG, wheelbase=2.700000047683716, steerRatio=13.0, centerToFrontRatio=0.37939826619, tireStiffnessFactor=0.444),  # as spec
+    radar_dbc_dict('acura_rdx_2018_can_generated'),
+    flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
   HONDA_PILOT = HondaNidecPlatformConfig(
     [
       HondaCarDocs("Honda Pilot 2016-22", min_steer_speed=12. * CV.MPH_TO_MS),
