@@ -1,5 +1,3 @@
-from collections import namedtuple
-
 from opendbc.car import structs
 from opendbc.sunnypilot import SunnypilotParamFlags
 
