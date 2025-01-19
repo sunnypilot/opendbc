@@ -120,7 +120,7 @@ class CarController(CarControllerBase, MadsCarController):
     self.last_steer = 0.0
 
   def update(self, CC, CS, now_nanos):
-    MadsCarController.update(self, CC)
+    MadsCarController.update(self, self.CP, CC)
     actuators = CC.actuators
     hud_control = CC.hudControl
     conversion = hondacan.get_cruise_speed_conversion(self.CP.carFingerprint, CS.is_metric)
