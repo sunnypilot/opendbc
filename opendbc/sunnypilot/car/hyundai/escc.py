@@ -8,8 +8,9 @@ ESCC_MSG = 0x2AB
 
 
 class EnhancedSmartCruiseControl:
-  def __init__(self, CP: structs.CarParams):
+  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     self.CP = CP
+    self.CP_SP = CP_SP
 
   @property
   def enabled(self):
@@ -61,8 +62,8 @@ class EsccCarStateBase:
 
 
 class EsccCarController:
-  def __init__(self, CP: structs.CarParams):
-    self.ESCC = EnhancedSmartCruiseControl(CP)
+  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
+    self.ESCC = EnhancedSmartCruiseControl(CP, CP_SP)
 
   def update(self, car_state):
     self.ESCC.update_car_state(car_state)
@@ -72,8 +73,8 @@ class EsccRadarInterfaceBase:
   rcp: CANParser
   pts: dict[int, structs.RadarData.RadarPoint]
 
-  def __init__(self, CP: structs.CarParams):
-    self.ESCC = EnhancedSmartCruiseControl(CP)
+  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
+    self.ESCC = EnhancedSmartCruiseControl(CP, CP_SP)
     self.track_id = 0
     self.use_escc = False
 
