@@ -151,7 +151,7 @@ class CarInterfaceBase(ABC):
                     experimental_long: bool, docs: bool) -> tuple[structs.CarParams, structs.CarParamsSP]:
     ret = structs.CarParamsSP()
 
-    ret_stock, ret = cls._get_params_sp(ret, ret_stock, candidate, fingerprint, car_fw, experimental_long, docs)
+    ret_stock, ret = cls._get_params_sp(ret_stock, ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
     return ret_stock, ret
 
