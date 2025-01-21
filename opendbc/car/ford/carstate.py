@@ -14,8 +14,8 @@ TransmissionType = structs.CarParams.TransmissionType
 
 
 class CarState(CarStateBase, MadsCarState):
-  def __init__(self, CP):
-    CarStateBase.__init__(self, CP)
+  def __init__(self, CP, CP_SP):
+    CarStateBase.__init__(self, CP, CP_SP)
     MadsCarState.__init__(self, CP)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     if CP.transmissionType == TransmissionType.automatic:
@@ -122,7 +122,7 @@ class CarState(CarStateBase, MadsCarState):
     return ret
 
   @staticmethod
-  def get_can_parsers(CP):
+  def get_can_parsers(CP, CP_SP):
     pt_messages = [
       # sig_address, frequency
       ("VehicleOperatingModes", 100),
