@@ -86,8 +86,9 @@ def get_torque_params():
 # generic car and radar interfaces
 
 class CarInterfaceBase(ABC):
-  def __init__(self, CP: structs.CarParams, CarController, CarState):
+  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP, CarController, CarState):
     self.CP = CP
+    self.CP_SP = CP_SP
 
     self.frame = 0
     self.v_ego_cluster_seen = False

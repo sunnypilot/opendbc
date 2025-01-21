@@ -3,7 +3,7 @@ import time
 
 from opendbc.car import carlog, gen_empty_fingerprint
 from opendbc.car.can_definitions import CanRecvCallable, CanSendCallable
-from opendbc.car.structs import CarParams, CarParamsT
+from opendbc.car.structs import CarParams, CarParamsT, CarParamsSP
 from opendbc.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from opendbc.car.fw_versions import ObdCallback, get_fw_versions_ordered, get_present_ecus, match_fw_to_car
 from opendbc.car.interfaces import get_interface_attr
@@ -149,9 +149,9 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
-def get_car_interface(CP: CarParams):
+def get_car_interface(CP: CarParams, CP_SP: CarParamsSP):
   CarInterface, CarController, CarState, _ = interfaces[CP.carFingerprint]
-  return CarInterface(CP, CarController, CarState)
+  return CarInterface(CP, CP_SP, CarController, CarState)
 
 
 def get_radar_interface(CP: CarParams):
@@ -169,12 +169,13 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
 
   CarInterface, _, _, _ = interfaces[candidate]
   CP: CarParams = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
+  CP_SP: CarParamsSP = CarInterface.get_params_sp(candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
   CP.carVin = vin
   CP.carFw = car_fw
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
 
-  return get_car_interface(CP)
+  return get_car_interface(CP, CP_SP)
 
 
 def get_demo_car_params():
