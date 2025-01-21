@@ -4,15 +4,18 @@ from opendbc.car.common.basedir import BASEDIR
 
 # TODO: remove car from cereal/__init__.py and always import from opendbc
 try:
-  from cereal import car
+  from cereal import car, custom
 except ImportError:
   capnp.remove_import_hook()
   car = capnp.load(os.path.join(BASEDIR, "car.capnp"))
+  custom = capnp.load(os.path.join(BASEDIR, "custom.capnp"))
 
 CarState = car.CarState
 RadarData = car.RadarData
 CarControl = car.CarControl
 CarParams = car.CarParams
+
+CarParamsSP = custom.CarParamsSP
 
 CarStateT = capnp.lib.capnp._StructModule
 RadarDataT = capnp.lib.capnp._StructModule
