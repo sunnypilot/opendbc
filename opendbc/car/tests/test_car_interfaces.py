@@ -107,7 +107,7 @@ class TestCarInterfaces:
       now_nanos += DT_CTRL * 1e9  # 10ms
 
     # Test radar interface
-    radar_interface = RadarInterface(car_params)
+    radar_interface = RadarInterface(car_params, car_params_sp)
     assert radar_interface
 
     # Run radar interface once
