@@ -15,6 +15,12 @@ def car_params():
 
 
 @pytest.fixture
+def car_params_sp():
+  params = structs.CarParamsSP()
+  return params
+
+
+@pytest.fixture
 def escc(car_params, car_params_sp):
   return EnhancedSmartCruiseControl(car_params, car_params_sp)
 
