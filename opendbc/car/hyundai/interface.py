@@ -142,6 +142,11 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
+  def _get_params_sp(ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParamsSP:
+    return ret
+
+  @staticmethod
   def init(CP, can_recv, can_send):
     if CP.openpilotLongitudinalControl and not ((CP.flags & (HyundaiFlags.CANFD_CAMERA_SCC | HyundaiFlags.CAMERA_SCC)) or
                                                 (CP.sunnypilotFlags & HyundaiFlagsSP.ENHANCED_SCC.value)):

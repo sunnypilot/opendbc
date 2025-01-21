@@ -146,6 +146,11 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
+  def _get_params_sp(ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParamsSP:
+    return ret
+
+  @staticmethod
   def init(CP, can_recv, can_send):
     # disable radar if alpha longitudinal toggled on radar-ACC car
     if CP.flags & ToyotaFlags.DISABLE_RADAR.value:

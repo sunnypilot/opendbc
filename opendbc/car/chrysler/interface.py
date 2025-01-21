@@ -72,3 +72,8 @@ class CarInterface(CarInterfaceBase):
     ret.enableBsm = 720 in fingerprint[0]
 
     return ret
+
+  @staticmethod
+  def _get_params_sp(ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParamsSP:
+    return ret

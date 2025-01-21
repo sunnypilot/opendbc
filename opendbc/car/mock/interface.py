@@ -15,3 +15,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 13.
     ret.dashcamOnly = True
     return ret
+
+  @staticmethod
+  def _get_params_sp(ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParamsSP:
+    return ret
