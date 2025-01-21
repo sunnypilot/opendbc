@@ -27,7 +27,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState):
   def __init__(self, CP, CP_SP):
     CarStateBase.__init__(self, CP, CP_SP)
     EsccCarStateBase.__init__(self)
-    MadsCarState.__init__(self, CP)
+    MadsCarState.__init__(self, CP, CP_SP)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
 
     self.cruise_buttons: deque = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
@@ -400,7 +400,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState):
       if CP.flags & HyundaiFlags.USE_FCA.value:
         cam_messages.append(("FCA11", 50))
 
-    MadsCarState.get_parser(CP, pt_messages)
+    MadsCarState.get_parser(CP, CP_SP, pt_messages)
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
