@@ -116,6 +116,10 @@ class CarInterfaceBase(ABC):
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
+  def get_non_essential_params_sp(cls, candidate: str) -> structs.CarParamsSP:
+    return cls.get_params_sp(candidate, gen_empty_fingerprint(), list(), False, False)
+
+  @classmethod
   def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
                  experimental_long: bool, docs: bool) -> structs.CarParams:
     ret = CarInterfaceBase.get_std_params(candidate)
