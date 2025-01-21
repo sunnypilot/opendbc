@@ -116,8 +116,8 @@ class CarInterfaceBase(ABC):
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_non_essential_params_sp(cls, candidate: str) -> structs.CarParamsSP:
-    return cls.get_params_sp(candidate, gen_empty_fingerprint(), list(), False, False)
+  def get_non_essential_params_sp(cls, ret_stock: structs.CarParams, candidate: str) -> tuple[structs.CarParams, structs.CarParamsSP]:
+    return cls.get_params_sp(ret_stock, candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
   def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
@@ -148,12 +148,12 @@ class CarInterfaceBase(ABC):
 
   @classmethod
   def get_params_sp(cls, ret_stock, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
-                    experimental_long: bool, docs: bool) -> structs.CarParamsSP:
+                    experimental_long: bool, docs: bool) -> tuple[structs.CarParams, structs.CarParamsSP]:
     ret = structs.CarParamsSP()
 
-    ret = cls._get_params_sp(ret, ret_stock, candidate, fingerprint, car_fw, experimental_long, docs)
+    ret_stock, ret = cls._get_params_sp(ret, ret_stock, candidate, fingerprint, car_fw, experimental_long, docs)
 
-    return ret
+    return ret_stock, ret
 
   @staticmethod
   @abstractmethod
@@ -163,7 +163,7 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params_sp(ret: structs.CarParamsSP, ret_stock: structs.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
+  def _get_params_sp(ret_stock: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParamsSP:
     raise NotImplementedError
 
