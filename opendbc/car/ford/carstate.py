@@ -16,7 +16,7 @@ TransmissionType = structs.CarParams.TransmissionType
 class CarState(CarStateBase, MadsCarState):
   def __init__(self, CP, CP_SP):
     CarStateBase.__init__(self, CP, CP_SP)
-    MadsCarState.__init__(self, CP)
+    MadsCarState.__init__(self, CP, CP_SP)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["PowertrainData_10"]["TrnRng_D_Rq"]
