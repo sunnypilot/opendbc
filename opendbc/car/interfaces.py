@@ -97,7 +97,7 @@ class CarInterfaceBase(ABC):
     self.can_parsers: dict[StrEnum, CANParser] = self.CS.get_can_parsers(CP, CP_SP)
 
     dbc_names = {bus: cp.dbc_name for bus, cp in self.can_parsers.items()}
-    self.CC: CarControllerBase = CarController(dbc_names, CP)
+    self.CC: CarControllerBase = CarController(dbc_names, CP, CP_SP)
 
   def apply(self, c: structs.CarControl, now_nanos: int | None = None) -> tuple[structs.CarControl.Actuators, list[CanData]]:
     if now_nanos is None:
@@ -375,8 +375,9 @@ class CarStateBase(ABC):
 
 
 class CarControllerBase(ABC):
-  def __init__(self, dbc_names: dict[StrEnum, str], CP: structs.CarParams):
+  def __init__(self, dbc_names: dict[StrEnum, str], CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     self.CP = CP
+    self.CP_SP = CP_SP
     self.frame = 0
     self.secoc_key: bytes = b"00" * 16
 
