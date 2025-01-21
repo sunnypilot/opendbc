@@ -147,11 +147,11 @@ class CarInterfaceBase(ABC):
     return ret
 
   @classmethod
-  def get_params_sp(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
+  def get_params_sp(cls, ret_stock, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
                     experimental_long: bool, docs: bool) -> structs.CarParamsSP:
     ret = structs.CarParamsSP()
 
-    ret = cls._get_params_sp(ret, candidate, fingerprint, car_fw, experimental_long, docs)
+    ret = cls._get_params_sp(ret, ret_stock, candidate, fingerprint, car_fw, experimental_long, docs)
 
     return ret
 
@@ -163,7 +163,7 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params_sp(ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+  def _get_params_sp(ret: structs.CarParamsSP, ret_stock: structs.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParamsSP:
     raise NotImplementedError
 
