@@ -158,6 +158,7 @@ class CarState(CarStateBase):
 
     self.frame += 1
     return ret
+
   def update_pq(self, pt_cp, cam_cp, ext_cp) -> structs.CarState:
     ret = structs.CarState()
     # Update vehicle speed and acceleration from ABS wheel speeds.
@@ -256,6 +257,7 @@ class CarState(CarStateBase):
 
     self.frame += 1
     return ret
+
   def update_hca_state(self, hca_status):
     # Treat INITIALIZING and FAULT as temporary for worst likely EPS recovery time, for cars without factory Lane Assist
     # DISABLED means the EPS hasn't been configured to support Lane Assist

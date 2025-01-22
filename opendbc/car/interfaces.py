@@ -220,6 +220,7 @@ class CarInterfaceBase(ABC):
     ret.longitudinalActuatorDelay = 0.15
     ret.steerLimitTimer = 1.0
     return ret
+
   @staticmethod
   def configure_torque_tune(candidate: str, tune: structs.CarParams.LateralTuning, steering_angle_deadzone_deg: float = 0.0, use_steering_angle: bool = True):
     params = get_torque_params()[candidate]
@@ -266,6 +267,7 @@ class CarInterfaceBase(ABC):
     self.CS.out = ret
 
     return ret
+
 
 class RadarInterfaceBase(ABC):
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
