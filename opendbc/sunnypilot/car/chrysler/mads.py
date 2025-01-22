@@ -63,7 +63,7 @@ class MadsCarController:
   @staticmethod
   def mads_status_update(CC: structs.CarControl, CC_SP: structs.CarControlSP, CS) -> MadsDataSP:
     enable_mads = CC_SP.mads.available
-    paused = CC.madsEnabled and not CC.latActive
+    paused = CC_SP.mads.enabled and not CC.latActive
 
     if any(be.type == ButtonType.lkas and be.pressed for be in CS.out.buttonEvents):
       CS.lkas_disabled = not CS.lkas_disabled

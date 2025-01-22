@@ -65,7 +65,7 @@ class MadsCarController:
     if not self.lat_disengage_init:
       self.lat_disengage_blink = frame
 
-    paused = CC.madsEnabled and not CC.latActive
+    paused = CC_SP.mads.enabled and not CC.latActive
     disengaging = (frame - self.lat_disengage_blink) * DT_CTRL < 1.0 if self.lat_disengage_init else False
 
     self.prev_lat_active = CC.latActive

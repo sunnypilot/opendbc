@@ -11,6 +11,6 @@ class MadsCarController:
     enable_mads = CC_SP.mads.available
 
     if enable_mads:
-      self.dashed_lanes = CC.madsEnabled and not CC.latActive
+      self.dashed_lanes = CC_SP.mads.enabled and not CC.latActive
     else:
       self.dashed_lanes = CC.hudControl.lanesVisible if CP.carFingerprint in HONDA_BOSCH_RADARLESS else False
