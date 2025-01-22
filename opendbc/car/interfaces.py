@@ -159,7 +159,6 @@ class CarInterfaceBase(ABC):
     raise NotImplementedError
 
   @staticmethod
-  @abstractmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParamsSP:
     print(f"Car {candidate} does not have a _get_params_sp method, using defaults")
