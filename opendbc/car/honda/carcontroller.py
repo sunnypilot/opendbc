@@ -119,7 +119,7 @@ class CarController(CarControllerBase, MadsCarController):
     self.brake = 0.0
     self.last_steer = 0.0
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, CC_SP, CS, now_nanos):
     MadsCarController.update(self, self.CP, CC)
     actuators = CC.actuators
     hud_control = CC.hudControl
