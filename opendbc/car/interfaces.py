@@ -18,6 +18,7 @@ from opendbc.car.common.simple_kalman import KF1D, get_kalman_gain
 from opendbc.car.common.numpy_fast import clip
 from opendbc.car.values import PLATFORMS
 from opendbc.can.parser import CANParser
+from opendbc.car import carlog
 
 GearShifter = structs.CarState.GearShifter
 
@@ -162,7 +163,7 @@ class CarInterfaceBase(ABC):
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParamsSP:
-    print(f"Car {candidate} does not have a _get_params_sp method, using defaults")
+    carlog.info(f"Car {candidate} does not have a _get_params_sp method, using defaults")
     return ret
 
   @staticmethod
