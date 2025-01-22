@@ -84,8 +84,3 @@ class CarInterface(CarInterfaceBase):
     ret.autoResumeSng = ret.minEnableSpeed == -1
 
     return ret
-
-  @staticmethod
-  def _get_params_sp(ret_stock: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
-                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> tuple[structs.CarParams, structs.CarParamsSP]:
-    return ret_stock, ret

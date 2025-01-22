@@ -116,8 +116,10 @@ class CarInterfaceBase(ABC):
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_non_essential_params_sp(cls, ret_stock: structs.CarParams, candidate: str) -> tuple[structs.CarParams, structs.CarParamsSP]:
-    return cls.get_params_sp(ret_stock, candidate, gen_empty_fingerprint(), list(), False, False)
+  def get_non_essential_params_sp(cls, candidate: str) -> tuple[structs.CarParams, structs.CarParamsSP]:
+    stock_cp = cls.get_non_essential_params(candidate)
+    sp_cp = cls.get_params_sp(stock_cp, candidate, gen_empty_fingerprint(), list(), False, False)
+    return stock_cp, sp_cp
 
   @classmethod
   def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
@@ -145,15 +147,10 @@ class CarInterfaceBase(ABC):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront, ret.tireStiffnessFactor)
 
     return ret
-
   @classmethod
-  def get_params_sp(cls, ret_stock, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
-                    experimental_long: bool, docs: bool) -> tuple[structs.CarParams, structs.CarParamsSP]:
-    ret = structs.CarParamsSP()
-
-    ret_stock, ret = cls._get_params_sp(ret_stock, ret, candidate, fingerprint, car_fw, experimental_long, docs)
-
-    return ret_stock, ret
+  def get_params_sp(cls, ret_stock, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw], experimental_long: bool,
+                    docs: bool) -> structs.CarParamsSP:
+    return cls._get_params_sp(ret_stock, structs.CarParamsSP(), candidate, fingerprint, car_fw, experimental_long, docs)
 
   @staticmethod
   @abstractmethod
@@ -163,9 +160,10 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params_sp(ret_stock: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
-                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> tuple[structs.CarParams, structs.CarParamsSP]:
-    raise NotImplementedError
+  def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParamsSP:
+    print(f"Car {candidate} does not have a _get_params_sp method, using defaults")
+    return ret
 
   @staticmethod
   def init(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanRecvCallable, can_send: CanSendCallable):
@@ -221,7 +219,6 @@ class CarInterfaceBase(ABC):
     ret.longitudinalActuatorDelay = 0.15
     ret.steerLimitTimer = 1.0
     return ret
-
   @staticmethod
   def configure_torque_tune(candidate: str, tune: structs.CarParams.LateralTuning, steering_angle_deadzone_deg: float = 0.0, use_steering_angle: bool = True):
     params = get_torque_params()[candidate]
@@ -268,7 +265,6 @@ class CarInterfaceBase(ABC):
     self.CS.out = ret
 
     return ret
-
 
 class RadarInterfaceBase(ABC):
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
