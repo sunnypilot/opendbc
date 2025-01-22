@@ -95,11 +95,6 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
-  def _get_params_sp(ret_stock: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
-                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> tuple[structs.CarParams, structs.CarParamsSP]:
-    return ret_stock, ret
-
-  @staticmethod
   def init(CP, CP_SP, can_recv, can_send):
     if CP.flags & SubaruFlags.DISABLE_EYESIGHT:
       disable_ecu(can_recv, can_send, bus=2, addr=GLOBAL_ES_ADDR, com_cont_req=b'\x28\x03\x01')

@@ -211,11 +211,6 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
-  def _get_params_sp(ret_stock: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
-                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> tuple[structs.CarParams, structs.CarParamsSP]:
-    return ret_stock, ret
-
-  @staticmethod
   def init(CP, CP_SP, can_recv, can_send):
     if CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) and CP.openpilotLongitudinalControl:
       disable_ecu(can_recv, can_send, bus=CanBus(CP).pt, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')

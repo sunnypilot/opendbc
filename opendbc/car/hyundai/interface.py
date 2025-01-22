@@ -131,11 +131,9 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
-  def _get_params_sp(ret_stock: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
-                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> tuple[structs.CarParams, structs.CarParamsSP]:
-    if ret_stock.flags & HyundaiFlags.CANFD:
-      pass
-    else:
+  def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParamsSP:
+    if not stock_cp.flags & HyundaiFlags.CANFD:
       # TODO-SP: add route with ESCC message for process replay
       if ESCC_MSG in fingerprint[0]:
         ret.flags |= HyundaiFlagsSP.ENHANCED_SCC.value
@@ -144,10 +142,10 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HyundaiFlagsSP.HAS_LFA_BUTTON.value
 
     if ret.flags & HyundaiFlagsSP.ENHANCED_SCC:
-      ret_stock.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_ESCC
-      ret_stock.radarUnavailable = False
+      stock_cp.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_ESCC
+      stock_cp.radarUnavailable = False
 
-    return ret_stock, ret
+    return ret
 
   @staticmethod
   def init(CP, CP_SP, can_recv, can_send):

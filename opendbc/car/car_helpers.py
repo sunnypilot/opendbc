@@ -173,7 +173,7 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
   CP.carFw = car_fw
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
-  CP, CP_SP = CarInterface.get_params_sp(CP, candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
+  CP_SP = CarInterface.get_params_sp(CP, candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
 
   return get_car_interface(CP, CP_SP)
 

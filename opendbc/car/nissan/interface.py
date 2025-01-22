@@ -28,8 +28,3 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_NISSAN_LEAF
 
     return ret
-
-  @staticmethod
-  def _get_params_sp(ret_stock: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
-                     car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> tuple[structs.CarParams, structs.CarParamsSP]:
-    return ret_stock, ret
