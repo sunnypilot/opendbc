@@ -22,7 +22,7 @@ class CarController(CarControllerBase, MadsCarController):
     self.params = CarControllerParams(CP)
 
   def update(self, CC, CC_SP, CS, now_nanos):
-    MadsCarController.update(self, CC, CS)
+    MadsCarController.update(self, CC, CC_SP, CS)
     can_sends = []
 
     lkas_active = CC.latActive and self.lkas_control_bit_prev

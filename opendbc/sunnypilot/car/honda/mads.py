@@ -1,6 +1,5 @@
 from opendbc.car import structs
 from opendbc.car.honda.values import HONDA_BOSCH_RADARLESS
-from opendbc.sunnypilot import SunnypilotParamFlags
 
 
 class MadsCarController:
@@ -8,8 +7,8 @@ class MadsCarController:
     super().__init__()
     self.dashed_lanes = False
 
-  def update(self, CP: structs.CarParams, CC: structs.CarControl) -> None:
-    enable_mads = CC.sunnypilotParams & SunnypilotParamFlags.ENABLE_MADS
+  def update(self, CP: structs.CarParams, CC: structs.CarControl, CC_SP: structs.CarControlSP) -> None:
+    enable_mads = CC_SP.mads.available
 
     if enable_mads:
       self.dashed_lanes = CC.madsEnabled and not CC.latActive

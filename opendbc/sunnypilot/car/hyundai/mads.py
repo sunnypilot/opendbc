@@ -30,7 +30,6 @@ from collections import namedtuple
 from opendbc.car import Bus, DT_CTRL, structs
 from opendbc.car.hyundai.values import CAR
 
-from opendbc.sunnypilot import SunnypilotParamFlags
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.sunnypilot.mads_base import MadsCarStateBase
@@ -55,8 +54,8 @@ class MadsCarController:
     self.lfa_icon = 0
 
   # display LFA "white_wheel" and LKAS "White car + lanes" when not CC.latActive
-  def mads_status_update(self, CC: structs.CarControl, frame: int) -> MadsDataSP:
-    enable_mads = CC.sunnypilotParams & SunnypilotParamFlags.ENABLE_MADS
+  def mads_status_update(self, CC: structs.CarControl, CC_SP: structs.CarControlSP, frame: int) -> MadsDataSP:
+    enable_mads = CC_SP.mads.available
 
     if CC.latActive:
       self.lat_disengage_init = False
@@ -93,8 +92,8 @@ class MadsCarController:
 
     return lfa_icon
 
-  def update(self, CP: structs.CarParams, CC: structs.CarControl, frame: int) -> None:
-    self.mads = self.mads_status_update(CC, frame)
+  def update(self, CP: structs.CarParams, CC: structs.CarControl, CC_SP: structs.CarControlSP, frame: int) -> None:
+    self.mads = self.mads_status_update(CC, CC_SP, frame)
     self.lkas_icon = self.create_lkas_icon(CP, CC.enabled)
     self.lfa_icon = self.create_lfa_icon(CC.enabled)
 

@@ -62,7 +62,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
-    MadsCarController.update(self, self.CP, CC, self.frame)
+    MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
     actuators = CC.actuators
     hud_control = CC.hudControl
 
