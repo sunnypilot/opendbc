@@ -61,7 +61,9 @@ class StrEnum(_StrEnum):
 
 @auto_dataclass
 class ModularAssistiveDrivingSystem:
-  state: 'ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState' = field(default_factory=lambda: ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState.disabled)
+  state: 'ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState' = field(
+    default_factory=lambda: ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState.disabled
+  )
   enabled: bool = auto_field()
   active: bool = auto_field()
   available: bool = auto_field()
