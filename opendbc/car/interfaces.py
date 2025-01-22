@@ -116,10 +116,8 @@ class CarInterfaceBase(ABC):
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_non_essential_params_sp(cls, candidate: str) -> tuple[structs.CarParams, structs.CarParamsSP]:
-    stock_cp = cls.get_non_essential_params(candidate)
-    sp_cp = cls.get_params_sp(stock_cp, candidate, gen_empty_fingerprint(), list(), False, False)
-    return stock_cp, sp_cp
+  def get_non_essential_params_sp(cls, car_params, candidate: str) -> structs.CarParamsSP:
+    return cls.get_params_sp(car_params, candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
   def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
@@ -147,10 +145,13 @@ class CarInterfaceBase(ABC):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront, ret.tireStiffnessFactor)
 
     return ret
+
   @classmethod
-  def get_params_sp(cls, ret_stock, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw], experimental_long: bool,
+  def get_params_sp(cls, car_params, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw], experimental_long: bool,
                     docs: bool) -> structs.CarParamsSP:
-    return cls._get_params_sp(ret_stock, structs.CarParamsSP(), candidate, fingerprint, car_fw, experimental_long, docs)
+    car_params_sp = structs.CarParamsSP()
+
+    return cls._get_params_sp(car_params, car_params_sp, candidate, fingerprint, car_fw, experimental_long, docs)
 
   @staticmethod
   @abstractmethod
