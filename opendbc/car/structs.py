@@ -60,6 +60,11 @@ class StrEnum(_StrEnum):
 
 
 @auto_dataclass
+class CarParamsSP:
+  flags: int = auto_field()  # flags for car specific quirks
+
+
+@auto_dataclass
 class ModularAssistiveDrivingSystem:
   state: 'ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState' = field(
     default_factory=lambda: ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState.disabled
