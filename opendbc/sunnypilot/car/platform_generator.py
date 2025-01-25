@@ -7,9 +7,14 @@ from opendbc.car.docs import get_all_footnotes, get_params_for_docs
 from opendbc.car.values import PLATFORMS
 
 
-def build_sorted_car_list(platforms) -> dict[str, str]:
+def get_car_list() -> dict[str, str]:
+  collected_footnote = get_all_footnotes()
+  sorted_list: dict[str, str] = build_sorted_car_list(PLATFORMS, collected_footnote)
+  return sorted_list
+
+
+def build_sorted_car_list(platforms, footnotes) -> dict[str, str]:
   cars: dict[str, str] = {}
-  footnotes = get_all_footnotes()
   for model, platform in platforms.items():
     car_docs = platform.config.car_docs
     CP = get_params_for_docs(model, platform)
@@ -31,7 +36,7 @@ def build_sorted_car_list(platforms) -> dict[str, str]:
 
 
 if __name__ == "__main__":
-  car_name_dict = build_sorted_car_list(PLATFORMS)
+  car_name_dict = get_car_list()
   car_list_file = os.path.join(BASEDIR, "opendbc/sunnypilot/car/car_list.json")
 
   with open(car_list_file, "w") as json_file:
