@@ -37,3 +37,4 @@ if __name__ == "__main__":
   with open(car_list_file, "w") as json_file:
     json.dump(car_name_dict, json_file, indent=2, ensure_ascii=False)
     json_file.write('\n')
+  print(f"Generated and written to {car_list_file}")
