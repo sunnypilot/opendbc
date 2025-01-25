@@ -4,7 +4,6 @@
 
 |Make|Model|Package|Support Level|
 |---|---|---|:---:|
-|Acura|ILX 2016-19|AcuraWatch Plus|[Upstream](#upstream)|
 |Acura|Integra 2024|All|[Community](#community)|
 |Acura|RDX 2016-18|AcuraWatch Plus|[Upstream](#upstream)|
 |Acura|RDX 2019-21|All|[Upstream](#upstream)|
