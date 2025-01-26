@@ -164,7 +164,8 @@ def get_radar_interface(CP: CarParams, CP_SP: CarParamsSP):
 
 def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, experimental_long_allowed: bool,
             num_pandas: int = 1, cached_params: CarParamsT | None = None, fixed_fingerprint: str | None = None):
-  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(can_recv, can_send, set_obd_multiplexing, num_pandas, cached_params, fixed_fingerprint)
+  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(can_recv, can_send, set_obd_multiplexing, num_pandas, cached_params,
+                                                                          fixed_fingerprint)
 
   if candidate is None:
     carlog.error({"event": "car doesn't match any fingerprints", "fingerprints": repr(fingerprints)})
