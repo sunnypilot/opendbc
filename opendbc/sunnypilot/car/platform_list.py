@@ -31,13 +31,17 @@ def build_sorted_car_list(platforms, footnotes) -> dict[str, dict[str, list[str]
         _car_docs.init(CP, footnotes)
       cars[_car_docs.name] = model
 
+      _platform = model
       _name = _car_docs.name
-      _model = model
+      _make = _car_docs.make
+      _model = _car_docs.model
       _years = _car_docs.year_list
       _package = _car_docs.package if _car_docs.package else []
       _support = _car_docs.support_link if _car_docs.support_link else []
 
       cars[_name] = {
+        "platform": _platform,
+        "make": _make,
         "model": _model,
         "year": _years if _years else [],
         "package": _package,
