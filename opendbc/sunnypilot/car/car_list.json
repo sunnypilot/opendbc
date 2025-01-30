@@ -2,6 +2,7 @@
   "Acura ILX 2016-19": {
     "platform": "ACURA_ILX",
     "make": "Acura",
+    "brand": "honda",
     "model": "ILX",
     "year": [
       "2016",
@@ -14,6 +15,7 @@
   "Acura RDX 2016-18": {
     "platform": "ACURA_RDX",
     "make": "Acura",
+    "brand": "honda",
     "model": "RDX",
     "year": [
       "2016",
@@ -25,6 +27,7 @@
   "Acura RDX 2019-21": {
     "platform": "ACURA_RDX_3G",
     "make": "Acura",
+    "brand": "honda",
     "model": "RDX",
     "year": [
       "2019",
@@ -36,6 +39,7 @@
   "Audi A3 2014-19": {
     "platform": "AUDI_A3_MK3",
     "make": "Audi",
+    "brand": "volkswagen",
     "model": "A3",
     "year": [
       "2014",
@@ -50,6 +54,7 @@
   "Audi A3 Sportback e-tron 2017-18": {
     "platform": "AUDI_A3_MK3",
     "make": "Audi",
+    "brand": "volkswagen",
     "model": "A3 Sportback e-tron",
     "year": [
       "2017",
@@ -60,6 +65,7 @@
   "Audi Q2 2018": {
     "platform": "AUDI_Q2_MK1",
     "make": "Audi",
+    "brand": "volkswagen",
     "model": "Q2",
     "year": [
       "2018"
@@ -69,6 +75,7 @@
   "Audi Q3 2019-23": {
     "platform": "AUDI_Q3_MK2",
     "make": "Audi",
+    "brand": "volkswagen",
     "model": "Q3",
     "year": [
       "2019",
@@ -82,6 +89,7 @@
   "Audi RS3 2018": {
     "platform": "AUDI_A3_MK3",
     "make": "Audi",
+    "brand": "volkswagen",
     "model": "RS3",
     "year": [
       "2018"
@@ -91,6 +99,7 @@
   "Audi S3 2015-17": {
     "platform": "AUDI_A3_MK3",
     "make": "Audi",
+    "brand": "volkswagen",
     "model": "S3",
     "year": [
       "2015",
@@ -102,6 +111,7 @@
   "Chevrolet Bolt EUV 2022-23": {
     "platform": "CHEVROLET_BOLT_EUV",
     "make": "Chevrolet",
+    "brand": "gm",
     "model": "Bolt EUV",
     "year": [
       "2022",
@@ -112,6 +122,7 @@
   "Chevrolet Bolt EV 2022-23": {
     "platform": "CHEVROLET_BOLT_EUV",
     "make": "Chevrolet",
+    "brand": "gm",
     "model": "Bolt EV",
     "year": [
       "2022",
@@ -122,6 +133,7 @@
   "Chevrolet Equinox 2019-22": {
     "platform": "CHEVROLET_EQUINOX",
     "make": "Chevrolet",
+    "brand": "gm",
     "model": "Equinox",
     "year": [
       "2019",
@@ -134,6 +146,7 @@
   "Chevrolet Silverado 1500 2020-21": {
     "platform": "CHEVROLET_SILVERADO",
     "make": "Chevrolet",
+    "brand": "gm",
     "model": "Silverado 1500",
     "year": [
       "2020",
@@ -144,6 +157,7 @@
   "Chevrolet Trailblazer 2021-22": {
     "platform": "CHEVROLET_TRAILBLAZER",
     "make": "Chevrolet",
+    "brand": "gm",
     "model": "Trailblazer",
     "year": [
       "2021",
@@ -154,6 +168,7 @@
   "Chrysler Pacifica 2017-18": {
     "platform": "CHRYSLER_PACIFICA_2018",
     "make": "Chrysler",
+    "brand": "chrysler",
     "model": "Pacifica",
     "year": [
       "2017",
@@ -164,6 +179,7 @@
   "Chrysler Pacifica 2019-20": {
     "platform": "CHRYSLER_PACIFICA_2020",
     "make": "Chrysler",
+    "brand": "chrysler",
     "model": "Pacifica",
     "year": [
       "2019",
@@ -174,6 +190,7 @@
   "Chrysler Pacifica 2021-23": {
     "platform": "CHRYSLER_PACIFICA_2020",
     "make": "Chrysler",
+    "brand": "chrysler",
     "model": "Pacifica",
     "year": [
       "2021",
@@ -185,6 +202,7 @@
   "Chrysler Pacifica Hybrid 2017-18": {
     "platform": "CHRYSLER_PACIFICA_2018_HYBRID",
     "make": "Chrysler",
+    "brand": "chrysler",
     "model": "Pacifica Hybrid",
     "year": [
       "2017",
@@ -195,6 +213,7 @@
   "Chrysler Pacifica Hybrid 2019-24": {
     "platform": "CHRYSLER_PACIFICA_2019_HYBRID",
     "make": "Chrysler",
+    "brand": "chrysler",
     "model": "Pacifica Hybrid",
     "year": [
       "2019",
@@ -209,6 +228,7 @@
   "comma body": {
     "platform": "COMMA_BODY",
     "make": "comma",
+    "brand": "body",
     "model": "body",
     "year": [],
     "package": "All"
@@ -216,6 +236,7 @@
   "CUPRA Ateca 2018-23": {
     "platform": "SEAT_ATECA_MK1",
     "make": "CUPRA",
+    "brand": "volkswagen",
     "model": "Ateca",
     "year": [
       "2018",
@@ -230,6 +251,7 @@
   "Dodge Durango 2020-21": {
     "platform": "DODGE_DURANGO",
     "make": "Dodge",
+    "brand": "chrysler",
     "model": "Durango",
     "year": [
       "2020",
@@ -240,6 +262,7 @@
   "Ford Bronco Sport 2021-24": {
     "platform": "FORD_BRONCO_SPORT_MK1",
     "make": "Ford",
+    "brand": "ford",
     "model": "Bronco Sport",
     "year": [
       "2021",
@@ -252,6 +275,7 @@
   "Ford Escape 2020-22": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
+    "brand": "ford",
     "model": "Escape",
     "year": [
       "2020",
@@ -263,6 +287,7 @@
   "Ford Escape Hybrid 2020-22": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
+    "brand": "ford",
     "model": "Escape Hybrid",
     "year": [
       "2020",
@@ -274,6 +299,7 @@
   "Ford Escape Plug-in Hybrid 2020-22": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
+    "brand": "ford",
     "model": "Escape Plug-in Hybrid",
     "year": [
       "2020",
@@ -285,6 +311,7 @@
   "Ford Explorer 2020-24": {
     "platform": "FORD_EXPLORER_MK6",
     "make": "Ford",
+    "brand": "ford",
     "model": "Explorer",
     "year": [
       "2020",
@@ -298,6 +325,7 @@
   "Ford Explorer Hybrid 2020-24": {
     "platform": "FORD_EXPLORER_MK6",
     "make": "Ford",
+    "brand": "ford",
     "model": "Explorer Hybrid",
     "year": [
       "2020",
@@ -311,6 +339,7 @@
   "Ford Focus 2018": {
     "platform": "FORD_FOCUS_MK4",
     "make": "Ford",
+    "brand": "ford",
     "model": "Focus",
     "year": [
       "2018"
@@ -320,6 +349,7 @@
   "Ford Focus Hybrid 2018": {
     "platform": "FORD_FOCUS_MK4",
     "make": "Ford",
+    "brand": "ford",
     "model": "Focus Hybrid",
     "year": [
       "2018"
@@ -329,6 +359,7 @@
   "Ford Kuga 2020-22": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
+    "brand": "ford",
     "model": "Kuga",
     "year": [
       "2020",
@@ -340,6 +371,7 @@
   "Ford Kuga Hybrid 2020-22": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
+    "brand": "ford",
     "model": "Kuga Hybrid",
     "year": [
       "2020",
@@ -351,6 +383,7 @@
   "Ford Kuga Plug-in Hybrid 2020-22": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
+    "brand": "ford",
     "model": "Kuga Plug-in Hybrid",
     "year": [
       "2020",
@@ -362,6 +395,7 @@
   "Ford Maverick 2022": {
     "platform": "FORD_MAVERICK_MK1",
     "make": "Ford",
+    "brand": "ford",
     "model": "Maverick",
     "year": [
       "2022"
@@ -371,6 +405,7 @@
   "Ford Maverick 2023-24": {
     "platform": "FORD_MAVERICK_MK1",
     "make": "Ford",
+    "brand": "ford",
     "model": "Maverick",
     "year": [
       "2023",
@@ -381,6 +416,7 @@
   "Ford Maverick Hybrid 2022": {
     "platform": "FORD_MAVERICK_MK1",
     "make": "Ford",
+    "brand": "ford",
     "model": "Maverick Hybrid",
     "year": [
       "2022"
@@ -390,6 +426,7 @@
   "Ford Maverick Hybrid 2023-24": {
     "platform": "FORD_MAVERICK_MK1",
     "make": "Ford",
+    "brand": "ford",
     "model": "Maverick Hybrid",
     "year": [
       "2023",
@@ -400,6 +437,7 @@
   "Genesis G70 2018": {
     "platform": "GENESIS_G70",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "G70",
     "year": [
       "2018"
@@ -409,6 +447,7 @@
   "Genesis G70 2019-21": {
     "platform": "GENESIS_G70_2020",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "G70",
     "year": [
       "2019",
@@ -420,6 +459,7 @@
   "Genesis G70 2022-23": {
     "platform": "GENESIS_G70_2020",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "G70",
     "year": [
       "2022",
@@ -430,6 +470,7 @@
   "Genesis G80 2017": {
     "platform": "HYUNDAI_GENESIS",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "G80",
     "year": [
       "2017"
@@ -439,6 +480,7 @@
   "Genesis G80 2018-19": {
     "platform": "GENESIS_G80",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "G80",
     "year": [
       "2018",
@@ -449,6 +491,7 @@
   "Genesis G80 (2.5T Advanced Trim, with HDA II) 2024": {
     "platform": "GENESIS_G80_2ND_GEN_FL",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "G80 (2.5T Advanced Trim, with HDA II)",
     "year": [
       "2024"
@@ -458,6 +501,7 @@
   "Genesis G90 2017-20": {
     "platform": "GENESIS_G90",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "G90",
     "year": [
       "2017",
@@ -470,6 +514,7 @@
   "Genesis GV60 (Advanced Trim) 2023": {
     "platform": "GENESIS_GV60_EV_1ST_GEN",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "GV60 (Advanced Trim)",
     "year": [
       "2023"
@@ -479,6 +524,7 @@
   "Genesis GV60 (Performance Trim) 2022-23": {
     "platform": "GENESIS_GV60_EV_1ST_GEN",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "GV60 (Performance Trim)",
     "year": [
       "2022",
@@ -489,6 +535,7 @@
   "Genesis GV70 (2.5T Trim, without HDA II) 2022-23": {
     "platform": "GENESIS_GV70_1ST_GEN",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "GV70 (2.5T Trim, without HDA II)",
     "year": [
       "2022",
@@ -499,6 +546,7 @@
   "Genesis GV70 (3.5T Trim, without HDA II) 2022-23": {
     "platform": "GENESIS_GV70_1ST_GEN",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "GV70 (3.5T Trim, without HDA II)",
     "year": [
       "2022",
@@ -509,6 +557,7 @@
   "Genesis GV70 Electrified (Australia Only) 2022": {
     "platform": "GENESIS_GV70_ELECTRIFIED_1ST_GEN",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "GV70 Electrified (Australia Only)",
     "year": [
       "2022"
@@ -518,6 +567,7 @@
   "Genesis GV70 Electrified (with HDA II) 2023": {
     "platform": "GENESIS_GV70_ELECTRIFIED_1ST_GEN",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "GV70 Electrified (with HDA II)",
     "year": [
       "2023"
@@ -527,6 +577,7 @@
   "Genesis GV80 2023": {
     "platform": "GENESIS_GV80",
     "make": "Genesis",
+    "brand": "hyundai",
     "model": "GV80",
     "year": [
       "2023"
@@ -536,6 +587,7 @@
   "GMC Sierra 1500 2020-21": {
     "platform": "CHEVROLET_SILVERADO",
     "make": "GMC",
+    "brand": "gm",
     "model": "Sierra 1500",
     "year": [
       "2020",
@@ -546,6 +598,7 @@
   "Honda Accord 2018-22": {
     "platform": "HONDA_ACCORD",
     "make": "Honda",
+    "brand": "honda",
     "model": "Accord",
     "year": [
       "2018",
@@ -559,6 +612,7 @@
   "Honda Accord Hybrid 2018-22": {
     "platform": "HONDA_ACCORD",
     "make": "Honda",
+    "brand": "honda",
     "model": "Accord Hybrid",
     "year": [
       "2018",
@@ -572,6 +626,7 @@
   "Honda Civic 2016-18": {
     "platform": "HONDA_CIVIC",
     "make": "Honda",
+    "brand": "honda",
     "model": "Civic",
     "year": [
       "2016",
@@ -583,6 +638,7 @@
   "Honda Civic 2019-21": {
     "platform": "HONDA_CIVIC_BOSCH",
     "make": "Honda",
+    "brand": "honda",
     "model": "Civic",
     "year": [
       "2019",
@@ -594,6 +650,7 @@
   "Honda Civic 2022-24": {
     "platform": "HONDA_CIVIC_2022",
     "make": "Honda",
+    "brand": "honda",
     "model": "Civic",
     "year": [
       "2022",
@@ -605,6 +662,7 @@
   "Honda Civic Hatchback 2017-21": {
     "platform": "HONDA_CIVIC_BOSCH",
     "make": "Honda",
+    "brand": "honda",
     "model": "Civic Hatchback",
     "year": [
       "2017",
@@ -618,6 +676,7 @@
   "Honda Civic Hatchback 2022-24": {
     "platform": "HONDA_CIVIC_2022",
     "make": "Honda",
+    "brand": "honda",
     "model": "Civic Hatchback",
     "year": [
       "2022",
@@ -629,6 +688,7 @@
   "Honda CR-V 2015-16": {
     "platform": "HONDA_CRV",
     "make": "Honda",
+    "brand": "honda",
     "model": "CR-V",
     "year": [
       "2015",
@@ -639,6 +699,7 @@
   "Honda CR-V 2017-22": {
     "platform": "HONDA_CRV_5G",
     "make": "Honda",
+    "brand": "honda",
     "model": "CR-V",
     "year": [
       "2017",
@@ -653,6 +714,7 @@
   "Honda CR-V Hybrid 2017-22": {
     "platform": "HONDA_CRV_HYBRID",
     "make": "Honda",
+    "brand": "honda",
     "model": "CR-V Hybrid",
     "year": [
       "2017",
@@ -667,6 +729,7 @@
   "Honda e 2020": {
     "platform": "HONDA_E",
     "make": "Honda",
+    "brand": "honda",
     "model": "e",
     "year": [
       "2020"
@@ -676,6 +739,7 @@
   "Honda Fit 2018-20": {
     "platform": "HONDA_FIT",
     "make": "Honda",
+    "brand": "honda",
     "model": "Fit",
     "year": [
       "2018",
@@ -687,6 +751,7 @@
   "Honda Freed 2020": {
     "platform": "HONDA_FREED",
     "make": "Honda",
+    "brand": "honda",
     "model": "Freed",
     "year": [
       "2020"
@@ -696,6 +761,7 @@
   "Honda HR-V 2019-22": {
     "platform": "HONDA_HRV",
     "make": "Honda",
+    "brand": "honda",
     "model": "HR-V",
     "year": [
       "2019",
@@ -708,6 +774,7 @@
   "Honda HR-V 2023": {
     "platform": "HONDA_HRV_3G",
     "make": "Honda",
+    "brand": "honda",
     "model": "HR-V",
     "year": [
       "2023"
@@ -717,6 +784,7 @@
   "Honda Insight 2019-22": {
     "platform": "HONDA_INSIGHT",
     "make": "Honda",
+    "brand": "honda",
     "model": "Insight",
     "year": [
       "2019",
@@ -729,6 +797,7 @@
   "Honda Inspire 2018": {
     "platform": "HONDA_ACCORD",
     "make": "Honda",
+    "brand": "honda",
     "model": "Inspire",
     "year": [
       "2018"
@@ -738,6 +807,7 @@
   "Honda Odyssey 2018-20": {
     "platform": "HONDA_ODYSSEY",
     "make": "Honda",
+    "brand": "honda",
     "model": "Odyssey",
     "year": [
       "2018",
@@ -749,6 +819,7 @@
   "Honda Passport 2019-23": {
     "platform": "HONDA_PILOT",
     "make": "Honda",
+    "brand": "honda",
     "model": "Passport",
     "year": [
       "2019",
@@ -762,6 +833,7 @@
   "Honda Pilot 2016-22": {
     "platform": "HONDA_PILOT",
     "make": "Honda",
+    "brand": "honda",
     "model": "Pilot",
     "year": [
       "2016",
@@ -777,6 +849,7 @@
   "Honda Ridgeline 2017-25": {
     "platform": "HONDA_RIDGELINE",
     "make": "Honda",
+    "brand": "honda",
     "model": "Ridgeline",
     "year": [
       "2017",
@@ -794,6 +867,7 @@
   "Hyundai Azera 2022": {
     "platform": "HYUNDAI_AZERA_6TH_GEN",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Azera",
     "year": [
       "2022"
@@ -803,6 +877,7 @@
   "Hyundai Azera Hybrid 2019": {
     "platform": "HYUNDAI_AZERA_HEV_6TH_GEN",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Azera Hybrid",
     "year": [
       "2019"
@@ -812,6 +887,7 @@
   "Hyundai Azera Hybrid 2020": {
     "platform": "HYUNDAI_AZERA_HEV_6TH_GEN",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Azera Hybrid",
     "year": [
       "2020"
@@ -821,6 +897,7 @@
   "Hyundai Custin 2023": {
     "platform": "HYUNDAI_CUSTIN_1ST_GEN",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Custin",
     "year": [
       "2023"
@@ -830,6 +907,7 @@
   "Hyundai Elantra 2017-18": {
     "platform": "HYUNDAI_ELANTRA",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Elantra",
     "year": [
       "2017",
@@ -840,6 +918,7 @@
   "Hyundai Elantra 2019": {
     "platform": "HYUNDAI_ELANTRA",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Elantra",
     "year": [
       "2019"
@@ -849,6 +928,7 @@
   "Hyundai Elantra 2021-23": {
     "platform": "HYUNDAI_ELANTRA_2021",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Elantra",
     "year": [
       "2021",
@@ -860,6 +940,7 @@
   "Hyundai Elantra GT 2017-20": {
     "platform": "HYUNDAI_ELANTRA_GT_I30",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Elantra GT",
     "year": [
       "2017",
@@ -872,6 +953,7 @@
   "Hyundai Elantra Hybrid 2021-23": {
     "platform": "HYUNDAI_ELANTRA_HEV_2021",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Elantra Hybrid",
     "year": [
       "2021",
@@ -883,6 +965,7 @@
   "Hyundai Genesis 2015-16": {
     "platform": "HYUNDAI_GENESIS",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Genesis",
     "year": [
       "2015",
@@ -893,6 +976,7 @@
   "Hyundai i30 2017-19": {
     "platform": "HYUNDAI_ELANTRA_GT_I30",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "i30",
     "year": [
       "2017",
@@ -904,6 +988,7 @@
   "Hyundai Ioniq 5 (Southeast Asia and Europe only) 2022-24": {
     "platform": "HYUNDAI_IONIQ_5",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Ioniq 5 (Southeast Asia and Europe only)",
     "year": [
       "2022",
@@ -915,6 +1000,7 @@
   "Hyundai Ioniq 5 (with HDA II) 2022-24": {
     "platform": "HYUNDAI_IONIQ_5",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Ioniq 5 (with HDA II)",
     "year": [
       "2022",
@@ -926,6 +1012,7 @@
   "Hyundai Ioniq 5 (without HDA II) 2022-24": {
     "platform": "HYUNDAI_IONIQ_5",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Ioniq 5 (without HDA II)",
     "year": [
       "2022",
@@ -937,6 +1024,7 @@
   "Hyundai Ioniq 6 (with HDA II) 2023-24": {
     "platform": "HYUNDAI_IONIQ_6",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Ioniq 6 (with HDA II)",
     "year": [
       "2023",
@@ -947,6 +1035,7 @@
   "Hyundai Ioniq Electric 2019": {
     "platform": "HYUNDAI_IONIQ_EV_LTD",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Ioniq Electric",
     "year": [
       "2019"
@@ -956,6 +1045,7 @@
   "Hyundai Ioniq Electric 2020": {
     "platform": "HYUNDAI_IONIQ_EV_2020",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Ioniq Electric",
     "year": [
       "2020"
@@ -965,6 +1055,7 @@
   "Hyundai Ioniq Hybrid 2017-19": {
     "platform": "HYUNDAI_IONIQ",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Ioniq Hybrid",
     "year": [
       "2017",
@@ -976,6 +1067,7 @@
   "Hyundai Ioniq Hybrid 2020-22": {
     "platform": "HYUNDAI_IONIQ_HEV_2022",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Ioniq Hybrid",
     "year": [
       "2020",
@@ -987,6 +1079,7 @@
   "Hyundai Ioniq Plug-in Hybrid 2019": {
     "platform": "HYUNDAI_IONIQ_PHEV_2019",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Ioniq Plug-in Hybrid",
     "year": [
       "2019"
@@ -996,6 +1089,7 @@
   "Hyundai Ioniq Plug-in Hybrid 2020-22": {
     "platform": "HYUNDAI_IONIQ_PHEV",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Ioniq Plug-in Hybrid",
     "year": [
       "2020",
@@ -1007,6 +1101,7 @@
   "Hyundai Kona 2020": {
     "platform": "HYUNDAI_KONA",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Kona",
     "year": [
       "2020"
@@ -1016,6 +1111,7 @@
   "Hyundai Kona Electric 2018-21": {
     "platform": "HYUNDAI_KONA_EV",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Kona Electric",
     "year": [
       "2018",
@@ -1028,6 +1124,7 @@
   "Hyundai Kona Electric 2022-23": {
     "platform": "HYUNDAI_KONA_EV_2022",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Kona Electric",
     "year": [
       "2022",
@@ -1038,6 +1135,7 @@
   "Hyundai Kona Electric (with HDA II, Korea only) 2023": {
     "platform": "HYUNDAI_KONA_EV_2ND_GEN",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Kona Electric (with HDA II, Korea only)",
     "year": [
       "2023"
@@ -1047,6 +1145,7 @@
   "Hyundai Kona Hybrid 2020": {
     "platform": "HYUNDAI_KONA_HEV",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Kona Hybrid",
     "year": [
       "2020"
@@ -1056,6 +1155,7 @@
   "Hyundai Palisade 2020-22": {
     "platform": "HYUNDAI_PALISADE",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Palisade",
     "year": [
       "2020",
@@ -1067,6 +1167,7 @@
   "Hyundai Santa Cruz 2022-24": {
     "platform": "HYUNDAI_SANTA_CRUZ_1ST_GEN",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Santa Cruz",
     "year": [
       "2022",
@@ -1078,6 +1179,7 @@
   "Hyundai Santa Fe 2019-20": {
     "platform": "HYUNDAI_SANTA_FE",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Santa Fe",
     "year": [
       "2019",
@@ -1088,6 +1190,7 @@
   "Hyundai Santa Fe 2021-23": {
     "platform": "HYUNDAI_SANTA_FE_2022",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Santa Fe",
     "year": [
       "2021",
@@ -1099,6 +1202,7 @@
   "Hyundai Santa Fe Hybrid 2022-23": {
     "platform": "HYUNDAI_SANTA_FE_HEV_2022",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Santa Fe Hybrid",
     "year": [
       "2022",
@@ -1109,6 +1213,7 @@
   "Hyundai Santa Fe Plug-in Hybrid 2022-23": {
     "platform": "HYUNDAI_SANTA_FE_PHEV_2022",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Santa Fe Plug-in Hybrid",
     "year": [
       "2022",
@@ -1119,6 +1224,7 @@
   "Hyundai Sonata 2018-19": {
     "platform": "HYUNDAI_SONATA_LF",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Sonata",
     "year": [
       "2018",
@@ -1129,6 +1235,7 @@
   "Hyundai Sonata 2020-23": {
     "platform": "HYUNDAI_SONATA",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Sonata",
     "year": [
       "2020",
@@ -1141,6 +1248,7 @@
   "Hyundai Sonata Hybrid 2020-23": {
     "platform": "HYUNDAI_SONATA_HYBRID",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Sonata Hybrid",
     "year": [
       "2020",
@@ -1153,6 +1261,7 @@
   "Hyundai Staria 2023": {
     "platform": "HYUNDAI_STARIA_4TH_GEN",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Staria",
     "year": [
       "2023"
@@ -1162,6 +1271,7 @@
   "Hyundai Tucson 2021": {
     "platform": "HYUNDAI_TUCSON",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Tucson",
     "year": [
       "2021"
@@ -1171,6 +1281,7 @@
   "Hyundai Tucson 2022": {
     "platform": "HYUNDAI_TUCSON_4TH_GEN",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Tucson",
     "year": [
       "2022"
@@ -1180,6 +1291,7 @@
   "Hyundai Tucson 2023-24": {
     "platform": "HYUNDAI_TUCSON_4TH_GEN",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Tucson",
     "year": [
       "2023",
@@ -1190,6 +1302,7 @@
   "Hyundai Tucson Diesel 2019": {
     "platform": "HYUNDAI_TUCSON",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Tucson Diesel",
     "year": [
       "2019"
@@ -1199,6 +1312,7 @@
   "Hyundai Tucson Hybrid 2022-24": {
     "platform": "HYUNDAI_TUCSON_4TH_GEN",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Tucson Hybrid",
     "year": [
       "2022",
@@ -1210,6 +1324,7 @@
   "Hyundai Tucson Plug-in Hybrid 2024": {
     "platform": "HYUNDAI_TUCSON_4TH_GEN",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Tucson Plug-in Hybrid",
     "year": [
       "2024"
@@ -1219,6 +1334,7 @@
   "Hyundai Veloster 2019-20": {
     "platform": "HYUNDAI_VELOSTER",
     "make": "Hyundai",
+    "brand": "hyundai",
     "model": "Veloster",
     "year": [
       "2019",
@@ -1229,6 +1345,7 @@
   "Jeep Grand Cherokee 2016-18": {
     "platform": "JEEP_GRAND_CHEROKEE",
     "make": "Jeep",
+    "brand": "chrysler",
     "model": "Grand Cherokee",
     "year": [
       "2016",
@@ -1240,6 +1357,7 @@
   "Jeep Grand Cherokee 2019-21": {
     "platform": "JEEP_GRAND_CHEROKEE_2019",
     "make": "Jeep",
+    "brand": "chrysler",
     "model": "Grand Cherokee",
     "year": [
       "2019",
@@ -1251,6 +1369,7 @@
   "Kia Carnival 2022-24": {
     "platform": "KIA_CARNIVAL_4TH_GEN",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Carnival",
     "year": [
       "2022",
@@ -1262,6 +1381,7 @@
   "Kia Carnival (China only) 2023": {
     "platform": "KIA_CARNIVAL_4TH_GEN",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Carnival (China only)",
     "year": [
       "2023"
@@ -1271,6 +1391,7 @@
   "Kia Ceed 2019-21": {
     "platform": "KIA_CEED",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Ceed",
     "year": [
       "2019",
@@ -1282,6 +1403,7 @@
   "Kia EV6 (Southeast Asia only) 2022-24": {
     "platform": "KIA_EV6",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "EV6 (Southeast Asia only)",
     "year": [
       "2022",
@@ -1293,6 +1415,7 @@
   "Kia EV6 (with HDA II) 2022-24": {
     "platform": "KIA_EV6",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "EV6 (with HDA II)",
     "year": [
       "2022",
@@ -1304,6 +1427,7 @@
   "Kia EV6 (without HDA II) 2022-24": {
     "platform": "KIA_EV6",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "EV6 (without HDA II)",
     "year": [
       "2022",
@@ -1315,6 +1439,7 @@
   "Kia Forte 2019-21": {
     "platform": "KIA_FORTE",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Forte",
     "year": [
       "2019",
@@ -1326,6 +1451,7 @@
   "Kia Forte 2022-23": {
     "platform": "KIA_FORTE",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Forte",
     "year": [
       "2022",
@@ -1336,6 +1462,7 @@
   "Kia K5 2021-24": {
     "platform": "KIA_K5_2021",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "K5",
     "year": [
       "2021",
@@ -1348,6 +1475,7 @@
   "Kia K5 Hybrid 2020-22": {
     "platform": "KIA_K5_HEV_2020",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "K5 Hybrid",
     "year": [
       "2020",
@@ -1359,6 +1487,7 @@
   "Kia K8 Hybrid (with HDA II) 2023": {
     "platform": "KIA_K8_HEV_1ST_GEN",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "K8 Hybrid (with HDA II)",
     "year": [
       "2023"
@@ -1368,6 +1497,7 @@
   "Kia Niro EV 2019": {
     "platform": "KIA_NIRO_EV",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro EV",
     "year": [
       "2019"
@@ -1377,6 +1507,7 @@
   "Kia Niro EV 2020": {
     "platform": "KIA_NIRO_EV",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro EV",
     "year": [
       "2020"
@@ -1386,6 +1517,7 @@
   "Kia Niro EV 2021": {
     "platform": "KIA_NIRO_EV",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro EV",
     "year": [
       "2021"
@@ -1395,6 +1527,7 @@
   "Kia Niro EV 2022": {
     "platform": "KIA_NIRO_EV",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro EV",
     "year": [
       "2022"
@@ -1404,6 +1537,7 @@
   "Kia Niro EV 2023": {
     "platform": "KIA_NIRO_EV_2ND_GEN",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro EV",
     "year": [
       "2023"
@@ -1413,6 +1547,7 @@
   "Kia Niro Hybrid 2018": {
     "platform": "KIA_NIRO_PHEV",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro Hybrid",
     "year": [
       "2018"
@@ -1422,6 +1557,7 @@
   "Kia Niro Hybrid 2021": {
     "platform": "KIA_NIRO_HEV_2021",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro Hybrid",
     "year": [
       "2021"
@@ -1431,6 +1567,7 @@
   "Kia Niro Hybrid 2022": {
     "platform": "KIA_NIRO_HEV_2021",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro Hybrid",
     "year": [
       "2022"
@@ -1440,6 +1577,7 @@
   "Kia Niro Hybrid 2023": {
     "platform": "KIA_NIRO_HEV_2ND_GEN",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro Hybrid",
     "year": [
       "2023"
@@ -1449,6 +1587,7 @@
   "Kia Niro Plug-in Hybrid 2018-19": {
     "platform": "KIA_NIRO_PHEV",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro Plug-in Hybrid",
     "year": [
       "2018",
@@ -1459,6 +1598,7 @@
   "Kia Niro Plug-in Hybrid 2020": {
     "platform": "KIA_NIRO_PHEV",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro Plug-in Hybrid",
     "year": [
       "2020"
@@ -1468,6 +1608,7 @@
   "Kia Niro Plug-in Hybrid 2021": {
     "platform": "KIA_NIRO_PHEV_2022",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro Plug-in Hybrid",
     "year": [
       "2021"
@@ -1477,6 +1618,7 @@
   "Kia Niro Plug-in Hybrid 2022": {
     "platform": "KIA_NIRO_PHEV_2022",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Niro Plug-in Hybrid",
     "year": [
       "2022"
@@ -1486,6 +1628,7 @@
   "Kia Optima 2017": {
     "platform": "KIA_OPTIMA_G4",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Optima",
     "year": [
       "2017"
@@ -1495,6 +1638,7 @@
   "Kia Optima 2019-20": {
     "platform": "KIA_OPTIMA_G4_FL",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Optima",
     "year": [
       "2019",
@@ -1505,6 +1649,7 @@
   "Kia Optima Hybrid 2019": {
     "platform": "KIA_OPTIMA_H_G4_FL",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Optima Hybrid",
     "year": [
       "2019"
@@ -1514,6 +1659,7 @@
   "Kia Seltos 2021": {
     "platform": "KIA_SELTOS",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Seltos",
     "year": [
       "2021"
@@ -1523,6 +1669,7 @@
   "Kia Sorento 2018": {
     "platform": "KIA_SORENTO",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Sorento",
     "year": [
       "2018"
@@ -1532,6 +1679,7 @@
   "Kia Sorento 2019": {
     "platform": "KIA_SORENTO",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Sorento",
     "year": [
       "2019"
@@ -1541,6 +1689,7 @@
   "Kia Sorento 2021-23": {
     "platform": "KIA_SORENTO_4TH_GEN",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Sorento",
     "year": [
       "2021",
@@ -1552,6 +1701,7 @@
   "Kia Sorento Hybrid 2021-23": {
     "platform": "KIA_SORENTO_HEV_4TH_GEN",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Sorento Hybrid",
     "year": [
       "2021",
@@ -1563,6 +1713,7 @@
   "Kia Sorento Plug-in Hybrid 2022-23": {
     "platform": "KIA_SORENTO_HEV_4TH_GEN",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Sorento Plug-in Hybrid",
     "year": [
       "2022",
@@ -1573,6 +1724,7 @@
   "Kia Sportage 2023-24": {
     "platform": "KIA_SPORTAGE_5TH_GEN",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Sportage",
     "year": [
       "2023",
@@ -1583,6 +1735,7 @@
   "Kia Sportage Hybrid 2023": {
     "platform": "KIA_SPORTAGE_5TH_GEN",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Sportage Hybrid",
     "year": [
       "2023"
@@ -1592,6 +1745,7 @@
   "Kia Stinger 2018-20": {
     "platform": "KIA_STINGER",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Stinger",
     "year": [
       "2018",
@@ -1603,6 +1757,7 @@
   "Kia Stinger 2022-23": {
     "platform": "KIA_STINGER_2022",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Stinger",
     "year": [
       "2022",
@@ -1613,6 +1768,7 @@
   "Kia Telluride 2020-22": {
     "platform": "HYUNDAI_PALISADE",
     "make": "Kia",
+    "brand": "hyundai",
     "model": "Telluride",
     "year": [
       "2020",
@@ -1624,6 +1780,7 @@
   "Lexus CT Hybrid 2017-18": {
     "platform": "LEXUS_CTH",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "CT Hybrid",
     "year": [
       "2017",
@@ -1634,6 +1791,7 @@
   "Lexus ES 2017-18": {
     "platform": "LEXUS_ES",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "ES",
     "year": [
       "2017",
@@ -1644,6 +1802,7 @@
   "Lexus ES 2019-24": {
     "platform": "LEXUS_ES_TSS2",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "ES",
     "year": [
       "2019",
@@ -1658,6 +1817,7 @@
   "Lexus ES Hybrid 2017-18": {
     "platform": "LEXUS_ES",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "ES Hybrid",
     "year": [
       "2017",
@@ -1668,6 +1828,7 @@
   "Lexus ES Hybrid 2019-25": {
     "platform": "LEXUS_ES_TSS2",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "ES Hybrid",
     "year": [
       "2019",
@@ -1683,6 +1844,7 @@
   "Lexus GS F 2016": {
     "platform": "LEXUS_GS_F",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "GS F",
     "year": [
       "2016"
@@ -1692,6 +1854,7 @@
   "Lexus IS 2017-19": {
     "platform": "LEXUS_IS",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "IS",
     "year": [
       "2017",
@@ -1703,6 +1866,7 @@
   "Lexus IS 2022-23": {
     "platform": "LEXUS_IS_TSS2",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "IS",
     "year": [
       "2022",
@@ -1713,6 +1877,7 @@
   "Lexus LC 2024": {
     "platform": "LEXUS_LC_TSS2",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "LC",
     "year": [
       "2024"
@@ -1722,6 +1887,7 @@
   "Lexus NX 2018-19": {
     "platform": "LEXUS_NX",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "NX",
     "year": [
       "2018",
@@ -1732,6 +1898,7 @@
   "Lexus NX 2020-21": {
     "platform": "LEXUS_NX_TSS2",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "NX",
     "year": [
       "2020",
@@ -1742,6 +1909,7 @@
   "Lexus NX Hybrid 2018-19": {
     "platform": "LEXUS_NX",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "NX Hybrid",
     "year": [
       "2018",
@@ -1752,6 +1920,7 @@
   "Lexus NX Hybrid 2020-21": {
     "platform": "LEXUS_NX_TSS2",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "NX Hybrid",
     "year": [
       "2020",
@@ -1762,6 +1931,7 @@
   "Lexus RC 2018-20": {
     "platform": "LEXUS_RC",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "RC",
     "year": [
       "2018",
@@ -1773,6 +1943,7 @@
   "Lexus RX 2016": {
     "platform": "LEXUS_RX",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "RX",
     "year": [
       "2016"
@@ -1782,6 +1953,7 @@
   "Lexus RX 2017-19": {
     "platform": "LEXUS_RX",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "RX",
     "year": [
       "2017",
@@ -1793,6 +1965,7 @@
   "Lexus RX 2020-22": {
     "platform": "LEXUS_RX_TSS2",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "RX",
     "year": [
       "2020",
@@ -1804,6 +1977,7 @@
   "Lexus RX Hybrid 2016": {
     "platform": "LEXUS_RX",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "RX Hybrid",
     "year": [
       "2016"
@@ -1813,6 +1987,7 @@
   "Lexus RX Hybrid 2017-19": {
     "platform": "LEXUS_RX",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "RX Hybrid",
     "year": [
       "2017",
@@ -1824,6 +1999,7 @@
   "Lexus RX Hybrid 2020-22": {
     "platform": "LEXUS_RX_TSS2",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "RX Hybrid",
     "year": [
       "2020",
@@ -1835,6 +2011,7 @@
   "Lexus UX Hybrid 2019-23": {
     "platform": "TOYOTA_COROLLA_TSS2",
     "make": "Lexus",
+    "brand": "toyota",
     "model": "UX Hybrid",
     "year": [
       "2019",
@@ -1848,6 +2025,7 @@
   "Lincoln Aviator 2020-24": {
     "platform": "FORD_EXPLORER_MK6",
     "make": "Lincoln",
+    "brand": "ford",
     "model": "Aviator",
     "year": [
       "2020",
@@ -1861,6 +2039,7 @@
   "Lincoln Aviator Plug-in Hybrid 2020-24": {
     "platform": "FORD_EXPLORER_MK6",
     "make": "Lincoln",
+    "brand": "ford",
     "model": "Aviator Plug-in Hybrid",
     "year": [
       "2020",
@@ -1874,6 +2053,7 @@
   "MAN eTGE 2020-24": {
     "platform": "VOLKSWAGEN_CRAFTER_MK2",
     "make": "MAN",
+    "brand": "volkswagen",
     "model": "eTGE",
     "year": [
       "2020",
@@ -1887,6 +2067,7 @@
   "MAN TGE 2017-24": {
     "platform": "VOLKSWAGEN_CRAFTER_MK2",
     "make": "MAN",
+    "brand": "volkswagen",
     "model": "TGE",
     "year": [
       "2017",
@@ -1903,6 +2084,7 @@
   "Mazda CX-5 2022-25": {
     "platform": "MAZDA_CX5_2022",
     "make": "Mazda",
+    "brand": "mazda",
     "model": "CX-5",
     "year": [
       "2022",
@@ -1915,6 +2097,7 @@
   "Mazda CX-9 2021-23": {
     "platform": "MAZDA_CX9_2021",
     "make": "Mazda",
+    "brand": "mazda",
     "model": "CX-9",
     "year": [
       "2021",
@@ -1926,6 +2109,7 @@
   "Nissan Altima 2019-20": {
     "platform": "NISSAN_ALTIMA",
     "make": "Nissan",
+    "brand": "nissan",
     "model": "Altima",
     "year": [
       "2019",
@@ -1936,6 +2120,7 @@
   "Nissan Leaf 2018-23": {
     "platform": "NISSAN_LEAF",
     "make": "Nissan",
+    "brand": "nissan",
     "model": "Leaf",
     "year": [
       "2018",
@@ -1950,6 +2135,7 @@
   "Nissan Rogue 2018-20": {
     "platform": "NISSAN_ROGUE",
     "make": "Nissan",
+    "brand": "nissan",
     "model": "Rogue",
     "year": [
       "2018",
@@ -1961,6 +2147,7 @@
   "Nissan X-Trail 2017": {
     "platform": "NISSAN_XTRAIL",
     "make": "Nissan",
+    "brand": "nissan",
     "model": "X-Trail",
     "year": [
       "2017"
@@ -1970,6 +2157,7 @@
   "Ram 1500 2019-24": {
     "platform": "RAM_1500_5TH_GEN",
     "make": "Ram",
+    "brand": "chrysler",
     "model": "1500",
     "year": [
       "2019",
@@ -1984,6 +2172,7 @@
   "SEAT Ateca 2016-23": {
     "platform": "SEAT_ATECA_MK1",
     "make": "SEAT",
+    "brand": "volkswagen",
     "model": "Ateca",
     "year": [
       "2016",
@@ -2000,6 +2189,7 @@
   "SEAT Leon 2014-20": {
     "platform": "SEAT_ATECA_MK1",
     "make": "SEAT",
+    "brand": "volkswagen",
     "model": "Leon",
     "year": [
       "2014",
@@ -2015,6 +2205,7 @@
   "Subaru Ascent 2019-21": {
     "platform": "SUBARU_ASCENT",
     "make": "Subaru",
+    "brand": "subaru",
     "model": "Ascent",
     "year": [
       "2019",
@@ -2026,6 +2217,7 @@
   "Subaru Crosstrek 2018-19": {
     "platform": "SUBARU_IMPREZA",
     "make": "Subaru",
+    "brand": "subaru",
     "model": "Crosstrek",
     "year": [
       "2018",
@@ -2036,6 +2228,7 @@
   "Subaru Crosstrek 2020-23": {
     "platform": "SUBARU_IMPREZA_2020",
     "make": "Subaru",
+    "brand": "subaru",
     "model": "Crosstrek",
     "year": [
       "2020",
@@ -2048,6 +2241,7 @@
   "Subaru Forester 2019-21": {
     "platform": "SUBARU_FORESTER",
     "make": "Subaru",
+    "brand": "subaru",
     "model": "Forester",
     "year": [
       "2019",
@@ -2059,6 +2253,7 @@
   "Subaru Impreza 2017-19": {
     "platform": "SUBARU_IMPREZA",
     "make": "Subaru",
+    "brand": "subaru",
     "model": "Impreza",
     "year": [
       "2017",
@@ -2070,6 +2265,7 @@
   "Subaru Impreza 2020-22": {
     "platform": "SUBARU_IMPREZA_2020",
     "make": "Subaru",
+    "brand": "subaru",
     "model": "Impreza",
     "year": [
       "2020",
@@ -2081,6 +2277,7 @@
   "Subaru Legacy 2020-22": {
     "platform": "SUBARU_LEGACY",
     "make": "Subaru",
+    "brand": "subaru",
     "model": "Legacy",
     "year": [
       "2020",
@@ -2092,6 +2289,7 @@
   "Subaru Outback 2020-22": {
     "platform": "SUBARU_OUTBACK",
     "make": "Subaru",
+    "brand": "subaru",
     "model": "Outback",
     "year": [
       "2020",
@@ -2103,6 +2301,7 @@
   "Subaru XV 2018-19": {
     "platform": "SUBARU_IMPREZA",
     "make": "Subaru",
+    "brand": "subaru",
     "model": "XV",
     "year": [
       "2018",
@@ -2113,6 +2312,7 @@
   "Subaru XV 2020-21": {
     "platform": "SUBARU_IMPREZA_2020",
     "make": "Subaru",
+    "brand": "subaru",
     "model": "XV",
     "year": [
       "2020",
@@ -2123,6 +2323,7 @@
   "Škoda Fabia 2022-23": {
     "platform": "SKODA_FABIA_MK4",
     "make": "Škoda",
+    "brand": "volkswagen",
     "model": "Fabia",
     "year": [
       "2022",
@@ -2133,6 +2334,7 @@
   "Škoda Kamiq 2021-23": {
     "platform": "SKODA_KAMIQ_MK1",
     "make": "Škoda",
+    "brand": "volkswagen",
     "model": "Kamiq",
     "year": [
       "2021",
@@ -2144,6 +2346,7 @@
   "Škoda Karoq 2019-23": {
     "platform": "SKODA_KAROQ_MK1",
     "make": "Škoda",
+    "brand": "volkswagen",
     "model": "Karoq",
     "year": [
       "2019",
@@ -2157,6 +2360,7 @@
   "Škoda Kodiaq 2017-23": {
     "platform": "SKODA_KODIAQ_MK1",
     "make": "Škoda",
+    "brand": "volkswagen",
     "model": "Kodiaq",
     "year": [
       "2017",
@@ -2172,6 +2376,7 @@
   "Škoda Octavia 2015-19": {
     "platform": "SKODA_OCTAVIA_MK3",
     "make": "Škoda",
+    "brand": "volkswagen",
     "model": "Octavia",
     "year": [
       "2015",
@@ -2185,6 +2390,7 @@
   "Škoda Octavia RS 2016": {
     "platform": "SKODA_OCTAVIA_MK3",
     "make": "Škoda",
+    "brand": "volkswagen",
     "model": "Octavia RS",
     "year": [
       "2016"
@@ -2194,6 +2400,7 @@
   "Škoda Octavia Scout 2017-19": {
     "platform": "SKODA_OCTAVIA_MK3",
     "make": "Škoda",
+    "brand": "volkswagen",
     "model": "Octavia Scout",
     "year": [
       "2017",
@@ -2205,6 +2412,7 @@
   "Škoda Scala 2020-23": {
     "platform": "SKODA_KAMIQ_MK1",
     "make": "Škoda",
+    "brand": "volkswagen",
     "model": "Scala",
     "year": [
       "2020",
@@ -2217,6 +2425,7 @@
   "Škoda Superb 2015-22": {
     "platform": "SKODA_SUPERB_MK3",
     "make": "Škoda",
+    "brand": "volkswagen",
     "model": "Superb",
     "year": [
       "2015",
@@ -2233,6 +2442,7 @@
   "Toyota Alphard 2019-20": {
     "platform": "TOYOTA_ALPHARD_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Alphard",
     "year": [
       "2019",
@@ -2243,6 +2453,7 @@
   "Toyota Alphard Hybrid 2021": {
     "platform": "TOYOTA_ALPHARD_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Alphard Hybrid",
     "year": [
       "2021"
@@ -2252,6 +2463,7 @@
   "Toyota Avalon 2016": {
     "platform": "TOYOTA_AVALON",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Avalon",
     "year": [
       "2016"
@@ -2261,6 +2473,7 @@
   "Toyota Avalon 2017-18": {
     "platform": "TOYOTA_AVALON",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Avalon",
     "year": [
       "2017",
@@ -2271,6 +2484,7 @@
   "Toyota Avalon 2019-21": {
     "platform": "TOYOTA_AVALON_2019",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Avalon",
     "year": [
       "2019",
@@ -2282,6 +2496,7 @@
   "Toyota Avalon 2022": {
     "platform": "TOYOTA_AVALON_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Avalon",
     "year": [
       "2022"
@@ -2291,6 +2506,7 @@
   "Toyota Avalon Hybrid 2019-21": {
     "platform": "TOYOTA_AVALON_2019",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Avalon Hybrid",
     "year": [
       "2019",
@@ -2302,6 +2518,7 @@
   "Toyota Avalon Hybrid 2022": {
     "platform": "TOYOTA_AVALON_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Avalon Hybrid",
     "year": [
       "2022"
@@ -2311,6 +2528,7 @@
   "Toyota C-HR 2017-20": {
     "platform": "TOYOTA_CHR",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "C-HR",
     "year": [
       "2017",
@@ -2323,6 +2541,7 @@
   "Toyota C-HR 2021": {
     "platform": "TOYOTA_CHR_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "C-HR",
     "year": [
       "2021"
@@ -2332,6 +2551,7 @@
   "Toyota C-HR Hybrid 2017-20": {
     "platform": "TOYOTA_CHR",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "C-HR Hybrid",
     "year": [
       "2017",
@@ -2344,6 +2564,7 @@
   "Toyota C-HR Hybrid 2021-22": {
     "platform": "TOYOTA_CHR_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "C-HR Hybrid",
     "year": [
       "2021",
@@ -2354,6 +2575,7 @@
   "Toyota Camry 2018-20": {
     "platform": "TOYOTA_CAMRY",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Camry",
     "year": [
       "2018",
@@ -2365,6 +2587,7 @@
   "Toyota Camry 2021-24": {
     "platform": "TOYOTA_CAMRY_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Camry",
     "year": [
       "2021",
@@ -2377,6 +2600,7 @@
   "Toyota Camry Hybrid 2018-20": {
     "platform": "TOYOTA_CAMRY",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Camry Hybrid",
     "year": [
       "2018",
@@ -2388,6 +2612,7 @@
   "Toyota Camry Hybrid 2021-24": {
     "platform": "TOYOTA_CAMRY_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Camry Hybrid",
     "year": [
       "2021",
@@ -2400,6 +2625,7 @@
   "Toyota Corolla 2017-19": {
     "platform": "TOYOTA_COROLLA",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Corolla",
     "year": [
       "2017",
@@ -2411,6 +2637,7 @@
   "Toyota Corolla 2020-22": {
     "platform": "TOYOTA_COROLLA_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Corolla",
     "year": [
       "2020",
@@ -2422,6 +2649,7 @@
   "Toyota Corolla Cross (Non-US only) 2020-23": {
     "platform": "TOYOTA_COROLLA_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Corolla Cross (Non-US only)",
     "year": [
       "2020",
@@ -2434,6 +2662,7 @@
   "Toyota Corolla Cross Hybrid (Non-US only) 2020-22": {
     "platform": "TOYOTA_COROLLA_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Corolla Cross Hybrid (Non-US only)",
     "year": [
       "2020",
@@ -2445,6 +2674,7 @@
   "Toyota Corolla Hatchback 2019-22": {
     "platform": "TOYOTA_COROLLA_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Corolla Hatchback",
     "year": [
       "2019",
@@ -2457,6 +2687,7 @@
   "Toyota Corolla Hybrid 2020-22": {
     "platform": "TOYOTA_COROLLA_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Corolla Hybrid",
     "year": [
       "2020",
@@ -2468,6 +2699,7 @@
   "Toyota Corolla Hybrid (South America only) 2020-23": {
     "platform": "TOYOTA_COROLLA_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Corolla Hybrid (South America only)",
     "year": [
       "2020",
@@ -2480,6 +2712,7 @@
   "Toyota Highlander 2017-19": {
     "platform": "TOYOTA_HIGHLANDER",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Highlander",
     "year": [
       "2017",
@@ -2491,6 +2724,7 @@
   "Toyota Highlander 2020-23": {
     "platform": "TOYOTA_HIGHLANDER_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Highlander",
     "year": [
       "2020",
@@ -2503,6 +2737,7 @@
   "Toyota Highlander Hybrid 2017-19": {
     "platform": "TOYOTA_HIGHLANDER",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Highlander Hybrid",
     "year": [
       "2017",
@@ -2514,6 +2749,7 @@
   "Toyota Highlander Hybrid 2020-23": {
     "platform": "TOYOTA_HIGHLANDER_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Highlander Hybrid",
     "year": [
       "2020",
@@ -2526,6 +2762,7 @@
   "Toyota Mirai 2021": {
     "platform": "TOYOTA_MIRAI",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Mirai",
     "year": [
       "2021"
@@ -2535,6 +2772,7 @@
   "Toyota Prius 2016": {
     "platform": "TOYOTA_PRIUS",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Prius",
     "year": [
       "2016"
@@ -2544,6 +2782,7 @@
   "Toyota Prius 2017-20": {
     "platform": "TOYOTA_PRIUS",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Prius",
     "year": [
       "2017",
@@ -2556,6 +2795,7 @@
   "Toyota Prius 2021-22": {
     "platform": "TOYOTA_PRIUS_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Prius",
     "year": [
       "2021",
@@ -2566,6 +2806,7 @@
   "Toyota Prius Prime 2017-20": {
     "platform": "TOYOTA_PRIUS",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Prius Prime",
     "year": [
       "2017",
@@ -2578,6 +2819,7 @@
   "Toyota Prius Prime 2021-22": {
     "platform": "TOYOTA_PRIUS_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Prius Prime",
     "year": [
       "2021",
@@ -2588,6 +2830,7 @@
   "Toyota Prius v 2017": {
     "platform": "TOYOTA_PRIUS_V",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Prius v",
     "year": [
       "2017"
@@ -2597,6 +2840,7 @@
   "Toyota RAV4 2016": {
     "platform": "TOYOTA_RAV4",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "RAV4",
     "year": [
       "2016"
@@ -2606,6 +2850,7 @@
   "Toyota RAV4 2017-18": {
     "platform": "TOYOTA_RAV4",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "RAV4",
     "year": [
       "2017",
@@ -2616,6 +2861,7 @@
   "Toyota RAV4 2019-21": {
     "platform": "TOYOTA_RAV4_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "RAV4",
     "year": [
       "2019",
@@ -2627,6 +2873,7 @@
   "Toyota RAV4 2022": {
     "platform": "TOYOTA_RAV4_TSS2_2022",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "RAV4",
     "year": [
       "2022"
@@ -2636,6 +2883,7 @@
   "Toyota RAV4 2023-24": {
     "platform": "TOYOTA_RAV4_TSS2_2023",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "RAV4",
     "year": [
       "2023",
@@ -2646,6 +2894,7 @@
   "Toyota RAV4 Hybrid 2016": {
     "platform": "TOYOTA_RAV4H",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "RAV4 Hybrid",
     "year": [
       "2016"
@@ -2655,6 +2904,7 @@
   "Toyota RAV4 Hybrid 2017-18": {
     "platform": "TOYOTA_RAV4H",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "RAV4 Hybrid",
     "year": [
       "2017",
@@ -2665,6 +2915,7 @@
   "Toyota RAV4 Hybrid 2019-21": {
     "platform": "TOYOTA_RAV4_TSS2",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "RAV4 Hybrid",
     "year": [
       "2019",
@@ -2676,6 +2927,7 @@
   "Toyota RAV4 Hybrid 2022": {
     "platform": "TOYOTA_RAV4_TSS2_2022",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "RAV4 Hybrid",
     "year": [
       "2022"
@@ -2685,6 +2937,7 @@
   "Toyota RAV4 Hybrid 2023-25": {
     "platform": "TOYOTA_RAV4_TSS2_2023",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "RAV4 Hybrid",
     "year": [
       "2023",
@@ -2696,6 +2949,7 @@
   "Toyota Sienna 2018-20": {
     "platform": "TOYOTA_SIENNA",
     "make": "Toyota",
+    "brand": "toyota",
     "model": "Sienna",
     "year": [
       "2018",
@@ -2707,6 +2961,7 @@
   "Volkswagen Arteon 2018-23": {
     "platform": "VOLKSWAGEN_ARTEON_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Arteon",
     "year": [
       "2018",
@@ -2721,6 +2976,7 @@
   "Volkswagen Arteon eHybrid 2020-23": {
     "platform": "VOLKSWAGEN_ARTEON_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Arteon eHybrid",
     "year": [
       "2020",
@@ -2733,6 +2989,7 @@
   "Volkswagen Arteon R 2020-23": {
     "platform": "VOLKSWAGEN_ARTEON_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Arteon R",
     "year": [
       "2020",
@@ -2745,6 +3002,7 @@
   "Volkswagen Arteon Shooting Brake 2020-23": {
     "platform": "VOLKSWAGEN_ARTEON_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Arteon Shooting Brake",
     "year": [
       "2020",
@@ -2757,6 +3015,7 @@
   "Volkswagen Atlas 2018-23": {
     "platform": "VOLKSWAGEN_ATLAS_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Atlas",
     "year": [
       "2018",
@@ -2771,6 +3030,7 @@
   "Volkswagen Atlas Cross Sport 2020-22": {
     "platform": "VOLKSWAGEN_ATLAS_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Atlas Cross Sport",
     "year": [
       "2020",
@@ -2782,6 +3042,7 @@
   "Volkswagen California 2021-23": {
     "platform": "VOLKSWAGEN_TRANSPORTER_T61",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "California",
     "year": [
       "2021",
@@ -2793,6 +3054,7 @@
   "Volkswagen Caravelle 2020": {
     "platform": "VOLKSWAGEN_TRANSPORTER_T61",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Caravelle",
     "year": [
       "2020"
@@ -2802,6 +3064,7 @@
   "Volkswagen CC 2018-22": {
     "platform": "VOLKSWAGEN_ARTEON_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "CC",
     "year": [
       "2018",
@@ -2815,6 +3078,7 @@
   "Volkswagen Crafter 2017-24": {
     "platform": "VOLKSWAGEN_CRAFTER_MK2",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Crafter",
     "year": [
       "2017",
@@ -2831,6 +3095,7 @@
   "Volkswagen e-Crafter 2018-24": {
     "platform": "VOLKSWAGEN_CRAFTER_MK2",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "e-Crafter",
     "year": [
       "2018",
@@ -2846,6 +3111,7 @@
   "Volkswagen e-Golf 2014-20": {
     "platform": "VOLKSWAGEN_GOLF_MK7",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "e-Golf",
     "year": [
       "2014",
@@ -2861,6 +3127,7 @@
   "Volkswagen Golf 2015-20": {
     "platform": "VOLKSWAGEN_GOLF_MK7",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Golf",
     "year": [
       "2015",
@@ -2875,6 +3142,7 @@
   "Volkswagen Golf Alltrack 2015-19": {
     "platform": "VOLKSWAGEN_GOLF_MK7",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Golf Alltrack",
     "year": [
       "2015",
@@ -2888,6 +3156,7 @@
   "Volkswagen Golf GTD 2015-20": {
     "platform": "VOLKSWAGEN_GOLF_MK7",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Golf GTD",
     "year": [
       "2015",
@@ -2902,6 +3171,7 @@
   "Volkswagen Golf GTE 2015-20": {
     "platform": "VOLKSWAGEN_GOLF_MK7",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Golf GTE",
     "year": [
       "2015",
@@ -2916,6 +3186,7 @@
   "Volkswagen Golf GTI 2015-21": {
     "platform": "VOLKSWAGEN_GOLF_MK7",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Golf GTI",
     "year": [
       "2015",
@@ -2931,6 +3202,7 @@
   "Volkswagen Golf R 2015-19": {
     "platform": "VOLKSWAGEN_GOLF_MK7",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Golf R",
     "year": [
       "2015",
@@ -2944,6 +3216,7 @@
   "Volkswagen Golf SportsVan 2015-20": {
     "platform": "VOLKSWAGEN_GOLF_MK7",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Golf SportsVan",
     "year": [
       "2015",
@@ -2958,6 +3231,7 @@
   "Volkswagen Grand California 2019-24": {
     "platform": "VOLKSWAGEN_CRAFTER_MK2",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Grand California",
     "year": [
       "2019",
@@ -2972,6 +3246,7 @@
   "Volkswagen Jetta 2018-23": {
     "platform": "VOLKSWAGEN_JETTA_MK7",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Jetta",
     "year": [
       "2018",
@@ -2986,6 +3261,7 @@
   "Volkswagen Jetta GLI 2021-23": {
     "platform": "VOLKSWAGEN_JETTA_MK7",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Jetta GLI",
     "year": [
       "2021",
@@ -2997,6 +3273,7 @@
   "Volkswagen Passat 2015-22": {
     "platform": "VOLKSWAGEN_PASSAT_MK8",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Passat",
     "year": [
       "2015",
@@ -3013,6 +3290,7 @@
   "Volkswagen Passat Alltrack 2015-22": {
     "platform": "VOLKSWAGEN_PASSAT_MK8",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Passat Alltrack",
     "year": [
       "2015",
@@ -3029,6 +3307,7 @@
   "Volkswagen Passat GTE 2015-22": {
     "platform": "VOLKSWAGEN_PASSAT_MK8",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Passat GTE",
     "year": [
       "2015",
@@ -3045,6 +3324,7 @@
   "Volkswagen Polo 2018-23": {
     "platform": "VOLKSWAGEN_POLO_MK6",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Polo",
     "year": [
       "2018",
@@ -3059,6 +3339,7 @@
   "Volkswagen Polo GTI 2018-23": {
     "platform": "VOLKSWAGEN_POLO_MK6",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Polo GTI",
     "year": [
       "2018",
@@ -3073,6 +3354,7 @@
   "Volkswagen T-Cross 2021": {
     "platform": "VOLKSWAGEN_TCROSS_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "T-Cross",
     "year": [
       "2021"
@@ -3082,6 +3364,7 @@
   "Volkswagen T-Roc 2018-23": {
     "platform": "VOLKSWAGEN_TROC_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "T-Roc",
     "year": [
       "2018",
@@ -3096,6 +3379,7 @@
   "Volkswagen Taos 2022-23": {
     "platform": "VOLKSWAGEN_TAOS_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Taos",
     "year": [
       "2022",
@@ -3106,6 +3390,7 @@
   "Volkswagen Teramont 2018-22": {
     "platform": "VOLKSWAGEN_ATLAS_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Teramont",
     "year": [
       "2018",
@@ -3119,6 +3404,7 @@
   "Volkswagen Teramont Cross Sport 2021-22": {
     "platform": "VOLKSWAGEN_ATLAS_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Teramont Cross Sport",
     "year": [
       "2021",
@@ -3129,6 +3415,7 @@
   "Volkswagen Teramont X 2021-22": {
     "platform": "VOLKSWAGEN_ATLAS_MK1",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Teramont X",
     "year": [
       "2021",
@@ -3139,6 +3426,7 @@
   "Volkswagen Tiguan 2018-23": {
     "platform": "VOLKSWAGEN_TIGUAN_MK2",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Tiguan",
     "year": [
       "2018",
@@ -3153,6 +3441,7 @@
   "Volkswagen Tiguan eHybrid 2021-23": {
     "platform": "VOLKSWAGEN_TIGUAN_MK2",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Tiguan eHybrid",
     "year": [
       "2021",
@@ -3164,6 +3453,7 @@
   "Volkswagen Touran 2016-23": {
     "platform": "VOLKSWAGEN_TOURAN_MK2",
     "make": "Volkswagen",
+    "brand": "volkswagen",
     "model": "Touran",
     "year": [
       "2016",

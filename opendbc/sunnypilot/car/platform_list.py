@@ -34,6 +34,7 @@ def build_sorted_car_list(platforms, footnotes) -> dict[str, dict[str, list[str]
       _platform = model
       _name = _car_docs.name
       _make = _car_docs.make
+      _brand = _car_docs.brand
       _model = _car_docs.model
       _years = _car_docs.year_list
       _package = _car_docs.package if _car_docs.package else []
@@ -42,6 +43,7 @@ def build_sorted_car_list(platforms, footnotes) -> dict[str, dict[str, list[str]
       cars[_name] = {
         "platform": _platform,
         "make": _make,
+        "brand": _brand,
         "model": _model,
         "year": _years if _years else [],
         "package": _package,
