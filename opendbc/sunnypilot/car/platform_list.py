@@ -21,7 +21,7 @@ def build_sorted_car_list(platforms, footnotes) -> dict[str, dict[str, list[str]
     car_docs = platform.config.get_all_docs()
     CP = get_params_for_docs(model, platform)
 
-    if CP.dashcamOnly or not len(car_docs):
+    if not len(car_docs):
       continue
 
     # A platform can include multiple car models
