@@ -38,7 +38,6 @@ def build_sorted_car_list(platforms, footnotes) -> dict[str, dict[str, list[str]
       _model = _car_docs.model
       _years = _car_docs.year_list
       _package = _car_docs.package if _car_docs.package else []
-      _support = _car_docs.support_link if _car_docs.support_link else []
 
       cars[_name] = {
         "platform": _platform,
