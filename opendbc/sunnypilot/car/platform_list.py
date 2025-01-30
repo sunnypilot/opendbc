@@ -18,7 +18,7 @@ def get_car_list() -> dict[str, dict[str, list[str] | str]]:
 def build_sorted_car_list(platforms, footnotes) -> dict[str, dict[str, list[str] | str]]:
   cars: dict[str, dict[str, list[str] | str]] = {}
   for model, platform in platforms.items():
-    car_docs = platform.config.car_docs
+    car_docs = platform.config.get_all_docs()
     CP = get_params_for_docs(model, platform)
 
     if CP.dashcamOnly or not len(car_docs):
