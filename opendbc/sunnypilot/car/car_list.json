@@ -120,26 +120,6 @@
     ],
     "package": "Driver Confidence Package 2"
   },
-  "Buick Regal Essence 2018": {
-    "platform": "BUICK_REGAL",
-    "make": "Buick",
-    "brand": "gm",
-    "model": "Regal Essence",
-    "year": [
-      "2018"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
-  "Cadillac ATS Premium Performance 2018": {
-    "platform": "CADILLAC_ATS",
-    "make": "Cadillac",
-    "brand": "gm",
-    "model": "ATS Premium Performance",
-    "year": [
-      "2018"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
   "Cadillac Escalade 2017": {
     "platform": "CADILLAC_ESCALADE",
     "make": "Cadillac",
@@ -212,16 +192,6 @@
       "2020",
       "2021",
       "2022"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
-  "Chevrolet Malibu Premier 2017": {
-    "platform": "CHEVROLET_MALIBU",
-    "make": "Chevrolet",
-    "brand": "gm",
-    "model": "Malibu Premier",
-    "year": [
-      "2017"
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
@@ -450,40 +420,6 @@
     ],
     "package": "Co-Pilot360 Assist+"
   },
-  "Ford F-150 2022-23": {
-    "platform": "FORD_F_150_MK14",
-    "make": "Ford",
-    "brand": "ford",
-    "model": "F-150",
-    "year": [
-      "2022",
-      "2023"
-    ],
-    "package": "Co-Pilot360 Active 2.0"
-  },
-  "Ford F-150 Hybrid 2022-23": {
-    "platform": "FORD_F_150_MK14",
-    "make": "Ford",
-    "brand": "ford",
-    "model": "F-150 Hybrid",
-    "year": [
-      "2022",
-      "2023"
-    ],
-    "package": "Co-Pilot360 Active 2.0"
-  },
-  "Ford F-150 Lightning 2021-23": {
-    "platform": "FORD_F_150_LIGHTNING_MK1",
-    "make": "Ford",
-    "brand": "ford",
-    "model": "F-150 Lightning",
-    "year": [
-      "2021",
-      "2022",
-      "2023"
-    ],
-    "package": "Co-Pilot360 Active 2.0"
-  },
   "Ford Focus 2018": {
     "platform": "FORD_FOCUS_MK4",
     "make": "Ford",
@@ -581,28 +517,6 @@
       "2024"
     ],
     "package": "Co-Pilot360 Assist"
-  },
-  "Ford Mustang Mach-E 2021-23": {
-    "platform": "FORD_MUSTANG_MACH_E_MK1",
-    "make": "Ford",
-    "brand": "ford",
-    "model": "Mustang Mach-E",
-    "year": [
-      "2021",
-      "2022",
-      "2023"
-    ],
-    "package": "Co-Pilot360 Active 2.0"
-  },
-  "Ford Ranger 2024": {
-    "platform": "FORD_RANGER_MK2",
-    "make": "Ford",
-    "brand": "ford",
-    "model": "Ranger",
-    "year": [
-      "2024"
-    ],
-    "package": "Adaptive Cruise Control with Lane Centering"
   },
   "Genesis G70 2018": {
     "platform": "GENESIS_G70",
@@ -774,27 +688,6 @@
       "2021"
     ],
     "package": "Driver Alert Package II"
-  },
-  "GMC Yukon 2019-20": {
-    "platform": "GMC_YUKON",
-    "make": "GMC",
-    "brand": "gm",
-    "model": "Yukon",
-    "year": [
-      "2019",
-      "2020"
-    ],
-    "package": "Adaptive Cruise Control (ACC) & LKAS"
-  },
-  "Holden Astra 2017": {
-    "platform": "HOLDEN_ASTRA",
-    "make": "Holden",
-    "brand": "gm",
-    "model": "Astra",
-    "year": [
-      "2017"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
   },
   "Honda Accord 2018-22": {
     "platform": "HONDA_ACCORD",
@@ -1847,16 +1740,6 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Kia Optima Hybrid 2017": {
-    "platform": "KIA_OPTIMA_H",
-    "make": "Kia",
-    "brand": "hyundai",
-    "model": "Optima Hybrid",
-    "year": [
-      "2017"
-    ],
-    "package": "Advanced Smart Cruise Control"
-  },
   "Kia Optima Hybrid 2019": {
     "platform": "KIA_OPTIMA_H_G4_FL",
     "make": "Kia",
@@ -2292,44 +2175,6 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
-  "Mazda 3 2017-18": {
-    "platform": "MAZDA_3",
-    "make": "Mazda",
-    "brand": "mazda",
-    "model": "3",
-    "year": [
-      "2017",
-      "2018"
-    ],
-    "package": "All"
-  },
-  "Mazda 6 2017-20": {
-    "platform": "MAZDA_6",
-    "make": "Mazda",
-    "brand": "mazda",
-    "model": "6",
-    "year": [
-      "2017",
-      "2018",
-      "2019",
-      "2020"
-    ],
-    "package": "All"
-  },
-  "Mazda CX-5 2017-21": {
-    "platform": "MAZDA_CX5",
-    "make": "Mazda",
-    "brand": "mazda",
-    "model": "CX-5",
-    "year": [
-      "2017",
-      "2018",
-      "2019",
-      "2020",
-      "2021"
-    ],
-    "package": "All"
-  },
   "Mazda CX-5 2022-25": {
     "platform": "MAZDA_CX5_2022",
     "make": "Mazda",
@@ -2340,20 +2185,6 @@
       "2023",
       "2024",
       "2025"
-    ],
-    "package": "All"
-  },
-  "Mazda CX-9 2016-20": {
-    "platform": "MAZDA_CX9",
-    "make": "Mazda",
-    "brand": "mazda",
-    "model": "CX-9",
-    "year": [
-      "2016",
-      "2017",
-      "2018",
-      "2019",
-      "2020"
     ],
     "package": "All"
   },
@@ -2432,45 +2263,6 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
-  "Ram 2500 2020-24": {
-    "platform": "RAM_HD_5TH_GEN",
-    "make": "Ram",
-    "brand": "chrysler",
-    "model": "2500",
-    "year": [
-      "2020",
-      "2021",
-      "2022",
-      "2023",
-      "2024"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
-  "Ram 3500 2019-22": {
-    "platform": "RAM_HD_5TH_GEN",
-    "make": "Ram",
-    "brand": "chrysler",
-    "model": "3500",
-    "year": [
-      "2019",
-      "2020",
-      "2021",
-      "2022"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
-  "SEAT Alhambra 2018-20": {
-    "platform": "VOLKSWAGEN_SHARAN_MK2",
-    "make": "SEAT",
-    "brand": "volkswagen",
-    "model": "Alhambra",
-    "year": [
-      "2018",
-      "2019",
-      "2020"
-    ],
-    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
-  },
   "SEAT Ateca 2016-23": {
     "platform": "SEAT_ATECA_MK1",
     "make": "SEAT",
@@ -2516,16 +2308,6 @@
     ],
     "package": "All"
   },
-  "Subaru Ascent 2023": {
-    "platform": "SUBARU_ASCENT_2023",
-    "make": "Subaru",
-    "brand": "subaru",
-    "model": "Ascent",
-    "year": [
-      "2023"
-    ],
-    "package": "All"
-  },
   "Subaru Crosstrek 2018-19": {
     "platform": "SUBARU_IMPREZA",
     "make": "Subaru",
@@ -2550,27 +2332,6 @@
     ],
     "package": "EyeSight Driver Assistance"
   },
-  "Subaru Crosstrek Hybrid 2020": {
-    "platform": "SUBARU_CROSSTREK_HYBRID",
-    "make": "Subaru",
-    "brand": "subaru",
-    "model": "Crosstrek Hybrid",
-    "year": [
-      "2020"
-    ],
-    "package": "EyeSight Driver Assistance"
-  },
-  "Subaru Forester 2017-18": {
-    "platform": "SUBARU_FORESTER_PREGLOBAL",
-    "make": "Subaru",
-    "brand": "subaru",
-    "model": "Forester",
-    "year": [
-      "2017",
-      "2018"
-    ],
-    "package": "EyeSight Driver Assistance"
-  },
   "Subaru Forester 2019-21": {
     "platform": "SUBARU_FORESTER",
     "make": "Subaru",
@@ -2582,28 +2343,6 @@
       "2021"
     ],
     "package": "All"
-  },
-  "Subaru Forester 2022-24": {
-    "platform": "SUBARU_FORESTER_2022",
-    "make": "Subaru",
-    "brand": "subaru",
-    "model": "Forester",
-    "year": [
-      "2022",
-      "2023",
-      "2024"
-    ],
-    "package": "All"
-  },
-  "Subaru Forester Hybrid 2020": {
-    "platform": "SUBARU_FORESTER_HYBRID",
-    "make": "Subaru",
-    "brand": "subaru",
-    "model": "Forester Hybrid",
-    "year": [
-      "2020"
-    ],
-    "package": "EyeSight Driver Assistance"
   },
   "Subaru Impreza 2017-19": {
     "platform": "SUBARU_IMPREZA",
@@ -2629,19 +2368,6 @@
     ],
     "package": "EyeSight Driver Assistance"
   },
-  "Subaru Legacy 2015-18": {
-    "platform": "SUBARU_LEGACY_PREGLOBAL",
-    "make": "Subaru",
-    "brand": "subaru",
-    "model": "Legacy",
-    "year": [
-      "2015",
-      "2016",
-      "2017",
-      "2018"
-    ],
-    "package": "EyeSight Driver Assistance"
-  },
   "Subaru Legacy 2020-22": {
     "platform": "SUBARU_LEGACY",
     "make": "Subaru",
@@ -2654,29 +2380,6 @@
     ],
     "package": "All"
   },
-  "Subaru Outback 2015-17": {
-    "platform": "SUBARU_OUTBACK_PREGLOBAL",
-    "make": "Subaru",
-    "brand": "subaru",
-    "model": "Outback",
-    "year": [
-      "2015",
-      "2016",
-      "2017"
-    ],
-    "package": "EyeSight Driver Assistance"
-  },
-  "Subaru Outback 2018-19": {
-    "platform": "SUBARU_OUTBACK_PREGLOBAL_2018",
-    "make": "Subaru",
-    "brand": "subaru",
-    "model": "Outback",
-    "year": [
-      "2018",
-      "2019"
-    ],
-    "package": "EyeSight Driver Assistance"
-  },
   "Subaru Outback 2020-22": {
     "platform": "SUBARU_OUTBACK",
     "make": "Subaru",
@@ -2686,16 +2389,6 @@
       "2020",
       "2021",
       "2022"
-    ],
-    "package": "All"
-  },
-  "Subaru Outback 2023": {
-    "platform": "SUBARU_OUTBACK_2023",
-    "make": "Subaru",
-    "brand": "subaru",
-    "model": "Outback",
-    "year": [
-      "2023"
     ],
     "package": "All"
   },
@@ -2839,35 +2532,6 @@
       "2022"
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
-  },
-  "Tesla Model 3 2019-24": {
-    "platform": "TESLA_MODEL_3",
-    "make": "Tesla",
-    "brand": "tesla",
-    "model": "Model 3",
-    "year": [
-      "2019",
-      "2020",
-      "2021",
-      "2022",
-      "2023",
-      "2024"
-    ],
-    "package": "Traffic Aware Cruise Control"
-  },
-  "Tesla Model Y 2020-24": {
-    "platform": "TESLA_MODEL_Y",
-    "make": "Tesla",
-    "brand": "tesla",
-    "model": "Model Y",
-    "year": [
-      "2020",
-      "2021",
-      "2022",
-      "2023",
-      "2024"
-    ],
-    "package": "Traffic Aware Cruise Control"
   },
   "Toyota Alphard 2019-20": {
     "platform": "TOYOTA_ALPHARD_TSS2",
@@ -3493,26 +3157,6 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
-  "Volkswagen Caddy 2019": {
-    "platform": "VOLKSWAGEN_CADDY_MK3",
-    "make": "Volkswagen",
-    "brand": "volkswagen",
-    "model": "Caddy",
-    "year": [
-      "2019"
-    ],
-    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
-  },
-  "Volkswagen Caddy Maxi 2019": {
-    "platform": "VOLKSWAGEN_CADDY_MK3",
-    "make": "Volkswagen",
-    "brand": "volkswagen",
-    "model": "Caddy Maxi",
-    "year": [
-      "2019"
-    ],
-    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
-  },
   "Volkswagen California 2021-23": {
     "platform": "VOLKSWAGEN_TRANSPORTER_T61",
     "make": "Volkswagen",
@@ -3717,19 +3361,6 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
-  "Volkswagen Jetta 2015-18": {
-    "platform": "VOLKSWAGEN_JETTA_MK6",
-    "make": "Volkswagen",
-    "brand": "volkswagen",
-    "model": "Jetta",
-    "year": [
-      "2015",
-      "2016",
-      "2017",
-      "2018"
-    ],
-    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
-  },
   "Volkswagen Jetta 2018-23": {
     "platform": "VOLKSWAGEN_JETTA_MK7",
     "make": "Volkswagen",
@@ -3808,21 +3439,6 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
-  "Volkswagen Passat NMS 2017-22": {
-    "platform": "VOLKSWAGEN_PASSAT_NMS",
-    "make": "Volkswagen",
-    "brand": "volkswagen",
-    "model": "Passat NMS",
-    "year": [
-      "2017",
-      "2018",
-      "2019",
-      "2020",
-      "2021",
-      "2022"
-    ],
-    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
-  },
   "Volkswagen Polo 2018-23": {
     "platform": "VOLKSWAGEN_POLO_MK6",
     "make": "Volkswagen",
@@ -3850,20 +3466,6 @@
       "2021",
       "2022",
       "2023"
-    ],
-    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
-  },
-  "Volkswagen Sharan 2018-22": {
-    "platform": "VOLKSWAGEN_SHARAN_MK2",
-    "make": "Volkswagen",
-    "brand": "volkswagen",
-    "model": "Sharan",
-    "year": [
-      "2018",
-      "2019",
-      "2020",
-      "2021",
-      "2022"
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
