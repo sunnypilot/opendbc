@@ -2,6 +2,7 @@ import numpy as np
 from opendbc.can.packer import CANPacker
 from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, common_fault_avoidance, make_tester_present_msg, structs
 from opendbc.car.common.conversions import Conversions as CV
+from openpilot.common.params import Params
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
 from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.hyundaicanfd import CanBus
@@ -10,6 +11,7 @@ from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarController
+from opendbc.sunnypilot.car.hyundai.longitudinal_tuning import HKGLongitudinalController, JerkOutput
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -50,6 +52,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     EsccCarController.__init__(self, CP, CP_SP)
     MadsCarController.__init__(self)
+    HKGLongitudinalController.__init__(self, CP)
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_names[Bus.pt])
@@ -84,9 +87,21 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     self.apply_torque_last = apply_torque
 
     # accel + longitudinal
-    accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    if Params().get_bool("HKGBraking") and self.tuning is not None:
+      accel = self.tuning.calculate_limited_accel(actuators.accel, actuators, CS)
+      accel = float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    else:
+      accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
+    normal_jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
+
+    if self.tuning is not None:
+      self.tuning.make_jerk(CS, accel, actuators)
+      self.jerk = self.tuning.get_jerk()
+    else:
+      self.jerk = JerkOutput(normal_jerk, normal_jerk, 0.0, 0.0)
 
     # HUD messages
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
@@ -136,7 +151,9 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
         else:
           can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))
         if self.frame % 2 == 0:
-          can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
+          can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel,
+                                                           self.jerk.jerk_upper_limit, self.jerk.jerk_lower_limit,
+                                                           stopping, CC.cruiseControl.override,
                                                            set_speed_in_units, hud_control,
                                                            CS.main_cruise_enabled))
           self.accel_last = accel
@@ -154,11 +171,11 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
         can_sends.extend(self.create_button_messages(CC, CS, use_clu11=True))
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
-        # TODO: unclear if this is needed
-        jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
         use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
-        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
-                                                        hud_control, set_speed_in_units, stopping,
+        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel,
+                                                        self.jerk.jerk_upper_limit, self.jerk.jerk_lower_limit,
+                                                        self.jerk.cb_upper, self.jerk.cb_lower,
+                                                        int(self.frame / 2), hud_control, set_speed_in_units, stopping,
                                                         CC.cruiseControl.override, use_fca, self.CP,
                                                         CS.main_cruise_enabled, self.ESCC))
 

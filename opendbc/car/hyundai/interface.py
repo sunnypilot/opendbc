@@ -1,3 +1,5 @@
+from panda import Panda
+from openpilot.common.params import Params
 from opendbc.car import Bus, get_safety_config, structs
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, \
@@ -9,6 +11,7 @@ from opendbc.car.disable_ecu import disable_ecu
 
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
+from opendbc.sunnypilot.car.hyundai.longitudinal_tuning import HKGLongitudinalController
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -124,6 +127,10 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStarting = 0.1
     ret.startAccel = 1.0
     ret.longitudinalActuatorDelay = 0.5
+
+    # Add HKG longitudinal support
+    if Params().get_bool("HKGtuning"):
+      HKGLongitudinalController(ret).apply_tune(ret)
 
     if ret.openpilotLongitudinalControl:
       ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.LONG.value
