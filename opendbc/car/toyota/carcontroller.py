@@ -41,8 +41,10 @@ RIGHT_BLINDSPOT = b"\x42"
 def get_long_tune(CP, params):
   if CP.carFingerprint in TSS2_CAR:
     if Params().get_bool("ToyotaTSS2Long"):
-      kiBP = [0.,  1.,  5.,   8.,   12.,  20.,  27.]
-      kiV = [0.35, 0.32, 0.22, 0.205, 0.203, 0.17, 0.10]
+      #kiBP = [0.,  1.,   1.5,    12.,  20.,  27.]
+      #kiV = [0.33, 0.332, 0.31,  0.20, 0.17, 0.10]
+      kiBP = [0.,   1.,     14.,   20.,   27.,   40]
+      kiV = [0.337,  0.337, 0.188, 0.174, 0.098, 0.09]
     else:
       kiBP = [2., 5.]
       kiV = [0.5, 0.25]
