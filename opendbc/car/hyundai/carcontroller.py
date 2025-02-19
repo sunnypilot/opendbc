@@ -47,7 +47,7 @@ def process_hud_alert(enabled, fingerprint, hud_control):
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-class CarController(CarControllerBase, EsccCarController, MadsCarController):
+class CarController(CarControllerBase, EsccCarController, HKGLongitudinalController, MadsCarController):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     EsccCarController.__init__(self, CP, CP_SP)
@@ -88,24 +88,22 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
 
     # accel + longitudinal
     if Params().get_bool("HKGBraking") and self.tuning is not None:
-      accel = self.tuning.calculate_limited_accel(actuators.accel, actuators, CS)
-      accel = float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+      accel = self.tuning.calculate_accel(actuators.accel, actuators, CS)
     else:
       accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
-    normal_jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
-
-    if self.tuning is not None:
-      self.tuning.make_jerk(CS, accel, actuators)
-      self.jerk = self.tuning.get_jerk()
-    else:
-      self.jerk = JerkOutput(normal_jerk, normal_jerk, 0.0, 0.0)
 
     # HUD messages
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
                                                                                       hud_control)
+
+    if self.tuning is not None:
+      self.jerk = self.tuning.calculate_and_get_jerk(CS, accel, actuators)
+    else:
+      normal_jerk = self.calculate_normal_jerk(actuators.longControlState)
+      self.jerk = JerkOutput(normal_jerk, normal_jerk, 0.0, 0.0)
 
     can_sends = []
 
