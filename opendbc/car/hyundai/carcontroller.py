@@ -95,15 +95,15 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
 
-    # HUD messages
-    sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
-                                                                                      hud_control)
-
     if self.tuning is not None:
       self.jerk = self.tuning.calculate_and_get_jerk(CS, accel, actuators)
     else:
       normal_jerk = self.calculate_normal_jerk(actuators.longControlState)
       self.jerk = JerkOutput(normal_jerk, normal_jerk, 0.0, 0.0)
+
+    # HUD messages
+    sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
+                                                                                      hud_control)
 
     can_sends = []
 
