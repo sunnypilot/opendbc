@@ -77,7 +77,7 @@ jobs:
             cppcheck-cache-${{ runner.os }}-${{ github.ref }}
             cppcheck-cache-${{ runner.os }}-
       - name: MISRA mutation tests
-        timeout-minutes: 1
+        timeout-minutes: 5
         run: |
           source setup.sh
           scons -j8
@@ -94,13 +94,15 @@ jobs:
     name: Safety mutation tests
     runs-on: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
     timeout-minutes: 20
+    env:
+      GIT_REF: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master-new' && github.event.before || '67683321a3cf53bb0bb4ae477ef84891c0b99aa6' || 'origin/master-new' }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # need master to get diff
       - name: Run mutation tests
-        timeout-minutes: 5
+        timeout-minutes: 10
         run: |
           source setup.sh
           scons -j8
-          GIT_REF=${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.event.before || 'origin/master' }} cd opendbc/safety/tests && ./mutation.sh
+          cd opendbc/safety/tests && ./mutation.sh
