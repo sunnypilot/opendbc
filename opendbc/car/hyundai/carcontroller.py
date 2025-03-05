@@ -98,7 +98,7 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
     if self.tuning is not None:
       self.jerk = self.tuning.calculate_and_get_jerk(CS, accel, actuators)
     else:
-      normal_jerk = self.calculate_normal_jerk(actuators.longControlState)
+      normal_jerk = self.calculate_normal_jerk(self.CP, actuators.longControlState)
       self.jerk = JerkOutput(normal_jerk, normal_jerk, 0.0, 0.0)
 
     # HUD messages
@@ -201,7 +201,8 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
     can_sends = []
     if use_clu11:
       if CC.cruiseControl.cancel:
-        can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP))
+        if not (self.tuning is not None and self.tuning.should_delay_cancel(CS)):
+          can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP))
       elif CC.cruiseControl.resume:
         # send resume at a max freq of 10Hz
         if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
