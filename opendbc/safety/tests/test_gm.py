@@ -165,6 +165,7 @@ class TestGmAscmSafety(GmLongitudinalBase, TestGmSafetyBase):
 
 class TestGmCameraSafetyBase(TestGmSafetyBase):
 
+  FWD_BUS_LOOKUP = {0: 2, 2: 0}
 
   @classmethod
   def setUpClass(cls):
