@@ -326,6 +326,12 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
         }
       }
     }
+    // SP: auto brake hold https://github.com/AlexandreSato
+    if ((addr == 0x344) && (alternative_experience & ALT_EXP_ALLOW_AEB)) {
+      if (vehicle_moving || gas_pressed || !acc_main_on) {
+        tx = false;
+      }
+    }
   }
 
   // UDS: Only tester present ("\x0F\x02\x3E\x00\x00\x00\x00\x00") allowed on diagnostics address
@@ -461,7 +467,10 @@ static bool toyota_fwd_hook(int bus_num, int addr) {
     is_lkas_msg |= toyota_secoc && (addr == 0x131);
     // in TSS2 the camera does ACC as well, so filter 0x343
     bool is_acc_msg = (addr == 0x343);
-    block_msg = is_lkas_msg || (is_acc_msg && !toyota_stock_longitudinal);
+    // SP: block AEB when auto brake hold is active, unblock AEB when auto brake hold is not active
+    bool is_aeb_msg = (addr == 0x344);
+    block_msg = is_lkas_msg || (is_acc_msg && !toyota_stock_longitudinal) ||
+                     (is_aeb_msg && (alternative_experience & ALT_EXP_ALLOW_AEB) && !vehicle_moving && !gas_pressed && acc_main_on);
   }
 
   return block_msg;
