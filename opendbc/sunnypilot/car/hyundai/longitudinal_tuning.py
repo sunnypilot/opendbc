@@ -1,11 +1,10 @@
 import numpy as np
-from typing import Any
+from cereal import messaging, car
 from openpilot.common.filter_simple import FirstOrderFilter
-from opendbc.car import structs
-from opendbc.car import DT_CTRL
 from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
+from opendbc.car import DT_CTRL, structs
 from opendbc.car.hyundai.values import HyundaiFlags, CarControllerParams
 from opendbc.sunnypilot.car.hyundai.longitudinal_config import Cartuning
 
@@ -20,7 +19,7 @@ class JerkOutput:
 
 class HKGLongitudinalTuning:
   """Longitudinal tuning methodology for Hyundai vehicles."""
-  def __init__(self, CP) -> None:
+  def __init__(self, CP: structs.CarParams) -> None:
     self.CP = CP
     self._setup_controllers()
     self._init_state()
@@ -57,7 +56,7 @@ class HKGLongitudinalTuning:
   def _setup_car_config(self) -> None:
     self.car_config = Cartuning.get_car_config(self.CP)
 
-  def update_mpc_mode(self, sm):
+  def update_mpc_mode(self, sm: messaging.SubMaster):
     """Update MPC mode with transition handling."""
     new_mode = 'blended' if sm['selfdriveState'].experimentalMode else 'acc'
 
@@ -78,7 +77,7 @@ class HKGLongitudinalTuning:
       if self.mode_transition_timer >= self.mode_transition_duration:
         self.transitioning = False
 
-  def make_jerk(self, CS, actuators):
+  def make_jerk(self, CS: car.CarState, actuators) -> float:
     self.jerk_count += 1
     # Handle cancel state to prevent cruise fault
     if not CS.out.cruiseState.enabled or CS.out.gasPressed or CS.out.brakePressed:
@@ -109,12 +108,12 @@ class HKGLongitudinalTuning:
           self.cb_upper = float(np.clip(0.20 + CS.out.aEgo * 0.20, 0.0, 1.0))
           self.cb_lower = float(np.clip(0.20 + CS.out.aEgo * 0.20, 0.0, 1.0))
         else:
-          # When at low speeds, or using smoother braking, we don't want ComfortBands to be affecting stopping control.
+          # When at low speeds, or using smoother braking button, we don't want ComfortBands to be effecting stopping control.
           self.cb_upper = self.cb_lower = 0.0
 
     return self.jerk
 
-  def handle_cruise_cancel(self, CS):
+  def handle_cruise_cancel(self, CS: car.CarState):
     """Handle cruise control cancel to prevent faults."""
     if not CS.out.cruiseState.enabled or CS.out.gasPressed or CS.out.brakePressed:
       self.accel_last = 0.0
@@ -123,14 +122,14 @@ class HKGLongitudinalTuning:
       return True
     return False
 
-  def should_delay_cancel(self, CS):
+  def should_delay_cancel(self, CS: car.CarState):
     """Check if cancel button press should be delayed based on recent deceleration."""
     if CS.out.aEgo < -0.1:
       self.last_decel_time = self.DT_CTRL * self.jerk_count
     current_time = self.DT_CTRL * self.jerk_count
     return (current_time - self.last_decel_time) < self.min_cancel_delay and CS.out.aEgo < 0
 
-  def calculate_limited_accel(self, accel, actuators, CS):
+  def calculate_limited_accel(self, accel, actuators, CS: car.CarState) -> float:
     """Adaptive acceleration limiting."""
     if self.handle_cruise_cancel(CS):
       return accel
@@ -159,7 +158,7 @@ class HKGLongitudinalTuning:
     self.accel_last = accel
     return accel
 
-  def calculate_accel(self, accel, actuators, CS):
+  def calculate_accel(self, accel, actuators, CS: car.CarState) -> float:
     """Calculate acceleration with cruise control status handling."""
     if self.handle_cruise_cancel(CS):
       return 0.0
@@ -167,7 +166,7 @@ class HKGLongitudinalTuning:
     return float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
 
-  def apply_tune(self, CP: Any) -> None:
+  def apply_tune(self, CP: structs.CarParams) -> None:
     config = self.car_config
     CP.vEgoStopping = config.vego_stopping
     CP.vEgoStarting = config.vego_starting
@@ -184,7 +183,7 @@ class HKGLongitudinalController:
     val = Params().get(key)
     return val in [b"1", b"2"]
 
-  def __init__(self, CP):
+  def __init__(self, CP: structs.CarParams):
     self.CP = CP
     self.tuning = HKGLongitudinalTuning(CP) if self.param("HKGtuning") else None
     self.jerk = None
@@ -193,7 +192,7 @@ class HKGLongitudinalController:
     self.cb_upper = 0.0
     self.cb_lower = 0.0
 
-  def apply_tune(self, CP):
+  def apply_tune(self, CP: structs.CarParams):
     if self.param("HKGtuning"):
       self.tuning.apply_tune(CP)
     else:
@@ -219,7 +218,7 @@ class HKGLongitudinalController:
         self.cb_lower,
       )
 
-  def calculate_and_get_jerk(self, actuators, CS, long_control_state: LongCtrlState) -> JerkOutput:
+  def calculate_and_get_jerk(self, actuators, CS: car.CarState, long_control_state: LongCtrlState) -> JerkOutput:
     """Calculate jerk based on tuning and return JerkOutput."""
     if self.tuning is not None:
       self.tuning.make_jerk(CS, actuators)
@@ -232,7 +231,7 @@ class HKGLongitudinalController:
       self.cb_lower = 0.0
     return self.get_jerk()
 
-  def calculate_accel(self, accel, actuators, CS) -> float:
+  def calculate_accel(self, accel, actuators, CS: car.CarState) -> float:
     """Calculate acceleration based on tuning and return the value."""
     if Params().get_bool("HKGBraking") and self.tuning is not None:
       accel = self.tuning.calculate_accel(actuators.accel, actuators, CS)
