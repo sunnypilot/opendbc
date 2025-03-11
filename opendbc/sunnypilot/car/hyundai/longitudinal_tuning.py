@@ -105,11 +105,11 @@ class HKGLongitudinalTuning:
       if self.CP.radarUnavailable:
         self.cb_upper = self.cb_lower = 0.0
       else:
-        if CS.out.vEgo > 5.0:
+        if(not Params().get_bool("HKGBraking")) and (CS.out.vEgo > 5.0):
           self.cb_upper = float(np.clip(0.20 + CS.out.aEgo * 0.20, 0.0, 1.0))
           self.cb_lower = float(np.clip(0.20 + CS.out.aEgo * 0.20, 0.0, 1.0))
         else:
-          # When at low speeds, we don't want ComfortBands to be affecting stopping control.
+          # When at low speeds, or using smoother braking, we don't want ComfortBands to be affecting stopping control.
           self.cb_upper = self.cb_lower = 0.0
 
     return self.jerk
