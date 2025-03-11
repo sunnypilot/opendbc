@@ -2,7 +2,6 @@ import numpy as np
 from opendbc.can.packer import CANPacker
 from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, common_fault_avoidance, make_tester_present_msg, structs
 from opendbc.car.common.conversions import Conversions as CV
-from openpilot.common.params import Params
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
 from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.hyundaicanfd import CanBus
@@ -11,7 +10,7 @@ from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarController
-from opendbc.sunnypilot.car.hyundai.longitudinal_tuning import HKGLongitudinalController, JerkOutput
+from opendbc.sunnypilot.car.hyundai.longitudinal_tuning import HKGLongitudinalController
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -87,19 +86,11 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
     self.apply_torque_last = apply_torque
 
     # accel + longitudinal
-    if Params().get_bool("HKGBraking") and self.tuning is not None:
-      accel = self.tuning.calculate_accel(actuators.accel, actuators, CS)
-    else:
-      accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
-
+    accel = self.calculate_accel(actuators.accel, actuators, CS)
+    accel = float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    self.jerk = self.calculate_and_get_jerk(actuators, CS, actuators.longControlState)
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
-
-    if self.tuning is not None:
-      self.jerk = self.tuning.calculate_and_get_jerk(CS, accel, actuators)
-    else:
-      normal_jerk = self.calculate_normal_jerk(self.CP, actuators.longControlState)
-      self.jerk = JerkOutput(normal_jerk, normal_jerk, 0.0, 0.0)
 
     # HUD messages
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
