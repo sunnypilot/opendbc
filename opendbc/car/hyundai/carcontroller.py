@@ -86,7 +86,7 @@ class CarController(CarControllerBase, EsccCarController, HKGLongitudinalControl
     self.apply_torque_last = apply_torque
 
     # accel + longitudinal
-    accel = self.calculate_accel(actuators.accel, actuators, CS)
+    accel = self.calculate_accel(actuators, CS)
     accel = float(np.clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     self.jerk = self.calculate_and_get_jerk(actuators, CS, actuators.longControlState)
     stopping = actuators.longControlState == LongCtrlState.stopping
