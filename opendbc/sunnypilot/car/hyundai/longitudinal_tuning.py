@@ -139,7 +139,7 @@ class HKGLongitudinalTuning:
         self.cb_upper = self.cb_lower = 0.0
       else:
         self.cb_upper = self.cb_lower = 0.0
-        #if(not Params().get_bool("HKGBraking")) and (CS.out.vEgo > 5.0):
+        #if(not Params().get_bool("HyundaiSmootherBraking")) and (CS.out.vEgo > 5.0):
         #  self.cb_upper = float(np.clip(0.20 + actuators.accel * 0.20, 0.0, 1.0))
         #  self.cb_lower = float(np.clip(0.10 + actuators.accel * 0.20, 0.0, 1.0))
         #else:
@@ -233,7 +233,7 @@ class HKGLongitudinalController:
 
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
-    self.tuning = HKGLongitudinalTuning(CP) if self.param("HKGtuning") else None
+    self.tuning = HKGLongitudinalTuning(CP) if self.param("HyundaiLongTune") else None
     self.jerk = None
     self.jerk_upper_limit = 0.0
     self.jerk_lower_limit = 0.0
@@ -241,7 +241,7 @@ class HKGLongitudinalController:
     self.cb_lower = 0.0
 
   def apply_tune(self, CP: structs.CarParams):
-    if self.param("HKGtuning"):
+    if self.param("HyundaiLongTune"):
       self.tuning.apply_tune(CP)
     else:
       CP.vEgoStopping = 0.5
@@ -281,7 +281,7 @@ class HKGLongitudinalController:
 
   def calculate_accel(self, actuators: structs.CarControl.Actuators, CS: structs.CarState) -> float:
     """Calculate acceleration based on tuning and return the value."""
-    if Params().get_bool("HKGBraking") and self.tuning is not None:
+    if Params().get_bool("HyundaiSmootherBraking") and self.tuning is not None:
       accel = self.tuning.calculate_accel(actuators, CS)
     else:
       accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
