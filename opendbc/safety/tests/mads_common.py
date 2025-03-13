@@ -416,3 +416,5 @@ class MadsSafetyTestBase(unittest.TestCase):
 
     finally:
       self._mads_states_cleanup()
+
+  # TODO-SP: controls_allowed and controls_allowed_lat check for steering safety tests
