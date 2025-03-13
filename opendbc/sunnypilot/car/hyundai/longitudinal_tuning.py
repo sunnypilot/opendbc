@@ -52,6 +52,7 @@ class HKGLongitudinalTuning:
 
   def _setup_controllers(self) -> None:
     self.mpc = LongitudinalMpc
+    self.sm = messaging.SubMaster(['selfdriveState'])
     self.long_control = LongControl(self.CP)
     self.DT_CTRL = DT_CTRL
     self.params = Params()
@@ -80,9 +81,9 @@ class HKGLongitudinalTuning:
   def _setup_car_config(self) -> None:
     self.car_config = Cartuning.get_car_config(self.CP)
 
-  def update_mpc_mode(self, sm: messaging.SubMaster):
+  def update_mpc_mode(self, sm: messaging.SubMaster) -> None:
     """Update MPC mode with transition handling."""
-    new_mode = 'blended' if sm['selfdriveState'].experimentalMode else 'acc'
+    new_mode = 'blended' if self.sm['selfdriveState'].experimentalMode else 'acc'
 
     # Detect mode change
     if new_mode != self.current_mode:
@@ -113,15 +114,21 @@ class HKGLongitudinalTuning:
       self.cb_upper = self.cb_lower = 0.0
       return 0.0
 
-    current_accel = actuators.accel
-    self.jerk = (current_accel - self.accel_last_jerk) / self.DT_CTRL
-    self.accel_last_jerk = current_accel
-
-    j_error = CS.out.vCruise - CS.out.vEgo
-    if ((j_error < 5.0) and (actuators.accel > 0.0)):
-      jerk_max = akima_interp(j_error, np.array([5.0, 0.0]), np.array([self.car_config.jerk_limits[1], 0.5]))
+    if actuators.longControlState == LongCtrlState.stopping:
+      self.jerk = self.car_config.jerk_limits[0] / 2 - CS.out.aEgo
     else:
-      jerk_max = self.car_config.jerk_limits[1]
+      current_accel = CS.out.aEgo
+      self.jerk = (current_accel - self.accel_last_jerk)
+      self.accel_last_jerk = current_accel
+
+    # the jerk division by ΔT (delta time) leads to too high of values of jerk when ΔT is small, which is not realistic
+    # when calculating jerk as a time-based derivative this is a more accurate representation of jerk within OP.
+
+    base_jerk = self.jerk
+    xp = np.array([-3.5, -2.0, -1.0, 0.0, 1.0, 2.0])
+    fp = np.array([-2.5, -1.0, -0.5, 0.0, 0.5, 1.0])
+    self.jerk = akima_interp(base_jerk, xp, fp)
+    jerk_max = self.car_config.jerk_limits[1]
 
 
     if self.CP.flags & HyundaiFlags.CANFD.value:
@@ -136,7 +143,7 @@ class HKGLongitudinalTuning:
       else:
         if(not Params().get_bool("HKGBraking")) and (CS.out.vEgo > 5.0):
           self.cb_upper = float(np.clip(0.20 + actuators.accel * 0.20, 0.0, 1.0))
-          self.cb_lower = float(np.clip(0.18 + actuators.accel * 0.20, 0.0, 1.0))
+          self.cb_lower = float(np.clip(0.10 + actuators.accel * 0.20, 0.0, 1.0))
         else:
           # When at low speeds, or using smoother braking button, we don't want ComfortBands to be effecting stopping control.
           self.cb_upper = self.cb_lower = 0.0
@@ -164,25 +171,46 @@ class HKGLongitudinalTuning:
     if self.handle_cruise_cancel(CS):
       return actuators.accel
     self.make_jerk(CS, actuators)
-
+    self.update_mpc_mode(self.sm)
     target_accel = actuators.accel
 
     # Apply transition smoothing when switching modes
     if self.transitioning and self.prev_mode == 'acc' and self.current_mode == 'blended':
-      if (CS.out.vEgo > 9.0 and (target_accel < 0.0 and target_accel < self.accel_last)):
-        progress = min(1.0, self.mode_transition_timer / self.mode_transition_duration)
-        blend_factor = 1.0 - (1.0 - progress) * (1.0 - abs(target_accel / CarControllerParams.ACCEL_MIN))
-        target_accel = self.accel_last + (target_accel - self.accel_last) * blend_factor
+      if CS.out.vEgo > 4.0 and target_accel < 0.0 and target_accel < self.accel_last:
+        #(hard brake threshold)
+        hard_brake_threshold = CarControllerParams.ACCEL_MIN * 0.7  # About -2.45 m/s² (70% of max decel)
+
+        if target_accel < hard_brake_threshold:
+          # Hard braking case - allow faster response with minimal smoothing
+          progress = min(1.0, self.mode_transition_timer / (self.mode_transition_duration * 0.5))
+          target_accel = self.accel_last + (target_accel - self.accel_last) * progress
+        else:
+          progress = min(1.0, self.mode_transition_timer / self.mode_transition_duration)
+          brake_intensity = abs(target_accel / CarControllerParams.ACCEL_MIN)
+
+          # Interpolation points
+          xp = np.array([0.0, 0.3, 0.6, 0.9, 1.0])
+
+          # Parabolic smoothing offsets
+          if brake_intensity < 0.3:  # Light braking
+            fp = np.array([0.0, 0.1, 0.3, 0.7, 1.0])
+          elif brake_intensity < 0.6:  # Moderate braking
+            fp = np.array([0.0, 0.2, 0.5, 0.8, 1.0])
+          else:  # Heavy braking
+            fp = np.array([0.0, 0.3, 0.6, 0.9, 1.0])
+
+          smooth_progress = akima_interp(progress, xp, fp)
+          target_accel = self.accel_last + (target_accel - self.accel_last) * smooth_progress
 
     # For braking, vary rate based on braking intensity
     if (CS.out.vEgo > 9.0 and target_accel < 0.01):
       brake_ratio = np.clip(abs(target_accel / self.car_config.accel_limits[0]), 0.0, 1.0)
       # Gentler for light braking, more responsive for harder braking
-      accel_rate_down = self.DT_CTRL * akima_interp( brake_ratio, np.array([0.0, 0.3, 0.7, 1.0]),
+      accel_rate_down = self.DT_CTRL * akima_interp( brake_ratio, np.array([0.25, 0.5, 0.75, 1.0]),
                                                           np.array(self.car_config.brake_response))
       accel = max(target_accel, self.accel_last - accel_rate_down)
     else:
-      accel = target_accel
+      accel = actuators.accel
 
     self.accel_last = accel
     return accel
