@@ -160,10 +160,11 @@ static safety_config nissan_init(uint16_t param) {
 
   // EPS Location. false = V-CAN, true = C-CAN
   const int NISSAN_PARAM_ALT_EPS_BUS = 1;
-  const int NISSAN_PARAM_LEAF = 512;
+
+  const int NISSAN_PARAM_SP_LEAF = 1;
 
   nissan_alt_eps = GET_FLAG(param, NISSAN_PARAM_ALT_EPS_BUS);
-  nissan_leaf = GET_FLAG(param, NISSAN_PARAM_LEAF);
+  nissan_leaf = (current_safety_param_sp & NISSAN_PARAM_SP_LEAF) != 0;
   return BUILD_SAFETY_CFG(nissan_rx_checks, NISSAN_TX_MSGS);
 }
 
