@@ -31,6 +31,7 @@ class HyundaiSafetyFlagsSP:
   DEFAULT = 0
   ESCC = 1
   LONG_MAIN_CRUISE_TOGGLEABLE = 2
+  HAS_LDA_BUTTON = 4
 
 
 class HyundaiFlagsSP(IntFlag):
