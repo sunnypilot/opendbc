@@ -20,6 +20,7 @@
   {.msg = {{0x1B6, alt_eps_bus, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 10U}, { 0 }, { 0 }}},  \
 
 static bool nissan_alt_eps = false;
+static bool nissan_leaf = false;
 
 static void nissan_rx_hook(const CANPacket_t *to_push) {
   int bus = GET_BUS(to_push);
@@ -156,11 +157,34 @@ static safety_config nissan_init(uint16_t param) {
     NISSAN_PRO_PILOT_RX_CHECKS(1)
   };
 
+  static RxCheck nissan_alt_eps_rx_checks[] = {
+    NISSAN_COMMON_RX_CHECKS
+    NISSAN_PRO_PILOT_RX_CHECKS(2)
+  };
+
+  static RxCheck nissan_leaf_rx_checks[] = {
+    NISSAN_COMMON_RX_CHECKS
+  };
+
   // EPS Location. false = V-CAN, true = C-CAN
   const int NISSAN_PARAM_ALT_EPS_BUS = 1;
 
+  const int NISSAN_PARAM_SP_LEAF = 1;
+
   nissan_alt_eps = GET_FLAG(param, NISSAN_PARAM_ALT_EPS_BUS);
-  return BUILD_SAFETY_CFG(nissan_rx_checks, NISSAN_TX_MSGS);
+  nissan_leaf = (current_safety_param_sp & NISSAN_PARAM_SP_LEAF) != 0;
+
+  safety_config ret;
+  SET_TX_MSGS(NISSAN_TX_MSGS, ret);
+  if (nissan_leaf) {
+    SET_RX_CHECKS(nissan_leaf_rx_checks, ret);
+  } else if (nissan_alt_eps) {
+    SET_RX_CHECKS(nissan_alt_eps_rx_checks, ret);
+  } else {
+    SET_RX_CHECKS(nissan_rx_checks, ret);
+  }
+
+  return ret;
 }
 
 const safety_hooks nissan_hooks = {
