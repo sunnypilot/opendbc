@@ -28,13 +28,6 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
   packer: CANPackerPanda
   safety: libsafety_py.Panda
 
-  @classmethod
-  def setUpClass(cls):
-    if cls.__name__.endswith("Base"):
-      cls.packer = None
-      cls.safety = None
-      raise unittest.SkipTest
-
   def _torque_meas_msg(self, torque: int, driver_torque: int | None = None):
     values = {"STEER_TORQUE_EPS": (torque / self.EPS_SCALE) * 100.}
     if driver_torque is not None:
@@ -79,6 +72,10 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
   def _pcm_status_msg(self, enable):
     values = {"CRUISE_ACTIVE": enable}
     return self.packer.make_can_msg_panda("PCM_CRUISE", 0, values)
+
+  def _acc_state_msg(self, enabled):
+    values = {"MAIN_ON": enabled}
+    return self.packer.make_can_msg_panda("PCM_CRUISE_2", 0, values)
 
   def test_diagnostics(self, stock_longitudinal: bool = False):
     for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present
