@@ -120,6 +120,10 @@ int get_current_safety_param(void){
   return current_safety_param;
 }
 
+int get_current_safety_param_sp(void){
+  return current_safety_param_sp;
+}
+
 void set_timer(uint32_t t){
   timer.CNT = t;
 }
