@@ -82,7 +82,7 @@ class MadsSafetyTestBase(unittest.TestCase):
           self.safety.set_mads_params(enable_mads, False)
           self._rx(self._acc_state_msg(True))
           self._rx(self._speed_msg(0))
-          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat(), f"param_sp: {self.safety.get_current_safety_param_sp()}")
+          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
 
