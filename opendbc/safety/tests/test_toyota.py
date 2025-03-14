@@ -273,12 +273,17 @@ class TestToyotaAltBrakeSafety(TestToyotaSafetyTorque):
   def setUp(self):
     self.packer = CANPackerPanda("toyota_new_mc_pt_generated")
     self.safety = libsafety_py.libsafety
+    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE | ToyotaSafetyFlags.ALT_BRAKE)
     self.safety.init_tests()
 
   def _user_brake_msg(self, brake):
     values = {"BRAKE_PRESSED": brake}
     return self.packer.make_can_msg_panda("BRAKE_MODULE", 0, values)
+
+  def _acc_state_msg(self, enabled):
+    values = {"MAIN_ON": enabled}
+    return self.packer.make_can_msg_panda("DSU_CRUISE", 0, values)
 
   # No LTA message in the DBC
   def test_lta_steer_cmd(self):
