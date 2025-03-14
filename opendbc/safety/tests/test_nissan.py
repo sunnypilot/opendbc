@@ -99,10 +99,6 @@ class TestNissanSafetyAltEpsBus(TestNissanSafety):
     self.safety.set_safety_hooks(CarParams.SafetyModel.nissan, NissanSafetyFlags.ALT_EPS_BUS)
     self.safety.init_tests()
 
-  def _acc_state_msg(self, main_on):
-    values = {"CRUISE_ON": main_on}
-    return self.packer.make_can_msg_panda("PRO_PILOT", self.ACC_MAIN_BUS, values)
-
 
 class TestNissanLeafSafety(TestNissanSafety):
 

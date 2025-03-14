@@ -14,7 +14,7 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiSafetyFlagsSP
 
 # LDA button availability
 LDA_BUTTON = [
-  {"SAFETY_PARAM_SP": 0},
+  {"SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.DEFAULT},
   {"SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.HAS_LDA_BUTTON},
 ]
 
@@ -137,7 +137,7 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
     return self.packer.make_can_msg_panda("SCC11", self.SCC_BUS, values)
 
   def _lkas_button_msg(self, enabled):
-    if self.safety.get_current_safety_param_sp() & HyundaiSafetyFlagsSP.HAS_LDA_BUTTON:
+    if self.SAFETY_PARAM_SP & HyundaiSafetyFlagsSP.HAS_LDA_BUTTON:
       values = {"LDA_BTN": enabled}
       return self.packer.make_can_msg_panda("BCM_PO_11", 0, values)
     else:

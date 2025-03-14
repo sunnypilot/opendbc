@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+from parameterized import parameterized_class
 import numpy as np
 import random
 import unittest
 import itertools
 
 from opendbc.car.toyota.values import ToyotaSafetyFlags
+from opendbc.sunnypilot.car.toyota.values import ToyotaSafetyFlagsSP
 from opendbc.car.structs import CarParams
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
@@ -16,6 +18,11 @@ TOYOTA_COMMON_LONG_TX_MSGS = [[0x283, 0], [0x2E6, 0], [0x2E7, 0], [0x33E, 0], [0
                               [0x128, 1], [0x141, 1], [0x160, 1], [0x161, 1], [0x470, 1],  # DSU bus 1
                               [0x411, 0],  # PCS_HUD
                               [0x750, 0]]  # radar diagnostic address
+
+UNSUPPORTED_DSU = [
+  {"SAFETY_PARAM_SP": ToyotaSafetyFlagsSP.DEFAULT},
+  {"SAFETY_PARAM_SP": ToyotaSafetyFlagsSP.UNSUPPORTED_DSU},
+]
 
 
 class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSafetyTest):
@@ -124,6 +131,7 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
       self.assertFalse(self.safety.get_controls_allowed())
 
 
+@parameterized_class(UNSUPPORTED_DSU)
 class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):
 
   MAX_RATE_UP = 15
@@ -139,11 +147,19 @@ class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSaf
   MAX_INVALID_STEERING_FRAMES = 1
   MIN_VALID_STEERING_RT_INTERVAL = 170000  # a ~10% buffer, can send steer up to 110Hz
 
+  SAFETY_PARAM_SP: int = 0
+
   def setUp(self):
     self.packer = CANPackerPanda("toyota_nodsu_pt_generated")
     self.safety = libsafety_py.libsafety
+    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE)
     self.safety.init_tests()
+
+  def _acc_state_msg(self, enabled):
+    msg = "DSU_CRUISE" if self.SAFETY_PARAM_SP & ToyotaSafetyFlagsSP.UNSUPPORTED_DSU else "PCM_CRUISE_2"
+    values = {"MAIN_ON": enabled}
+    return self.packer.make_can_msg_panda(msg, 0, values)
 
 
 class TestToyotaSafetyAngle(TestToyotaSafetyBase, common.AngleSteeringSafetyTest):
@@ -296,11 +312,13 @@ class TestToyotaStockLongitudinalBase(TestToyotaSafetyBase):
         self.assertEqual(should_tx, self._tx(self._accel_msg(accel, cancel_req=1)))
 
 
+@parameterized_class(UNSUPPORTED_DSU)
 class TestToyotaStockLongitudinalTorque(TestToyotaStockLongitudinalBase, TestToyotaSafetyTorque):
 
   def setUp(self):
     self.packer = CANPackerPanda("toyota_nodsu_pt_generated")
     self.safety = libsafety_py.libsafety
+    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE | ToyotaSafetyFlags.STOCK_LONGITUDINAL)
     self.safety.init_tests()
 
