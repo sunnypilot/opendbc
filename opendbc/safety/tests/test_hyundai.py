@@ -324,7 +324,8 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libsafety_py.libsafety
-    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, HyundaiSafetyFlags.LONG | HyundaiSafetyFlagsSP.ESCC)
+    self.safety.set_current_safety_param_sp(HyundaiSafetyFlagsSP.ESCC)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, HyundaiSafetyFlags.LONG)
     self.safety.init_tests()
 
   def _accel_msg(self, accel, aeb_req=False, aeb_decel=0):
@@ -343,6 +344,7 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
 
   def test_disabled_ecu_alive(self):
     pass
+
 
 if __name__ == "__main__":
   unittest.main()
