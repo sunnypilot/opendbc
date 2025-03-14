@@ -132,12 +132,18 @@ class TestNissanLeafSafety(TestNissanSafety):
   def test_nissan_leaf_param(self):
     self.safety.set_current_safety_param_sp(NissanSafetyFlagsSP.LEAF)
     self.assertTrue(self.safety.get_current_safety_param_sp() & NissanSafetyFlagsSP.LEAF)
+    self._rx(self._acc_state_msg(True))
+    self.assertTrue(self.safety.get_acc_main_on())
 
-    self.safety.set_current_safety_param_sp(0)
+    self.safety.set_current_safety_param_sp(NissanSafetyFlagsSP.DEFAULT)
     self.assertFalse(self.safety.get_current_safety_param_sp() & NissanSafetyFlagsSP.LEAF)
+    self._rx(self._acc_state_msg(True))
+    self.assertFalse(self.safety.get_acc_main_on())
 
     self.safety.set_current_safety_param_sp(0xFF & ~NissanSafetyFlagsSP.LEAF)
     self.assertFalse(self.safety.get_current_safety_param_sp() & NissanSafetyFlagsSP.LEAF)
+    self._rx(self._acc_state_msg(True))
+    self.assertFalse(self.safety.get_acc_main_on())
 
 
 if __name__ == "__main__":
