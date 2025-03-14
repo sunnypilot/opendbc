@@ -273,7 +273,7 @@ class TestToyotaAltBrakeSafety(TestToyotaSafetyTorque):
   def setUp(self):
     self.packer = CANPackerPanda("toyota_new_mc_pt_generated")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
+    self.safety.set_current_safety_param_sp(ToyotaSafetyFlagsSP.UNSUPPORTED_DSU)
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE | ToyotaSafetyFlags.ALT_BRAKE)
     self.safety.init_tests()
 
