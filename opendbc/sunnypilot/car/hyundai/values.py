@@ -27,6 +27,12 @@ Last updated: July 29, 2024
 from enum import IntFlag
 
 
+class HyundaiSafetyFlagsSP:
+  DEFAULT = 0
+  ESCC = 1
+  LONG_MAIN_CRUISE_TOGGLEABLE = 2
+
+
 class HyundaiFlagsSP(IntFlag):
   """
     Flags for Hyundai specific quirks within sunnypilot.

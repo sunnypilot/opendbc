@@ -9,6 +9,8 @@ import opendbc.safety.tests.common as common
 from opendbc.safety.tests.common import CANPackerPanda
 from opendbc.safety.tests.hyundai_common import HyundaiButtonBase, HyundaiLongitudinalBase
 
+from opendbc.sunnypilot.car.hyundai.values import HyundaiSafetyFlagsSP
+
 
 # 4 bit checkusm used in some hyundai messages
 # lives outside the can packer because we never send this msg
@@ -322,7 +324,7 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libsafety_py.libsafety
-    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.FLAG_HYUNDAI_ESCC)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, HyundaiSafetyFlags.LONG | HyundaiSafetyFlagsSP.ESCC)
     self.safety.init_tests()
 
   def _accel_msg(self, accel, aeb_req=False, aeb_decel=0):

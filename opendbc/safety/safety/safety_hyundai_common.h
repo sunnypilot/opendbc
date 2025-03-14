@@ -17,6 +17,11 @@ enum {
   HYUNDAI_BTN_CANCEL = 4,
 };
 
+enum {
+  HYUNDAI_PARAM_SP_ESCC = 1,
+  HYUNDAI_PARAM_SP_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE = 2,
+};
+
 // common state
 extern bool hyundai_ev_gas_signal;
 bool hyundai_ev_gas_signal = false;
@@ -64,8 +69,6 @@ void hyundai_common_init(uint16_t param) {
   const int HYUNDAI_PARAM_ALT_LIMITS = 64; // TODO: shift this down with the rest of the common flags
   const int HYUNDAI_PARAM_FCEV_GAS = 256;
   const int HYUNDAI_PARAM_ALT_LIMITS_2 = 512;
-  const int HYUNDAI_PARAM_ESCC = 8192;
-  const int HYUNDAI_PARAM_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE = 16384;
 
   hyundai_ev_gas_signal = GET_FLAG(param, HYUNDAI_PARAM_EV_GAS);
   hyundai_hybrid_gas_signal = !hyundai_ev_gas_signal && GET_FLAG(param, HYUNDAI_PARAM_HYBRID_GAS);
@@ -74,8 +77,9 @@ void hyundai_common_init(uint16_t param) {
   hyundai_alt_limits = GET_FLAG(param, HYUNDAI_PARAM_ALT_LIMITS);
   hyundai_fcev_gas_signal = GET_FLAG(param, HYUNDAI_PARAM_FCEV_GAS);
   hyundai_alt_limits_2 = GET_FLAG(param, HYUNDAI_PARAM_ALT_LIMITS_2);
-  hyundai_escc = GET_FLAG(param, HYUNDAI_PARAM_ESCC);
-  hyundai_longitudinal_main_cruise_toggleable = GET_FLAG(param, HYUNDAI_PARAM_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE);
+
+  hyundai_escc = (current_safety_param_sp & HYUNDAI_PARAM_SP_ESCC) != 0;
+  hyundai_longitudinal_main_cruise_toggleable = (current_safety_param_sp & HYUNDAI_PARAM_SP_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE) != 0;
 
   hyundai_last_button_interaction = HYUNDAI_PREV_BUTTON_SAMPLES;
 

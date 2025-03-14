@@ -1,6 +1,6 @@
 import unittest
 
-from opendbc.car.hyundai.values import HyundaiSafetyFlags
+from opendbc.sunnypilot.car.hyundai.values import HyundaiSafetyFlagsSP
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.libsafety import libsafety_py
 from opendbc.safety.tests.common import make_msg
@@ -151,7 +151,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
         for main_cruise_toggleable in (True, False):
           with self.subTest("main_cruise_toggleable", main_cruise_toggleable=main_cruise_toggleable):
-            main_cruise_toggleable_flag = HyundaiSafetyFlags.FLAG_HYUNDAI_LONG_MAIN_CRUISE_TOGGLEABLE if main_cruise_toggleable else 0
+            main_cruise_toggleable_flag = HyundaiSafetyFlagsSP.LONG_MAIN_CRUISE_TOGGLEABLE if main_cruise_toggleable else 0
             self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
 
             # Test initial state
@@ -183,7 +183,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
 
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
-        main_cruise_toggleable_flag = HyundaiSafetyFlags.FLAG_HYUNDAI_LONG_MAIN_CRUISE_TOGGLEABLE
+        main_cruise_toggleable_flag = HyundaiSafetyFlagsSP.LONG_MAIN_CRUISE_TOGGLEABLE
         self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
 
         self._mads_states_cleanup()
@@ -216,7 +216,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
 
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
-        main_cruise_toggleable_flag = HyundaiSafetyFlags.FLAG_HYUNDAI_LONG_MAIN_CRUISE_TOGGLEABLE
+        main_cruise_toggleable_flag = HyundaiSafetyFlagsSP.LONG_MAIN_CRUISE_TOGGLEABLE
         self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
 
         self._mads_states_cleanup()
@@ -257,7 +257,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
     """Test that mismatch counter resets when states resync"""
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
-        main_cruise_toggleable_flag = HyundaiSafetyFlags.FLAG_HYUNDAI_LONG_MAIN_CRUISE_TOGGLEABLE
+        main_cruise_toggleable_flag = HyundaiSafetyFlagsSP.LONG_MAIN_CRUISE_TOGGLEABLE
         self.safety.set_safety_hooks(default_safety_mode, default_safety_param | main_cruise_toggleable_flag)
 
         self._mads_states_cleanup()
