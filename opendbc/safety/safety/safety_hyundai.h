@@ -339,13 +339,13 @@ static safety_config hyundai_init(uint16_t param) {
       {.msg = {{0x4F1, 0, 4, .ignore_checksum = true, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}},
     };
 
-    if (hyundai_escc)
+    if (hyundai_escc) {
       ret = BUILD_SAFETY_CFG(hyundai_long_rx_checks, HYUNDAI_LONG_ESCC_TX_MSGS);
-    else if (hyundai_camera_scc)
+    } else if (hyundai_camera_scc) {
       ret = BUILD_SAFETY_CFG(hyundai_long_rx_checks, HYUNDAI_CAMERA_SCC_LONG_TX_MSGS);
-    else
+    } else {
       ret = BUILD_SAFETY_CFG(hyundai_long_rx_checks, HYUNDAI_LONG_TX_MSGS);
-                         
+    }
   } else if (hyundai_camera_scc) {
     static RxCheck hyundai_cam_scc_rx_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
