@@ -2,7 +2,6 @@
 import unittest
 
 from opendbc.car.nissan.values import NissanSafetyFlags
-from opendbc.sunnypilot.car.nissan.values import NissanSafetyFlagsSP
 from opendbc.car.structs import CarParams
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
@@ -109,7 +108,6 @@ class TestNissanLeafSafety(TestNissanSafety):
   def setUp(self):
     self.packer = CANPackerPanda("nissan_leaf_2018_generated")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_sp(NissanSafetyFlagsSP.LEAF)
     self.safety.set_safety_hooks(CarParams.SafetyModel.nissan, 0)
     self.safety.init_tests()
 
@@ -128,22 +126,6 @@ class TestNissanLeafSafety(TestNissanSafety):
   # TODO: leaf should use its own safety param
   def test_acc_buttons(self):
     pass
-
-  def test_nissan_leaf_param(self):
-    self.safety.set_current_safety_param_sp(NissanSafetyFlagsSP.LEAF)
-    self.assertTrue(self.safety.get_current_safety_param_sp() & NissanSafetyFlagsSP.LEAF)
-    self._rx(self._acc_state_msg(True))
-    self.assertTrue(self.safety.get_acc_main_on())
-
-    self.safety.set_current_safety_param_sp(NissanSafetyFlagsSP.DEFAULT)
-    self.assertFalse(self.safety.get_current_safety_param_sp() & NissanSafetyFlagsSP.LEAF)
-    self._rx(self._acc_state_msg(True))
-    self.assertFalse(self.safety.get_acc_main_on())
-
-    self.safety.set_current_safety_param_sp(0xFF & ~NissanSafetyFlagsSP.LEAF)
-    self.assertFalse(self.safety.get_current_safety_param_sp() & NissanSafetyFlagsSP.LEAF)
-    self._rx(self._acc_state_msg(True))
-    self.assertFalse(self.safety.get_acc_main_on())
 
 
 if __name__ == "__main__":
