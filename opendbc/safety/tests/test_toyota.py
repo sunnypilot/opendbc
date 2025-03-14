@@ -150,6 +150,12 @@ class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSaf
   MAX_INVALID_STEERING_FRAMES = 1
   MIN_VALID_STEERING_RT_INTERVAL = 170000  # a ~10% buffer, can send steer up to 110Hz
 
+  @classmethod
+  def setUpClass(cls):
+    if cls.__name__ == "TestToyotaSafetyTorque":
+      cls.safety = None
+      raise unittest.SkipTest
+
   def setUp(self):
     self.packer = CANPackerPanda("toyota_nodsu_pt_generated")
     self.safety = libsafety_py.libsafety
@@ -267,6 +273,12 @@ class TestToyotaSafetyAngle(TestToyotaSafetyBase, common.AngleSteeringSafetyTest
 @parameterized_class(UNSUPPORTED_DSU)
 class TestToyotaAltBrakeSafety(TestToyotaSafetyTorque):
 
+  @classmethod
+  def setUpClass(cls):
+    if cls.__name__ == "TestToyotaAltBrakeSafety":
+      cls.safety = None
+      raise unittest.SkipTest
+
   def setUp(self):
     self.packer = CANPackerPanda("toyota_new_mc_pt_generated")
     self.safety = libsafety_py.libsafety
@@ -312,6 +324,12 @@ class TestToyotaStockLongitudinalBase(TestToyotaSafetyBase):
 
 @parameterized_class(UNSUPPORTED_DSU)
 class TestToyotaStockLongitudinalTorque(TestToyotaStockLongitudinalBase, TestToyotaSafetyTorque):
+
+  @classmethod
+  def setUpClass(cls):
+    if cls.__name__ == "TestToyotaStockLongitudinalTorque":
+      cls.safety = None
+      raise unittest.SkipTest
 
   def setUp(self):
     self.packer = CANPackerPanda("toyota_nodsu_pt_generated")
