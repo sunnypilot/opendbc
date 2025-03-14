@@ -156,15 +156,6 @@ static safety_config nissan_init(uint16_t param) {
     NISSAN_PRO_PILOT_RX_CHECKS(1)
   };
 
-  static RxCheck nissan_alt_eps_rx_checks[] = {
-    NISSAN_COMMON_RX_CHECKS
-    NISSAN_PRO_PILOT_RX_CHECKS(2)
-  };
-
-  static RxCheck nissan_leaf_rx_checks[] = {
-    NISSAN_COMMON_RX_CHECKS
-  };
-
   // EPS Location. false = V-CAN, true = C-CAN
   const int NISSAN_PARAM_ALT_EPS_BUS = 1;
 
