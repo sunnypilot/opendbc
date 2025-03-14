@@ -129,6 +129,16 @@ class TestNissanLeafSafety(TestNissanSafety):
   def test_acc_buttons(self):
     pass
 
+  def test_nissan_leaf_param(self):
+    self.safety.set_current_safety_param_sp(NissanSafetyFlagsSP.LEAF)
+    self.assertTrue(self.safety.get_current_safety_param_sp() & NissanSafetyFlagsSP.LEAF)
+
+    self.safety.set_current_safety_param_sp(0)
+    self.assertFalse(self.safety.get_current_safety_param_sp() & NissanSafetyFlagsSP.LEAF)
+
+    self.safety.set_current_safety_param_sp(0xFF & ~NissanSafetyFlagsSP.LEAF)
+    self.assertFalse(self.safety.get_current_safety_param_sp() & NissanSafetyFlagsSP.LEAF)
+
 
 if __name__ == "__main__":
   unittest.main()
