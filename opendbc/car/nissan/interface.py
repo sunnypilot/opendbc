@@ -1,7 +1,6 @@
 from opendbc.car import get_safety_config, structs
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.nissan.values import CAR, NissanSafetyFlags
-from opendbc.sunnypilot.car.nissan.values import NissanSafetyFlagsSP
 
 
 class CarInterface(CarInterfaceBase):
