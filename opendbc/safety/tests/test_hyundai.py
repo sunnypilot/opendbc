@@ -161,6 +161,38 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
             self.assertEqual(expected_acc_main, self.safety.get_acc_main_on())
     self.safety.set_safety_hooks(prior_safety_mode, prior_safety_param)
 
+  def test_enable_control_allowed_with_mads_button(self):
+    default_safety_mode = self.safety.get_current_safety_mode()
+    default_safety_param = self.safety.get_current_safety_param()
+    default_safety_param_sp = self.safety.get_current_safety_param_sp()
+    """Toggle MADS with MADS button"""
+    try:
+      self._lkas_button_msg(False)
+    except NotImplementedError as err:
+      raise unittest.SkipTest("Skipping test because LDA button is not supported") from err
+
+    try:
+      for enable_mads in (True, False):
+        with self.subTest("enable_mads", mads_enabled=enable_mads):
+          for has_lda_button_param in (True, False):
+            with self.subTest("has_lda_button", has_lda_button_param=has_lda_button_param):
+              has_lda_button = HyundaiSafetyFlagsSP.HAS_LDA_BUTTON if has_lda_button_param else 0
+              self.safety.set_current_safety_param_sp(has_lda_button)
+              self.safety.set_safety_hooks(default_safety_mode, default_safety_param)
+
+              self._mads_states_cleanup()
+              self.safety.set_mads_params(enable_mads, False)
+              self.assertEqual(enable_mads, self.safety.get_enable_mads())
+
+              self._rx(self._lkas_button_msg(True))
+              self._rx(self._speed_msg(0))
+              self._rx(self._lkas_button_msg(False))
+              self._rx(self._speed_msg(0))
+              self.assertEqual(enable_mads and has_lda_button_param, self.safety.get_controls_allowed_lat())
+    finally:
+      self._mads_states_cleanup()
+      self.safety.set_current_safety_param_sp(default_safety_param_sp)
+
 
 @parameterized_class(LDA_BUTTON)
 class TestHyundaiSafetyAltLimits(TestHyundaiSafety):
@@ -256,7 +288,6 @@ class TestHyundaiLegacySafety(TestHyundaiSafety):
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiLegacy, 0)
     self.safety.init_tests()
 
@@ -265,7 +296,6 @@ class TestHyundaiLegacySafetyEV(TestHyundaiSafety):
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiLegacy, HyundaiSafetyFlags.EV_GAS)
     self.safety.init_tests()
 
@@ -278,7 +308,6 @@ class TestHyundaiLegacySafetyHEV(TestHyundaiSafety):
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiLegacy, HyundaiSafetyFlags.HYBRID_GAS)
     self.safety.init_tests()
 
@@ -352,7 +381,7 @@ class TestHyundaiLongitudinalSafetyCameraSCC(HyundaiLongitudinalBase, TestHyunda
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
+    self.safety.set_current_safety_param_sp(HyundaiSafetyFlagsSP.HAS_LDA_BUTTON)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CAMERA_SCC)
     self.safety.init_tests()
 
@@ -397,10 +426,17 @@ class TestHyundaiSafetyFCEVLong(TestHyundaiLongitudinalSafety, TestHyundaiSafety
     self.safety.init_tests()
 
 
+@parameterized_class(LDA_BUTTON)
 class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafety):
   TX_MSGS = [[0x340, 0], [0x4F1, 0], [0x485, 0], [0x420, 0], [0x421, 0], [0x50A, 0], [0x389, 0]]
 
   RELAY_MALFUNCTION_ADDRS = {0: (0x340, 0x421)}  # LKAS11, SCC12
+
+  @classmethod
+  def setUpClass(cls):
+    if cls.__name__ == "TestHyundaiLongitudinalESCCSafety":
+      cls.safety = None
+      raise unittest.SkipTest
 
   def setUp(self):
     self.packer = CANPackerPanda("hyundai_kia_generic")
