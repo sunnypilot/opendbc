@@ -32,6 +32,8 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
   FWD_BLACKLISTED_ADDRS = {2: [0x2E4, 0x412, 0x191, 0x343]}
   EPS_SCALE = 73
 
+  SAFETY_PARAM_SP: int = 0
+
   packer: CANPackerPanda
   safety: libsafety_py.Panda
 
@@ -81,8 +83,9 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
     return self.packer.make_can_msg_panda("PCM_CRUISE", 0, values)
 
   def _acc_state_msg(self, enabled):
+    msg = "DSU_CRUISE" if self.SAFETY_PARAM_SP & ToyotaSafetyFlagsSP.UNSUPPORTED_DSU else "PCM_CRUISE_2"
     values = {"MAIN_ON": enabled}
-    return self.packer.make_can_msg_panda("PCM_CRUISE_2", 0, values)
+    return self.packer.make_can_msg_panda(msg, 0, values)
 
   def test_diagnostics(self, stock_longitudinal: bool = False):
     for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present
@@ -147,19 +150,12 @@ class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSaf
   MAX_INVALID_STEERING_FRAMES = 1
   MIN_VALID_STEERING_RT_INTERVAL = 170000  # a ~10% buffer, can send steer up to 110Hz
 
-  SAFETY_PARAM_SP: int = 0
-
   def setUp(self):
     self.packer = CANPackerPanda("toyota_nodsu_pt_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE)
     self.safety.init_tests()
-
-  def _acc_state_msg(self, enabled):
-    msg = "DSU_CRUISE" if self.SAFETY_PARAM_SP & ToyotaSafetyFlagsSP.UNSUPPORTED_DSU else "PCM_CRUISE_2"
-    values = {"MAIN_ON": enabled}
-    return self.packer.make_can_msg_panda(msg, 0, values)
 
 
 class TestToyotaSafetyAngle(TestToyotaSafetyBase, common.AngleSteeringSafetyTest):
@@ -268,22 +264,19 @@ class TestToyotaSafetyAngle(TestToyotaSafetyBase, common.AngleSteeringSafetyTest
         self.assertEqual(self.safety.get_angle_meas_max(), 0)
 
 
+@parameterized_class(UNSUPPORTED_DSU)
 class TestToyotaAltBrakeSafety(TestToyotaSafetyTorque):
 
   def setUp(self):
     self.packer = CANPackerPanda("toyota_new_mc_pt_generated")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_sp(ToyotaSafetyFlagsSP.UNSUPPORTED_DSU)
+    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE | ToyotaSafetyFlags.ALT_BRAKE)
     self.safety.init_tests()
 
   def _user_brake_msg(self, brake):
     values = {"BRAKE_PRESSED": brake}
     return self.packer.make_can_msg_panda("BRAKE_MODULE", 0, values)
-
-  def _acc_state_msg(self, enabled):
-    values = {"MAIN_ON": enabled}
-    return self.packer.make_can_msg_panda("DSU_CRUISE", 0, values)
 
   # No LTA message in the DBC
   def test_lta_steer_cmd(self):

@@ -408,10 +408,14 @@ static safety_config toyota_init(uint16_t param) {
     };
     static RxCheck toyota_lka_alt_brake_rx_checks[] = {
       TOYOTA_ALT_BRAKE_RX_CHECKS(false)
-      TOYOTA_DSU_CRUISE_ADDR_CHECK
+      TOYOTA_PCM_CRUISE_2_ADDR_CHECK
     };
     static RxCheck toyota_lka_unsupported_dsu_rx_checks[] = {
       TOYOTA_RX_CHECKS(false)
+      TOYOTA_DSU_CRUISE_ADDR_CHECK
+    };
+    static RxCheck toyota_lka_alt_brake_unsupported_dsu_rx_checks[] = {
+      TOYOTA_ALT_BRAKE_RX_CHECKS(false)
       TOYOTA_DSU_CRUISE_ADDR_CHECK
     };
 
@@ -422,7 +426,11 @@ static safety_config toyota_init(uint16_t param) {
         SET_RX_CHECKS(toyota_lka_rx_checks, ret);
       }
     } else {
-      SET_RX_CHECKS(toyota_lka_alt_brake_rx_checks, ret);
+      if (toyota_unsupported_dsu) {
+        SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_rx_checks, ret);
+      } else {
+        SET_RX_CHECKS(toyota_lka_alt_brake_rx_checks, ret);
+      }
     }
   }
 
