@@ -158,6 +158,9 @@ class CarInterface(CarInterfaceBase):
       ret.safetyParam |= HyundaiSafetyFlagsSP.ESCC
       stock_cp.radarUnavailable = False
 
+    if stock_cp.flags & HyundaiFlags.HAS_LDA_BUTTON:
+      ret.safetyParam |= HyundaiSafetyFlagsSP.HAS_LDA_BUTTON
+
     return ret
 
   @staticmethod
