@@ -373,7 +373,7 @@ static safety_config toyota_init(uint16_t param) {
   toyota_lta = GET_FLAG(param, TOYOTA_PARAM_LTA);
   toyota_dbc_eps_torque_factor = param & TOYOTA_EPS_FACTOR;
 
-  const bool toyota_unsupported_dsu = (current_safety_param_sp & TOYOTA_PARAM_SP_UNSUPPORTED_DSU) != 0;
+  const bool toyota_unsupported_dsu = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_UNSUPPORTED_DSU);
 
   safety_config ret;
   if (toyota_stock_longitudinal) {

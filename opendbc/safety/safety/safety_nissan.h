@@ -171,7 +171,7 @@ static safety_config nissan_init(uint16_t param) {
   const int NISSAN_PARAM_SP_LEAF = 1;
 
   nissan_alt_eps = GET_FLAG(param, NISSAN_PARAM_ALT_EPS_BUS);
-  const bool nissan_leaf = (current_safety_param_sp & NISSAN_PARAM_SP_LEAF) != 0;
+  const bool nissan_leaf = GET_FLAG(current_safety_param_sp, NISSAN_PARAM_SP_LEAF);
 
   safety_config ret;
   SET_TX_MSGS(NISSAN_TX_MSGS, ret);
