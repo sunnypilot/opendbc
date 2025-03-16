@@ -64,6 +64,15 @@ class CarParamsSP:
   flags: int = auto_field()        # flags for car specific quirks
   safetyParam: int = auto_field()  # flags for custom safety flags
 
+  neuralNetworkLateralControl: 'CarParamsSP.NeuralNetworkLateralControl' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl())
+
+  @auto_dataclass
+  class NeuralNetworkLateralControl:
+    enabled: bool = auto_field()
+    modelPath: str = auto_field()
+    modelName: str = auto_field()
+    fuzzyFingerprint: bool = auto_field()
+
 
 @auto_dataclass
 class ModularAssistiveDrivingSystem:
