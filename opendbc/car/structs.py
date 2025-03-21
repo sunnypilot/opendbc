@@ -68,10 +68,13 @@ class CarParamsSP:
 
   @auto_dataclass
   class NeuralNetworkLateralControl:
-    enabled: bool = auto_field()
-    modelPath: str = auto_field()
-    modelName: str = auto_field()
+    model: 'CarParamsSP.NeuralNetworkLateralControl.Model' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl.Model())
     fuzzyFingerprint: bool = auto_field()
+
+    @auto_dataclass
+    class Model:
+      path: str = auto_field()
+      name: str = auto_field()
 
 
 @auto_dataclass
