@@ -6,6 +6,10 @@ from opendbc.car.toyota.values import ToyotaFlags
 class SecOCLong:
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
+    self.reset_counter()
+
+  def reset_counter(self):
+    self.secoc_acc_message_counter = 0
 
   @property
   def enabled(self):
@@ -27,7 +31,7 @@ class SecOCLong:
       :param values: ACC_CONTROL to be sent in dictionary form before being packed
       :return: Nothing. ACC_CONTROL is updated in place.
     """
-    values["ACCEL_CMD"] = 0
+    values["ACCEL_CMD"] = 0.
 
   def create_accel_2_command(self, packer, accel):
     values = {
@@ -45,10 +49,9 @@ class SecOCLong:
 class SecOCLongCarController:
   def __init__(self, CP: structs.CarParams):
     self.SECOC_LONG = SecOCLong(CP)
-    self.secoc_acc_message_counter = 0
 
   def update(self, CS):
     self.SECOC_LONG.update_car_state(CS)
     if self.CP.flags & ToyotaFlags.SECOC.value:
       if CS.secoc_synchronization['RESET_CNT'] != self.secoc_prev_reset_counter:
-        self.secoc_acc_message_counter = 0
+        self.SECOC_LONG.reset_counter()
