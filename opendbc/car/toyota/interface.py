@@ -1,5 +1,9 @@
 from openpilot.common.params import Params
 from opendbc.car import Bus, structs, get_safety_config, uds
+
+from opendbc.car.toyota.carstate import CarState
+from opendbc.car.toyota.carcontroller import CarController
+from opendbc.car.toyota.radar_interface import RadarInterface
 from opendbc.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, ToyotaFlagsSP, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                                   MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR, \
                                                   ToyotaSafetyFlags
@@ -11,6 +15,10 @@ SteerControlType = structs.CarParams.SteerControlType
 
 
 class CarInterface(CarInterfaceBase):
+  CarState = CarState
+  CarController = CarController
+  RadarInterface = RadarInterface
+
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return CarControllerParams(CP).ACCEL_MIN, CarControllerParams(CP).ACCEL_MAX
