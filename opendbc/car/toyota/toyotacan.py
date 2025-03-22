@@ -57,7 +57,7 @@ def create_accel_command(packer, accel, pcm_cancel, permit_braking, standstill_r
 
   commands = []
   if SECOC_LONG and SECOC_LONG.enabled:
-    SECOC_LONG.update_accel_command(values);
+    SECOC_LONG.update_accel_command(values)
     commands.append(SECOC_LONG.create_accel_2_command(packer, accel))
 
   commands.append(packer.make_can_msg("ACC_CONTROL", 0, values))
