@@ -222,7 +222,7 @@ class CarState(CarStateBase):
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
 
     if self.CP.carFingerprint in TSS2_CAR and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
-      if not (self.CP.flags & ToyotaFlags.SDSU.value):
+      if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
         self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["PCS_HUD"]["FCW"])
 
@@ -353,7 +353,7 @@ class CarState(CarStateBase):
       pt_messages += [
         ("PCS_HUD", 1),
       ]
-      if not CP.flags & ToyotaFlags.SDSU.value:
+      if not CP.flags & ToyotaFlags.SMART_DSU.value:
         pt_messages += [
           ("ACC_CONTROL", 33),
         ]
