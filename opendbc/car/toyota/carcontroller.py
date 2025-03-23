@@ -241,7 +241,7 @@ class CarController(CarControllerBase, SecOCLongCarController):
         pcm_accel_cmd = float(np.clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX))
 
         can_sends.extend(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.permit_braking, self.standstill_req, lead,
-                                                        CS.acc_type, fcw_alert, self.distance_button))
+                                                        CS.acc_type, fcw_alert, self.distance_button, self.SECOC_LONG))
         self.accel = pcm_accel_cmd
 
     else:
