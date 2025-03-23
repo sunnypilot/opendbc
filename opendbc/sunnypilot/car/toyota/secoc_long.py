@@ -31,7 +31,7 @@ class SecOCLong:
       :param values: ACC_CONTROL to be sent in dictionary form before being packed
       :return: Nothing. ACC_CONTROL is updated in place.
     """
-    values["ACCEL_CMD"] = 0.
+    values["ACCEL_CMD"] = 0
 
   def create_accel_2_command(self, packer, accel):
     values = {
