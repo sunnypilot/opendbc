@@ -78,7 +78,6 @@ class CarController(CarControllerBase, SecOCLongCarController):
     self.secoc_prev_reset_counter = 0
 
   def update(self, CC, CC_SP, CS, now_nanos):
-    SecOCLongCarController.update(self, CS)
     actuators = CC.actuators
     stopping = actuators.longControlState == LongCtrlState.stopping
     hud_control = CC.hudControl
@@ -90,6 +89,8 @@ class CarController(CarControllerBase, SecOCLongCarController):
 
     # *** control msgs ***
     can_sends = []
+
+    SecOCLongCarController.update(self, CS, can_sends)
 
     # *** handle secoc reset counter increase ***
     if self.CP.flags & ToyotaFlags.SECOC.value:
@@ -240,7 +241,7 @@ class CarController(CarControllerBase, SecOCLongCarController):
 
         pcm_accel_cmd = float(np.clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX))
 
-        can_sends.extend(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.permit_braking, self.standstill_req, lead,
+        can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.permit_braking, self.standstill_req, lead,
                                                         CS.acc_type, fcw_alert, self.distance_button, self.SECOC_LONG))
         self.accel = pcm_accel_cmd
 
@@ -250,7 +251,8 @@ class CarController(CarControllerBase, SecOCLongCarController):
         if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
           can_sends.append(toyotacan.create_acc_cancel_command(self.packer))
         else:
-          can_sends.extend(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, True, False, lead, CS.acc_type, False, self.distance_button, self.SECOC_LONG))
+          can_sends.append(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, True, False, lead, CS.acc_type, False, self.distance_button,
+                                                          self.SECOC_LONG))
 
     # *** hud ui ***
     if self.CP.carFingerprint != CAR.TOYOTA_PRIUS_V:

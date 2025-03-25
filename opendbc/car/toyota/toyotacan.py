@@ -55,13 +55,9 @@ def create_accel_command(packer, accel, pcm_cancel, permit_braking, standstill_r
     "ACC_CUT_IN": fcw_alert,  # only shown when ACC enabled
   }
 
-  commands = []
-  if SECOC_LONG and SECOC_LONG.enabled:
-    SECOC_LONG.update_accel_command(values)
-    commands.append(SECOC_LONG.create_accel_2_command(packer, accel))
+  SECOC_LONG.update_accel_command(packer, values)
 
-  commands.append(packer.make_can_msg("ACC_CONTROL", 0, values))
-  return commands
+  return packer.make_can_msg("ACC_CONTROL", 0, values)
 
 
 def create_pcs_commands(packer, accel, active, mass):
