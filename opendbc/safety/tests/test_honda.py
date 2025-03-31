@@ -559,6 +559,15 @@ class TestHondaBoschRadarlessSafetyBase(TestHondaBoschSafetyBase):
     self.packer = CANPackerPanda("honda_civic_ex_2022_can_generated")
     self.safety = libsafety_py.libsafety
 
+class TestHondaBoschRadarlessAltSCMSafety(HondaPcmEnableBase, TestHondaBoschRadarlessSafetyBase):
+  """
+    Covers the Honda Bosch Radarless safety mode with stock longitudinal
+  """
+
+  def setUp(self):
+    super().setUp()
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hondaBosch, HondaSafetyFlags.RADARLESS | HondaSafetyFlags.NIDEC_ALT)
+    self.safety.init_tests()
 
 class TestHondaBoschRadarlessSafety(HondaPcmEnableBase, TestHondaBoschRadarlessSafetyBase):
   """
