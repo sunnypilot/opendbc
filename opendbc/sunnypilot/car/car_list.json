@@ -2661,6 +2661,16 @@
     ],
     "package": "All"
   },
+  "Tesla Model X (with HW4) 2024": {
+    "platform": "TESLA_MODEL_X",
+    "make": "Tesla",
+    "brand": "tesla",
+    "model": "Model X (with HW4)",
+    "year": [
+      "2024"
+    ],
+    "package": "All"
+  },
   "Tesla Model Y (with HW3) 2020-23": {
     "platform": "TESLA_MODEL_Y",
     "make": "Tesla",
