@@ -467,10 +467,6 @@ static bool toyota_fwd_hook(int bus_num, int addr) {
     block_msg = is_lkas_msg || (is_acc_msg && !toyota_stock_longitudinal);
   }
 
-  if (bus_num == 0) {
-    block_msg = (addr == 0x24D);
-  }
-
   return block_msg;
 }
 
