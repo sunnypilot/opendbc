@@ -9,6 +9,7 @@ from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
 
 class RadarInterfaceExt(EsccRadarInterfaceBase):
   msg_src: str
+  trigger_msg: int
   rcp: CANParser
   pts: dict[int, structs.RadarData.RadarPoint]
 
@@ -19,36 +20,43 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
 
     self.track_id = 0
 
-  def initialize_radar_ext(self, trigger_msg):
-    if self.ESCC.enabled:
-      self.use_escc = True
+  @property
+  def use_radar_interface_ext(self) -> bool:
+    return self.use_escc or self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC)
 
-    rcp, trigger_msg = self.get_radar_ext_can_parser(trigger_msg)
-    return rcp, trigger_msg
-
-  def get_radar_ext_can_parser(self, trigger_msg):
-    if self.ESCC.enabled:
-      trigger_msg = self.ESCC.trigger_msg
-      lead_src, bus = "ESCC", 0
-    elif self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
-      trigger_msg = 0x1A0 if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else 0x420
-      lead_src = "SCC_CONTROL" if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else "SCC11"
-      bus = CanBus(self.CP).CAM if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else 2
-    else:
-      return None, trigger_msg
-    messages = [(lead_src, 50)]
-    return CANParser(DBC[self.CP.carFingerprint][Bus.pt], messages, bus), trigger_msg
-
-  def get_msg_src(self):
+  def get_msg_src(self) -> str | None:
     if self.use_escc:
       return "ESCC"
     if self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
       return "SCC_CONTROL" if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else "SCC11"
 
-  def use_radar_interface_ext(self) -> bool:
-    return self.use_escc or self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC)
+  def get_radar_ext_can_parser(self) -> CANParser:
+    if self.ESCC.enabled:
+      lead_src, bus = "ESCC", 0
+    elif self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
+      lead_src = "SCC_CONTROL" if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else "SCC11"
+      bus = CanBus(self.CP).CAM if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else 2
+    else:
+      return None
 
-  def update_ext(self, ret):
+    messages = [(lead_src, 50)]
+    return CANParser(DBC[self.CP.carFingerprint][Bus.pt], messages, bus)
+
+  def get_trigger_msg(self, default_trigger_msg) -> int:
+    if self.ESCC.enabled:
+      return self.ESCC.trigger_msg
+    if self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
+      return 0x1A0 if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else 0x420
+    return default_trigger_msg
+
+  def initialize_radar_ext(self, default_trigger_msg) -> None:
+    if self.ESCC.enabled:
+      self.use_escc = True
+
+    self.rcp = self.get_radar_ext_can_parser()
+    self.trigger_msg = self.get_trigger_msg(default_trigger_msg)
+
+  def update_ext(self, ret: structs.RadarData) -> structs.RadarData:
     for ii in range(1):
       msg_src = self.get_msg_src()
       msg = self.rcp.vl[msg_src]
