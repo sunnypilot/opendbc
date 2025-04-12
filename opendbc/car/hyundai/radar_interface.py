@@ -32,7 +32,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.rcp = get_radar_can_parser(CP)
 
     if self.rcp is None:
-      self.rcp, self.trigger_msg = self.initialize_radar_ext(self.trigger_msg)
+      self.initialize_radar_ext()
 
   def update(self, can_strings):
     if self.radar_off_can or (self.rcp is None):
