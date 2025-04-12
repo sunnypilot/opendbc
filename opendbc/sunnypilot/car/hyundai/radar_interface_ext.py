@@ -1,9 +1,8 @@
 from opendbc.can.parser import CANParser
 from opendbc.car import structs, Bus
-from opendbc.car.hyundai.values import DBC
-
 from opendbc.car.hyundai.hyundaicanfd import CanBus
-from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.car.hyundai.values import DBC, HyundaiFlags
+
 from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
 
 
