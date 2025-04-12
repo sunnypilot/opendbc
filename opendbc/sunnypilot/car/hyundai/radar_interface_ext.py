@@ -56,6 +56,10 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     self.trigger_msg = self.get_trigger_msg(default_trigger_msg)
 
   def update_ext(self, ret: structs.RadarData) -> structs.RadarData:
+    if not self.rcp.can_valid:
+      ret.errors.canError = True
+      return ret
+
     for ii in range(1):
       msg_src = self.get_msg_src()
       msg = self.rcp.vl[msg_src]
