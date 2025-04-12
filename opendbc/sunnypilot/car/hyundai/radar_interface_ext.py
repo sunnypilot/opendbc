@@ -7,6 +7,7 @@ from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
 
 class RadarInterfaceExt(EsccRadarInterfaceBase):
   msg_src: str
+  trigger_msg: int
   rcp: CANParser
   pts: dict[int, structs.RadarData.RadarPoint]
 
@@ -17,13 +18,13 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
 
     self.track_id = 0
 
-  def initialize_radar_ext(self, trigger_msg) -> tuple[CANParser, int]:
-    if self.ESCC.enabled:
-      self.use_escc = True
+  @property
+  def use_radar_interface_ext(self) -> bool:
+    return self.use_escc
 
-    rcp = self.get_radar_ext_can_parser()
-    trigger_msg = self.get_trigger_msg() or trigger_msg
-    return rcp, trigger_msg
+  def get_msg_src(self) -> str | None:
+    if self.use_escc:
+      return "ESCC"
 
   def get_radar_ext_can_parser(self) -> CANParser:
     if self.ESCC.enabled:
@@ -38,13 +39,12 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     if self.ESCC.enabled:
       return self.ESCC.trigger_msg
 
-  def get_msg_src(self) -> str | None:
-    if self.use_escc:
-      return "ESCC"
+  def initialize_radar_ext(self) -> None:
+    if self.ESCC.enabled:
+      self.use_escc = True
 
-  @property
-  def use_radar_interface_ext(self) -> bool:
-    return self.use_escc
+    self.rcp = self.get_radar_ext_can_parser()
+    self.trigger_msg = self.get_trigger_msg()
 
   def update_ext(self, ret: structs.RadarData) -> structs.RadarData:
     for ii in range(1):
