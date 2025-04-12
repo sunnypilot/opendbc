@@ -35,16 +35,17 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     messages = [(lead_src, 50)]
     return CANParser(DBC[self.CP.carFingerprint][Bus.pt], messages, bus)
 
-  def get_trigger_msg(self) -> int | None:
+  def get_trigger_msg(self, default_trigger_msg) -> int:
     if self.ESCC.enabled:
       return self.ESCC.trigger_msg
+    return default_trigger_msg
 
-  def initialize_radar_ext(self) -> None:
+  def initialize_radar_ext(self, default_trigger_msg) -> None:
     if self.ESCC.enabled:
       self.use_escc = True
 
     self.rcp = self.get_radar_ext_can_parser()
-    self.trigger_msg = self.get_trigger_msg()
+    self.trigger_msg = self.get_trigger_msg(default_trigger_msg)
 
   def update_ext(self, ret: structs.RadarData) -> structs.RadarData:
     for ii in range(1):
