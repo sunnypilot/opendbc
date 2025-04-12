@@ -16,9 +16,11 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     self.CP_SP = CP_SP
 
     self.track_id = 0
-    self.use_escc = self.ESCC.enabled
 
   def initialize_radar_ext(self, trigger_msg) -> tuple[CANParser, int]:
+    if self.ESCC.enabled:
+      self.use_escc = True
+
     rcp = self.get_radar_ext_can_parser()
     trigger_msg = self.get_trigger_msg() or trigger_msg
     return rcp, trigger_msg
@@ -40,6 +42,7 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     if self.use_escc:
       return "ESCC"
 
+  @property
   def use_radar_interface_ext(self) -> bool:
     return self.use_escc
 

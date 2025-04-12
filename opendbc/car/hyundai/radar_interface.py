@@ -57,7 +57,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     if not self.rcp.can_valid:
       ret.errors.canError = True
 
-    if self.use_radar_interface_ext():
+    if self.use_radar_interface_ext:
       return self.update_ext(ret)
 
     for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
