@@ -4,7 +4,6 @@ from opendbc.car import CanData
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.hyundai.values import CAR, HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
-from openpilot.sunnypilot.selfdrive.car import interfaces as sunnypilot_interfaces
 
 ESCC_CARS = [
   (CAR.HYUNDAI_ELANTRA_2021, ESCC_MSG),
@@ -32,8 +31,6 @@ class TestRadarInterfaceExt:
     CP.flags |= additional_flags
 
     CP_SP = CarInterface.get_non_essential_params_sp(CP, car_name)
-
-    sunnypilot_interfaces.setup_interfaces(CP, CP_SP)
 
     CI = CarInterface(CP, CP_SP)
 
