@@ -157,11 +157,13 @@ class CarInterface(CarInterfaceBase):
     if candidate in UNSUPPORTED_DSU_CAR:
       ret.safetyParam |= ToyotaSafetyFlagsSP.UNSUPPORTED_DSU
 
-    if candidate in (TSS2_CAR - SECOC_CAR):
+    sp_toyota_auto_brake_hold = Params().get_bool("ToyotaAutoHold")
+    sp_toyota_enhanced_bsm = Params().get_bool("ToyotaEnhancedBsm")
+    if sp_toyota_enhanced_bsm and candidate in (TSS2_CAR - SECOC_CAR):
       ret.flags |= ToyotaFlagsSP.SP_ENHANCED_BSM.value
     if candidate == CAR.TOYOTA_PRIUS_TSS2:
       ret.flags |= ToyotaFlagsSP.SP_NEED_DEBUG_BSM.value
-    if candidate in (TSS2_CAR - RADAR_ACC_CAR - SECOC_CAR):
+    if sp_toyota_auto_brake_hold and candidate in (TSS2_CAR - RADAR_ACC_CAR - SECOC_CAR):
       ret.flags |= ToyotaFlagsSP.SP_AUTO_BRAKE_HOLD.value
 
 
