@@ -13,7 +13,7 @@ class SecOCLong:
 
   @property
   def enabled(self):
-    return self.CP.flags & ToyotaFlags.SECOC.value
+    return self.CP.flags & ToyotaFlags.SECOC
 
   def update_car_state(self, car_state):
     """
@@ -61,11 +61,12 @@ class SecOCLong:
 
 class SecOCLongCarController:
   def __init__(self, CP: structs.CarParams):
+    self.CP = CP
     self.SECOC_LONG = SecOCLong(CP)
 
-  def update(self, CS, can_sends):
+  def update(self, CS, can_sends, prev_reset_timer):
     self.SECOC_LONG.update_car_state(CS)
     self.SECOC_LONG.set_can_sends(can_sends)
-    if self.CP.flags & ToyotaFlags.SECOC.value:
-      if CS.secoc_synchronization['RESET_CNT'] != self.secoc_prev_reset_counter:
+    if self.CP.flags & ToyotaFlags.SECOC:
+      if CS.secoc_synchronization['RESET_CNT'] != prev_reset_timer:
         self.SECOC_LONG.reset_counter()
