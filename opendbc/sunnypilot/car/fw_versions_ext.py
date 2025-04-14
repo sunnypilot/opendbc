@@ -48,3 +48,28 @@ def merge_fw_versions(fw_versions):
       for v in versions:
         if v not in fw_versions[c][ecu]:
           fw_versions[c][ecu].append(v)
+
+
+if __name__ == "__main__":
+  from opendbc.car.hyundai.values import CAR
+  from opendbc.car.hyundai.fingerprints import FW_VERSIONS
+
+  # Merge the extensions into FW_VERSIONS
+  merge_fw_versions(FW_VERSIONS)
+
+  # Specify which car you want to print
+  target_car = CAR.KIA_NIRO_EV
+
+  if target_car in FW_VERSIONS:
+    print(f"\n--- Firmware versions for {target_car} ---")
+    for ecu, versions in FW_VERSIONS[target_car].items():
+      print(f"\nECU: {ecu}")
+      for v in versions:
+        # Printing as hex and str for better readability
+        print(f"  {v} ({v.hex()})")
+    print(f"\nTotal ECUs: {len(FW_VERSIONS[target_car])}")
+  else:
+    print(f"Car {target_car} not found in FW_VERSIONS")
+
+  # Print available cars for reference
+  print(f"\nAvailable cars in FW_VERSIONS: {sorted(list(FW_VERSIONS.keys()))}")
