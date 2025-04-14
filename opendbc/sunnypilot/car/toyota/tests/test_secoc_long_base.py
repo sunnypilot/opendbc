@@ -1,10 +1,11 @@
+import pytest
+from hypothesis import given, strategies as st, settings, HealthCheck
+
 from opendbc.car import structs
+from opendbc.car.toyota.carstate import CarState
 from opendbc.car.toyota.values import ToyotaFlags
 from opendbc.safety.tests.common import CANPackerPanda
 from opendbc.sunnypilot.car.toyota.secoc_long import SecOCLong
-import pytest
-from hypothesis import given, strategies as st, settings, HealthCheck
-from opendbc.car.toyota.carstate import CarState
 
 
 @pytest.fixture
@@ -14,10 +15,12 @@ def car_params():
   params.flags = ToyotaFlags.SECOC.value
   return params
 
+
 @pytest.fixture
 def car_params_sp():
   params = structs.CarParams()
   return params
+
 
 @pytest.fixture
 def car_state(car_params, car_params_sp):
@@ -29,9 +32,11 @@ def car_state(car_params, car_params_sp):
   }
   return car_state
 
+
 @pytest.fixture
 def secoc_long(car_params):
   return SecOCLong(car_params)
+
 
 class TestSecOCLong:
   packer = CANPackerPanda("toyota_nodsu_pt_generated")

@@ -1,7 +1,7 @@
 from opendbc.car import structs
-
 from opendbc.car.secoc import add_mac
 from opendbc.car.toyota.values import ToyotaFlags
+
 
 class SecOCLong:
   def __init__(self, CP: structs.CarParams):
@@ -57,6 +57,7 @@ class SecOCLong:
                         acc_cmd_2)
     self.secoc_acc_message_counter += 1
     return acc_cmd_2
+
 
 class SecOCLongCarController:
   def __init__(self, CP: structs.CarParams):

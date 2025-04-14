@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from parameterized import parameterized_class
 import numpy as np
 import random
@@ -9,6 +8,7 @@ import itertools
 from opendbc.car.toyota.values import ToyotaSafetyFlags
 from opendbc.sunnypilot.car.toyota.values import ToyotaSafetyFlagsSP
 from opendbc.car.structs import CarParams
+from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.common import CANPackerPanda
@@ -361,7 +361,7 @@ class TestToyotaSecOcSafety(TestToyotaSafetyBase):
                                  self.EPS_SCALE | ToyotaSafetyFlags.SECOC)
     self.safety.init_tests()
 
-  def test_diagnostics(self, ecu_disabled: bool = False):
+  def test_diagnostics(self, stock_longitudinal: bool = False, ecu_disabled: bool = False):
     super().test_diagnostics(ecu_disabled=ecu_disabled)
 
   @unittest.skip("test not applicable for cars without a DSU")
@@ -388,7 +388,7 @@ class TestToyotaSecOcSafety(TestToyotaSafetyBase):
       should_tx = not req and not req2 and angle == 0
       self.assertEqual(should_tx, self._tx(self._lta_2_msg(req, req2, angle)), f"{req=} {req2=} {angle=}")
 
-  def _accel_2_msg(self, accel, cancel_req=0):
+  def _accel_2_msg(self, accel):
     values = {"ACCEL_CMD": accel}
     return self.packer.make_can_msg_panda("ACC_CONTROL_2", 0, values)
 
@@ -409,6 +409,7 @@ class TestToyotaSecOcSafety(TestToyotaSafetyBase):
           should_tx_2 = (controls_allowed and min_accel <= accel <= max_accel) or accel == self.INACTIVE_ACCEL
           self.assertEqual(should_tx_1, self._tx(self._accel_msg(accel)))
           self.assertEqual(should_tx_2, self._tx(self._accel_2_msg(accel)))
+
 
 if __name__ == "__main__":
   unittest.main()
