@@ -67,7 +67,7 @@ class TestSecOCLong:
 
   @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
   @given(st.integers(min_value=0, max_value=255))
-  def test_sould_not_update_accel_command(self, car_state, value):
+  def test_should_not_update_accel_command(self, car_state, value):
     car_state.CP.openpilotLongitudinalControl = False
     secoc_long = SecOCLong(car_state.CP)
     secoc_long.set_can_sends([])
