@@ -246,11 +246,17 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
       }
     }
 
+    // ACCEL: safety check on byte 1-2 for SecOC car
     if (addr == 0x183) {
       int desired_accel = (GET_BYTE(to_send, 0) << 8) | GET_BYTE(to_send, 1);
       desired_accel = to_signed(desired_accel, 16);
 
-      tx = !longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
+      bool violation = false;
+      violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
+
+      if (violation) {
+        tx = false;
+      }
     }
 
     // AEB: block all actuation. only used when DSU is unplugged
