@@ -15,7 +15,6 @@
   TOYOTA_BASE_TX_MSGS \
   {0x2E4, 0, 8, true}, {0x131, 0, 8, false}, \
   {0x343, 0, 8, false},  /* ACC cancel cmd */  \
-  {0x183, 0, 8, true},  /* ACC_CONTROL_2 */  \
 
 #define TOYOTA_COMMON_LONG_TX_MSGS                                                                                                                                                                  \
   TOYOTA_COMMON_TX_MSGS                                                                                                                                                                             \
@@ -23,7 +22,11 @@
   {0x128, 1, 6, false}, {0x141, 1, 4, false}, {0x160, 1, 8, false}, {0x161, 1, 7, false}, {0x470, 1, 4, false},  /* DSU bus 1 */                                                                    \
   {0x411, 0, 8, false},  /* PCS_HUD */                                                                                                                                                              \
   {0x750, 0, 8, false},  /* radar diagnostic address */                                                                                                                                             \
-  {0x343, 0, 8, true},  /* ACC */                                                                                                                                                                   \
+  {0x343, 0, 8, true},  /* ACC */
+
+#define TOYOTA_COMMON_SECOC_LONG_TX_MSGS \
+  TOYOTA_COMMON_SECOC_TX_MSGS \
+  {0x183, 0, 8, true},  /* ACC_CONTROL_2 */  \
 
 #define TOYOTA_COMMON_RX_CHECKS(lta)                                                                          \
   {.msg = {{ 0xaa, 0, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 83U}, { 0 }, { 0 }}},  \
@@ -223,7 +226,7 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
       bool violation = false;
       if (toyota_secoc) {
         // SecOC cars move accel to 0x183. Only allow inactive accel on 0x343 to match stock behavior
-        violation = desired_accel != TOYOTA_LONG_LIMITS.inactive_accel;     
+        violation = desired_accel != TOYOTA_LONG_LIMITS.inactive_accel;
      }
       violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
 
@@ -364,6 +367,10 @@ static safety_config toyota_init(uint16_t param) {
     TOYOTA_COMMON_LONG_TX_MSGS
   };
 
+  static const CanMsg TOYOTA_SECOC_LONG_TX_MSGS[] = {
+    TOYOTA_COMMON_SECOC_LONG_TX_MSGS
+  };
+
   // safety param flags
   // first byte is for EPS factor, second is for flags
   const uint32_t TOYOTA_PARAM_OFFSET = 8U;
@@ -388,11 +395,17 @@ static safety_config toyota_init(uint16_t param) {
 
   safety_config ret;
   if (toyota_secoc) {
-    SET_TX_MSGS(TOYOTA_SECOC_TX_MSGS, ret);
-  } else if (toyota_stock_longitudinal) {
-    SET_TX_MSGS(TOYOTA_TX_MSGS, ret);
+    if (toyota_stock_longitudinal) {
+      SET_TX_MSGS(TOYOTA_SECOC_TX_MSGS, ret);
+    } else {
+      SET_TX_MSGS(TOYOTA_SECOC_LONG_TX_MSGS, ret);
+    }
   } else {
-    SET_TX_MSGS(TOYOTA_LONG_TX_MSGS, ret);
+    if (toyota_stock_longitudinal) {
+      SET_TX_MSGS(TOYOTA_TX_MSGS, ret);
+    } else {
+      SET_TX_MSGS(TOYOTA_LONG_TX_MSGS, ret);
+    }
   }
 
   if (toyota_secoc) {
