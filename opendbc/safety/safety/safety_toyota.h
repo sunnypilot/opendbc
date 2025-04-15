@@ -232,13 +232,10 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
         if (!cancel_req) {
           violation = true;
         }
-        if (desired_accel != TOYOTA_LONG_LIMITS.inactive_accel) {
-          violation = true;
-        }
       }
 
-      // SecOC cars does ACC on 0x183. Only allow inactive accel on 0x343 to match stock behavior
-      if (toyota_secoc) {
+      // block ACC messages when openpilot is not controlling longitudinal or is a SecOC car
+      if (toyota_stock_longitudinal || toyota_secoc) {
         if (desired_accel != TOYOTA_LONG_LIMITS.inactive_accel) {
           violation = true;
         }
