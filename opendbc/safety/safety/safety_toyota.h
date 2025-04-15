@@ -26,6 +26,7 @@
 
 #define TOYOTA_COMMON_SECOC_LONG_TX_MSGS \
   TOYOTA_COMMON_SECOC_TX_MSGS \
+  {0x343, 0, 8, true},  /* ACC */ \
   {0x183, 0, 8, true},  /* ACC_CONTROL_2 */  \
 
 #define TOYOTA_COMMON_RX_CHECKS(lta)                                                                          \
