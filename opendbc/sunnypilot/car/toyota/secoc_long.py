@@ -13,7 +13,7 @@ class SecOCLong:
 
   @property
   def enabled(self):
-    return self.CP.flags & ToyotaFlags.SECOC
+    return self.CP.openpilotLongitudinalControl and (self.CP.flags & ToyotaFlags.SECOC)
 
   def update_car_state(self, car_state):
     """
