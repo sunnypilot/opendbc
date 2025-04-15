@@ -347,6 +347,7 @@ class TestToyotaStockLongitudinalAngle(TestToyotaStockLongitudinalBase, TestToyo
                                  self.EPS_SCALE | ToyotaSafetyFlags.STOCK_LONGITUDINAL | ToyotaSafetyFlags.LTA)
     self.safety.init_tests()
 
+
 class TestToyotaSecOcSafetyBase(TestToyotaSafetyBase):
 
   TX_MSGS = TOYOTA_SECOC_TX_MSGS
@@ -360,8 +361,12 @@ class TestToyotaSecOcSafetyBase(TestToyotaSafetyBase):
                                  self.EPS_SCALE | ToyotaSafetyFlags.SECOC)
     self.safety.init_tests()
 
-  def test_diagnostics(self, ecu_disabled: bool = False):
-    super().test_diagnostics(ecu_disabled=ecu_disabled)
+  # 0x283|PRE_COLLISION is not allowed on SecOC platforms
+  def test_block_aeb(self, stock_longitudinal: bool = False):
+    pass
+
+  def test_diagnostics(self, stock_longitudinal: bool = False, ecu_disabled: bool = False):
+    super().test_diagnostics(stock_longitudinal=stock_longitudinal, ecu_disabled=ecu_disabled)
 
   # This platform also has alternate brake and PCM messages, but same naming in the DBC, so same packers work
 
@@ -383,6 +388,7 @@ class TestToyotaSecOcSafetyBase(TestToyotaSafetyBase):
       should_tx = not req and not req2 and angle == 0
       self.assertEqual(should_tx, self._tx(self._lta_2_msg(req, req2, angle)), f"{req=} {req2=} {angle=}")
 
+
 class TestToyotaSecOcSafetyStockLongitudinal(TestToyotaSecOcSafetyBase, TestToyotaStockLongitudinalBase):
 
   def setUp(self):
@@ -391,6 +397,10 @@ class TestToyotaSecOcSafetyStockLongitudinal(TestToyotaSecOcSafetyBase, TestToyo
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota,
                                  self.EPS_SCALE | ToyotaSafetyFlags.STOCK_LONGITUDINAL | ToyotaSafetyFlags.SECOC)
     self.safety.init_tests()
+
+  def test_diagnostics(self, stock_longitudinal: bool = True, ecu_disabled: bool = False):
+    super().test_diagnostics(stock_longitudinal=stock_longitudinal, ecu_disabled=ecu_disabled)
+
 
 class TestToyotaSecOcSafety(TestToyotaSecOcSafetyBase):
 
@@ -402,10 +412,6 @@ class TestToyotaSecOcSafety(TestToyotaSecOcSafetyBase):
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE | ToyotaSafetyFlags.SECOC)
     self.safety.init_tests()
-
-  @unittest.skip("test not applicable for cars without a DSU")
-  def test_block_aeb(self, stock_longitudinal: bool = False):
-    pass
 
   def _accel_msg_2(self, accel):
     values = {"ACCEL_CMD": accel}
