@@ -165,7 +165,7 @@ class LongitudinalTuningController:
     accel_cmd = CC.actuators.accel
 
     # Internal PCM gas command can get stuck unwinding from negative accel so we apply a rate limit
-    accel_cmd = rate_limit(accel_cmd, self.prev_accel, ACCEL_WINDDOWN_LIMIT, ACCEL_WINDDOWN_LIMIT)
+    accel_cmd = rate_limit(accel_cmd, self.prev_accel, ACCEL_WINDDOWN_LIMIT, ACCEL_WINDUP_LIMIT)
     self.prev_accel = accel_cmd
 
     if self.CP.flags & HyundaiFlags.CANFD:
