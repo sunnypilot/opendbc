@@ -15,7 +15,7 @@ class CarTuningConfig:
   v_ego_stopping: float = 0.25
   v_ego_starting: float = 0.10
   stopping_decel_rate: float = 0.25
-  jerk_limits: tuple[float, float, float] = 2.5, 5.0, 3.0  # (min jerk, max lower jerk, max upper jerk)
+  jerk_limits: tuple[float, float, float] = 1.0, 5.0, 3.0  # (min jerk, max lower jerk, max upper jerk)
   longitudinal_actuator_delay: float = 0.45
   lower_jerk_multiplier: float = 1.0
 
