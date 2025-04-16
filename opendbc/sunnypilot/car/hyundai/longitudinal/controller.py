@@ -59,6 +59,17 @@ class LongitudinalController:
   def calculate_jerk_and_accel(self, CC: structs.CarControl, CS: CarStateBase) -> None:
     self.tuning.calculate_jerk_and_accel(CC, CS, self.pitch)
 
+    self.long_state.stopping = self.tuning.stopping
+
+    if not CC.longActive:
+      self.long_state.jerk_upper = 0.0
+      self.long_state.jerk_lower = 0.0
+    self.long_state.jerk_upper = self.tuning.jerk_upper
+    self.long_state.jerk_lower = self.tuning.jerk_lower
+
+    self.long_state.desired_accel = self.tuning.desired_accel
+    self.long_state.actual_accel = self.tuning.actual_accel
+
   def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     #actuators = CC.actuators
