@@ -167,8 +167,7 @@ class LongitudinalTuningController:
     accel_cmd = jerk_limited_integrator(accel_cmd, self.prev_accel, ACCEL_WINDDOWN_LIMIT, ACCEL_WINDUP_LIMIT)
     self.prev_accel = accel_cmd
 
-    # TODO-SP: Use TCS13|aBasis
-    a_ego_blended = CS.out.aEgo
+    a_ego_blended = float(np.interp(CS.out.vEgo, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
 
     prev_aego = self.aego.x
     self.aego.update(a_ego_blended)

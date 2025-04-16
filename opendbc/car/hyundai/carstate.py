@@ -68,6 +68,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     self.cluster_speed_counter = CLUSTER_SAMPLE_RATE
 
     self.params = CarControllerParams(CP)
+    self.aBasis = 0.0
 
   def update(self, can_parsers) -> structs.CarState:
     cp = can_parsers[Bus.pt]
@@ -202,6 +203,8 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
       ret.cruiseState.available = self.get_main_cruise(ret)
 
     CarStateExt.update(self, ret, can_parsers)
+
+    self.aBasis = cp.vl["TCS13"]["aBasis"]
 
     return ret
 
