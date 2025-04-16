@@ -81,7 +81,7 @@ class LongitudinalTuningController:
       # Apply delay logic OR strong deceleration override
       self.stopping_count += 1
       delay_met = self.stopping_count > 1 / (DT_CTRL * 2)  # noqa: F841
-      self.stopping = strong_decel_request
+      self.stopping = delay_met or strong_decel_request
 
 
   def calculate_jerk_and_accel(self, CC: structs.CarControl, CS: CarStateBase) -> None:
