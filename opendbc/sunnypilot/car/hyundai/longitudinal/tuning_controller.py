@@ -80,7 +80,7 @@ class LongitudinalTuningController:
     else:
       # Apply delay logic OR strong deceleration override
       self.stopping_count += 1
-      delay_met = self.stopping_count > 1 / (DT_CTRL * 2)  # noqa: F841
+      delay_met = self.stopping_count > 1 / (DT_CTRL * 2)
       self.stopping = delay_met or strong_decel_request
 
 
@@ -127,9 +127,15 @@ class LongitudinalTuningController:
     else:   # Between 5 m/s and 20 m/s
       decel_jerk_max = 5.83 - (velocity/6)
 
+    accel_error = accel_cmd - a_ego_future
+    if accel_error <= -0.01:
+      # Interpolate min_lower_jerk from 1.0 at -0.01 to 2.5 at -0.5
+      min_lower_jerk = float(np.interp(accel_error, [-0.01, -0.5], [1.0, 2.5]))
+    else:
+      min_lower_jerk = 0.5
+
     accel_jerk_max = self.car_config.jerk_limits[2] if long_control_state == LongCtrlState.pid else 1.0
     min_upper_jerk = 0.5 if (velocity > 3.0) else 0.725
-    min_lower_jerk = self.car_config.jerk_limits[0] if (accel_cmd - a_ego_future) <= -0.01 else 0.5
     multiplier = self.car_config.lower_jerk_multiplier
 
     # Calculate desired upper and lower jerk limits based on acceleration error
