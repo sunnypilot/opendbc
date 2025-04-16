@@ -13,7 +13,7 @@ from opendbc.car import structs, DT_CTRL, rate_limit, ACCELERATION_DUE_TO_GRAVIT
 from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.interfaces import CarStateBase
 
-from opendbc.car.hyundai.values import CarControllerParams
+from opendbc.car.hyundai.values import CarControllerParams, HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
@@ -168,7 +168,11 @@ class LongitudinalTuningController:
     accel_cmd = jerk_limited_integrator(accel_cmd, self.prev_accel, ACCEL_WINDDOWN_LIMIT, ACCEL_WINDUP_LIMIT)
     self.prev_accel = accel_cmd
 
-    a_ego_blended = float(np.interp(CS.out.vEgo, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
+    if self.CP.flags & HyundaiFlags.CANFD:
+      # TODO-SP: use it if found in DBC
+      a_ego_blended = CS.out.aEgo
+    else:
+      a_ego_blended = float(np.interp(CS.out.vEgo, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
 
     prev_aego = self.aego.x
     self.aego.update(a_ego_blended)
