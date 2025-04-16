@@ -144,6 +144,7 @@ class LongitudinalTuningController:
   def calculate_jerk_and_accel(self, CC: structs.CarControl, CS: CarStateBase, pitch) -> None:
     long_control_state = CC.actuators.longControlState
     stopping = long_control_state == LongCtrlState.stopping
+    has_lead = CC.hudControl.leadVisible
 
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       self.desired_accel = CC.actuators.accel
@@ -192,14 +193,27 @@ class LongitudinalTuningController:
 
     # Calculate desired upper and lower jerk limits based on acceleration error
     accel_error = accel_cmd - a_ego_future
-    if accel_error >= 0:
-      # Acceleration is increasing - use upper jerk limit
-      desired_jerk_upper = min(max(min_upper_jerk, abs(accel_error / (DT_CTRL * 2))), accel_jerk_max)
-      desired_jerk_lower = decel_jerk_max  # Keep decel jerk at max for quick response when needed
+    accel_error_significant = abs(accel_error) >= 0.5
+    if not has_lead and not accel_error_significant:
+      # No lead car and accel error is not significant - use base value of 0.5
+      if accel_error >= 0:
+        # Acceleration is increasing - use base value for upper jerk
+        desired_jerk_upper = 0.5
+        desired_jerk_lower = decel_jerk_max  # Keep decel jerk at max for quick response when needed
+      else:
+        # Acceleration is decreasing - use base value for lower jerk
+        desired_jerk_upper = accel_jerk_max  # Keep accel jerk at max for quick response when needed
+        desired_jerk_lower = 0.5
     else:
-      # Acceleration is decreasing - use lower jerk limit
-      desired_jerk_upper = accel_jerk_max  # Keep accel jerk at max for quick response when needed
-      desired_jerk_lower = min(max(min_lower_jerk, abs(accel_error / (DT_CTRL * 2)) * multiplier), decel_jerk_max)
+      # Lead car visible or accel error is significant - use original calculations
+      if accel_error >= 0:
+        # Acceleration is increasing - use upper jerk limit
+        desired_jerk_upper = min(max(min_upper_jerk, abs(accel_error / (DT_CTRL * 2))), accel_jerk_max)
+        desired_jerk_lower = decel_jerk_max  # Keep decel jerk at max for quick response when needed
+      else:
+        # Acceleration is decreasing - use lower jerk limit
+        desired_jerk_upper = accel_jerk_max  # Keep accel jerk at max for quick response when needed
+        desired_jerk_lower = min(max(min_lower_jerk, abs(accel_error / (DT_CTRL * 2)) * multiplier), decel_jerk_max)
 
     def ramp_update(current, target):
       if abs(target - current) > JERK_THRESHOLD:
