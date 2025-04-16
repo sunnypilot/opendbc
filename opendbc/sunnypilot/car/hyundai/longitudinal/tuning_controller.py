@@ -9,7 +9,7 @@ import math
 import numpy as np
 from dataclasses import dataclass
 
-from opendbc.car import structs, DT_CTRL, rate_limit, ACCELERATION_DUE_TO_GRAVITY
+from opendbc.car import structs, DT_CTRL, rate_limit
 from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.interfaces import CarStateBase
 
@@ -142,10 +142,9 @@ class LongitudinalTuningController:
     self.actual_accel = jerk_limited_integrator(self.desired_accel, self.state.accel_last, self.jerk_upper, self.jerk_lower)
     self.state.accel_last = self.actual_accel
 
-  def calculate_jerk_and_accel(self, CC: structs.CarControl, CS: CarStateBase, pitch) -> None:
+  def calculate_jerk_and_accel(self, CC: structs.CarControl, CS: CarStateBase) -> None:
     long_control_state = CC.actuators.longControlState
     stopping = long_control_state == LongCtrlState.stopping
-    has_lead = CC.hudControl.leadVisible
 
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       self.desired_accel = CC.actuators.accel
@@ -158,10 +157,6 @@ class LongitudinalTuningController:
       self.state.accel_last = 0.0
       self.aego.x = 0.0
       return
-
-    # Calculate amount of acceleration PCM should apply to reach target, given pitch.
-    # Clipped to only include downhill angles, avoids erroneously unsetting StopReq when on uphills
-    accel_due_to_pitch = math.sin(min(pitch.x, 0.0)) * ACCELERATION_DUE_TO_GRAVITY
 
     accel_cmd = CC.actuators.accel
 
@@ -200,49 +195,42 @@ class LongitudinalTuningController:
     accel_error = accel_cmd - a_ego_future
     accel_error_significant = abs(accel_error) >= 0.5
     jerk = abs(accel_error / (DT_CTRL * 2))
-    if not has_lead and not accel_error_significant:
-      # No lead car and accel error is not significant - use base value of 0.5
-      desired_jerk_upper = 0.5
+    if accel_error >= 0:
+      # Acceleration is increasing - use upper jerk limit
+      desired_jerk_upper = min(max(min_upper_jerk, jerk), accel_jerk_max)
       desired_jerk_lower = 0.5
     else:
-      # Lead car visible or accel error is significant - use original calculations
-      if accel_error >= 0:
-        # Acceleration is increasing - use upper jerk limit
-        desired_jerk_upper = min(max(min_upper_jerk, jerk), accel_jerk_max)
-        desired_jerk_lower = 0.5
+      # Acceleration is decreasing - use lower jerk limit
+      desired_jerk_upper = 0.5
+      # For deceleration, scale jerk based on how negative the acceleration error is
+      # This provides more gradual braking that doesn't suddenly become aggressive
+      error_magnitude = abs(accel_error)
+
+      # Softer jerk when already decelerating to prevent compounding braking effect
+      if a_ego_blended < -0.1:
+        # Progressive scaling of jerk for smoother deceleration
+        # This reduces jerk when already braking to prevent aggressive braking cascade
+        jerk_scale = float(np.clip(0.6 + (error_magnitude * 0.2), 0.6, 1.0))
+        jerk_value = jerk * jerk_scale
       else:
-        # Acceleration is decreasing - use lower jerk limit
-        desired_jerk_upper = 0.5
-        # For deceleration, scale jerk based on how negative the acceleration error is
-        # This provides more gradual braking that doesn't suddenly become aggressive
-        error_magnitude = abs(accel_error)
+        # Standard jerk calculation when not already decelerating
+        jerk_value = jerk * multiplier
 
-        # Softer jerk when already decelerating to prevent compounding braking effect
-        if a_ego_blended < -0.1:
-          # Progressive scaling of jerk for smoother deceleration
-          # This reduces jerk when already braking to prevent aggressive braking cascade
-          jerk_scale = float(np.clip(0.6 + (error_magnitude * 0.2), 0.6, 1.0))
-          jerk_value = jerk * jerk_scale
-        else:
-          # Standard jerk calculation when not already decelerating
-          jerk_value = jerk * multiplier
+      # Progressive cap on maximum jerk to prevent sudden aggressive braking
+      # This helps maintain a more consistent deceleration profile
+      max_jerk = min(decel_jerk_max, 2.5 + min(error_magnitude * 0.3, 0.7))
 
-        # Progressive cap on maximum jerk to prevent sudden aggressive braking
-        # This helps maintain a more consistent deceleration profile
-        max_jerk = min(decel_jerk_max, 2.5 + min(error_magnitude * 0.3, 0.7))
-
-        desired_jerk_lower = min(max(min_lower_jerk, jerk_value), max_jerk)
+      desired_jerk_lower = min(max(min_lower_jerk, jerk_value), max_jerk)
 
     self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
     self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
 
-    net_acceleration_request = accel_cmd + accel_due_to_pitch
-    net_acceleration_request_min = min(CC.actuators.accel + accel_due_to_pitch, net_acceleration_request)
-
-    if net_acceleration_request_min < -0.5 and stopping:
-      self.stopping = True
+    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
+      self.stopping = stopping
     elif not stopping:
       self.stopping = False
+    elif CC.actuators.accel < -0.5:
+      self.stopping = True
 
     if self.stopping:
       self.desired_accel = 0.0
