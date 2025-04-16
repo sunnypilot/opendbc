@@ -241,4 +241,4 @@ class LongitudinalTuningController:
       self.desired_accel = float(np.clip(accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
     self.actual_accel = jerk_limited_integrator(self.desired_accel, self.state.accel_last, self.jerk_upper, self.jerk_lower)
-    self.state.accel_last = accel_cmd
+    self.state.accel_last = self.actual_accel
