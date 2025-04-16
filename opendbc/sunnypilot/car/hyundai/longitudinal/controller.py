@@ -30,29 +30,9 @@ class LongitudinalController:
     self.tuning = LongitudinalTuningController(CP, CP_SP)
     self.long_state = LongitudinalState()
 
-  def get_stopping_state(self, long_control_state: LongCtrlState) -> None:
-    self.tuning.get_stopping_state(long_control_state)
+  def get_stopping_state(self, long_control_state: LongCtrlState, CC: structs.CarControl) -> None:
+    self.tuning.get_stopping_state(long_control_state, CC)
     self.long_state.stopping = self.tuning.stopping
-
-  def calculate_and_get_jerk(self, CC: structs.CarControl, CS: CarStateBase,
-                             long_control_state: LongCtrlState) -> None:
-    """Calculate jerk based on tuning."""
-    self.tuning.make_jerk(CC, CS, long_control_state)
-
-    if not CC.longActive:
-      self.long_state.jerk_upper = 0.0
-      self.long_state.jerk_lower = 0.0
-      return
-
-    self.long_state.jerk_upper = self.tuning.jerk_upper
-    self.long_state.jerk_lower = self.tuning.jerk_lower
-
-  def calculate_a_value(self, CC: structs.CarControl) -> None:
-    """Calculate aReqValue."""
-    self.tuning.calculate_a_value(CC)
-
-    self.long_state.desired_accel = self.tuning.desired_accel
-    self.long_state.actual_accel = self.tuning.actual_accel
 
   def calculate_jerk_and_accel(self, CC: structs.CarControl, CS: CarStateBase) -> None:
     self.tuning.calculate_jerk_and_accel(CC, CS)
@@ -70,11 +50,10 @@ class LongitudinalController:
 
   def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
-    #actuators = CC.actuators
-    #long_control_state = actuators.longControlState
+    actuators = CC.actuators
+    long_control_state = actuators.longControlState
 
     if frame % 2 == 0:
-      #self.get_stopping_state(long_control_state)
-      #self.calculate_and_get_jerk(CC, CS, long_control_state)
-      #self.calculate_a_value(CC)
+      self.get_stopping_state(long_control_state, CC)
+      # calculate jerk and acceleration
       self.calculate_jerk_and_accel(CC, CS)
