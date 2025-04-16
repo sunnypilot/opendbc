@@ -54,11 +54,12 @@ class LongitudinalController:
     self.long_state.desired_accel = self.tuning.desired_accel
     self.long_state.actual_accel = self.tuning.actual_accel
 
-  def update(self, CC: structs.CarControl, CS: CarStateBase) -> None:
+  def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     actuators = CC.actuators
     long_control_state = actuators.longControlState
 
-    self.get_stopping_state(long_control_state)
-    self.calculate_and_get_jerk(CC, CS, long_control_state)
-    self.calculate_a_value(CC)
+    if frame % 2 == 0:
+      self.get_stopping_state(long_control_state)
+      self.calculate_and_get_jerk(CC, CS, long_control_state)
+      self.calculate_a_value(CC)
