@@ -19,8 +19,8 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
-ACCEL_WINDUP_LIMIT = 5.0 * DT_CTRL * 2  # m/s^2 / frame
-ACCEL_WINDDOWN_LIMIT = -5.0 * DT_CTRL * 2  # m/s^2 / frame
+ACCEL_WINDUP_LIMIT = 4.0 * DT_CTRL * 2  # m/s^2 / frame
+ACCEL_WINDDOWN_LIMIT = -4.0 * DT_CTRL * 2  # m/s^2 / frame
 JERK_STEP = 0.1
 JERK_THRESHOLD = 0.1
 
