@@ -193,7 +193,6 @@ class LongitudinalTuningController:
 
     # Calculate desired upper and lower jerk limits based on acceleration error
     accel_error = accel_cmd - a_ego_future
-    accel_error_significant = abs(accel_error) >= 0.5
     jerk = abs(accel_error / (DT_CTRL * 2))
     if accel_error >= 0:
       # Acceleration is increasing - use upper jerk limit
