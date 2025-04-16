@@ -61,8 +61,8 @@ class LongitudinalController:
 
   def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
-    actuators = CC.actuators
-    long_control_state = actuators.longControlState
+    #actuators = CC.actuators
+    #long_control_state = actuators.longControlState
 
     if len(CC.orientationNED) == 3:
       self.pitch.update(CC.orientationNED[1])
