@@ -34,6 +34,12 @@ def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -
   return rate_limit(desired_accel, last_accel, -val, val)
 
 
+def ramp_update(current, target):
+  if abs(target - current) > JERK_THRESHOLD:
+    return current + float(np.clip(target - current, -JERK_STEP, JERK_STEP))
+  return current
+
+
 @dataclass
 class LongitudinalTuningState:
   accel_last: float = 0.0
@@ -108,11 +114,6 @@ class LongitudinalTuningController:
     min_upper_jerk = 0.5 if (velocity > 3.0) else 0.725
     min_lower_jerk = self.car_config.jerk_limits[0] if (self.desired_accel - self.actual_accel) <= -0.01 else 0.5
     multiplier = self.car_config.lower_jerk_multiplier
-
-    def ramp_update(current, target):
-      if abs(target - current) > JERK_THRESHOLD:
-        return current + float(np.clip(target - current, -JERK_STEP, JERK_STEP))
-      return current
 
     desired_jerk_upper = min(max(min_upper_jerk, self.state.jerk), accel_jerk_max)
     desired_jerk_lower = min(max(min_lower_jerk, -self.state.jerk * multiplier), decel_jerk_max)
@@ -218,11 +219,6 @@ class LongitudinalTuningController:
         # Acceleration is decreasing - use lower jerk limit
         desired_jerk_upper = accel_jerk_max  # Keep accel jerk at max for quick response when needed
         desired_jerk_lower = min(max(min_lower_jerk, abs(accel_error / (DT_CTRL * 2)) * multiplier), decel_jerk_max)
-
-    def ramp_update(current, target):
-      if abs(target - current) > JERK_THRESHOLD:
-        return current + float(np.clip(target - current, -JERK_STEP, JERK_STEP))
-      return current
 
     self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
     self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
