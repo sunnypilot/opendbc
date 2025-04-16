@@ -213,7 +213,25 @@ class LongitudinalTuningController:
       else:
         # Acceleration is decreasing - use lower jerk limit
         desired_jerk_upper = 0.5
-        desired_jerk_lower = min(max(min_lower_jerk, jerk * multiplier), decel_jerk_max)
+        # For deceleration, scale jerk based on how negative the acceleration error is
+        # This provides more gradual braking that doesn't suddenly become aggressive
+        error_magnitude = abs(accel_error)
+
+        # Softer jerk when already decelerating to prevent compounding braking effect
+        if a_ego_blended < -0.1:
+          # Progressive scaling of jerk for smoother deceleration
+          # This reduces jerk when already braking to prevent aggressive braking cascade
+          jerk_scale = float(np.clip(0.6 + (error_magnitude * 0.2), 0.6, 1.0))
+          jerk_value = jerk * jerk_scale
+        else:
+          # Standard jerk calculation when not already decelerating
+          jerk_value = jerk * multiplier
+
+        # Progressive cap on maximum jerk to prevent sudden aggressive braking
+        # This helps maintain a more consistent deceleration profile
+        max_jerk = min(decel_jerk_max, 2.5 + min(error_magnitude * 0.3, 0.7))
+
+        desired_jerk_lower = min(max(min_lower_jerk, jerk_value), max_jerk)
 
     self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
     self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
