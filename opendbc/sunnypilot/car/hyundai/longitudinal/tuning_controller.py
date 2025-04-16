@@ -111,7 +111,7 @@ class LongitudinalTuningController:
     future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.25, 0.5]))
     a_ego_future = a_ego_blended + j_ego * future_t  # noqa: F841
 
-    jerk_cmd = (accel_cmd - self.prev_accel) / (DT_CTRL * 2)
+    jerk_cmd = (accel_cmd - self.prev_accel) / (DT_CTRL * 2)  # noqa: F841
 
     # Separate into upper/lower
     self.jerk_upper = max(j_ego, 0.0)
