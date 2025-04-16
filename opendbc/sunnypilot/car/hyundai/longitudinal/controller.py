@@ -7,8 +7,7 @@ See the LICENSE.md file in the root directory for more details.
 
 from dataclasses import dataclass
 
-from opendbc.car import structs, DT_CTRL
-from opendbc.car.common.filter_simple import FirstOrderFilter
+from opendbc.car import structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import LongitudinalTuningController
 
