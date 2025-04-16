@@ -221,9 +221,9 @@ class LongitudinalTuningController:
     net_acceleration_request = accel_cmd + accel_due_to_pitch
     net_acceleration_request_min = min(CC.actuators.accel + accel_due_to_pitch, net_acceleration_request)
 
-    if net_acceleration_request_min < 0.2 or stopping:
+    if net_acceleration_request_min < -0.5 and stopping:
       self.stopping = True
-    elif net_acceleration_request_min > 0.3:
+    elif not stopping:
       self.stopping = False
 
     if self.stopping:
