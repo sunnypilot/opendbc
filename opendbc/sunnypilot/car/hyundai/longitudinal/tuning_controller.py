@@ -130,7 +130,7 @@ class LongitudinalTuningController:
     accel_error = accel_cmd - a_ego_future
     if accel_error <= -0.01:
       # Interpolate min_lower_jerk from 1.0 at -0.01 to 2.5 at -0.5
-      min_lower_jerk = float(np.interp(accel_error, [-0.01, -0.5], [1.0, 2.5]))
+      min_lower_jerk = float(np.interp(accel_error, [-0.01, -0.35], [1.0, 3.3]))
     else:
       min_lower_jerk = 0.5
 
