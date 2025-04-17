@@ -120,12 +120,7 @@ class LongitudinalTuningController:
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
     velocity = CS.out.vEgo
-    if velocity < 5.0:
-      decel_jerk_max = self.car_config.jerk_limits[1]
-    elif velocity > 20.0:
-      decel_jerk_max = 2.5
-    else:   # Between 5 m/s and 20 m/s
-      decel_jerk_max = 5.83 - (velocity/6)
+    speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
 
     accel_error = accel_cmd - a_ego_future
     if accel_error <= -0.01:
@@ -138,7 +133,7 @@ class LongitudinalTuningController:
     accel_jerk_max = self.car_config.jerk_limits[2] if long_control_state == LongCtrlState.pid else 1.0
 
     desired_jerk_upper = min(max(upper_jerk, j_ego), accel_jerk_max)
-    desired_jerk_lower = min(max(lower_jerk, -j_ego), decel_jerk_max)
+    desired_jerk_lower = min(lower_jerk, speed_factor)
 
     self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
     self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
