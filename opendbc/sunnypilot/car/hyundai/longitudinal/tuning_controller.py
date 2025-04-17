@@ -118,7 +118,7 @@ class LongitudinalTuningController:
     velocity = CS.out.vEgo
     speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
 
-    accel_error = a_ego_blended - self.accel_last
+    accel_error = a_ego_blended - self.state.accel_last
     if accel_error <= -0.01:
       # Interpolate min_lower_jerk from 1.0 at -0.01 to 5.0 at -3.5
       lower_jerk = float(np.interp(accel_error, [-0.01, -0.2, -0.5, -3.5], [1.0, 2.5, 3.3, 5.0]))
