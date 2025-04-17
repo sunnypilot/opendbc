@@ -129,44 +129,16 @@ class LongitudinalTuningController:
 
     accel_error = accel_cmd - a_ego_future
     if accel_error <= -0.01:
-      # Interpolate min_lower_jerk from 1.0 at -0.01 to 2.5 at -0.5
-      min_lower_jerk = float(np.interp(accel_error, [-0.01, -0.35], [1.0, 3.3]))
+      # Interpolate min_lower_jerk from 1.0 at -0.01 to 5.0 at -3.5
+      lower_jerk = float(np.interp(accel_error, [-0.01, -0.2, -0.5, -3.5], [1.0, 2.5, 3.3, 5.0]))
     else:
-      min_lower_jerk = 0.5
+      lower_jerk = 0.5
 
+    upper_jerk = 0.5 if (velocity > 3.0) else 0.725
     accel_jerk_max = self.car_config.jerk_limits[2] if long_control_state == LongCtrlState.pid else 1.0
-    min_upper_jerk = 0.5 if (velocity > 3.0) else 0.725
-    multiplier = self.car_config.lower_jerk_multiplier
 
-    # Calculate desired upper and lower jerk limits based on acceleration error
-    accel_error = accel_cmd - a_ego_future
-    jerk = abs(accel_error / (DT_CTRL * 2))
-    if accel_error >= 0:
-      # Acceleration is increasing - use upper jerk limit
-      desired_jerk_upper = min(max(min_upper_jerk, jerk), accel_jerk_max)
-      desired_jerk_lower = 0.5
-    else:
-      # Acceleration is decreasing - use lower jerk limit
-      desired_jerk_upper = 0.5
-      # For deceleration, scale jerk based on how negative the acceleration error is
-      # This provides more gradual braking that doesn't suddenly become aggressive
-      error_magnitude = abs(accel_error)
-
-      # Softer jerk when already decelerating to prevent compounding braking effect
-      if a_ego_blended < -0.1:
-        # Progressive scaling of jerk for smoother deceleration
-        # This reduces jerk when already braking to prevent aggressive braking cascade
-        jerk_scale = float(np.clip(0.6 + (error_magnitude * 0.2), 0.6, 1.0))
-        jerk_value = jerk * jerk_scale
-      else:
-        # Standard jerk calculation when not already decelerating
-        jerk_value = jerk * multiplier
-
-      # Progressive cap on maximum jerk to prevent sudden aggressive braking
-      # This helps maintain a more consistent deceleration profile
-      max_jerk = min(decel_jerk_max, 2.5 + min(error_magnitude * 0.3, 0.7))
-
-      desired_jerk_lower = min(max(min_lower_jerk, jerk_value), max_jerk)
+    desired_jerk_upper = min(max(upper_jerk, j_ego), accel_jerk_max)
+    desired_jerk_lower = min(max(lower_jerk, -j_ego), decel_jerk_max)
 
     self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
     self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
