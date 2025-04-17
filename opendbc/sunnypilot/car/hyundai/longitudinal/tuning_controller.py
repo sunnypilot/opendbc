@@ -63,7 +63,7 @@ class LongitudinalTuningController:
     self.aego = FirstOrderFilter(0.0, 0.25, DT_CTRL * 2)
     self.prev_accel = 0.0
 
-  def get_stopping_state(self, long_control_state: LongCtrlState, CC: structs.CarControl) -> None:
+  def get_stopping_state(self, long_control_state: LongCtrlState, CC: structs.CarControl, CS: CarStateBase) -> None:
     long_control_stopping = long_control_state == LongCtrlState.stopping
     strong_decel_request = CC.longActive and CC.actuators.accel < -0.5
 
@@ -73,16 +73,15 @@ class LongitudinalTuningController:
       self.stopping_count = 0
       return
 
-    if not long_control_stopping:
+    if not long_control_stopping and CS.out.vEgo < 5.0:
       # If state is not stopping, only stop if strong deceleration override is active
       self.stopping = strong_decel_request
       self.stopping_count = 0
     else:
       # Apply delay logic OR strong deceleration override
       self.stopping_count += 1
-      delay_met = self.stopping_count > 1 / (DT_CTRL * 2)
-      self.stopping = delay_met or strong_decel_request
-
+      delay_met = self.stopping_count > 1 / (DT_CTRL * 2)  # noqa: F841
+      self.stopping = strong_decel_request
 
   def calculate_jerk_and_accel(self, CC: structs.CarControl, CS: CarStateBase) -> None:
     long_control_state = CC.actuators.longControlState
