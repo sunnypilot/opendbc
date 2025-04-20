@@ -20,10 +20,10 @@ JERK_STEP = 0.1
 JERK_THRESHOLD = 0.1
 
 UPPER_JERK_BP = [0.005,  0.03,  0.1,   0.25,  0.4,  0.6]
-UPPER_JERK_V  = [  0.5,   0.6,  1.0,    1.6,  2.0,  2.5]
+UPPER_JERK_V  = [  0.5,   0.6,  1.0,    1.6,  2.0,  2.2]
 
-LOWER_JERK_BP = [-1.5, -1.0, -0.5, -0.25, -0.1, -0.025, -0.01, -0.005]
-LOWER_JERK_V  = [  3.3, 2.5,  1.9,  1.7,   1.5,  1.25,   1.0,   0.5]
+LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
+LOWER_JERK_V  = [  3.3, 2.4,  1.9,  1.7,   1.5,  1.25,   1.0,   0.5]
 
 
 def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -> float:
@@ -142,6 +142,7 @@ class LongitudinalTuningController:
     desired_jerk_upper = min(upper_jerk, upper_speed_factor)
     desired_jerk_lower = min(lower_jerk, lower_speed_factor)
 
-    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+    self.jerk_upper = (ramp_update(self.jerk_upper, desired_jerk_upper)
+      if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING else desired_jerk_upper)
     self.jerk_lower = (ramp_update(self.jerk_lower, desired_jerk_lower)
       if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING else desired_jerk_lower)
