@@ -137,7 +137,7 @@ class LongitudinalTuningController:
     accel_error_ = self.accel_cmd - a_ego_blended   # noqa: F841
     accel_error = a_ego_blended - self.state.accel_last
 
-  # Jerk is limited by the following conditions imposed by ISO 15622:2018
+  # Jerk is limited by the following conditions imposed by ISO 15622:2018.
     velocity = CS.out.vEgo
     lower_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
     upper_speed_factor = 1.0
