@@ -142,9 +142,9 @@ class LongitudinalTuningController:
 
       error_future = self.aego_blended_accel - a_ego_blended
       self.aego_blended_accel = self.pid.update(error_future,
-                                      speed=CS.out.vEgo,
-                                      feedforward=self.aego_blended_accel,
-                                      freeze_integrator=long_control_state != LongCtrlState.pid)
+                                                speed=CS.out.vEgo,
+                                                feedforward=self.aego_blended_accel,
+                                                freeze_integrator=long_control_state != LongCtrlState.pid)
     else:
       self.pid.reset()
 
