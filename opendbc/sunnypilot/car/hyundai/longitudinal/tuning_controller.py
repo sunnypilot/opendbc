@@ -60,7 +60,7 @@ class LongitudinalTuningController:
     self.state = LongitudinalTuningState()
     self.desired_accel = 0.0
     self.actual_accel = 0.0
-    self.aego_blended_accel = 0.0
+    self.accel_cmd = 0.0
     self.jerk_upper = 0.5
     self.jerk_lower = 0.5
     self.stopping = False
@@ -111,7 +111,7 @@ class LongitudinalTuningController:
     if self.stopping:
       self.desired_accel = 0.0
     else:
-      self.desired_accel = float(np.clip(self.aego_blended_accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+      self.desired_accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
     self.actual_accel = jerk_limited_integrator(self.desired_accel, self.state.accel_last, self.jerk_upper, self.jerk_lower)
     self.state.accel_last = self.actual_accel
@@ -126,7 +126,7 @@ class LongitudinalTuningController:
       self.jerk_lower = 5.0
       return
 
-    self.aego_blended_accel = CC.actuators.accel
+    self.accel_cmd = CC.actuators.accel
 
     a_ego_blended = float(np.interp(CS.out.vEgo, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
 
@@ -140,10 +140,10 @@ class LongitudinalTuningController:
     if CC.longActive:
       self.pid.i -= ACCEL_PID_UNWIND * float(np.sign(self.pid.i))
 
-      error_future = self.aego_blended_accel - a_ego_blended
-      self.aego_blended_accel = self.pid.update(error_future,
+      error_future = self.accel_cmd - a_ego_blended
+      self.accel_cmd = self.pid.update(error_future,
                                                 speed=CS.out.vEgo,
-                                                feedforward=self.aego_blended_accel,
+                                                feedforward=self.accel_cmd,
                                                 freeze_integrator=long_control_state != LongCtrlState.pid)
     else:
       self.pid.reset()
@@ -155,16 +155,16 @@ class LongitudinalTuningController:
     if long_control_state == LongCtrlState.pid:
       upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [1.0, 2.2, 1.0]))
 
-    accel_error = self.aego_blended_accel - self.state.accel_last
+    accel_error = self.accel_cmd - self.state.accel_last
 
-    if self.aego_blended_accel > 0.005 and accel_error > 0.005:
+    if self.accel_cmd > 0.005 and accel_error > 0.005:
       upper_jerk = float(np.interp(accel_error, UPPER_JERK_BP, UPPER_JERK_V))
     else:
       upper_jerk = 0.5
 
     if self.CP.radarUnavailable:
       lower_jerk = 5.0
-    elif self.aego_blended_accel < 0.005 and accel_error < 0.005:
+    elif self.accel_cmd < 0.005 and accel_error < 0.005:
       lower_jerk = float(np.interp(accel_error, LOWER_JERK_BP, LOWER_JERK_V))
     else:
       lower_jerk = 0.5
