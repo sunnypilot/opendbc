@@ -157,14 +157,14 @@ class LongitudinalTuningController:
 
     accel_error = self.accel_cmd - self.state.accel_last
 
-    if self.accel_cmd > 0.005 and accel_error > 0.005:
+    if accel_error > 0.005:
       upper_jerk = float(np.interp(accel_error, UPPER_JERK_BP, UPPER_JERK_V))
     else:
       upper_jerk = 0.5
 
     if self.CP.radarUnavailable:
       lower_jerk = 5.0
-    elif self.accel_cmd < 0.005 and accel_error < 0.005:
+    elif self.accel_cmd < -0.005 or accel_error < -0.005:
       lower_jerk = float(np.interp(accel_error, LOWER_JERK_BP, LOWER_JERK_V))
     else:
       lower_jerk = 0.5
