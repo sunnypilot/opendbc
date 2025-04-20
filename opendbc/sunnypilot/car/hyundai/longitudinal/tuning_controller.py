@@ -10,7 +10,6 @@ from dataclasses import dataclass
 
 from opendbc.car import structs, DT_CTRL, rate_limit
 from opendbc.car.common.filter_simple import FirstOrderFilter
-from opendbc.car.common.pid import PIDController
 from opendbc.car.interfaces import CarStateBase
 
 from opendbc.car.hyundai.values import CarControllerParams
@@ -66,10 +65,6 @@ class LongitudinalTuningController:
     self.stopping = False
     self.stopping_count = 0
 
-    self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
-                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
-                             pos_limit=CarControllerParams.ACCEL_MAX, neg_limit=CarControllerParams.ACCEL_MIN,
-                             k_f=CP.longitudinalTuning.kf, rate=1 / (DT_CTRL * 2))
     self.aego = FirstOrderFilter(0.0, 0.25, DT_CTRL * 2)
 
   def get_stopping_state(self, long_control_state: LongCtrlState, long_state_last: LongCtrlState) -> None:
@@ -137,16 +132,7 @@ class LongitudinalTuningController:
     future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.1, 0.2]))
     a_ego_blended = a_ego_blended + j_ego * future_t
 
-    if CC.longActive:
-      self.pid.i -= ACCEL_PID_UNWIND * float(np.sign(self.pid.i))
-
-      error_future = self.accel_cmd - a_ego_blended
-      self.accel_cmd = self.pid.update(error_future,
-                                                speed=CS.out.vEgo,
-                                                feedforward=self.accel_cmd,
-                                                freeze_integrator=long_control_state != LongCtrlState.pid)
-    else:
-      self.pid.reset()
+    accel_error = self.accel_cmd - a_ego_blended
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
     velocity = CS.out.vEgo
@@ -154,8 +140,6 @@ class LongitudinalTuningController:
     upper_speed_factor = 1.0
     if long_control_state == LongCtrlState.pid:
       upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [1.0, 2.2, 1.0]))
-
-    accel_error = self.accel_cmd - self.state.accel_last
 
     if accel_error > 0.005:
       upper_jerk = float(np.interp(accel_error, UPPER_JERK_BP, UPPER_JERK_V))
