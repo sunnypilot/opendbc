@@ -27,6 +27,10 @@ class TestLongitudinalTuningController(unittest.TestCase):
   def test_make_jerk_flag_off(self):
     """Test when LONG_TUNING flag is off"""
     mock_CC, mock_CS = Mock(spec=structs.CarControl), Mock(spec=CarStateBase)
+    mock_CS.out = Mock()
+    mock_CS.out.vEgo = 0.0
+    mock_CS.out.aEgo = 0.0
+    mock_CS.aBasis = 0.0
 
     # Test with PID state
     self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
@@ -50,6 +54,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     self.controller.stopping = False
     mock_CS = Mock()
     mock_CS.out = Mock(aEgo=0.8, vEgo=3.0)
+    mock_CS.aBasis = 0.8
 
     self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
     print(f"[FlagOn] jerk_upper={self.controller.jerk_upper:.3f}, jerk_lower={self.controller.jerk_lower:.3f}")
@@ -66,6 +71,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     print("[a_value] starting accel_last:", self.controller.state.accel_last)
     # first pass: limit to jerk_upper * DT_CTRL * 2 = 0.1
     self.controller.jerk_upper = 0.1 / (DT_CTRL * 2)
+    self.controller.accel_cmd = 1.0  # ensure accel_cmd is set
     self.controller.calculate_a_value(mock_CC)
     print(f"[a_value] pass1 actual_accel={self.controller.actual_accel:.5f}")
     self.assertAlmostEqual(self.controller.actual_accel, 0.1, places=5)
@@ -73,6 +79,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     # second pass: limit increment by new jerk_upper
     mock_CC.actuators.accel = 0.7
     self.controller.jerk_upper = 0.2 / (DT_CTRL * 2)
+    self.controller.accel_cmd = 0.7  # update accel_cmd
     self.controller.calculate_a_value(mock_CC)
     print(f"[a_value] pass2 actual_accel={self.controller.actual_accel:.5f}")
     self.assertAlmostEqual(self.controller.actual_accel, 0.3, places=5)
@@ -103,6 +110,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     for v, a in zip(vels, accels, strict=True):
       mock_CS.out.vEgo = float(v)
       mock_CS.out.aEgo = float(a)
+      mock_CS.aBasis = float(a)
       mock_CC.actuators.accel = float(a)
       self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
       print(f"[realistic][LONG_TUNING] v={v:.2f}, a={a:.2f}, jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
@@ -118,6 +126,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     for v, a in zip(vels, accels, strict=True):
       mock_CS.out.vEgo = float(v)
       mock_CS.out.aEgo = float(a)
+      mock_CS.aBasis = float(a)
       mock_CC.actuators.accel = float(a)
       self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
       print(f"[realistic][LONG_TUNING_BRAKING] v={v:.2f}, a={a:.2f}, jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
