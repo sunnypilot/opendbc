@@ -301,6 +301,8 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
 
+    CarStateExt.update_canfd_ext(self, ret, can_parsers)
+
     return ret
 
   def get_can_parsers_canfd(self, CP):
