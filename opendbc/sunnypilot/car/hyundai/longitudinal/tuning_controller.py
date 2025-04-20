@@ -9,6 +9,8 @@ import numpy as np
 from dataclasses import dataclass
 
 from opendbc.car import structs, DT_CTRL, rate_limit
+from opendbc.car.common.filter_simple import FirstOrderFilter
+from opendbc.car.common.pid import PIDController
 from opendbc.car.interfaces import CarStateBase
 
 from opendbc.car.hyundai.values import CarControllerParams
@@ -16,6 +18,7 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
+ACCEL_PID_UNWIND = 0.02 * DT_CTRL * 2
 JERK_STEP = 0.1
 JERK_THRESHOLD = 0.1
 
@@ -57,10 +60,17 @@ class LongitudinalTuningController:
     self.state = LongitudinalTuningState()
     self.desired_accel = 0.0
     self.actual_accel = 0.0
+    self.aego_blended_accel = 0.0
     self.jerk_upper = 0.5
     self.jerk_lower = 0.5
     self.stopping = False
     self.stopping_count = 0
+
+    self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
+                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
+                             pos_limit=CarControllerParams.ACCEL_MAX, neg_limit=CarControllerParams.ACCEL_MIN,
+                             k_f=CP.longitudinalTuning.kf, rate=1 / (DT_CTRL * 2))
+    self.aego = FirstOrderFilter(0.0, 0.25, DT_CTRL * 2)
 
   def get_stopping_state(self, long_control_state: LongCtrlState, long_state_last: LongCtrlState) -> None:
     stopping = long_control_state == LongCtrlState.stopping
@@ -101,7 +111,7 @@ class LongitudinalTuningController:
     if self.stopping:
       self.desired_accel = 0.0
     else:
-      self.desired_accel = float(np.clip(CC.actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+      self.desired_accel = float(np.clip(self.aego_blended_accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
     self.actual_accel = jerk_limited_integrator(self.desired_accel, self.state.accel_last, self.jerk_upper, self.jerk_lower)
     self.state.accel_last = self.actual_accel
@@ -116,7 +126,27 @@ class LongitudinalTuningController:
       self.jerk_lower = 5.0
       return
 
-    planned_accel = CC.actuators.accel
+    self.aego_blended_accel = CC.actuators.accel
+
+    a_ego_blended = float(np.interp(CS.out.vEgo, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
+
+    prev_aego = self.aego.x
+    self.aego.update(a_ego_blended)
+    j_ego = (self.aego.x - prev_aego) / (DT_CTRL * 2)
+
+    future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.1, 0.2]))
+    a_ego_blended = a_ego_blended + j_ego * future_t
+
+    if CC.longActive:
+      self.pid.i -= ACCEL_PID_UNWIND * float(np.sign(self.pid.i))
+
+      error_future = self.aego_blended_accel - a_ego_blended
+      self.aego_blended_accel = self.pid.update(error_future,
+                                      speed=CS.out.vEgo,
+                                      feedforward=self.aego_blended_accel,
+                                      freeze_integrator=long_control_state != LongCtrlState.pid)
+    else:
+      self.pid.reset()
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018
     velocity = CS.out.vEgo
@@ -125,16 +155,16 @@ class LongitudinalTuningController:
     if long_control_state == LongCtrlState.pid:
       upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [1.0, 2.2, 1.0]))
 
-    accel_error = planned_accel - self.state.accel_last
+    accel_error = self.aego_blended_accel - self.state.accel_last
 
-    if planned_accel > 0.005 and accel_error > 0.005:
+    if self.aego_blended_accel > 0.005 and accel_error > 0.005:
       upper_jerk = float(np.interp(accel_error, UPPER_JERK_BP, UPPER_JERK_V))
     else:
       upper_jerk = 0.5
 
     if self.CP.radarUnavailable:
       lower_jerk = 5.0
-    elif planned_accel < 0.005 and accel_error < 0.005:
+    elif self.aego_blended_accel < 0.005 and accel_error < 0.005:
       lower_jerk = float(np.interp(accel_error, LOWER_JERK_BP, LOWER_JERK_V))
     else:
       lower_jerk = 0.5
