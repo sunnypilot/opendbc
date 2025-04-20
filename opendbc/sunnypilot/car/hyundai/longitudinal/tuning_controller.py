@@ -26,8 +26,8 @@ UPPER_START_JERK_V  = [  0.5,   0.6,  1.0,    1.6,  2.0]
 UPPER_JERK_BP = [0.005, 0.03, 0.5, 1.0,  1.5, 2.0]
 UPPER_JERK_V  = [  0.5,  0.6, 1.0, 1.5, 1.25, 2.0]
 
-LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
-LOWER_JERK_V  = [ 3.3,  2.4,  1.9,   1.7,  1.5,   1.25,   1.0,    0.5]
+LOWER_JERK_BP = [-2.2, -1.6, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
+LOWER_JERK_V  = [ 3.3,  2.4,  1.85,   1.7,  1.5,   1.25,   1.0,    0.5]
 
 
 def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -> float:
