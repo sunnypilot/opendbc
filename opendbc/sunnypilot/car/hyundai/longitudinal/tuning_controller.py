@@ -97,7 +97,7 @@ class LongitudinalTuningController:
       self.state.accel_last = 0.0
       return
 
-    # Force zero aReqRaw during StopReq
+    # Force zero aReqRaw during StopReq.
     if self.stopping:
       self.desired_accel = 0.0
     else:
