@@ -97,7 +97,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     ]
     accels = np.concatenate(segments)[:num_points]
     vels = np.zeros_like(accels)
-    vels[0] = 15.0
+    vels[0] = 5.0
     for i in range(1, len(accels)):
       vels[i] = max(0.0, min(30.0, vels[i-1] + accels[i-1] * (DT_CTRL*2)))
     mock_CC, mock_CS = Mock(), Mock()

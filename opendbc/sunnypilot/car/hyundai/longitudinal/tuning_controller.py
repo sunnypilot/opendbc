@@ -144,19 +144,20 @@ class LongitudinalTuningController:
     lower_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
     upper_speed_factor = 1.0
     if long_control_state == LongCtrlState.pid:
-      upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [1.0, 2.2, 1.0]))
+      upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 3.0, 1.0]))
 
     if accel_error > 0.005:
-      _upper_bp = UPPER_START_JERK_BP if velocity < 5.0 else UPPER_JERK_BP
-      _upper_v = UPPER_START_JERK_V if velocity < 5.0 else UPPER_JERK_V
-      upper_jerk = float(np.interp(accel_error, _upper_bp, _upper_v))
+      bp = UPPER_START_JERK_BP if velocity < 5.0 else UPPER_JERK_BP
+      _upper_v = np.array(UPPER_START_JERK_V) if velocity < 5.0 else np.array(UPPER_JERK_V)
+      _scaled_v = _upper_v * (self.car_config.jerk_limits[2] / _upper_v[-1])
+      upper_jerk = float(np.interp(accel_error, bp, _scaled_v))
     else:
       upper_jerk = 0.5
 
-    # dynamic lower‐jerk curve: scale the original LOWER_JERK_V by config ratio
+    # lower‐jerk : scale the original LOWER_JERK_V by config ratio
     lower_max = self.car_config.jerk_limits[1]
-    orig_v = np.array(LOWER_JERK_V)
-    dynamic_lower = orig_v * (lower_max / orig_v[0])
+    original_value = np.array(LOWER_JERK_V)
+    dynamic_lower = original_value * (lower_max / original_value[0])
 
     if self.CP.radarUnavailable:
       lower_jerk = 5.0
