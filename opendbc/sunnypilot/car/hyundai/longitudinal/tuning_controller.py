@@ -14,6 +14,7 @@ from opendbc.car.interfaces import CarStateBase
 
 from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
@@ -26,7 +27,7 @@ UPPER_START_JERK_V  = [  0.5,   0.6,  1.0,    1.6,  2.0]
 UPPER_JERK_BP = [0.005, 0.03, 0.5, 1.0,  1.5, 2.0]
 UPPER_JERK_V  = [  0.5,  0.6, 1.0, 1.5, 1.25, 2.0]
 
-LOWER_JERK_BP = [-2.2, -1.6, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
+LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
 LOWER_JERK_V  = [ 3.3,  2.5,  2.0,   1.9,  1.8,   1.65,   1.15,    0.5]
 
 
@@ -58,6 +59,7 @@ class LongitudinalTuningController:
     self.CP = CP
     self.CP_SP = CP_SP
 
+    self.car_config = get_car_config(CP)
     self.state = LongitudinalTuningState()
     self.desired_accel = 0.0
     self.actual_accel = 0.0
@@ -151,10 +153,15 @@ class LongitudinalTuningController:
     else:
       upper_jerk = 0.5
 
+    # dynamic lower‐jerk curve: scale the original LOWER_JERK_V by config ratio
+    lower_max = self.car_config.jerk_limits[1]
+    orig_v = np.array(LOWER_JERK_V)
+    dynamic_lower = orig_v * (lower_max / orig_v[0])
+
     if self.CP.radarUnavailable:
       lower_jerk = 5.0
-    elif accel_error < -0.005 or self.accel_cmd < 0:
-      lower_jerk = float(np.interp(accel_error, LOWER_JERK_BP, LOWER_JERK_V))
+    elif accel_error < -0.005:
+      lower_jerk = float(np.interp(accel_error, LOWER_JERK_BP, dynamic_lower))
     else:
       lower_jerk = 0.5
 
