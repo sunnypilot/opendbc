@@ -20,15 +20,7 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 JERK_STEP = 0.1
 JERK_THRESHOLD = 0.1
-
-UPPER_START_JERK_BP = [0.005,  0.6,  1.0,  1.6,  2.0]
-UPPER_START_JERK_V  = [  0.5,   0.6,  1.0,    1.6,  2.0]
-
-UPPER_JERK_BP = [0.005, 0.03, 0.5, 1.0,  1.5, 2.0]
-UPPER_JERK_V  = [  0.5,  0.6, 1.0, 1.5, 1.25, 2.0]
-
-LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
-LOWER_JERK_V  = [ 3.3,  2.5,  2.0,   1.9,  1.8,   1.65,   1.15,    0.5]
+MIN_JERK = 0.5
 
 
 def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -> float:
@@ -128,43 +120,27 @@ class LongitudinalTuningController:
     self.accel_cmd = CC.actuators.accel
 
     a_ego_blended = float(np.interp(CS.out.vEgo, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
-
-    prev_aego = self.aego.x
     self.aego.update(a_ego_blended)
-    j_ego = (self.aego.x - prev_aego) / (DT_CTRL * 2)
 
-    future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.25, 0.5]))
-    a_ego_blended_ = a_ego_blended + j_ego * future_t
+    # Lookahead jerk: How much jerk is needed to reach desired accel in future_t seconds
+    future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.1, 0.5]))
+    j_ego = (self.accel_cmd - self.aego.x) / future_t
 
-    accel_error_ = self.accel_cmd - a_ego_blended_
-    accel_error = a_ego_blended - self.state.accel_last  # noqa: F841
-
-  # Jerk is limited by the following conditions imposed by ISO 15622:2018.
+    # Jerk is limited by the following conditions imposed by ISO 15622:2018.
     velocity = CS.out.vEgo
     lower_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
     upper_speed_factor = 1.0
     if long_control_state == LongCtrlState.pid:
       upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 3.0, 1.0]))
 
-    if accel_error_ > 0.005:
-      bp = UPPER_START_JERK_BP if velocity < 5.0 else UPPER_JERK_BP
-      _upper_v = np.array(UPPER_START_JERK_V) if velocity < 5.0 else np.array(UPPER_JERK_V)
-      _scaled_v = _upper_v * (self.car_config.jerk_limits[2] / _upper_v[-1])
-      upper_jerk = float(np.interp(accel_error_, bp, _scaled_v))
-    else:
-      upper_jerk = 0.5
+    # upper-jerk
+    upper_jerk = max(j_ego, MIN_JERK)
 
-    # lower‐jerk : scale the original LOWER_JERK_V by config ratio
-    lower_max = self.car_config.jerk_limits[1]
-    original_value = np.array(LOWER_JERK_V)
-    dynamic_lower = original_value * (lower_max / original_value[0])
-
+    # lower‐jerk
     if self.CP.radarUnavailable:
       lower_jerk = 5.0
-    elif accel_error_ < -0.005:
-      lower_jerk = float(np.interp(accel_error_, LOWER_JERK_BP, dynamic_lower))
     else:
-      lower_jerk = 0.5
+      lower_jerk = max(-j_ego, MIN_JERK)
 
     desired_jerk_upper = min(upper_jerk, upper_speed_factor)
     desired_jerk_lower = min(lower_jerk, lower_speed_factor)
