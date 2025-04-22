@@ -136,8 +136,8 @@ class LongitudinalTuningController:
     future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.25, 0.5]))
     a_ego_blended_ = a_ego_blended + j_ego * future_t
 
-    accel_error_ = self.accel_cmd - a_ego_blended   # noqa: F841
-    accel_error = a_ego_blended - self.state.accel_last
+    accel_error_ = self.accel_cmd - a_ego_blended_
+    accel_error = a_ego_blended - self.state.accel_last  # noqa: F841
 
   # Jerk is limited by the following conditions imposed by ISO 15622:2018.
     velocity = CS.out.vEgo
@@ -146,11 +146,11 @@ class LongitudinalTuningController:
     if long_control_state == LongCtrlState.pid:
       upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 3.0, 1.0]))
 
-    if accel_error > 0.005:
+    if accel_error_ > 0.005:
       bp = UPPER_START_JERK_BP if velocity < 5.0 else UPPER_JERK_BP
       _upper_v = np.array(UPPER_START_JERK_V) if velocity < 5.0 else np.array(UPPER_JERK_V)
       _scaled_v = _upper_v * (self.car_config.jerk_limits[2] / _upper_v[-1])
-      upper_jerk = float(np.interp(accel_error, bp, _scaled_v))
+      upper_jerk = float(np.interp(accel_error_, bp, _scaled_v))
     else:
       upper_jerk = 0.5
 
@@ -161,8 +161,8 @@ class LongitudinalTuningController:
 
     if self.CP.radarUnavailable:
       lower_jerk = 5.0
-    elif accel_error < -0.005:
-      lower_jerk = float(np.interp(accel_error, LOWER_JERK_BP, dynamic_lower))
+    elif accel_error_ < -0.005:
+      lower_jerk = float(np.interp(accel_error_, LOWER_JERK_BP, dynamic_lower))
     else:
       lower_jerk = 0.5
 
