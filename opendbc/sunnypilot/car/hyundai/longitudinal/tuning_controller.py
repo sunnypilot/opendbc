@@ -133,8 +133,8 @@ class LongitudinalTuningController:
     self.aego.update(a_ego_blended)
     j_ego = (self.aego.x - prev_aego) / (DT_CTRL * 2)
 
-    future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.1, 0.2]))
-    a_ego_blended_ = a_ego_blended + j_ego * future_t   # noqa: F841
+    future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.25, 0.5]))
+    a_ego_blended_ = a_ego_blended + j_ego * future_t
 
     accel_error_ = self.accel_cmd - a_ego_blended   # noqa: F841
     accel_error = a_ego_blended - self.state.accel_last
