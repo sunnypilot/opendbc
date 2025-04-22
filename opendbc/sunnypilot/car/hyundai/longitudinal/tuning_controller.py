@@ -23,10 +23,10 @@ JERK_THRESHOLD = 0.1
 MIN_JERK = 0.5
 
 JERK_LOOKAHEAD_BP = [2.0, 5.0]
-
 UPPER_JERK_LOOKAHEAD_V = [0.25, 0.5]
-LOWER_JERK_LOOKAHEAD_V = [0.1, 0.5]
 
+GEN1_LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
+GEN1_LOWER_JERK_V  = [ 3.3,  2.5,  2.0,   1.9,  1.8,   1.65,   1.15,    0.5]
 
 def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -> float:
   if desired_accel >= last_accel:
@@ -57,6 +57,7 @@ class LongitudinalTuningController:
     self.CP_SP = CP_SP
 
     self.car_config = get_car_config(CP)
+    self.LOWER_JERK_LOOKAHEAD_V = [self.car_config.lookahead[1], self.car_config.lookahead[2]]
     self.state = LongitudinalTuningState()
     self.desired_accel = 0.0
     self.actual_accel = 0.0
@@ -132,9 +133,8 @@ class LongitudinalTuningController:
 
     # Lookahead jerk: How much jerk is needed to reach desired accel in future_t seconds
     future_t_upper = float(np.interp(velocity, JERK_LOOKAHEAD_BP,
-                      [self.car_config.jerk_limits[0], UPPER_JERK_LOOKAHEAD_V[1]]))
-    future_t_lower = float(np.interp(velocity, JERK_LOOKAHEAD_BP,
-                      [self.car_config.jerk_limits[1], LOWER_JERK_LOOKAHEAD_V[1]]))
+                      [self.car_config.lookahead[0], UPPER_JERK_LOOKAHEAD_V[1]]))
+    future_t_lower = float(np.interp(velocity, JERK_LOOKAHEAD_BP, self.LOWER_JERK_LOOKAHEAD_V))
 
     # Required jerk to reach target accel in lookahead window
     j_ego_upper = accel_error / future_t_upper
@@ -154,10 +154,23 @@ class LongitudinalTuningController:
     desired_jerk_upper = min(max(j_ego_upper, MIN_JERK), upper_speed_factor)
     desired_jerk_lower = min(lower_jerk, lower_speed_factor)
 
-    # Optional smoothing
+    # Gen1 negative accel tune
+    gen1_accel_error = a_ego_blended - self.state.accel_last
+    if self.CP.radarUnavailable:
+      gen1_lower_jerk = 5.0
+    elif gen1_accel_error < 0:
+      lower_max = self.car_config.jerk_limits
+      original_value = np.array(GEN1_LOWER_JERK_V)
+      dynamic_lower = original_value * (lower_max / original_value[0])
+      gen1_lower_jerk = float(np.interp(gen1_accel_error, GEN1_LOWER_JERK_BP, dynamic_lower))
+    else:
+      gen1_lower_jerk = 0.5
+    gen1_desired_jerk_lower = min(gen1_lower_jerk, lower_speed_factor)
+
+    # New gen tune uses LONG_TUNING_BRAKING flag
     if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
       self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
       self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
     else:
-      self.jerk_upper = desired_jerk_upper
-      self.jerk_lower = desired_jerk_lower
+      self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+      self.jerk_lower = ramp_update(self.jerk_lower, gen1_desired_jerk_lower)
