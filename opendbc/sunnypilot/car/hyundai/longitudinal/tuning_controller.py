@@ -22,7 +22,7 @@ JERK_STEP = 0.1
 JERK_THRESHOLD = 0.1
 MIN_JERK = 0.5
 
-JERK_LOOKAHEAD_BP = [2., 5.]
+JERK_LOOKAHEAD_BP = [2.0, 5.0]
 
 UPPER_JERK_LOOKAHEAD_V = [0.25, 0.5]
 LOWER_JERK_LOOKAHEAD_V = [0.1, 0.5]
@@ -131,8 +131,10 @@ class LongitudinalTuningController:
     accel_error = self.accel_cmd - self.aego.x
 
     # Lookahead jerk: How much jerk is needed to reach desired accel in future_t seconds
-    future_t_upper = float(np.interp(velocity, JERK_LOOKAHEAD_BP, UPPER_JERK_LOOKAHEAD_V))
-    future_t_lower = float(np.interp(velocity, JERK_LOOKAHEAD_BP, LOWER_JERK_LOOKAHEAD_V))
+    future_t_upper = float(np.interp(velocity, JERK_LOOKAHEAD_BP,
+                      [self.car_config.jerk_limits[0], UPPER_JERK_LOOKAHEAD_V[1]]))
+    future_t_lower = float(np.interp(velocity, JERK_LOOKAHEAD_BP,
+                      [self.car_config.jerk_limits[1], LOWER_JERK_LOOKAHEAD_V[1]]))
 
     # Required jerk to reach target accel in lookahead window
     j_ego_upper = accel_error / future_t_upper
@@ -144,10 +146,9 @@ class LongitudinalTuningController:
       upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 3.0, 1.0]))
     lower_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
 
+    lower_jerk = max(-j_ego_lower, MIN_JERK)
     if self.CP.radarUnavailable:
       lower_jerk = 5.0
-    else:
-      lower_jerk = max(-j_ego_lower, MIN_JERK)
 
     # Final jerk limits with thresholds
     desired_jerk_upper = min(max(j_ego_upper, MIN_JERK), upper_speed_factor)
