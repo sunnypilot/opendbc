@@ -14,7 +14,7 @@ class CarState(CarStateBase):
     super().__init__(CP, CP_SP)
     self.can_define = CANDefine(DBC[CP.carFingerprint][Bus.party])
     self.shifter_values = self.can_define.dv["DI_systemStatus"]["DI_gear"]
-    self.is3Y = CP.carFingerprint in ["TESLA_MODEL3", "TESLA_MODELY"]
+    self.is3Y = CP.carFingerprint in ["TESLA_MODEL_3", "TESLA_MODEL_Y"]
 
     self.hands_on_level = 0
     self.das_control = None
