@@ -14,6 +14,7 @@ class CarState(CarStateBase):
     super().__init__(CP, CP_SP)
     self.can_define = CANDefine(DBC[CP.carFingerprint][Bus.party])
     self.shifter_values = self.can_define.dv["DI_systemStatus"]["DI_gear"]
+    self.is3Y = CP.carFingerprint in ["TESLA_MODEL3", "TESLA_MODELY"]
 
     self.hands_on_level = 0
     self.das_control = None
@@ -85,7 +86,8 @@ class CarState(CarStateBase):
     ret.stockAeb = cp_ap_party.vl["DAS_control"]["DAS_aebEvent"] == 1
 
     # Stock Autosteer should be off (includes FSD)
-    ret.invalidLkasSetting = cp_ap_party.vl["DAS_settings"]["DAS_autosteerEnabled"] != 0
+    if self.is3Y:
+      ret.invalidLkasSetting = cp_ap_party.vl["DAS_settings"]["DAS_autosteerEnabled"] != 0
 
     # Buttons # ToDo: add Gap adjust button
 
