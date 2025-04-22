@@ -22,6 +22,9 @@ JERK_STEP = 0.1
 JERK_THRESHOLD = 0.1
 MIN_JERK = 0.5
 
+UPPER_JERK_LOOKAHEAD_V = [0.25, 0.5]
+LOWER_JERK_LOOKAHEAD_V = [0.1, 0.5]
+
 
 def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -> float:
   if desired_accel >= last_accel:
@@ -117,35 +120,41 @@ class LongitudinalTuningController:
       self.jerk_lower = 5.0
       return
 
+    velocity = CS.out.vEgo
     self.accel_cmd = CC.actuators.accel
 
-    a_ego_blended = float(np.interp(CS.out.vEgo, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
+    a_ego_blended = float(np.interp(velocity, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
     self.aego.update(a_ego_blended)
 
+    accel_error = self.accel_cmd - self.aego.x
+
     # Lookahead jerk: How much jerk is needed to reach desired accel in future_t seconds
-    future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.1, 0.5]))
-    j_ego = (self.accel_cmd - self.aego.x) / future_t
+    future_t_upper = float(np.interp(velocity, [2., 5.], UPPER_JERK_LOOKAHEAD_V))
+    future_t_lower = float(np.interp(velocity, [2., 5.], LOWER_JERK_LOOKAHEAD_V))
+
+    # Required jerk to reach target accel in lookahead window
+    j_ego_upper = accel_error / future_t_upper
+    j_ego_lower = accel_error / future_t_lower
 
     # Jerk is limited by the following conditions imposed by ISO 15622:2018.
-    velocity = CS.out.vEgo
-    lower_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
     upper_speed_factor = 1.0
     if long_control_state == LongCtrlState.pid:
       upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 3.0, 1.0]))
+    lower_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
 
-    # upper-jerk
-    upper_jerk = max(j_ego, MIN_JERK)
-
-    # lower‐jerk
     if self.CP.radarUnavailable:
       lower_jerk = 5.0
     else:
-      lower_jerk = max(-j_ego, MIN_JERK)
+      lower_jerk = max(-j_ego_lower, MIN_JERK)
 
-    desired_jerk_upper = min(upper_jerk, upper_speed_factor)
+    # Final jerk limits with thresholds
+    desired_jerk_upper = min(max(j_ego_upper, MIN_JERK), upper_speed_factor)
     desired_jerk_lower = min(lower_jerk, lower_speed_factor)
 
-    self.jerk_upper = (ramp_update(self.jerk_upper, desired_jerk_upper)
-      if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING else desired_jerk_upper)
-    self.jerk_lower = (ramp_update(self.jerk_lower, desired_jerk_lower)
-      if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING else desired_jerk_lower)
+    # Optional smoothing
+    if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
+      self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+      self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
+    else:
+      self.jerk_upper = desired_jerk_upper
+      self.jerk_lower = desired_jerk_lower
