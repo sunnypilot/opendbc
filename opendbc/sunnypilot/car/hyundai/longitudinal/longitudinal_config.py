@@ -15,7 +15,7 @@ class CarTuningConfig:
   v_ego_stopping: float = 0.25
   v_ego_starting: float = 0.10
   stopping_decel_rate: float = 0.25
-  lookahead: tuple[float, float, float] = 0.25, 0.1, 0.5  # (upper min, lower min , lower max)
+  lookahead: tuple[float, float, float] = 0.25, 0.15, 0.3  # (upper min, lower min , lower max)
   longitudinal_actuator_delay: float = 0.45
   jerk_limits: float = 3.3
 
@@ -40,19 +40,19 @@ TUNING_CONFIGS = {
 CAR_SPECIFIC_CONFIGS = {
   CAR.HYUNDAI_ELANTRA_2021: CarTuningConfig(
     stopping_decel_rate=0.8,
-    lookahead=(0.25, 0.25, 0.5)
+    lookahead=(0.25, 0.15, 0.3)
   ),
   CAR.KIA_NIRO_EV: CarTuningConfig(
     v_ego_stopping=0.1,
     stopping_decel_rate=0.1,
-    lookahead=(0.25, 0.3, 0.6),
+    lookahead=(0.25, 0.15, 0.4),
     jerk_limits=2.7,
-    longitudinal_actuator_delay=0.45,
+    longitudinal_actuator_delay=0.25,
   ),
   CAR.HYUNDAI_IONIQ:CarTuningConfig(
     v_ego_stopping=0.25,
     stopping_decel_rate=0.4,
-    lookahead=(0.25, 0.1, 0.5),
+    lookahead=(0.25, 0.15, 0.3),
     jerk_limits=4.5,
     longitudinal_actuator_delay=0.45,
   )
