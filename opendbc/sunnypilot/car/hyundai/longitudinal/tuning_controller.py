@@ -64,6 +64,7 @@ class LongitudinalTuningController:
     self.accel_cmd = 0.0
     self.jerk_upper = 0.5
     self.jerk_lower = 0.5
+    self.starting = False
     self.stopping = False
     self.stopping_count = 0
 
@@ -80,6 +81,9 @@ class LongitudinalTuningController:
     if not stopping:
       self.stopping = False
       self.stopping_count = 0
+
+      if long_state_last == LongCtrlState.stopping:
+        self.starting = True
       return
 
     # when the last state was off
@@ -123,6 +127,9 @@ class LongitudinalTuningController:
       self.jerk_lower = 5.0
       return
 
+    if not CC.longActive:
+      self.starting = False
+
     velocity = CS.out.vEgo
     self.accel_cmd = CC.actuators.accel
 
@@ -145,6 +152,13 @@ class LongitudinalTuningController:
     if long_control_state == LongCtrlState.pid:
       upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 3.0, 1.6]))
     lower_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
+
+    # Do not ramp up upper jerk limits while TCS is still in standstill state
+    if self.starting:
+      if self.aego.x < 0.01:
+        j_ego_upper = 0.5
+      else:
+        self.starting = False
 
     lower_jerk = max(-j_ego_lower, MIN_JERK)
     if self.CP.radarUnavailable:
