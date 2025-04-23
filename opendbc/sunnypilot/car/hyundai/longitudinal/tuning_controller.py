@@ -28,6 +28,7 @@ UPPER_JERK_LOOKAHEAD_V = [0.25, 0.5]
 GEN1_LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
 GEN1_LOWER_JERK_V  = [ 3.3,  2.5,  2.0,   1.9,  1.8,   1.65,   1.15,    0.5]
 
+
 def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -> float:
   if desired_accel >= last_accel:
     val = jerk_upper * DT_CTRL * 2
@@ -38,9 +39,10 @@ def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -
 
 
 def ramp_update(current, target):
-  if abs(target - current) > JERK_THRESHOLD:
-    return current + float(np.clip(target - current, -JERK_STEP, JERK_STEP))
-  return current
+  error = target - current
+  if abs(error) > JERK_THRESHOLD:
+    return current + float(np.clip(error, -JERK_STEP, JERK_STEP))
+  return target
 
 
 @dataclass
