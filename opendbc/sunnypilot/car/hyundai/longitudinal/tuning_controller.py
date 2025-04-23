@@ -151,7 +151,7 @@ class LongitudinalTuningController:
     lower_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
 
     # Do not ramp up upper jerk limits while TCS is still in standstill state
-    if self.starting and not (self.CP & HyundaiFlags.EV):
+    if self.starting and not (self.CP.flags & HyundaiFlags.EV):
       if self.aego.x < 0.01:
         j_ego_upper = 0.5
       else:
