@@ -22,11 +22,8 @@ JERK_STEP = 0.1
 JERK_THRESHOLD = 0.1
 MIN_JERK = 0.5
 
-JERK_LOOKAHEAD_BP = [5.0, 20.0]
-UPPER_JERK_LOOKAHEAD_V = [0.25, 0.5]
-
 GEN1_LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
-GEN1_LOWER_JERK_V  = [ 3.3,  2.5,  2.0,   1.9,  1.8,   1.65,   1.15,    0.5]
+GEN1_LOWER_JERK_V  = [ 3.3,  2.5,  2.0,   1.9,  1.8,   1.65,  1.15,    0.5]
 
 
 def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -> float:
@@ -59,7 +56,6 @@ class LongitudinalTuningController:
     self.CP_SP = CP_SP
 
     self.car_config = get_car_config(CP)
-    self.LOWER_JERK_LOOKAHEAD_V = [self.car_config.lookahead[1], self.car_config.lookahead[2]]
     self.state = LongitudinalTuningState()
     self.desired_accel = 0.0
     self.actual_accel = 0.0
@@ -141,9 +137,8 @@ class LongitudinalTuningController:
     accel_error = self.accel_cmd - self.aego.x
 
     # Lookahead jerk: How much jerk is needed to reach desired accel in future_t seconds
-    future_t_upper = float(np.interp(velocity, JERK_LOOKAHEAD_BP,
-                      [self.car_config.lookahead[0], UPPER_JERK_LOOKAHEAD_V[1]]))
-    future_t_lower = float(np.interp(velocity, JERK_LOOKAHEAD_BP, self.LOWER_JERK_LOOKAHEAD_V))
+    future_t_upper = float(np.interp(velocity, self.car_config.lookahead_jerk_bp, self.car_config.lookahead_jerk_upper_v))
+    future_t_lower = float(np.interp(velocity, self.car_config.lookahead_jerk_bp, self.car_config.lookahead_jerk_lower_v))
 
     # Required jerk to reach target accel in lookahead window
     j_ego_upper = accel_error / future_t_upper
