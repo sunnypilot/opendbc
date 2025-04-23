@@ -43,6 +43,7 @@ CAR_SPECIFIC_CONFIGS = {
   CAR.HYUNDAI_ELANTRA_2021: CarTuningConfig(
     stopping_decel_rate=0.8,
     lookahead_jerk_upper_v=[0.25, 1.0],
+    lookahead_jerk_lower_v=[0.10, 0.3],
   ),
   CAR.KIA_NIRO_EV: CarTuningConfig(
     v_ego_stopping=0.1,
