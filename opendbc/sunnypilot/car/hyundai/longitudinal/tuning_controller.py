@@ -143,7 +143,7 @@ class LongitudinalTuningController:
     # Jerk is limited by the following conditions imposed by ISO 15622:2018.
     upper_speed_factor = 1.0
     if long_control_state == LongCtrlState.pid:
-      upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 3.0, 1.0]))
+      upper_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 3.0, 1.6]))
     lower_speed_factor = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
 
     lower_jerk = max(-j_ego_lower, MIN_JERK)
