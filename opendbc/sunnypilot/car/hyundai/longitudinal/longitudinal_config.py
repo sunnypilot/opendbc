@@ -14,7 +14,7 @@ from opendbc.car.hyundai.values import CAR
 class CarTuningConfig:
   v_ego_stopping: float = 0.25
   v_ego_starting: float = 0.10
-  stopping_decel_rate: float = 0.25
+  stopping_decel_rate: float = 0.40
   lookahead_jerk_bp: list[float] = field(default_factory=lambda: [5., 20.])
   lookahead_jerk_upper_v: list[float] = field(default_factory=lambda: [0.25, 0.5])
   lookahead_jerk_lower_v: list[float] = field(default_factory=lambda: [0.15, 0.3])
@@ -35,16 +35,15 @@ TUNING_CONFIGS = {
     v_ego_starting=0.12,
     stopping_decel_rate=0.30,
   ),
-  "DEFAULT": CarTuningConfig()
+  "DEFAULT": CarTuningConfig(
+    lookahead_jerk_bp=[2., 5., 20.],
+    lookahead_jerk_upper_v=[0.25, 0.5, 1.0],
+    lookahead_jerk_lower_v=[0.05, 0.10, 0.3],
+  )
 }
 
 # Car-specific configs
 CAR_SPECIFIC_CONFIGS = {
-  CAR.HYUNDAI_ELANTRA_2021: CarTuningConfig(
-    stopping_decel_rate=0.8,
-    lookahead_jerk_upper_v=[0.25, 1.0],
-    lookahead_jerk_lower_v=[0.10, 0.3],
-  ),
   CAR.KIA_NIRO_EV: CarTuningConfig(
     v_ego_stopping=0.1,
     stopping_decel_rate=0.1,
@@ -52,7 +51,7 @@ CAR_SPECIFIC_CONFIGS = {
     jerk_limits=3.0,
     longitudinal_actuator_delay=0.25,
   ),
-  CAR.HYUNDAI_IONIQ:CarTuningConfig(
+  CAR.HYUNDAI_IONIQ: CarTuningConfig(
     v_ego_stopping=0.25,
     stopping_decel_rate=0.4,
     jerk_limits=4.5,
