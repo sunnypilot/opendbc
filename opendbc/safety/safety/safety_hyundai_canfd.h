@@ -49,6 +49,10 @@ static bool hyundai_canfd_alt_buttons = false;
 static bool hyundai_canfd_lka_steering_alt = false;
 static bool hyundai_ccnc = false;
 
+static bool get_hyundai_ccnc(void) {
+  return hyundai_ccnc;
+}
+
 static int hyundai_canfd_get_lka_addr(void) {
   return hyundai_canfd_lka_steering_alt ? 0x110 : 0x50;
 }
