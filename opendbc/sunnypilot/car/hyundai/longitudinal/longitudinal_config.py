@@ -47,9 +47,10 @@ CAR_SPECIFIC_CONFIGS = {
   CAR.KIA_NIRO_EV: CarTuningConfig(
     v_ego_stopping=0.1,
     stopping_decel_rate=0.1,
-    lookahead_jerk_lower_v=[0.15, 0.4],
-    jerk_limits=3.0,
-    longitudinal_actuator_delay=0.25,
+    lookahead_jerk_upper_v=[0.6, 1.0],
+    lookahead_jerk_lower_v=[0.6, 0.65],
+    jerk_limits=2.5,
+    longitudinal_actuator_delay=0.45,
   ),
   CAR.HYUNDAI_IONIQ: CarTuningConfig(
     v_ego_stopping=0.25,

@@ -167,7 +167,7 @@ class LongitudinalTuningController:
     # New gen tune uses LONG_TUNING_BRAKING flag
     if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
       self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
-      self.jerk_lower = ramp_update(self.jerk_lower, desired_jerk_lower)
+      self.jerk_lower = desired_jerk_lower
     else:
       self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
       self.jerk_lower = ramp_update(self.jerk_lower, gen1_desired_jerk_lower)
