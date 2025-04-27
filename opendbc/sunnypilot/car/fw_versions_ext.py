@@ -5,7 +5,7 @@ from typing import Any
 from opendbc.car.common.basedir import BASEDIR
 
 INTERFACE_EXT_ATTR_FILE = {
-  "FW_VERSIONS_EXT": "fingerprints",
+  "FW_VERSIONS_EXT": "fingerprints_ext",
 }
 
 
@@ -36,40 +36,20 @@ def get_interface_ext_attr(attr: str, combine_brands: bool = False, ignore_none:
 
 
 def merge_fw_versions(fw_versions):
-  fw_versions_ext = get_interface_ext_attr("FW_VERSIONS_EXT", ignore_none=True)
-  for c, e in fw_versions_ext.items():
+  """
+    Merge firmware versions by extending lists for matching ECUs,
+    adding all entries regardless of duplicates.
+  """
+  FW_VERSIONS_EXT = get_interface_ext_attr('FW_VERSIONS_EXT', combine_brands=True, ignore_none=True)
+  for c, f in FW_VERSIONS_EXT.items():
     if c not in fw_versions:
-      fw_versions[c] = {}
+      fw_versions[c] = f
+      continue
 
-    for ecu, versions in e.items():
-      if ecu not in fw_versions[c]:
-        fw_versions[c][ecu] = []
+    for e, new_fw_list in f.items():
+      if e not in fw_versions[c]:
+        fw_versions[c][e] = new_fw_list
+      else:
+        fw_versions[c][e].extend(new_fw_list)
 
-      for v in versions:
-        if v not in fw_versions[c][ecu]:
-          fw_versions[c][ecu].append(v)
-
-
-if __name__ == "__main__":
-  from opendbc.car.hyundai.values import CAR
-  from opendbc.car.hyundai.fingerprints import FW_VERSIONS
-
-  # Merge the extensions into FW_VERSIONS
-  merge_fw_versions(FW_VERSIONS)
-
-  # Specify which car you want to print
-  target_car = CAR.KIA_NIRO_EV
-
-  if target_car in FW_VERSIONS:
-    print(f"\n--- Firmware versions for {target_car} ---")
-    for ecu, versions in FW_VERSIONS[target_car].items():
-      print(f"\nECU: {ecu}")
-      for v in versions:
-        # Printing as hex and str for better readability
-        print(f"  {v} ({v.hex()})")
-    print(f"\nTotal ECUs: {len(FW_VERSIONS[target_car])}")
-  else:
-    print(f"Car {target_car} not found in FW_VERSIONS")
-
-  # Print available cars for reference
-  print(f"\nAvailable cars in FW_VERSIONS: {sorted(list(FW_VERSIONS.keys()))}")
+  return fw_versions
