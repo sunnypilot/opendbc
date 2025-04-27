@@ -1,6 +1,9 @@
 from opendbc.car.structs import CarParams
 from opendbc.car.chrysler.values import CAR
 
+from opendbc.sunnypilot.car.fw_versions_ext import merge_fw_versions
+from opendbc.sunnypilot.car.chrysler.fingerprints_ext import FW_VERSIONS_EXT
+
 Ecu = CarParams.Ecu
 
 FW_VERSIONS = {
@@ -424,7 +427,6 @@ FW_VERSIONS = {
       b'68453471AD',
       b'68453483AC',
       b'68453483AD',
-      b'68453485AC',
       b'68453487AD',
       b'68453491AC',
       b'68453491AD',
@@ -446,7 +448,6 @@ FW_VERSIONS = {
       b'68510282AG',
       b'68510282AH',
       b'68510283AG',
-      b'68510283AH',
       b'68527346AE',
       b'68527361AD',
       b'68527375AD',
@@ -496,8 +497,6 @@ FW_VERSIONS = {
       b'68548900AC',
       b'68586307AB',
       b'68586307AC',
-      b'68728724AA',
-      b'68728727AA',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672892AB',
@@ -539,7 +538,6 @@ FW_VERSIONS = {
       b'68552788AA',
       b'68552789AA',
       b'68552790AA',
-      b'68552791AA',
       b'68552791AB',
       b'68552794AA',
       b'68552794AD',
@@ -561,7 +559,6 @@ FW_VERSIONS = {
       b'05036193AA ',
       b'05149368AA ',
       b'05149374AA ',
-      b'05149390AA ',
       b'05149591AD ',
       b'05149591AE ',
       b'05149592AE ',
@@ -576,7 +573,6 @@ FW_VERSIONS = {
       b'05190346AD',
       b'68378695AI ',
       b'68378695AJ ',
-      b'68378696AI ',
       b'68378696AJ ',
       b'68378696AK ',
       b'68378701AI ',
@@ -610,7 +606,6 @@ FW_VERSIONS = {
       b'68500630AD',
       b'68500630AE',
       b'68500631AE',
-      b'68500631AF',
       b'68502719AC ',
       b'68502722AC ',
       b'68502733AC ',
@@ -645,14 +640,12 @@ FW_VERSIONS = {
       b'68360080AM',
       b'68360081AM',
       b'68360081AN',
-      b'68360085AF',
       b'68360085AH',
       b'68360085AJ',
       b'68360085AL',
       b'68360085AO',
       b'68360086AH',
       b'68360086AK',
-      b'68360086AL',
       b'68360086AN',
       b'68384328AD',
       b'68384332AD',
@@ -669,7 +662,6 @@ FW_VERSIONS = {
       b'68484471AC',
       b'68502994AC',
       b'68502994AD',
-      b'68502996AC',
       b'68502996AD',
       b'68520867AE',
       b'68520867AF',
@@ -771,3 +763,5 @@ FW_VERSIONS = {
     ],
   },
 }
+
+FW_VERSIONS = merge_fw_versions(FW_VERSIONS, FW_VERSIONS_EXT)
