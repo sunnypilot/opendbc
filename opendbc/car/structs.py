@@ -96,4 +96,8 @@ class ModularAssistiveDrivingSystem:
 
 @auto_dataclass
 class CarControlSP:
+  def __init__(self):
+    self.leadDistance = None
+    self.leadRelSpeed = None
+
   mads: 'ModularAssistiveDrivingSystem' = field(default_factory=lambda: ModularAssistiveDrivingSystem())

@@ -8,6 +8,7 @@ from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParam
 from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
+from opendbc.sunnypilot.car.hyundai.hyundaican_ext import HyundaiCanEXT
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarController
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
@@ -44,10 +45,11 @@ def process_hud_alert(enabled, fingerprint, hud_control):
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-class CarController(CarControllerBase, EsccCarController, MadsCarController):
-  def __init__(self, dbc_names, CP, CP_SP):
+class CarController(CarControllerBase, EsccCarController, HyundaiCanEXT, MadsCarController):
+  def __init__(self, dbc_names, CP, CP_SP, CC_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     EsccCarController.__init__(self, CP, CP_SP)
+    HyundaiCanEXT.__init__(self, CC_SP)
     MadsCarController.__init__(self)
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
@@ -61,6 +63,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
+    HyundaiCanEXT.update(self)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
     actuators = CC.actuators
     hud_control = CC.hudControl
@@ -151,7 +154,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
       jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
       use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
       can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
-                                                      hud_control, set_speed_in_units, stopping,
+                                                      self.hyundaican_ext, hud_control, set_speed_in_units, stopping,
                                                       CC.cruiseControl.override, use_fca, self.CP,
                                                       CS.main_cruise_enabled, self.ESCC))
 
