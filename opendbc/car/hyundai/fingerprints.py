@@ -1,6 +1,9 @@
 from opendbc.car.structs import CarParams
 from opendbc.car.hyundai.values import CAR
 
+from opendbc.sunnypilot.car.fw_versions_ext import merge_fw_versions
+from opendbc.sunnypilot.car.hyundai.fingerprints_ext import FW_VERSIONS_EXT
+
 Ecu = CarParams.Ecu
 
 # The existence of SCC or RDR in the fwdRadar FW usually determines the radar's function,
@@ -288,12 +291,14 @@ FW_VERSIONS = {
       b'\xf1\x00TM ESC \x04 102!\x04\x05 58910-S2GA0',
       b'\xf1\x00TM ESC \x04 103"\x07\x08 58910-S2GA0',
       b'\xf1\x00TM ESC \x1e 102 \x08\x08 58910-S1DA0',
+      b'\xf1\x00TM ESC \x1b 102 \x08\x08 58910-S1DA0',
       b'\xf1\x00TM ESC   103!\x030 58910-S1MA0',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.01 56310-S1AB0 4TSDC101',
       b'\xf1\x00TM  MDPS C 1.00 1.01 56310-S1EB0 4TSDC101',
       b'\xf1\x00TM  MDPS C 1.00 1.02 56370-S2AA0 0B19',
+      b'\xf1\x00TM  MDPS R 1.00 1.05 57700-S1500 4TSDP105',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TM  MFC  AT EUR LHD 1.00 1.03 99211-S1500 210224',
@@ -1294,3 +1299,5 @@ FW_VERSIONS = {
     ],
   },
 }
+
+FW_VERSIONS = merge_fw_versions(FW_VERSIONS, FW_VERSIONS_EXT)
