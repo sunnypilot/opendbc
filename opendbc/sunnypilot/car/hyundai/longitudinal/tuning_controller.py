@@ -12,7 +12,7 @@ from opendbc.car import structs, DT_CTRL, rate_limit
 from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.interfaces import CarStateBase
 
-from opendbc.car.hyundai.values import CarControllerParams, HyundaiFlags
+from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config
 
