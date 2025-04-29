@@ -9,7 +9,8 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, \
-                                                  TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
+                                                  TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR, \
+                                                  SECOC_CAR
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -143,7 +144,7 @@ class CarState(CarStateBase):
       else:
         self.accel_profile = AccelPersonality.normal
 
-      print(f"Accel profile set to: {self.accel_profile}")
+      #print(f"Accel profile set to: {self.accel_profile}")
 
       # If not initialized, sync profile with the current mode on the car
       if not self.accel_profile_init or self.accel_profile != self.prev_accel_profile:
@@ -260,7 +261,11 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       # distance button is wired to the ACC module (camera or radar)
       prev_distance_button = self.distance_button
-      self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
+      if self.CP.carFingerprint in (SECOC_CAR):
+        self.distance_button = cp.vl["PCM_CRUISE_4"]["DISTANCE"]
+        #Params().put_nonblocking('LongitudinalPersonality', str(int(max(self.distance_button - 1, 0))))
+      else:
+        self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
 
       ret.buttonEvents = create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
@@ -332,6 +337,7 @@ class CarState(CarStateBase):
         ("GEAR_PACKET_HYBRID", 60),
         ("SECOC_SYNCHRONIZATION", 10),
         ("GAS_PEDAL", 42),
+        ("PCM_CRUISE_4", 1),
       ]
     else:
       pt_messages.append(("VSC1S07", 20))
