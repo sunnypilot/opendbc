@@ -4,7 +4,8 @@ This document explains the custom longitudinal control tuning implemented in sun
 
 **Safety First: ISO 15622:2018**
 
-Our primary safety guideline is [ISO 15622:2018](https://www.iso.org/obp/ui/en/#iso:std:iso:15622:ed-3:v1:en). This standard provides the foundation for the safety limits enforced by this tuning, particularly concerning maximum allowable jerk based on speed.
+Our primary safety guideline is [ISO 15622:2018](https://www.iso.org/obp/ui/en/#iso:std:iso:15622:ed-3:v1:en).
+This standard provides the foundation for the safety limits enforced by this tuning, particularly concerning maximum allowable jerk based on speed.
 
 **Core Concepts**
 
