@@ -1,117 +1,53 @@
-
 # **How custom longitudinal tuning works for Hyundai/Kia/Genesis vehicles in sunnypilot.**
 
-To start this readme, I would like to first present the safety guidelines followed to create the tune:
+This document explains the custom longitudinal control tuning implemented in sunnypilot for Hyundai, Kia, and Genesis vehicles.
 
-Our main safety guideline considered is [ISO 15622:2018](https://www.iso.org/obp/ui/en/#iso:std:iso:15622:ed-3:v1:en)
-This provides the groundwork of safety limits this tune must adhere too, and therefore, must be followed.
-For example, in our jerk calculations throughout this tune, you will see how maximum jerk is clipped using the equation provided.
+**Safety First: ISO 15622:2018**
 
-In the tuning you will see a set of equations, the first being jerk, **but what exactly is jerk?**
-Jerk is the rate of change of acceleration (how quickly acceleration changes). It's calculated by finding the 
-difference between the new filtered acceleration and the previous one. This difference is divided by the
-time step (2 × 0.01 seconds = 0.02 seconds). The result tells you how quickly the acceleration is changing in m/s³:
+Our primary safety guideline is [ISO 15622:2018](https://www.iso.org/obp/ui/en/#iso:std:iso:15622:ed-3:v1:en). This standard provides the foundation for the safety limits enforced by this tuning, particularly concerning maximum allowable jerk based on speed.
 
-    planned_accel = CC.actuators.accel
-    current_accel = CS.out.aEgo
-    blended_accel = 0.8 * planned_accel + 0.2 * current_accel
+**Core Concepts**
 
-    prev_filtered_accel = self.accel_filter.x
+1.  **Jerk-Limited Acceleration:** Instead of directly applying the planner's target acceleration (`CC.actuators.accel`), we use a jerk-limited integrator. This ensures smoother transitions by limiting the rate of change of acceleration (jerk).
+    *   `desired_accel`: The target acceleration from the planner, clipped within safe limits (`CarControllerParams.ACCEL_MIN`, `CarControllerParams.ACCEL_MAX`). During stopping, this is forced to 0.
+    *   `actual_accel`: The acceleration command sent to the car. It's calculated by integrating `desired_accel` but limiting the change from the previous step (`state.accel_last`) based on calculated `jerk_upper` and `jerk_lower` limits.
+    *   `jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower)`: This function calculates the maximum allowable acceleration change per control step (`DT_CTRL * 2`) based on the upper and lower jerk limits and applies it using `rate_limit`.
 
-    self.accel_filter.update(blended_accel)
-    filtered_accel = self.accel_filter.x
+2.  **Predictive Jerk Limits:** The upper and lower jerk limits (`jerk_upper`, `jerk_lower`) are not fixed but calculated dynamically based on several factors:
+    *   **Actual Acceleration (`aego`):** The car's current acceleration (`CS.out.aEgo`, potentially blended with `CS.aBasis` at low speeds) is smoothed using a `FirstOrderFilter` (`self.aego`).
+    *   **Acceleration Error:** The difference between the *commanded* acceleration (`self.accel_cmd`) and the *actual* smoothed acceleration (`self.aego.x`).
+    *   **Lookahead Jerk:** We estimate the jerk required to reach the target acceleration (`accel_cmd`) within a future time window. This window (`future_t_upper`, `future_t_lower`) varies with speed, defined in `longitudinal_config.py` (`lookahead_jerk_bp`, `lookahead_jerk_upper_v`, `lookahead_jerk_lower_v`).
+        *   `j_ego_upper = accel_error / future_t_upper`
+        *   `j_ego_lower = accel_error / future_t_lower`
+    *   **ISO 15622 Speed Factors:** Maximum allowed jerk decreases with speed according to ISO 15622. We interpolate values based on current velocity (`CS.out.vEgo`) to get `upper_speed_factor` and `lower_speed_factor`.
+    *   **Minimum Jerk (`MIN_JERK`):** A baseline minimum jerk (currently 0.5 m/s³) is enforced to ensure responsiveness.
+    *   **Combining Factors:**
+        *   `desired_jerk_upper = min(max(j_ego_upper, MIN_JERK), upper_speed_factor)`
+        *   `desired_jerk_lower = min(max(-j_ego_lower, MIN_JERK), lower_speed_factor)` (Note: `j_ego_lower` is negated for the lower limit calculation).
 
-    self.state.jerk = (filtered_accel - prev_filtered_accel) / (DT_MDL * 3)
+3.  **Dynamic Braking Tune:** For use of the tune without the `LONG_TUNING_BRAKING` flag, a specific negative jerk profile is applied during braking (`gen1_accel_error < 0`).
+    *   `gen1_accel_error = a_ego_blended - self.state.accel_last`
+    *   A dynamic lower jerk limit (`gen1_lower_jerk`) is interpolated based on this error using `GEN1_LOWER_JERK_BP` and a dynamically scaled `GEN1_LOWER_JERK_V` (scaled by `car_config.jerk_limits`).
+    *   `gen1_desired_jerk_lower = min(gen1_lower_jerk, lower_speed_factor)`
 
-planned_accel is what the controller wants the car to do (target acceleration), where current_accel is what the
-car is actually doing right now (measured acceleration). The code combines these with an 80%/20% ratio to create
-a more realistic target. This prevents sudden jerkiness that can sometimes be produced. Before calculating anything
-new, the code saves the previous filtered acceleration. This value will be needed to calculate the rate of change (jerk)
-A first-order filter is like a smoothing function that reduces sudden changes. `update()` feeds the new
-blended acceleration into this filter. The filter gradually moves toward the target value rather than jumping to it.
-This then goes through our minimum and maximum clipping which forces a value between our set min and max,
-which I discuss later in this readme.
+4.  **Applying Jerk Limits:**
+    *   The `jerk_upper` limit is always smoothed using `ramp_update` to prevent abrupt changes.
+    *   The `jerk_lower` limit is applied differently based on the `LONG_TUNING_BRAKING` flag:
+        *   **If Flag Set (predictive tune):** `jerk_lower` is set directly to `desired_jerk_lower`.
+        *   **If Flag Not Set (dynamic tune):** `jerk_lower` is smoothed using `ramp_update` towards `gen1_desired_jerk_lower`.
 
-Moving on, the accel_last_jerk, stores current accel after each iteration and uses that in the calculation as previous accel for
-our jerk calculations. Now we see the calculation of jerk max and jerk min. 
+**Configuration (`longitudinal_config.py`)**
 
-**Let's dive into how jerk lower limit max is calculated:**
+*   The `CarTuningConfig` dataclass holds tuning parameters like stopping/starting speeds, lookahead jerk profiles, actuator delay, and base jerk limits.
+*   `TUNING_CONFIGS` provides default configurations based on car type (CANFD, EV, HYBRID, DEFAULT).
+*   `CAR_SPECIFIC_CONFIGS` allows overriding defaults for specific car models (e.g., `KIA_NIRO_EV`, `HYUNDAI_IONIQ`).
+*   The `get_car_config` helper function selects the appropriate configuration based on the car fingerprint and flags.
+*   `get_longitudinal_tune` applies relevant config values (like stopping/starting speeds, delay) to the main `CarParams` (CP).
 
-     velocity = CS.out.vEgo
-    if velocity < 5.0:
-      decel_jerk_max = self.car_config.jerk_limits[1]
-    elif velocity > 20.0:
-      decel_jerk_max = 2.5
-    else:
-      if self.CP.flags & HyundaiFlags.CANFD:
-        decel_jerk_max = 5.83 - (velocity/6)
-      else:
-        decel_jerk_max = 3.64284 - (0.05714 * velocity)
+**Summary**
 
-This equation above is set by ISO 15622, and dictates that jerk lower limit can only be five when below 5 m/s. In our equation,
-
-    self.car_config.jerk_limits[1] 
-
-Jerk_limits[1] represents a jerk value of 5.0 m/s^3, which is the maximum analyzed lower jerk rate seen on stock SCC CAN.
-Between 5 m/s and 20 m/s jerk is capped using the calculation:
-
-    decel_jerk_max = 5.83 - (velocity/6)
-    decel_jerk_max = 3.64284 - 0.05714 * velocity
-
-This equation first determines if the user is in a CANFD vehicle, to which higher jerk lower limits are requested, 
-then it calculates the linear jerk from 6m/s to 19m/s, scaling down from 3.3 to 2.5 m/s^3.
-This means that if current velocity is say, 15 m/s the final jerk max value would be capped at 2.78 m/s^3.
-Anything above 20 m/s is capped to a lower jerk max of 2.5 m/s^3. This allows for a smoother jerk range, while complying to ISO standards to a tee.
-The current jerk Lower Limit you will see in openpilot before this tune, is 5.0 m/s^3; Which as you can see from using the above calculation,
-the 5.0 m/s^3 technically does not comply with ISO standards at any speed above 5.0 m/s^3.
-Having our jerk max be clipped to these values not only allows for better consistency with ISO standards, 
-but also enables us to have a much smoother braking experience.
-
-**Getting into our next topic, I would like to explain how our minimum jerk was chosen.**
-
-Minimum jerk was chosen based off of the following guideline proposed by Handbook of Intellegent Vehicles (2012):
-`Ride comfort may be sacrificed only under emergency conditions when vehicle and occupant safety consideration may preclude comfort.`
-
-**What the value of 0.53 m/s^3 of the jerk lower limit was chosen based off of**
-
-[Carlowitz et al. (2024).](https://www.researchgate.net/publication/382274551_User_evaluation_of_comfortable_deceleration_profiles_for_highly_automated_driving_Findings_from_a_test_track_study)
-This research study identified the average lower jerk used in comfortable driving settings, which is 0.53 m/s^3.
-This is then inputted to jerk_limits[0] as 0.53 m/s^3 represents the value used in upper jerk absolute minimum.
-
-     min_lower_jerk = self.car_config.jerk_limits[0]
-
-As shown above, lower jerk minimum of 0.53 is used for our lower_jerk minimum bounds.
-
-**Why our minimum upper jerk is conditional**
-
-Our minimum upper band jerk is conditional as well and is denoted below:
-
-    min_upper_jerk = self.car_config.jerk_limits[0] if (velocity > 3.611) else 0.725
-
-This means that for speeds under 3.611 m/s (8.077 mph/ 13 kph) we have a minimum jerk of 0.60. This allows for smooth
-takeoffs while not causing lag. For all other speeds, we use our normal min jerk_limit, which is 0.53.
-
-**Why our minimum lower jerk is conditional** 
-
-Our minimum lower band is conditional, and is based on the following condition:
-    
-    min_lower_jerk = self.car_config.jerk_limits[0] if (velocity < 12.0) else 0.625
-
-This means that for speeds under 12 m/s, we have our minimum jerk of 0.53 (jerk_limits[0]), but for all other speeds,
-minimum jerk is set to 0.625. 
-
-**Next, we have our acceleration limiting**
-
-For acceleration limiting, we use TCS signal brakeLightsDEPRECATED to measure when to enact the standstill delay 
-which stock SCC uses to allow smoother transitions in acceleration.
-
-**Next, we have our accel value calculations for hyundaican.py**
-
-For our accel value calculations we have the following:
-
-   `self.accel_value = np.clip(self.accel_raw, self.state.accel_last - jerk_number, self.state.accel_last + jerk_number)`
-
-This essentialy means that we have our accel_raw, which is acceleration (m/s^2), followed by our clipping variables. 
-jerk_number in this equation represents exactly `0.1`, which is subtracted or added by self.state.accel_last, which is 
-previous calculated accel_value. Furthermore, we have `self.state.accel_last`, which is caculated as the stored accel from
-the above calculations.
+This tuning aims for smoother and more responsive longitudinal control by:
+*   Using a jerk-limited integrator for acceleration commands.
+*   Dynamically calculating jerk limits based on lookahead predictions, actual acceleration, and ISO 15622 speed constraints.
+*   Providing specific tuning profiles via a configuration system based on car type and model.
+*   Applying special braking logic for use of predictive or dynamic tune.
