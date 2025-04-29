@@ -661,6 +661,22 @@ FW_VERSIONS = {
       b'77959-TX4-C020\x00\x00',
     ],
   },
+    CAR.ACURA_RLX: {
+    (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TX4-A220\x00\x00',
+      b'57114-TX5-A220\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-TX4-A030\x00\x00',
+      b'36161-TX5-A030\x00\x00',
+      b'36161-TY3-A030\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-TX4-B010\x00\x00',
+      b'77959-TX4-C010\x00\x00',
+      b'77959-TX4-C020\x00\x00',
+    ],
+  },
   CAR.ACURA_RDX_3G: {
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TJB-A030\x00\x00',
