@@ -18,15 +18,15 @@ class HyundaiCanEXTParams:
 
 
 class HyundaiCanEXT:
-  def __init__(self, CC_SP: structs.CarControlSP):
-    self.CC_SP = CC_SP
+  def __init__(self):
     self.hyundaican_ext = HyundaiCanEXTParams()
 
-  def update(self) -> HyundaiCanEXTParams:
-    lead_distance = self.CC_SP.leadDistance
-    lead_rel_speed = self.CC_SP.leadRelSpeed
+  def update(self, CC_SP: structs.CarControlSP) -> HyundaiCanEXTParams:
+    lead_distance = CC_SP.leadDistance
+    lead_rel_speed = CC_SP.leadRelSpeed
 
-    if lead_distance == 0:
+    # Check if lead_distance is None before comparison
+    if lead_distance is None or lead_distance == 0:
       objectGap = 0
     elif lead_distance < 20:
       objectGap = 2

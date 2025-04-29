@@ -46,12 +46,11 @@ def process_hud_alert(enabled, fingerprint, hud_control):
 
 
 class CarController(CarControllerBase, EsccCarController, HyundaiCanEXT, MadsCarController):
-  def __init__(self, dbc_names, CP, CP_SP, CC_SP):
+  def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     EsccCarController.__init__(self, CP, CP_SP)
-    HyundaiCanEXT.__init__(self, CC_SP)
+    HyundaiCanEXT.__init__(self)
     MadsCarController.__init__(self)
-    self.CC_SP = CC_SP
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_names[Bus.pt])
@@ -64,7 +63,7 @@ class CarController(CarControllerBase, EsccCarController, HyundaiCanEXT, MadsCar
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
-    HyundaiCanEXT.update(self)
+    HyundaiCanEXT.update(self, CC_SP)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
     actuators = CC.actuators
     hud_control = CC.hudControl
@@ -155,7 +154,7 @@ class CarController(CarControllerBase, EsccCarController, HyundaiCanEXT, MadsCar
       jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
       use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
       can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
-                                                      self, hud_control, set_speed_in_units, stopping,
+                                                      self.hyundaican_ext, hud_control, set_speed_in_units, stopping,
                                                       CC.cruiseControl.override, use_fca, self.CP,
                                                       CS.main_cruise_enabled, self.ESCC))
 
