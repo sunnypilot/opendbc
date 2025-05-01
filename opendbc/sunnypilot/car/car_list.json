@@ -858,6 +858,24 @@
     ],
     "package": "All"
   },
+  "Honda Civic Hatchback Hybrid 2023 (Europe only)": {
+    "platform": "HONDA_CIVIC_2022",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Civic Hatchback Hybrid 2023 (Europe only)",
+    "year": [],
+    "package": "All"
+  },
+  "Honda Civic Hatchback Hybrid 2025": {
+    "platform": "HONDA_CIVIC_2022",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Civic Hatchback Hybrid",
+    "year": [
+      "2025"
+    ],
+    "package": "All"
+  },
   "Honda CR-V 2015-16": {
     "platform": "HONDA_CRV",
     "make": "Honda",
@@ -944,13 +962,15 @@
     ],
     "package": "Honda Sensing"
   },
-  "Honda HR-V 2023": {
+  "Honda HR-V 2023-25": {
     "platform": "HONDA_HRV_3G",
     "make": "Honda",
     "brand": "honda",
     "model": "HR-V",
     "year": [
-      "2023"
+      "2023",
+      "2024",
+      "2025"
     ],
     "package": "All"
   },

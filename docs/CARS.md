@@ -75,6 +75,8 @@
 |Honda|Civic 2022-24|All|[Upstream](#upstream)|
 |Honda|Civic Hatchback 2017-21|Honda Sensing|[Upstream](#upstream)|
 |Honda|Civic Hatchback 2022-24|All|[Upstream](#upstream)|
+|Honda|Civic Hatchback Hybrid 2023 (Europe only)|All|[Upstream](#upstream)|
+|Honda|Civic Hatchback Hybrid 2025|All|[Upstream](#upstream)|
 |Honda|Clarity 2018-21|All|[Community](#community)|
 |Honda|CR-V 2015-16|Touring Trim|[Upstream](#upstream)|
 |Honda|CR-V 2017-22|Honda Sensing|[Upstream](#upstream)|
@@ -85,13 +87,14 @@
 |Honda|Fit 2018-20|Honda Sensing|[Upstream](#upstream)|
 |Honda|Freed 2020|Honda Sensing|[Upstream](#upstream)|
 |Honda|HR-V 2019-22|Honda Sensing|[Upstream](#upstream)|
-|Honda|HR-V 2023|All|[Upstream](#upstream)|
+|Honda|HR-V 2023-25|All|[Upstream](#upstream)|
 |Honda|Insight 2019-22|All|[Upstream](#upstream)|
 |Honda|Inspire 2018|All|[Upstream](#upstream)|
 |Honda|Odyssey 2018-20|Honda Sensing|[Upstream](#upstream)|
 |Honda|Odyssey 2021-25|All|[Community](#community)|
 |Honda|Passport 2019-25|All|[Upstream](#upstream)|
 |Honda|Pilot 2016-22|Honda Sensing|[Upstream](#upstream)|
+|Honda|Pilot 2023|All|[Dashcam mode](#dashcam)|
 |Honda|Pilot 2023-24|All|[Community](#community)|
 |Honda|Ridgeline 2017-25|Honda Sensing|[Upstream](#upstream)|
 |Hyundai|Azera 2022|All|[Upstream](#upstream)|
