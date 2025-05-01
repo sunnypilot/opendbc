@@ -2,6 +2,9 @@ from opendbc.car import structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.chrysler.values import RAM_DT
 
+GearShifter = structs.CarState.GearShifter
+
+
 class CarControllerExt:
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
@@ -11,7 +14,7 @@ class CarControllerExt:
       lkas_control_bit = lkas_control_bit_prev
       if self.CP.minEnableSpeed <= CS.out.vEgo <= self.CP.minEnableSpeed + 0.5:
         lkas_control_bit = True
-      if (self.CP.minEnableSpeed >= 14.5) and (CS.out.gearShifter != 2):
+      if CS.out.gearShifter != GearShifter.drive:
         lkas_control_bit = False
 
     return lkas_control_bit
