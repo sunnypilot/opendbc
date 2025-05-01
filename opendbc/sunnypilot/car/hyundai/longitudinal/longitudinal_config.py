@@ -28,7 +28,8 @@ TUNING_CONFIGS = {
     stopping_decel_rate=0.4,
   ),
   "EV": CarTuningConfig(
-    longitudinal_actuator_delay=0.45,
+    lookahead_jerk_upper_v=[0.3, 1.0],
+    lookahead_jerk_lower_v=[0.3, 0.6],
   ),
   "HYBRID": CarTuningConfig(
     v_ego_starting=0.12,
@@ -49,12 +50,10 @@ CAR_SPECIFIC_CONFIGS = {
     lookahead_jerk_upper_v=[0.3, 1.0],
     lookahead_jerk_lower_v=[0.3, 0.6],
     jerk_limits=2.5,
-    longitudinal_actuator_delay=0.45,
   ),
   CAR.HYUNDAI_IONIQ: CarTuningConfig(
     v_ego_stopping=0.25,
     stopping_decel_rate=0.4,
     jerk_limits=4.5,
-    longitudinal_actuator_delay=0.45,
   )
 }
