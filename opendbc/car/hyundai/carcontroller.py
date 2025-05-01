@@ -118,7 +118,7 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
     else:
       new_angle = np.clip(actuators.steeringAngleDeg, -1212., 1212.)
       adjusted_alpha = np.interp(CS.out.vEgoRaw, self.params.SMOOTHING_ANGLE_VEGO_MATRIX, self.params.SMOOTHING_ANGLE_ALPHA_MATRIX) + self.smoothing_factor
-      adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.)) # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
+      adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.))  # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
       new_angle = (adjusted_alpha_limited * new_angle + (1 - adjusted_alpha_limited) * self.apply_angle_last)
 
       # Example values for curvature-based torque scaling (tune these as needed)
@@ -147,8 +147,8 @@ class CarController(CarControllerBase, EsccCarController, MadsCarController):
         self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.angle_min_torque)
       else:
         # Calculate target torque based on the absolute curvature value and the speed. Higher curvature and speeds should naturally command higher torque.
-        target_torque = float(np.interp(abs(actuators.curvature), self.params.CURVATURE_BREAKPOINTS, TORQUE_VALUES_AT_CURVATURE))
-        target_torque = min(max(target_torque, self.angle_min_torque), self.angle_max_torque)
+        target_torque = np.interp(abs(actuators.curvature), self.params.CURVATURE_BREAKPOINTS, TORQUE_VALUES_AT_CURVATURE)
+        target_torque = float(np.clip(target_torque, self.angle_min_torque, self.angle_max_torque))
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
