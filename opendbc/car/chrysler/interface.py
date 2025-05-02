@@ -13,7 +13,7 @@ class CarInterface(CarInterfaceBase):
   RadarInterface = RadarInterface
 
   @staticmethod
-  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs) -> structs.CarParams:
+  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, docs) -> structs.CarParams:
     ret.brand = "chrysler"
     ret.dashcamOnly = False  # candidate in RAM_HD  TODO: Remove after testing
 
@@ -66,7 +66,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, 1.0, False)
 
-      # Some RAM HD use Chrysler button address (0x23A CRUISE_BUTTONS_ALT)
+      # Some RAM HD use Chrysler button address (0x23B CRUISE_BUTTONS_ALT)
       if 0x23A not in fingerprint[0]:
         ret.flags |= ChryslerFlags.RAM_HD_ALT_BUTTONS.value
         ret.safetyConfigs[0].safetyParam |= ChryslerSafetyFlags.RAM_HD_ALT_BUTTONS.value
