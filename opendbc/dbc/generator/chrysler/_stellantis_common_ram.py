@@ -48,12 +48,11 @@ if __name__ == "__main__":
           val_new_addrs = addr_lookup.get(val_addr, (val_addr,))
           if not isinstance(val_new_addrs, tuple):
             val_new_addrs = (val_new_addrs,)
-          for val_new_addr in enumerate(val_new_addrs):
+          for val_new_addr in val_new_addrs:
             val_sl[1] = str(val_new_addr)
             cur_msg.append(' '.join(val_sl))
-          continue
-
-        cur_msg.append(line)
+        else:
+          cur_msg.append(line)
         if line.strip() == '':
           if not len(cur_msg):
             continue
