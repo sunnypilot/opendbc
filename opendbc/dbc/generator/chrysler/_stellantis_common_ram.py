@@ -42,12 +42,23 @@ if __name__ == "__main__":
       wrote_addrs = set()
       cur_msg = []
       for line in in_f.readlines():
+        if line.startswith('VAL_'):
+          val_sl = line.split(' ')
+          val_addr = int(val_sl[1])
+          val_new_addrs = addr_lookup.get(val_addr, (val_addr,))
+          if not isinstance(val_new_addrs, tuple):
+            val_new_addrs = (val_new_addrs,)
+          for val_new_addr in enumerate(val_new_addrs):
+            val_sl[1] = str(val_new_addr)
+            cur_msg.append(' '.join(val_sl))
+          continue
+
         cur_msg.append(line)
         if line.strip() == '':
           if not len(cur_msg):
             continue
 
-          if not cur_msg[0].startswith(('BO_', 'VAL_')):
+          if not cur_msg[0].startswith('BO_'):
             out_f.write(''.join(cur_msg))
             cur_msg = []
             continue
@@ -65,13 +76,6 @@ if __name__ == "__main__":
               sl[2] = sl[2][:-1] + '_ALT:'
             sl[1] = str(new_addr)
             cur_msg[0] = ' '.join(sl)
-
-            for i in range(1, len(cur_msg)):
-              if cur_msg[i].startswith('VAL_'):
-                val_sl = cur_msg[i].split(' ')
-                val_sl[1] = str(new_addr)
-                cur_msg[i] = ' '.join(val_sl)
-
             out_f.write(''.join(cur_msg))
 
           wrote_addrs.add(addr)
