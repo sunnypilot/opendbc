@@ -65,6 +65,13 @@ if __name__ == "__main__":
               sl[2] = sl[2][:-1] + '_ALT:'
             sl[1] = str(new_addr)
             cur_msg[0] = ' '.join(sl)
+
+            for i in range(1, len(cur_msg)):
+              if cur_msg[i].startswith('VAL_'):
+                val_sl = cur_msg[i].split(' ')
+                val_sl[1] = str(new_addr)
+                cur_msg[i] = ' '.join(val_sl)
+
             out_f.write(''.join(cur_msg))
 
           wrote_addrs.add(addr)
