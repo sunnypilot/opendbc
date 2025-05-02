@@ -80,5 +80,8 @@ if __name__ == "__main__":
           wrote_addrs.add(addr)
           cur_msg = []
 
+      if cur_msg:
+        out_f.write(''.join(cur_msg))
+
       missing_addrs = set(addr_lookup.keys()) - wrote_addrs
       assert len(missing_addrs) == 0, f"Missing addrs from {src}: {missing_addrs}"
