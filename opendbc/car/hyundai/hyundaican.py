@@ -2,7 +2,6 @@ import crcmod
 from opendbc.car.hyundai.values import CAR, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.escc import EnhancedSmartCruiseControl
-from opendbc.sunnypilot.car.hyundai.hyundaican_ext import HyundaiCanEXTParams
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
@@ -127,7 +126,7 @@ def create_lfahda_mfc(packer, enabled, lfa_icon):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hyundaican_ext: HyundaiCanEXTParams,
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hyundaican_ext,
                         hud_control, set_speed, stopping, long_override, use_fca, CP,
                         main_cruise_enabled, ESCC: EnhancedSmartCruiseControl = None):
   commands = []
