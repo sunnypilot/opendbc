@@ -146,7 +146,7 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
 
     "ACC_ObjDist": int(hyundaicanfd_ext.leadDistance),
     "ACC_ObjRelSpd": hyundaicanfd_ext.leadRelSpeed,
-    "ObjValid": 0,  # TODO-SP CHECK this to see if we can do (1 if hud_control.leadVisible else 0)
+    "ObjValid": 1 if hud_control.leadVisible else 0,
     "OBJ_STATUS": hyundaicanfd_ext.objectStatus,
     "SET_ME_2": 0x4,
     "SET_ME_3": 0x3,
