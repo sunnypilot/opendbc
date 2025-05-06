@@ -137,8 +137,8 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hyundaican_ext,
       "TauGapSet": hud_control.leadDistanceBars,
       "VSetDis": set_speed if enabled else 0,
       "AliveCounterACC": idx % 0x10,
-      "ObjValid": 1 if hud_control.leadVisible else 0, # close lead makes controls tighter
-      "ACC_ObjStatus": 1 if hud_control.leadVisible else 0, # close lead makes controls tighter
+      "ObjValid": int(hyundaican_ext.leadVisible), # close lead makes controls tighter
+      "ACC_ObjStatus": int(hyundaican_ext.leadVisible), # close lead makes controls tighter
       "ACC_ObjLatPos": 0,
       "ACC_ObjRelSpd": hyundaican_ext.leadRelSpeed,
       "ACC_ObjDist": int(hyundaican_ext.leadDistance), # close lead makes controls tighter
