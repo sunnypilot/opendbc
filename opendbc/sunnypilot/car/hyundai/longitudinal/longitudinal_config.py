@@ -25,15 +25,15 @@ class CarTuningConfig:
 # Default configurations for different car types
 TUNING_CONFIGS = {
   "CANFD": CarTuningConfig(
-    stopping_decel_rate=0.4,
   ),
   "EV": CarTuningConfig(
     lookahead_jerk_upper_v=[0.3, 1.0],
     lookahead_jerk_lower_v=[0.2, 0.4],
   ),
   "HYBRID": CarTuningConfig(
-    v_ego_starting=0.12,
-    stopping_decel_rate=0.4,
+    v_ego_starting=0.15,
+    stopping_decel_rate=0.45,
+    v_ego_stopping=0.35,
   ),
   "DEFAULT": CarTuningConfig(
     lookahead_jerk_bp=[2., 5., 20.],
@@ -45,15 +45,12 @@ TUNING_CONFIGS = {
 # Car-specific configs
 CAR_SPECIFIC_CONFIGS = {
   CAR.KIA_NIRO_EV: CarTuningConfig(
-    v_ego_stopping=0.25,
     stopping_decel_rate=0.3,
     lookahead_jerk_upper_v=[0.3, 1.0],
     lookahead_jerk_lower_v=[0.2, 0.4],
     jerk_limits=2.5,
   ),
   CAR.HYUNDAI_IONIQ: CarTuningConfig(
-    v_ego_stopping=0.25,
-    stopping_decel_rate=0.4,
     jerk_limits=4.5,
   )
 }
