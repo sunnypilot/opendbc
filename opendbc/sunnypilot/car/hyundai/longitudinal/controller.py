@@ -39,6 +39,7 @@ class LongitudinalController:
     self.long_control_state_last = LongCtrlState.off
     self.stopping_count = 0
 
+    self.accel_cmd = 0.0
     self.desired_accel = 0.0
     self.actual_accel = 0.0
     self.accel_last = 0.0
@@ -82,11 +83,9 @@ class LongitudinalController:
     self.jerk_lower = self.tuning.jerk_lower
 
   def calculate_a_value(self, CC: structs.CarControl) -> None:
-    accel_cmd = CC.actuators.accel
-
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING or self.CP.radarUnavailable:
-      self.desired_accel = accel_cmd
-      self.actual_accel = accel_cmd
+      self.desired_accel = self.accel_cmd
+      self.actual_accel = self.accel_cmd
       return
 
     if not CC.longActive:
@@ -99,7 +98,7 @@ class LongitudinalController:
     if self.stopping:
       self.desired_accel = 0.0
     else:
-      self.desired_accel = float(np.clip(accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+      self.desired_accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
     self.actual_accel = jerk_limited_integrator(self.desired_accel, self.accel_last, self.jerk_upper, self.jerk_lower)
     self.accel_last = self.actual_accel
@@ -108,6 +107,7 @@ class LongitudinalController:
     """Inject Longitudinal Controls for HKG Vehicles."""
     actuators = CC.actuators
     long_control_state = actuators.longControlState
+    self.accel_cmd = CC.actuators.accel
 
     self.get_stopping_state(actuators)
     self.calculate_jerk(CC, CS, long_control_state)
