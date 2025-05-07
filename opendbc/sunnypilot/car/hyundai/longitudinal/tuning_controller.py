@@ -9,7 +9,6 @@ import numpy as np
 from dataclasses import dataclass
 
 from opendbc.car import structs, DT_CTRL, rate_limit
-from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.interfaces import CarStateBase
 
 from opendbc.car.hyundai.values import CarControllerParams
@@ -64,8 +63,6 @@ class LongitudinalTuningController:
     self.jerk_lower = 0.5
     self.stopping = False
     self.stopping_count = 0
-
-    self.aego = FirstOrderFilter(0.0, 0.25, DT_CTRL * 2)
 
   def get_stopping_state(self, long_control_state: LongCtrlState, long_state_last: LongCtrlState) -> None:
     stopping = long_control_state == LongCtrlState.stopping
