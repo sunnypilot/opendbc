@@ -15,6 +15,12 @@ JERK_THRESHOLD = 0.1
 JERK_STEP = 0.1
 
 
+class LongitudinalTuningType:
+  OFF = 0
+  DYNAMIC = 1
+  PREDICTIVE = 2
+
+
 def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
   # Get car type flags from specific configs or determine from car flags
   car_config = CAR_SPECIFIC_CONFIGS.get(CP.carFingerprint)

@@ -26,14 +26,14 @@ This standard provides the foundation for the safety limits enforced by this tun
         *   `desired_jerk_upper = min(max(j_ego_upper, MIN_JERK), upper_speed_factor)`
         *   `desired_jerk_lower = min(max(-j_ego_lower, MIN_JERK), lower_speed_factor)` (Note: `j_ego_lower` is negated for the lower limit calculation).
 
-3.  **Dynamic Braking Tune:** For use of the tune without the `LONG_TUNING_BRAKING` flag, a specific negative jerk profile is applied during braking (`gen1_accel_error < 0`).
+3.  **Dynamic Braking Tune:** For use of the tune without the `LONG_TUNING_PREDICTIVE` flag, a specific negative jerk profile is applied during braking (`gen1_accel_error < 0`).
     *   `gen1_accel_error = a_ego_blended - self.state.accel_last`
     *   A dynamic lower jerk limit (`gen1_lower_jerk`) is interpolated based on this error using `GEN1_LOWER_JERK_BP` and a dynamically scaled `GEN1_LOWER_JERK_V` (scaled by `car_config.jerk_limits`).
     *   `gen1_desired_jerk_lower = min(gen1_lower_jerk, lower_speed_factor)`
 
 4.  **Applying Jerk Limits:**
     *   The `jerk_upper` limit is always smoothed using `ramp_update` to prevent abrupt changes.
-    *   The `jerk_lower` limit is applied differently based on the `LONG_TUNING_BRAKING` flag:
+    *   The `jerk_lower` limit is applied differently based on the `LONG_TUNING_PREDICTIVE` flag:
         *   **If Flag Set (predictive tune):** `jerk_lower` is set directly to `desired_jerk_lower`.
         *   **If Flag Not Set (dynamic tune):** `jerk_lower` is smoothed using `ramp_update` towards `gen1_desired_jerk_lower`.
 

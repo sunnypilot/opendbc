@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from unittest.mock import Mock
+
 from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController, LongitudinalState
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.car import DT_CTRL, structs
@@ -8,6 +9,7 @@ from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import HyundaiFlags
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
+
 
 class TestLongitudinalTuningController(unittest.TestCase):
   def setUp(self):
@@ -25,7 +27,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     self.assertEqual(self.controller.jerk_lower, 0.0)
 
   def test_make_jerk_flag_off(self):
-    """Test when LONG_TUNING flag is off"""
+    """Test when LONG_TUNING_DYNAMIC flag is off"""
     mock_CC, mock_CS = Mock(spec=structs.CarControl), Mock(spec=CarStateBase)
     mock_CS.out = Mock()
     mock_CS.out.vEgo = 0.0
@@ -46,7 +48,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
   def test_make_jerk_flag_on(self):
     """Only verify that limits update when flags are on."""
-    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
     self.controller.CP.flags = HyundaiFlags.CANFD
     mock_CC = Mock()
     mock_CC.actuators = Mock(accel=1.0)
@@ -63,7 +65,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
 
   def test_a_value_jerk_scaling(self):
     """Test a_value jerk scaling under tuning branch."""
-    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
     self.controller.CP.radarUnavailable = False
     mock_CC = Mock()
     mock_CC.actuators = Mock(accel=1.0)
@@ -105,15 +107,15 @@ class TestLongitudinalTuningController(unittest.TestCase):
     mock_CC.longActive = True
     self.controller.stopping = False
 
-    # Test with LONG_TUNING only
-    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING
+    # Test with LONG_TUNING_DYNAMIC only
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
     for v, a in zip(vels, accels, strict=True):
       mock_CS.out.vEgo = float(v)
       mock_CS.out.aEgo = float(a)
       mock_CS.aBasis = float(a)
       mock_CC.actuators.accel = float(a)
       self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
-      print(f"[realistic][LONG_TUNING] v={v:.2f}, a={a:.2f}, jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
+      print(f"[realistic][LONG_TUNING_DYNAMIC] v={v:.2f}, a={a:.2f}, jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
       self.assertGreater(self.controller.jerk_upper, 0.0)
 
     # Reset controller before next test
@@ -121,16 +123,18 @@ class TestLongitudinalTuningController(unittest.TestCase):
     self.controller.jerk_upper = 0.5
     self.controller.jerk_lower = 0.5
 
-    # Test with LONG_TUNING and LONG_TUNING_BRAKING
-    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING | HyundaiFlagsSP.LONG_TUNING_BRAKING
+    # Test with LONG_TUNING_DYNAMIC and LONG_TUNING_PREDICTIVE
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE
     for v, a in zip(vels, accels, strict=True):
       mock_CS.out.vEgo = float(v)
       mock_CS.out.aEgo = float(a)
       mock_CS.aBasis = float(a)
       mock_CC.actuators.accel = float(a)
       self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
-      print(f"[realistic][LONG_TUNING_BRAKING] v={v:.2f}, a={a:.2f}, jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
+      print(f"[realistic][LONG_TUNING_PREDICTIVE] v={v:.2f}, a={a:.2f}, " +
+            f"jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
       self.assertGreater(self.controller.jerk_upper, 0.0)
+
 
 if __name__ == "__main__":
   unittest.main()

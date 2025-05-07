@@ -55,7 +55,7 @@ class LongitudinalController:
   def get_stopping_state(self, actuators: structs.CarControl.Actuators) -> None:
     stopping = actuators.longControlState == LongCtrlState.stopping
 
-    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
+    if not self.CP_SP.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE):
       self.stopping = stopping
       self.stopping_count = 0
       return
@@ -76,7 +76,7 @@ class LongitudinalController:
     self.stopping_count += 1
 
   def calculate_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
-    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
+    if not self.CP_SP.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE):
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
 
       self.jerk_upper = jerk_limit
@@ -123,20 +123,17 @@ class LongitudinalController:
       gen1_lower_jerk = 0.5
     gen1_desired_jerk_lower = min(gen1_lower_jerk, lower_speed_factor)
 
-    # New gen tune uses LONG_TUNING_BRAKING flag
-    if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_BRAKING:
-      self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
-      self.jerk_lower = desired_jerk_lower
-    else:
-      self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
-      self.jerk_lower = ramp_update(self.jerk_lower, gen1_desired_jerk_lower)
+    # New gen tune uses LONG_TUNING_PREDICTIVE flag
+    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+    self.jerk_lower = desired_jerk_lower if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_PREDICTIVE else \
+                      ramp_update(self.jerk_lower, gen1_desired_jerk_lower)
 
     if not CC.longActive:
       self.jerk_upper = 0.0
       self.jerk_lower = 0.0
 
   def calculate_a_value(self, CC: structs.CarControl) -> None:
-    if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING or self.CP.radarUnavailable:
+    if not self.CP_SP.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE) or self.CP.radarUnavailable:
       self.desired_accel = self.accel_cmd
       self.actual_accel = self.accel_cmd
       return
