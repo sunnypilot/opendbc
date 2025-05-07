@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from unittest.mock import Mock
-from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import LongitudinalTuningController, LongitudinalTuningState
+from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController, LongitudinalState
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import CarStateBase
@@ -14,15 +14,15 @@ class TestLongitudinalTuningController(unittest.TestCase):
     self.mock_CP = Mock(carFingerprint="KIA_NIRO_EV", flags=0)
     self.mock_CP.radarUnavailable = False            # ensure tuning branch
     self.mock_CP_SP = Mock(flags=0)
-    self.controller = LongitudinalTuningController(self.mock_CP, self.mock_CP_SP)
+    self.controller = LongitudinalController(self.mock_CP, self.mock_CP_SP)
 
   def test_init(self):
     """Test controller initialization"""
-    self.assertIsInstance(self.controller.state, LongitudinalTuningState)
+    self.assertIsInstance(self.controller.tuning, LongitudinalState)
     self.assertEqual(self.controller.desired_accel, 0.0)
     self.assertEqual(self.controller.actual_accel, 0.0)
-    self.assertEqual(self.controller.jerk_upper, 0.5)
-    self.assertEqual(self.controller.jerk_lower, 0.5)
+    self.assertEqual(self.controller.jerk_upper, 0.0)
+    self.assertEqual(self.controller.jerk_lower, 0.0)
 
   def test_make_jerk_flag_off(self):
     """Test when LONG_TUNING flag is off"""
@@ -68,7 +68,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     mock_CC = Mock()
     mock_CC.actuators = Mock(accel=1.0)
     mock_CC.longActive = True
-    print("[a_value] starting accel_last:", self.controller.state.accel_last)
+    print("[a_value] starting accel_last:", self.controller.tuning.accel_last)
     # first pass: limit to jerk_upper * DT_CTRL * 2 = 0.1
     self.controller.jerk_upper = 0.1 / (DT_CTRL * 2)
     self.controller.accel_cmd = 1.0  # ensure accel_cmd is set
@@ -117,7 +117,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
       self.assertGreater(self.controller.jerk_upper, 0.0)
 
     # Reset controller before next test
-    self.controller.state = LongitudinalTuningState()
+    self.controller.tuning = LongitudinalState()
     self.controller.jerk_upper = 0.5
     self.controller.jerk_lower = 0.5
 
