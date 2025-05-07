@@ -40,8 +40,8 @@ class LongitudinalController:
     self.long_control_state_last = LongCtrlState.off
     self.stopping_count = 0
 
-  def get_stopping_state(self, CC: structs.CarControl) -> None:
-    stopping = CC.actuators.longControlState == LongCtrlState.stopping
+  def get_stopping_state(self, actuators: structs.CarControl.Actuators) -> None:
+    stopping = actuators.longControlState == LongCtrlState.stopping
 
     if not self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING:
       self.long_state.stopping = stopping
@@ -103,7 +103,7 @@ class LongitudinalController:
     actuators = CC.actuators
     long_control_state = actuators.longControlState
 
-    self.get_stopping_state(CC)
+    self.get_stopping_state(actuators)
     self.calculate_jerk(CC, CS, long_control_state)
     self.calculate_a_value(CC)
 
