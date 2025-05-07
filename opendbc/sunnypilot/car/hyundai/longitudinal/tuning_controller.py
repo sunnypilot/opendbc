@@ -125,9 +125,8 @@ class LongitudinalTuningController:
     self.accel_cmd = CC.actuators.accel
 
     a_ego_blended = float(np.interp(velocity, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
-    self.aego.update(a_ego_blended)
 
-    accel_error = self.accel_cmd - self.aego.x
+    accel_error = self.accel_cmd - self.state.accel_last
 
     # Lookahead jerk: How much jerk is needed to reach desired accel in future_t seconds
     future_t_upper = float(np.interp(velocity, self.car_config.lookahead_jerk_bp, self.car_config.lookahead_jerk_upper_v))
