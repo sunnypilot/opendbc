@@ -124,7 +124,7 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
 
-def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, long_state, set_speed, hud_control, main_cruise_enabled):
+def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, tuning, set_speed, hud_control, main_cruise_enabled):
   jerk = 5
   jn = jerk / 50
   if not enabled or gas_override:
@@ -137,11 +137,11 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "ACCMode": 0 if not enabled else (2 if gas_override else 1),
     "MainMode_ACC": 1 if main_cruise_enabled else 0,
     "StopReq": 1 if stopping else 0,
-    "aReqValue": long_state.actual_accel,
-    "aReqRaw": long_state.actual_accel,
+    "aReqValue": tuning.actual_accel,
+    "aReqRaw": tuning.actual_accel,
     "VSetDis": set_speed,
-    "JerkLowerLimit": long_state.jerk_lower,
-    "JerkUpperLimit": long_state.jerk_upper,
+    "JerkLowerLimit": tuning.jerk_lower,
+    "JerkUpperLimit": tuning.jerk_upper,
 
     "ACC_ObjDist": 1,
     "ObjValid": 0,
