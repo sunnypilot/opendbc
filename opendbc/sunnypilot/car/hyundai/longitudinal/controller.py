@@ -12,7 +12,6 @@ from opendbc.car import structs, DT_CTRL
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update
-from opendbc.sunnypilot.car.hyundai.longitudinal.tuning_controller import LongitudinalTuningController
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -40,6 +39,7 @@ class LongitudinalController:
     self.CP = CP
     self.CP_SP = CP_SP
 
+    self.tuning = LongitudinalState()
     self.car_config = get_car_config(CP)
     self.long_control_state_last = LongCtrlState.off
     self.stopping_count = 0
@@ -156,6 +156,16 @@ class LongitudinalController:
     self.actual_accel = jerk_limited_integrator(self.desired_accel, self.accel_last, self.jerk_upper, self.jerk_lower)
     self.accel_last = self.actual_accel
 
+  def get_tuning_state(self) -> None:
+    self.tuning = LongitudinalState(
+      desired_accel=self.desired_accel,
+      actual_accel=self.actual_accel,
+      accel_last=self.accel_last,
+      jerk_upper=self.jerk_upper,
+      jerk_lower=self.jerk_lower,
+      stopping=self.stopping,
+    )
+
   def update(self, CC: structs.CarControl, CS: CarStateBase) -> None:
     """Inject Longitudinal Controls for HKG Vehicles."""
     actuators = CC.actuators
@@ -165,5 +175,6 @@ class LongitudinalController:
     self.get_stopping_state(actuators)
     self.calculate_jerk(CC, CS, long_control_state)
     self.calculate_a_value(CC)
+    self.get_tuning_state()
 
     self.long_control_state_last = long_control_state
