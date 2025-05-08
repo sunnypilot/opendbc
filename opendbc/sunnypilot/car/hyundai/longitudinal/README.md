@@ -17,7 +17,7 @@ This standard provides the foundation for the safety limits enforced by this tun
 2.  **Predictive Jerk Limits:** The upper and lower jerk limits (`jerk_upper`, `jerk_lower`) are not fixed but calculated dynamically based on several factors:
     *   **Actual Acceleration (`aego`):** The car's current acceleration (`CS.out.aEgo`, potentially blended with `CS.aBasis` at low speeds) is smoothed using a `FirstOrderFilter` (`self.aego`).
     *   **Acceleration Error:** The difference between the *commanded* acceleration (`self.accel_cmd`) and the *actual* smoothed acceleration (`self.aego.x`).
-    *   **Lookahead Jerk:** We estimate the jerk required to reach the target acceleration (`accel_cmd`) within a future time window. This window (`future_t_upper`, `future_t_lower`) varies with speed, defined in `longitudinal_config.py` (`lookahead_jerk_bp`, `lookahead_jerk_upper_v`, `lookahead_jerk_lower_v`).
+    *   **Lookahead Jerk:** We estimate the jerk required to reach the target acceleration (`accel_cmd`) within a future time window. This window (`future_t_upper`, `future_t_lower`) varies with speed, defined in `config.py` (`lookahead_jerk_bp`, `lookahead_jerk_upper_v`, `lookahead_jerk_lower_v`).
         *   `j_ego_upper = accel_error / future_t_upper`
         *   `j_ego_lower = accel_error / future_t_lower`
     *   **ISO 15622 Speed Factors:** Maximum allowed jerk decreases with speed according to ISO 15622. We interpolate values based on current velocity (`CS.out.vEgo`) to get `upper_speed_factor` and `lower_speed_factor`.
@@ -37,7 +37,7 @@ This standard provides the foundation for the safety limits enforced by this tun
         *   **If Flag Set (predictive tune):** `jerk_lower` is set directly to `desired_jerk_lower`.
         *   **If Flag Not Set (dynamic tune):** `jerk_lower` is smoothed using `ramp_update` towards `gen1_desired_jerk_lower`.
 
-**Configuration (`longitudinal_config.py`)**
+**Configuration (`config.py`)**
 
 *   The `CarTuningConfig` dataclass holds tuning parameters like stopping/starting speeds, lookahead jerk profiles, actuator delay, and base jerk limits.
 *   `TUNING_CONFIGS` provides default configurations based on car type (CANFD, EV, HYBRID, DEFAULT).

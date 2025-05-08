@@ -81,7 +81,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     # first pass: limit to jerk_upper * DT_CTRL * 2 = 0.1
     self.controller.jerk_upper = 0.1 / (DT_CTRL * 2)
     self.controller.accel_cmd = 1.0  # ensure accel_cmd is set
-    self.controller.calculate_a_value(mock_CC)
+    self.controller.calculate_accel(mock_CC)
     print(f"[a_value] pass1 actual_accel={self.controller.actual_accel:.5f}")
     self.assertAlmostEqual(self.controller.actual_accel, 0.1, places=5)
 
@@ -89,7 +89,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     mock_CC.actuators.accel = 0.7
     self.controller.jerk_upper = 0.2 / (DT_CTRL * 2)
     self.controller.accel_cmd = 0.7  # update accel_cmd
-    self.controller.calculate_a_value(mock_CC)
+    self.controller.calculate_accel(mock_CC)
     print(f"[a_value] pass2 actual_accel={self.controller.actual_accel:.5f}")
     self.assertAlmostEqual(self.controller.actual_accel, 0.3, places=5)
 

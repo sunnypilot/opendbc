@@ -24,8 +24,7 @@ class CarTuningConfig:
 
 # Default configurations for different car types
 TUNING_CONFIGS = {
-  "CANFD": CarTuningConfig(
-  ),
+  "CANFD": CarTuningConfig(),
   "EV": CarTuningConfig(
     lookahead_jerk_upper_v=[0.3, 1.0],
     lookahead_jerk_lower_v=[0.2, 0.4],

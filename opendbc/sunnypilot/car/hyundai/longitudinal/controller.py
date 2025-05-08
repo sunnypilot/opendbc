@@ -131,7 +131,7 @@ class LongitudinalController:
       self.jerk_upper = 0.0
       self.jerk_lower = 0.0
 
-  def calculate_a_value(self, CC: structs.CarControl) -> None:
+  def calculate_accel(self, CC: structs.CarControl) -> None:
     if not self.CP_SP.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE) or self.CP.radarUnavailable:
       self.desired_accel = self.accel_cmd
       self.actual_accel = self.accel_cmd
@@ -170,7 +170,7 @@ class LongitudinalController:
 
     self.get_stopping_state(actuators)
     self.calculate_jerk(CC, CS, long_control_state)
-    self.calculate_a_value(CC)
+    self.calculate_accel(CC)
     self.get_tuning_state()
 
     self.long_control_state_last = long_control_state
