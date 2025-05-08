@@ -192,8 +192,6 @@ def create_acc_commands(packer, enabled, accel, tuning, idx, hud_control, set_sp
     values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
     return values
 
-  commands = []
-
   scc11_values = get_scc11_values()
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 
