@@ -491,6 +491,16 @@ BO_ 200 HU_USM_E1: 8 XXX
  SG_ USM_RLGhostDoorReq : 60|2@1+ (1,0) [0|3] "" XXX
  SG_ USM_RRGhostDoorReq : 62|2@1+ (1,0) [0|3] "" XXX
 
+BO_ 203 ADAS_CMD_35_10ms: 24 CGW_CCU
+ SG_ ADAS_CMD_Crc35Val : 0|16@1+ (1,0) [0|0] "0" FCU_C,GW_RGW,MDPS,SFA
+ SG_ ADAS_CMD_AlvCnt35Val : 16|8@1+ (1,0) [0|0] "0" FCU_C,GW_RGW,MDPS,SFA
+ SG_ ADAS_ActvACISta : 24|4@1+ (1,0) [0|0] "" GW_RGW,MDPS,SFA
+ SG_ ADAS_ActvACILvl2Sta : 28|4@1+ (1,0) [0|0] "" ESC,FCU_C,GW_RGW,MDPS,SFA,VPC_C
+ SG_ ADAS_StrAnglReqVal : 32|14@1- (0.1,0) [0|0] "Deg" GW_RGW,MDPS,SFA
+ SG_ ADAS_ACIAnglTqRedcGainVal : 48|8@1+ (0.004,0) [0|0] "" GW_RGW,MDPS,SFA
+ SG_ FCA_ESA_ActvSta : 56|2@1+ (1,0) [0|0] "" GW_RGW,MDPS,SFA
+ SG_ FCA_ESA_TqBstGainVal : 64|8@1+ (0.004,0) [0|0] "" GW_RGW,MDPS,SFA
+
 BO_ 209 DLBCU_05_00ms_DLBCU: 8 XXX
  SG_ DSAU_SmartCtrl_1h : 0|4@1+ (1,0) [0|15] "" XXX
  SG_ DSAU_SmartCtrl_2h : 4|4@1+ (1,0) [0|15] "" XXX
@@ -734,17 +744,7 @@ BO_ 293 SAS_01_10ms: 16 XXX
  SG_ SAS_AnglVal : 24|16@1- (-0.1,0) [0|255] "deg" XXX
  SG_ SAS_SpdVal : 40|8@1+ (4,0) [0|1016] "deg/s" XXX
  SG_ SAS_IntSta : 48|8@1+ (1,0) [0|255] "" XXX
- 
-BO_ 203 ADAS_CMD_35_10ms: 24 CGW_CCU
- SG_ ADAS_CMD_Crc35Val : 0|16@1+ (1,0) [0|0] "0"  FCU_C,GW_RGW,MDPS,SFA
- SG_ ADAS_CMD_AlvCnt35Val : 16|8@1+ (1,0) [0|0] "0"  FCU_C,GW_RGW,MDPS,SFA
- SG_ ADAS_ActvACISta : 24|4@1+ (1,0) [0|0] ""  GW_RGW,MDPS,SFA
- SG_ ADAS_ActvACILvl2Sta : 28|4@1+ (1,0) [0|0] ""  ESC,FCU_C,GW_RGW,MDPS,SFA,VPC_C
- SG_ ADAS_StrAnglReqVal : 32|14@1- (0.1,0) [0|0] "Deg"  GW_RGW,MDPS,SFA
- SG_ ADAS_ACIAnglTqRedcGainVal : 48|8@1+ (0.004,0) [0|0] ""  GW_RGW,MDPS,SFA
- SG_ FCA_ESA_ActvSta : 56|2@1+ (1,0) [0|0] ""  GW_RGW,MDPS,SFA
- SG_ FCA_ESA_TqBstGainVal : 64|8@1+ (0.004,0) [0|0] ""  GW_RGW,MDPS,SFA
- 
+
 BO_ 298 ADAS_CMD_30_10ms: 16 ADRV
  SG_ ADAS_CMD_Crc30Val : 0|16@1+ (1,0) [0|65535] "" ADRV
  SG_ ADAS_CMD_AlvCnt30Val : 16|8@1+ (1,0) [0|255] "" ADRV
@@ -1310,7 +1310,7 @@ BO_ 432 DATC_02_20ms: 8 XXX
  SG_ DATC_EcoClmtLimSta : 238|2@1+ (1,0) [0|3] "" XXX
  SG_ DATC_ClmtLimOpSta : 240|8@1+ (1,0) [0|255] "" XXX
 
-BO_ 437 FR_CMR_03_50ms: 8 XXX
+BO_ 437 FR_CMR_03_50ms: 32 XXX
  SG_ FR_CMR_Crc3Val : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ FR_CMR_AlvCnt3Val : 16|8@1+ (1,0) [0|255] "" XXX
  SG_ Info_LtLnQualSta : 24|3@1+ (1,0) [0|7] "" XXX
@@ -1327,7 +1327,7 @@ BO_ 437 FR_CMR_03_50ms: 8 XXX
  SG_ Info_RtLnCrvtrDrvtvVal : 144|48@1+ (1,0) [0|281474976710655] "" XXX
  SG_ ID_CIPV : 192|8@1+ (1,0) [0|255] "" XXX
  SG_ Relative_Velocity : 200|12@1+ (1,0) [0|4095] "" XXX
- SG_ Longitudinal_Distance : 212|4@1+ (1,0) [0|15] "" XXX
+ SG_ Longitudinal_Distance : 212|12@1+ (1,0) [0|15] "" XXX
 
 BO_ 438 CAM_0x1b6: 32 CAMERA
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -1602,12 +1602,14 @@ BO_ 507 CAM_0x1fb: 32 CAMERA
 BO_ 512 ADAS_CMD_21_50ms: 8 XXX
  SG_ ADAS_CMD_Crc21Val : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ ADAS_CMD_AlvCnt21Val : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ SET_ME_E1 : 24|2@1+ (1,0) [0|3] "" XXX
- SG_ SCC_Char1Sta : 26|6@1+ (1,0) [0|63] "" XXX
- SG_ SET_ME_3A : 32|6@1+ (1,0) [0|63] "" XXX
+ SG_ SCCMode_OptUsmSta : 25|2@0+ (1,0) [0|3] "" XXX
+ SG_ SCC_Char1Sta : 26|3@1+ (1,0) [0|63] "" XXX
+ SG_ SCCML_LearningChar1Sta : 29|3@1+ (1,0) [0|3] "" XXX
+ SG_ SCCML_LearningChar2Sta : 32|3@1+ (1,0) [0|63] "" XXX
+ SG_ SCCML_LearningChar3Sta : 37|3@0+ (1,0) [0|7] "" XXX
  SG_ SCC_ML_OnOffEquipSta : 38|2@1+ (1,0) [0|3] "" XXX
  SG_ SCC_Char2Sta : 40|3@1+ (1,0) [0|7] "" XXX
- SG_ SCC_Char3Sta : 43|5@1+ (1,0) [0|31] "" XXX
+ SG_ SCC_Char3Sta : 43|3@1+ (1,0) [0|31] "" XXX
 
 BO_ 513 RADAR_0x201: 32 FRONT_RADAR
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -1799,10 +1801,26 @@ BO_ 565 BMS_01_100ms: 8 XXX
  SG_ xEV_RlyWeldingSta : 188|36@1+ (1,0) [0|68719476735] "" XXX
  SG_ xEV_BmsWakeUpModSta : 224|8@1+ (1,0) [0|255] "" XXX
 
-BO_ 576 ADAS_CMD_31_50ms_1_HDA_LFA: 16 XXX
- SG_ CHECKSUM : 0|5@1+ (1,0) [0|31] "" XXX
- SG_ HU_DSW_SymSta : 5|3@1+ (1,0) [0|7] "" XXX
- SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+BO_ 576 HU_DSW: 32 XXX
+ SG_ HeadPoseYawStat : 0|5@1+ (1,0) [0|31] "" XXX
+ SG_ SymSta : 5|3@1+ (1,0) [0|7] "" XXX
+ SG_ LeftEyeOpenStat : 8|5@1+ (1,0) [0|31] "" XXX
+ SG_ EyeOpenStat : 13|3@1+ (1,0) [0|7] "" XXX
+ SG_ RightEyeOpenStat : 16|5@1+ (1,0) [0|31] "" XXX
+ SG_ LatestNumBlink : 21|3@1+ (1,0) [0|7] "" XXX
+ SG_ HeadPosePitchStat : 24|4@1+ (1,0) [0|15] "" XXX
+ SG_ FaceDectStat : 28|2@1+ (1,0) [0|3] "" XXX
+ SG_ CamBlckdSta : 30|2@1+ (1,0) [0|3] "" XXX
+ SG_ EyeGazePitchStat : 32|4@1+ (1,0) [0|15] "" XXX
+ SG_ FakeStat : 36|2@1+ (1,0) [0|3] "" XXX
+ SG_ DistWrngTypSta : 38|2@1+ (1,0) [0|3] "" XXX
+ SG_ PerclosStat : 40|2@1+ (1,0) [0|3] "" XXX
+ SG_ LongBlinkStat : 42|2@1+ (1,0) [0|3] "" XXX
+ SG_ TalkStat : 44|2@1+ (1,0) [0|3] "" XXX
+ SG_ DistFtgWrngSta : 46|2@1+ (1,0) [0|3] "" XXX
+ SG_ EyeGazeYawStat : 48|5@1+ (1,0) [0|31] "" XXX
+ SG_ EyeStat : 53|9@1+ (1,0) [0|511] "" XXX
+ SG_ LatestLongClosedStat : 62|2@1+ (1,0) [0|3] "" XXX
 
 BO_ 577 HU_APSU_PE: 8 XXX
  SG_ C_AstBolsterInfSw_HU : 0|2@1+ (1,0) [0|3] "" XXX
@@ -4711,8 +4729,13 @@ BO_ 1217 HU_NAVI_V2_3_SEG_SUB_E: 8 XXX
  SG_ SEG_SUB_V2_3_CyclicCounter : 45|3@1+ (1,0) [0|7] "" XXX
  SG_ SEG_SUB_V2_3_Retransmission : 48|8@1+ (1,0) [0|255] "" XXX
 
-BO_ 1218 HU_USM_E11: 8 XXX
- SG_ CF_AVN_HDALCFuncNValueSet : 8|5@1+ (1,0) [0|31] "" XXX
+BO_ 1218 HU_USM_E11: 64 XXX
+ SG_ C_RH_Unfolding_SW : 0|2@1+ (1,0) [0|3] "" XXX
+ SG_ C_RH_Folding_SW : 2|2@1+ (1,0) [0|3] "" XXX
+ SG_ C_LH_Unfolding_SW : 4|2@1+ (1,0) [0|3] "" XXX
+ SG_ C_LH_Folding_SW : 6|2@1+ (1,0) [0|3] "" XXX
+ SG_ CF_AVN_HDALCFuncNValueSet : 8|2@1+ (1,0) [0|3] "" XXX
+ SG_ C_PSMHeightNValueSet : 10|3@1+ (1,0) [0|7] "" XXX
  SG_ C_AVN_PTGHeightNValueSet : 13|3@1+ (1,0) [0|7] "" XXX
  SG_ CF_AVN_SCCMLReset : 16|2@1+ (1,0) [0|3] "" XXX
  SG_ C_TgltAwayCloseNValue : 18|2@1+ (1,0) [0|3] "" XXX
@@ -4720,16 +4743,18 @@ BO_ 1218 HU_USM_E11: 8 XXX
  SG_ CF_AVN_RrSeatRemindNValueSet : 22|2@1+ (1,0) [0|3] "" XXX
  SG_ CF_AVN_DSWNValueSet : 24|2@1+ (1,0) [0|3] "" XXX
  SG_ CF_AVN_RRPSU_RLNValueSet : 26|3@1+ (1,0) [0|7] "" XXX
- SG_ CF_AVN_APSUNValueSet : 29|3@1+ (1,0) [0|7] "" XXX
- SG_ CF_AVN_NCC_CameraNValueSet : 32|5@1+ (1,0) [0|31] "" XXX
- SG_ CF_AVN_RRPSU_RRNValueSet : 37|3@1+ (1,0) [0|7] "" XXX
- SG_ CF_AVN_HtBlcAstNValueSet : 40|4@1+ (1,0) [0|15] "" XXX
- SG_ CF_AVN_HtBlcDrvNValueSet : 44|4@1+ (1,0) [0|15] "" XXX
- SG_ CF_AVN_SCCModeNValueSet : 48|2@1+ (1,0) [0|3] "" XXX
- SG_ CF_AVN_SCCMLChar1Set : 50|4@1+ (1,0) [0|15] "" XXX
- SG_ CF_AVN_UIPNValueSet : 54|2@1+ (1,0) [0|3] "" XXX
- SG_ CF_AVN_SCCMLChar2Set : 56|3@1+ (1,0) [0|7] "" XXX
- SG_ CF_AVN_SCCMLChar3Set : 59|5@1+ (1,0) [0|31] "" XXX
+ SG_ CF_AVN_APSUNValueSet : 29|6@1+ (1,0) [0|63] "" XXX
+ SG_ CF_AVN_NCC_CameraNValueSet : 35|2@1+ (1,0) [0|3] "" XXX
+ SG_ CF_AVN_FCAJnctnNValueSet : 37|2@1+ (1,0) [0|3] "" XXX
+ SG_ CF_AVN_RRPSU_RRNValueSet : 39|3@1+ (1,0) [0|7] "" XXX
+ SG_ CF_AVN_HtBlcAstNValueSet : 42|4@1+ (1,0) [0|15] "" XXX
+ SG_ CF_AVN_HtBlcDrvNValueSet : 46|4@1+ (1,0) [0|15] "" XXX
+ SG_ CF_AVN_SCCModeNValueSet : 50|2@1+ (1,0) [0|3] "" XXX
+ SG_ CF_AVN_SCCMLChar1Set : 52|4@1+ (1,0) [0|15] "" XXX
+ SG_ CF_AVN_UIPNValueSet : 56|2@1+ (1,0) [0|3] "" XXX
+ SG_ CF_AVN_SCCMLChar2Set : 58|3@1+ (1,0) [0|7] "" XXX
+ SG_ CF_AVN_SCCMLChar3Set : 61|3@1+ (1,0) [0|7] "" XXX
+ SG_ CF_AVN_NmodeFCAoffNValue : 64|6@1+ (1,0) [0|63] "" XXX
 
 BO_ 1219 HU_BLTN_CAM_E_01_BLTN_CAM_StoProp: 8 XXX
  SG_ DVRS_Display_Advanced_TBT : 4|1@1+ (1,0) [0|1] "" XXX
@@ -5330,3 +5355,16 @@ BO_ 1789 TP_HU_VESS_Dev_Req: 8 XXX
  SG_ HU_VESS_Dev_Byte6 : 48|8@1+ (1,0) [0|255] "" XXX
  SG_ HU_VESS_Dev_Byte7 : 56|8@1+ (1,0) [0|255] "" XXX
 
+CM_ SG_ 512 SCCMode_OptUsmSta "I am not sure why this is here too (though all indicates this is should exist here), and why the val is diff from SCC_ML_OnOffEquiSta.";
+CM_ SG_ 512 SCCML_LearningChar1Sta "SCCMLAccelerationLevel";
+CM_ SG_ 512 SCCML_LearningChar2Sta "SCCMLVehicleDistanceLevel";
+CM_ SG_ 512 SCCML_LearningChar3Sta "SCCMLResponseSpeedLevel";
+CM_ SG_ 512 SCC_ML_OnOffEquipSta "AKA SCCMode_OptUsmSta ?";
+VAL_ 512 SCCMode_OptUsmSta 1 "Driving Mode" 2 "SCC-ML" 3 "Invalid";
+VAL_ 512 SCC_Char1Sta 0 "Default" 1 "Level 1" 2 "Level 2" 3 "Level 3" 4 "Level 4" 5 "Level 5";
+VAL_ 512 SCCML_LearningChar1Sta 1 "Level 1" 2 "Level 2" 3 "Level 3" 4 "Level 4" 5 "Level 5";
+VAL_ 512 SCCML_LearningChar2Sta 1 "Level 1" 2 "Level 2" 3 "Level 3" 4 "Level 4";
+VAL_ 512 SCCML_LearningChar3Sta 1 "Level 1" 2 "Level 2" 3 "Level 3" 4 "Level 4" 5 "Level 5";
+VAL_ 512 SCC_ML_OnOffEquipSta 1 "Driving Mode" 2 "SCC-ML" 3 "Invalid";
+VAL_ 512 SCC_Char2Sta 0 "Default" 1 "Level 1" 2 "Level 2" 3 "Level 3" 4 "Level 4" 5 "Level 5";
+VAL_ 512 SCC_Char3Sta 0 "Default" 1 "Level 1" 2 "Level 2" 3 "Level 3" 4 "Level 4" 5 "Level 5";
