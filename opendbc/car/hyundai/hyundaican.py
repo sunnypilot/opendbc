@@ -126,9 +126,7 @@ def create_lfahda_mfc(packer, enabled, lfa_icon):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-
-def create_acc_commands(packer, enabled, accel, tuning, idx, hud_control, set_speed,
-                        stopping, long_override, use_fca, CP,
+def create_acc_commands(packer, enabled, accel, tuning, idx, hud_control, set_speed, stopping, long_override, use_fca, CP,
                         main_cruise_enabled, ESCC: EnhancedSmartCruiseControl = None):
   commands = []
 

@@ -152,6 +152,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
             self.last_button_frame = self.frame
 
     if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
+      # TODO: unclear if this is needed
+      jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0  # noqa: F841
       use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
       can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, self.tuning, int(self.frame / 2),
                                                       hud_control, set_speed_in_units, stopping,
@@ -201,7 +203,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))
       if self.frame % 2 == 0:
         can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
-                                                         self.tuning, set_speed_in_units, hud_control, CS.main_cruise_enabled))
+                                                         set_speed_in_units, hud_control, CS.main_cruise_enabled, self.tuning))
         self.accel_last = accel
     else:
       # button presses
