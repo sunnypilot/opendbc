@@ -86,8 +86,6 @@ class LongitudinalController:
     velocity = CS.out.vEgo
     accel_error = self.accel_cmd - self.accel_last
 
-    a_ego_blended = float(np.interp(velocity, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
-
     # Lookahead jerk: How much jerk is needed to reach desired accel in future_t seconds
     future_t_upper = float(np.interp(velocity, self.car_config.lookahead_jerk_bp, self.car_config.lookahead_jerk_upper_v))
     future_t_lower = float(np.interp(velocity, self.car_config.lookahead_jerk_bp, self.car_config.lookahead_jerk_lower_v))
@@ -111,6 +109,7 @@ class LongitudinalController:
     desired_jerk_lower = min(lower_jerk, lower_speed_factor)
 
     # Gen1 negative accel tune
+    a_ego_blended = float(np.interp(velocity, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
     gen1_accel_error = a_ego_blended - self.accel_last
     if self.CP.radarUnavailable:
       gen1_lower_jerk = 5.0
