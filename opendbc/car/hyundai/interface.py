@@ -175,7 +175,7 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
-  def _get_longitudinal_tuning(stock_cp: structs.CarParams, ret: structs.CarParamsSP) -> structs.CarParamsSP:
+  def _get_longitudinal_tuning_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP) -> structs.CarParamsSP:
     if ret.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE):
       get_longitudinal_tune(stock_cp)
 
