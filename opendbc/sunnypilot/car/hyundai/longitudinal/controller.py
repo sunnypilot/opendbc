@@ -18,8 +18,8 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 MIN_JERK = 0.5
 
-GEN1_LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
-GEN1_LOWER_JERK_V  = [ 3.3,  2.5,  2.0,   1.9,  1.8,   1.65,  1.15,    0.5]
+DYNAMIC_LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
+DYNAMIC_LOWER_JERK_V  = [ 3.3,  2.5,  2.0,   1.9,  1.8,   1.65,  1.15,    0.5]
 
 
 @dataclass
@@ -52,10 +52,14 @@ class LongitudinalController:
     self.jerk_lower = 0.0
     self.stopping = False
 
+  @property
+  def enabled(self) -> bool:
+    return bool(self.CP_SP.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE))
+
   def get_stopping_state(self, actuators: structs.CarControl.Actuators) -> None:
     stopping = actuators.longControlState == LongCtrlState.stopping
 
-    if not self.CP_SP.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE):
+    if not self.enabled:
       self.stopping = stopping
       self.stopping_count = 0
       return
@@ -76,7 +80,7 @@ class LongitudinalController:
     self.stopping_count += 1
 
   def calculate_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
-    if not self.CP_SP.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE):
+    if not self.enabled:
       jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
 
       self.jerk_upper = jerk_limit
@@ -115,9 +119,9 @@ class LongitudinalController:
       gen1_lower_jerk = 5.0
     elif gen1_accel_error < 0:
       lower_max = self.car_config.jerk_limits
-      original_value = np.array(GEN1_LOWER_JERK_V)
+      original_value = np.array(DYNAMIC_LOWER_JERK_V)
       dynamic_lower = original_value * (lower_max / original_value[0])
-      gen1_lower_jerk = float(np.interp(gen1_accel_error, GEN1_LOWER_JERK_BP, dynamic_lower))
+      gen1_lower_jerk = float(np.interp(gen1_accel_error, DYNAMIC_LOWER_JERK_BP, dynamic_lower))
     else:
       gen1_lower_jerk = 0.5
     gen1_desired_jerk_lower = min(gen1_lower_jerk, lower_speed_factor)
@@ -132,7 +136,7 @@ class LongitudinalController:
       self.jerk_lower = 0.0
 
   def calculate_accel(self, CC: structs.CarControl) -> None:
-    if not self.CP_SP.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE) or self.CP.radarUnavailable:
+    if not self.enabled or self.CP.radarUnavailable:
       self.desired_accel = self.accel_cmd
       self.actual_accel = self.accel_cmd
       return

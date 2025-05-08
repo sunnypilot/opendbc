@@ -28,7 +28,7 @@ This standard provides the foundation for the safety limits enforced by this tun
 
 3.  **Dynamic Braking Tune:** For use of the tune without the `LONG_TUNING_PREDICTIVE` flag, a specific negative jerk profile is applied during braking (`gen1_accel_error < 0`).
     *   `gen1_accel_error = a_ego_blended - self.state.accel_last`
-    *   A dynamic lower jerk limit (`gen1_lower_jerk`) is interpolated based on this error using `GEN1_LOWER_JERK_BP` and a dynamically scaled `GEN1_LOWER_JERK_V` (scaled by `car_config.jerk_limits`).
+    *   A dynamic lower jerk limit (`gen1_lower_jerk`) is interpolated based on this error using `DYNAMIC_LOWER_JERK_BP` and a dynamically scaled `DYNAMIC_LOWER_JERK_V` (scaled by `car_config.jerk_limits`).
     *   `gen1_desired_jerk_lower = min(gen1_lower_jerk, lower_speed_factor)`
 
 4.  **Applying Jerk Limits:**
