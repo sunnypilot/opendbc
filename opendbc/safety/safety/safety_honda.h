@@ -341,12 +341,6 @@ static safety_config honda_nidec_init(uint16_t param) {
 }
 
 static safety_config honda_bosch_init(uint16_t param) {
-<<<<<<< HEAD
-  static CanMsg HONDA_BOSCH_TX_MSGS[] = {{0xE4, 0, 5, true}, {0xE5, 0, 8, false}, {0x296, 1, 4, false}, {0x33D, 0, 5, false}, {0x33DA, 0, 5, false}, {0x33DB, 0, 8, false}};  // Bosch
-  static CanMsg HONDA_BOSCH_LONG_TX_MSGS[] = {{0xE4, 1, 5, true}, {0x1DF, 1, 8, true}, {0x1EF, 1, 8, false}, {0x1FA, 1, 8, false}, {0x30C, 1, 8, false}, {0x33D, 1, 5, false}, {0x33DA, 1, 5, false}, {0x33DB, 1, 8, false}, {0x39F, 1, 8, false}, {0x18DAB0F1, 1, 8, false}};  // Bosch w/ gas and brakes
-  static CanMsg HONDA_RADARLESS_TX_MSGS[] = {{0xE4, 0, 5, true}, {0x296, 2, 4, false}, {0x1A6, 2, 8, false}, {0x33D, 0, 8, false}}; // Bosch radarless
-  static CanMsg HONDA_RADARLESS_LONG_TX_MSGS[] = {{0xE4, 0, 5, true}, {0x33D, 0, 8, false}, {0x1C8, 0, 8, false}, {0x30C, 0, 8, false}};  // Bosch radarless w/ gas and brakes
-=======
   // HONDA_BOSCH_TX_MSGS is used by Bosch and Bosch CAN FD
   static CanMsg HONDA_BOSCH_TX_MSGS[] = {{0xE4, 0, 5, .check_relay = true}, {0xE5, 0, 8, .check_relay = true},
                                          // Send buttons on powertrain bus: 0 for Bosch CAN FD, 1 for CAN
@@ -358,11 +352,10 @@ static safety_config honda_bosch_init(uint16_t param) {
                                               {0x33DA, 1, 5, .check_relay = true}, {0x33DB, 1, 8, .check_relay = true}, {0x39F, 1, 8, .check_relay = false},
                                               {0x18DAB0F1, 1, 8, .check_relay = false}};  // Bosch w/ gas and brakes
 
-  static CanMsg HONDA_RADARLESS_TX_MSGS[] = {{0xE4, 0, 5, .check_relay = true}, {0x296, 2, 4, .check_relay = false}, {0x33D, 0, 8, .check_relay = true}};  // Bosch radarless
+  static CanMsg HONDA_RADARLESS_TX_MSGS[] = {{0xE4, 0, 5, .check_relay = true}, {0x296, 2, 4, .check_relay = false}, {0x1A6, 2, 8, .check_relay = false}, {0x33D, 0, 8, .check_relay = true}};  // Bosch radarless
 
   static CanMsg HONDA_RADARLESS_LONG_TX_MSGS[] = {{0xE4, 0, 5, .check_relay = true}, {0x33D, 0, 8, .check_relay = true}, {0x1C8, 0, 8, .check_relay = true},
                                                   {0x30C, 0, 8, .check_relay = true}};  // Bosch radarless w/ gas and brakes
->>>>>>> b6447407d069f37c53e90cffae56d93f50b30960
 
   const uint16_t HONDA_PARAM_ALT_BRAKE = 1;
   const uint16_t HONDA_PARAM_RADARLESS = 8;
