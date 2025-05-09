@@ -182,20 +182,26 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, latacti
 
   return [packer.make_can_msg(msg, CAN.ECAN, data) for msg, data in [("CCNC_0x161", msg_161), ("CCNC_0x162", msg_162)]]
 
-def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed, hud_control, main_cruise_enabled, cruise_info=None):
+def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed, hud_control,
+                       main_cruise_enabled, tuning, cruise_info=None):
   jerk = 5
   jn = jerk / 50
-  a_raw, a_val = (0, 0) if not enabled or gas_override else (accel, np.clip(accel, accel_last - jn, accel_last + jn))
+  if not enabled or gas_override:
+    a_val, a_raw = 0, 0
+  else:
+    a_raw = accel  # noqa: F841
+    a_val = np.clip(accel, accel_last - jn, accel_last + jn)  # noqa: F841
 
   values = {
     "ACCMode": 0 if not enabled else (2 if gas_override else 1),
     "MainMode_ACC": 1 if main_cruise_enabled else 0,
-    "StopReq": 1 if stopping else 0,
-    "aReqValue": a_val,
-    "aReqRaw": a_raw,
+    "StopReq": 1 if tuning.stopping else 0,
+    "aReqValue": tuning.actual_accel,
+    "aReqRaw": tuning.actual_accel,
     "VSetDis": set_speed,
-    "JerkLowerLimit": jerk if enabled else 1,
-    "JerkUpperLimit": 3.0,
+    "JerkLowerLimit": tuning.jerk_lower,
+    "JerkUpperLimit": tuning.jerk_upper,
+
     "ObjValid": 0,
     "OBJ_STATUS": 2,
     "SET_ME_2": 0x4,
