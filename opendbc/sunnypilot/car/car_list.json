@@ -1,5 +1,5 @@
 {
-  "Acura ILX 2016-19": {
+  "Acura ILX 2016-18": {
     "platform": "ACURA_ILX",
     "make": "Acura",
     "brand": "honda",
@@ -7,10 +7,19 @@
     "year": [
       "2016",
       "2017",
-      "2018",
+      "2018"
+    ],
+    "package": "Technology Plus Package or AcuraWatch Plus"
+  },
+  "Acura ILX 2019": {
+    "platform": "ACURA_ILX",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "ILX",
+    "year": [
       "2019"
     ],
-    "package": "AcuraWatch Plus"
+    "package": "All"
   },
   "Acura RDX 2016-18": {
     "platform": "ACURA_RDX",
@@ -22,7 +31,7 @@
       "2017",
       "2018"
     ],
-    "package": "AcuraWatch Plus"
+    "package": "AcuraWatch Plus or Advance Package"
   },
   "Acura RDX 2019-21": {
     "platform": "ACURA_RDX_3G",
@@ -368,6 +377,17 @@
     ],
     "package": "Co-Pilot360 Assist+"
   },
+  "Ford Escape 2023-24": {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "brand": "ford",
+    "model": "Escape",
+    "year": [
+      "2023",
+      "2024"
+    ],
+    "package": "Co-Pilot360 Assist+"
+  },
   "Ford Escape Hybrid 2020-22": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
@@ -380,6 +400,17 @@
     ],
     "package": "Co-Pilot360 Assist+"
   },
+  "Ford Escape Hybrid 2023-24": {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "brand": "ford",
+    "model": "Escape Hybrid",
+    "year": [
+      "2023",
+      "2024"
+    ],
+    "package": "Co-Pilot360 Assist+"
+  },
   "Ford Escape Plug-in Hybrid 2020-22": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
@@ -389,6 +420,17 @@
       "2020",
       "2021",
       "2022"
+    ],
+    "package": "Co-Pilot360 Assist+"
+  },
+  "Ford Escape Plug-in Hybrid 2023-24": {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "brand": "ford",
+    "model": "Escape Plug-in Hybrid",
+    "year": [
+      "2023",
+      "2024"
     ],
     "package": "Co-Pilot360 Assist+"
   },
@@ -475,7 +517,7 @@
     ],
     "package": "Adaptive Cruise Control with Lane Centering"
   },
-  "Ford Kuga 2020-22": {
+  "Ford Kuga 2020-23": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
     "brand": "ford",
@@ -483,11 +525,12 @@
     "year": [
       "2020",
       "2021",
-      "2022"
+      "2022",
+      "2023"
     ],
     "package": "Adaptive Cruise Control with Lane Centering"
   },
-  "Ford Kuga Hybrid 2020-22": {
+  "Ford Kuga Hybrid 2020-23": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
     "brand": "ford",
@@ -495,11 +538,22 @@
     "year": [
       "2020",
       "2021",
-      "2022"
+      "2022",
+      "2023"
     ],
     "package": "Adaptive Cruise Control with Lane Centering"
   },
-  "Ford Kuga Plug-in Hybrid 2020-22": {
+  "Ford Kuga Hybrid 2024": {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "brand": "ford",
+    "model": "Kuga Hybrid",
+    "year": [
+      "2024"
+    ],
+    "package": "All"
+  },
+  "Ford Kuga Plug-in Hybrid 2020-23": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
     "brand": "ford",
@@ -507,9 +561,20 @@
     "year": [
       "2020",
       "2021",
-      "2022"
+      "2022",
+      "2023"
     ],
     "package": "Adaptive Cruise Control with Lane Centering"
+  },
+  "Ford Kuga Plug-in Hybrid 2024": {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "brand": "ford",
+    "model": "Kuga Plug-in Hybrid",
+    "year": [
+      "2024"
+    ],
+    "package": "All"
   },
   "Ford Maverick 2022": {
     "platform": "FORD_MAVERICK_MK1",
@@ -838,6 +903,24 @@
     ],
     "package": "All"
   },
+  "Honda Civic Hatchback Hybrid 2023 (Europe only)": {
+    "platform": "HONDA_CIVIC_2022",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Civic Hatchback Hybrid 2023 (Europe only)",
+    "year": [],
+    "package": "All"
+  },
+  "Honda Civic Hatchback Hybrid 2025": {
+    "platform": "HONDA_CIVIC_2022",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Civic Hatchback Hybrid",
+    "year": [
+      "2025"
+    ],
+    "package": "All"
+  },
   "Honda CR-V 2015-16": {
     "platform": "HONDA_CRV",
     "make": "Honda",
@@ -924,13 +1007,15 @@
     ],
     "package": "Honda Sensing"
   },
-  "Honda HR-V 2023": {
+  "Honda HR-V 2023-25": {
     "platform": "HONDA_HRV_3G",
     "make": "Honda",
     "brand": "honda",
     "model": "HR-V",
     "year": [
-      "2023"
+      "2023",
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -969,7 +1054,7 @@
     ],
     "package": "Honda Sensing"
   },
-  "Honda Passport 2019-23": {
+  "Honda Passport 2019-25": {
     "platform": "HONDA_PILOT",
     "make": "Honda",
     "brand": "honda",
@@ -979,7 +1064,9 @@
       "2020",
       "2021",
       "2022",
-      "2023"
+      "2023",
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -1707,13 +1794,14 @@
     ],
     "package": "All"
   },
-  "Kia Niro EV 2023": {
+  "Kia Niro EV 2023-24": {
     "platform": "KIA_NIRO_EV_2ND_GEN",
     "make": "Kia",
     "brand": "hyundai",
     "model": "Niro EV",
     "year": [
-      "2023"
+      "2023",
+      "2024"
     ],
     "package": "All"
   },
@@ -2110,6 +2198,16 @@
       "2018",
       "2019",
       "2020"
+    ],
+    "package": "All"
+  },
+  "Lexus RC 2023": {
+    "platform": "LEXUS_RC_TSS2",
+    "make": "Lexus",
+    "brand": "toyota",
+    "model": "RC",
+    "year": [
+      "2023"
     ],
     "package": "All"
   },
@@ -2651,13 +2749,14 @@
     ],
     "package": "All"
   },
-  "Tesla Model 3 (with HW4) 2024": {
+  "Tesla Model 3 (with HW4) 2024-25": {
     "platform": "TESLA_MODEL_3",
     "make": "Tesla",
     "brand": "tesla",
     "model": "Model 3 (with HW4)",
     "year": [
-      "2024"
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -3125,14 +3224,15 @@
     ],
     "package": "All"
   },
-  "Toyota RAV4 2023-24": {
+  "Toyota RAV4 2023-25": {
     "platform": "TOYOTA_RAV4_TSS2_2023",
     "make": "Toyota",
     "brand": "toyota",
     "model": "RAV4",
     "year": [
       "2023",
-      "2024"
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -3225,6 +3325,14 @@
       "2022",
       "2023"
     ],
+    "package": "All"
+  },
+  "Toyota Yaris 2023 (Non-US only)": {
+    "platform": "TOYOTA_YARIS",
+    "make": "Toyota",
+    "brand": "toyota",
+    "model": "Yaris 2023 (Non-US only)",
+    "year": [],
     "package": "All"
   },
   "Volkswagen Arteon 2018-23": {

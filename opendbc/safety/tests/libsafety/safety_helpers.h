@@ -60,10 +60,6 @@ bool get_disengage_lateral_on_brake(void){
   return get_mads_state()->disengage_lateral_on_brake;
 }
 
-bool get_pause_lateral_on_brake(void){
-  return get_mads_state()->pause_lateral_on_brake;
-}
-
 int get_alternative_experience(void){
   return alternative_experience;
 }
@@ -86,6 +82,10 @@ bool get_brake_pressed_prev(void){
 
 bool get_regen_braking_prev(void){
   return regen_braking_prev;
+}
+
+bool get_steering_disengage_prev(void){
+  return steering_disengage_prev;
 }
 
 bool get_cruise_engaged_prev(void){
@@ -242,17 +242,13 @@ void set_controls_requested_lat(bool c){
   m_mads_state.controls_requested_lat = c;
 }
 
-void set_mads_params(bool enable_mads, bool disengage_lateral_on_brake, bool pause_lateral_on_brake){
+void set_mads_params(bool enable_mads, bool disengage_lateral_on_brake){
   alternative_experience = 0;
   if (enable_mads) {
     alternative_experience |= ALT_EXP_ENABLE_MADS;
 
-    if (disengage_lateral_on_brake) {
-      alternative_experience |= ALT_EXP_MADS_DISENGAGE_LATERAL_ON_BRAKE;
-    } else if (pause_lateral_on_brake) {
-      alternative_experience |= ALT_EXP_MADS_PAUSE_LATERAL_ON_BRAKE;
-    } else {
-    }
+    if (disengage_lateral_on_brake)
+      alternative_experience |= ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE;
   }
 
   mads_set_alternative_experience(&alternative_experience);
@@ -274,4 +270,7 @@ void init_tests(void){
   ts_steer_req_mismatch_last = 0;
   valid_steer_req_count = 0;
   invalid_steer_req_count = 0;
+
+  // assumes autopark on safety mode init to avoid a fault. get rid of that for testing
+  tesla_autopark = false;
 }

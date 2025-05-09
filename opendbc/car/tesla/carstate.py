@@ -50,6 +50,12 @@ class CarState(CarStateBase):
     ret.steerFaultPermanent = eac_status == "EAC_FAULT"
     ret.steerFaultTemporary = eac_status == "EAC_INHIBITED"
 
+    # FSD disengages using union of handsOnLevel (slow overrides) and high angle rate faults (fast overrides, high speed)
+    # TODO: implement in safety
+    eac_error_code = self.can_define.dv["EPAS3S_sysStatus"]["EPAS3S_eacErrorCode"].get(int(epas_status["EPAS3S_eacErrorCode"]), None)
+    ret.steeringDisengage = self.hands_on_level >= 3 or (eac_status == "EAC_INHIBITED" and
+                                                         eac_error_code == "EAC_ERROR_HIGH_ANGLE_RATE_SAFETY")
+
     # Cruise state
     cruise_state = self.can_define.dv["DI_state"]["DI_cruiseState"].get(int(cp_party.vl["DI_state"]["DI_cruiseState"]), None)
     speed_units = self.can_define.dv["DI_state"]["DI_speedUnits"].get(int(cp_party.vl["DI_state"]["DI_speedUnits"]), None)
@@ -71,8 +77,8 @@ class CarState(CarStateBase):
     ret.doorOpen = cp_party.vl["UI_warning"]["anyDoorOpen"] == 1
 
     # Blinkers
-    ret.leftBlinker = cp_party.vl["UI_warning"]["leftBlinkerOn"] != 0
-    ret.rightBlinker = cp_party.vl["UI_warning"]["rightBlinkerOn"] != 0
+    ret.leftBlinker = cp_party.vl["UI_warning"]["leftBlinkerBlinking"] in (1, 2)
+    ret.rightBlinker = cp_party.vl["UI_warning"]["rightBlinkerBlinking"] in (1, 2)
 
     # Seatbelt
     ret.seatbeltUnlatched = cp_party.vl["UI_warning"]["buckleStatus"] != 1
@@ -83,6 +89,12 @@ class CarState(CarStateBase):
 
     # AEB
     ret.stockAeb = cp_ap_party.vl["DAS_control"]["DAS_aebEvent"] == 1
+
+    # LKAS
+    ret.stockLkas = cp_ap_party.vl["DAS_steeringControl"]["DAS_steeringControlType"] == 2  # LANE_KEEP_ASSIST
+
+    # Stock Autosteer should be off (includes FSD)
+    ret.invalidLkasSetting = cp_ap_party.vl["DAS_settings"]["DAS_autosteerEnabled"] != 0
 
     # Buttons # ToDo: add Gap adjust button
 
@@ -105,7 +117,9 @@ class CarState(CarStateBase):
 
     ap_party_messages = [
       ("DAS_control", 25),
+      ("DAS_steeringControl", 50),
       ("DAS_status", 2),
+      ("DAS_settings", 2),
       ("SCCM_steeringAngleSensor", 100),
     ]
 
