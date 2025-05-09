@@ -137,7 +137,7 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
   values = {
     "ACCMode": 0 if not enabled else (2 if gas_override else 1),
     "MainMode_ACC": 1 if main_cruise_enabled else 0,
-    "StopReq": 1 if stopping else 0,
+    "StopReq": 1 if tuning.stopping else 0,
     "aReqValue": tuning.actual_accel,
     "aReqRaw": tuning.actual_accel,
     "VSetDis": set_speed,

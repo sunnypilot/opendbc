@@ -90,7 +90,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # accel + longitudinal
     accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
-    stopping = self.tuning.stopping
+    stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
 
     can_sends = []
