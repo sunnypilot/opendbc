@@ -32,6 +32,8 @@ class TestLongitudinalTuningController(unittest.TestCase):
     self.assertEqual(self.controller.actual_accel, 0.0)
     self.assertEqual(self.controller.jerk_upper, 0.0)
     self.assertEqual(self.controller.jerk_lower, 0.0)
+    self.assertEqual(self.controller.comfort_band_upper, 0.0)
+    self.assertEqual(self.controller.comfort_band_lower, 0.0)
 
   def test_make_jerk_flag_off(self):
     """Test when LONG_TUNING_DYNAMIC flag is off"""

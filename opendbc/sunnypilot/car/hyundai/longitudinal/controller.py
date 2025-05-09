@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from opendbc.car import structs, DT_CTRL
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
-from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update, JERK_THRESHOLD
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -29,6 +29,8 @@ class LongitudinalState:
   accel_last: float = 0.0
   jerk_upper: float = 0.0
   jerk_lower: float = 0.0
+  comfort_band_upper: float = 0.0
+  comfort_band_lower: float = 0.0
   stopping: bool = False
 
 
@@ -50,6 +52,8 @@ class LongitudinalController:
     self.accel_last = 0.0
     self.jerk_upper = 0.0
     self.jerk_lower = 0.0
+    self.comfort_band_upper = 0.0
+    self.comfort_band_lower = 0.0
     self.stopping = False
 
   @property
@@ -241,6 +245,15 @@ class LongitudinalController:
 
     self.accel_last = self.actual_accel
 
+  def calculate_comfort_band(self, CC: structs.CarControl) -> None:
+    if not self.enabled or self.CP.radarUnavailable or not CC.longActive:
+      self.comfort_band_upper = 0.0
+      self.comfort_band_lower = 0.0
+      return
+
+    self.comfort_band_upper = JERK_THRESHOLD
+    self.comfort_band_lower = JERK_THRESHOLD
+
   def get_tuning_state(self) -> None:
     """Update the tuning state object with current control values.
 
@@ -253,6 +266,8 @@ class LongitudinalController:
       accel_last=self.accel_last,
       jerk_upper=self.jerk_upper,
       jerk_lower=self.jerk_lower,
+      comfort_band_upper=self.comfort_band_upper,
+      comfort_band_lower=self.comfort_band_lower,
       stopping=self.stopping,
     )
 
@@ -273,6 +288,7 @@ class LongitudinalController:
     self.get_stopping_state(actuators)
     self.calculate_jerk(CC, CS, long_control_state)
     self.calculate_accel(CC)
+    self.calculate_comfort_band(CC)
     self.get_tuning_state()
 
     self.long_control_state_last = long_control_state

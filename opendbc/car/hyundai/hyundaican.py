@@ -171,8 +171,8 @@ def create_acc_commands(packer, enabled, accel, tuning, idx, hud_control, set_sp
 
   def get_scc14_values():
     return {
-      "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
-      "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
+      "ComfortBandUpper": tuning.comfort_band_upper, # stock usually is 0 but sometimes uses higher values
+      "ComfortBandLower": tuning.comfort_band_lower, # stock usually is 0 but sometimes uses higher values
       "JerkUpperLimit": tuning.jerk_upper, # stock usually is 1.0 but sometimes uses higher values
       "JerkLowerLimit": tuning.jerk_lower, # stock usually is 0.5 but sometimes uses higher values
       "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
