@@ -142,7 +142,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.angle_min_torque)
       else:
         # Calculate target torque based on the absolute curvature value and the speed. Higher curvature and speeds should naturally command higher torque.
-        active_min_torque = 0.25 * self.angle_max_torque
+        active_min_torque = 0.15 * self.angle_max_torque
         target_torque = float(np.clip(abs(actuators.torque) * self.angle_max_torque, active_min_torque, self.angle_max_torque))
 
         # Ramp up or down toward the target torque smoothly
