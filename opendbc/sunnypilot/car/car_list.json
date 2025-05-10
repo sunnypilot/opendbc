@@ -717,6 +717,16 @@
     ],
     "package": "All"
   },
+  "Genesis G90 2023": {
+    "platform": "GENESIS_G90_2ND_GEN",
+    "make": "Genesis",
+    "brand": "hyundai",
+    "model": "G90",
+    "year": [
+      "2023"
+    ],
+    "package": "All"
+  },
   "Genesis GV60 (Advanced Trim) 2023": {
     "platform": "GENESIS_GV60_EV_1ST_GEN",
     "make": "Genesis",
