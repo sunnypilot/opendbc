@@ -120,7 +120,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
 
     # angle control
-    if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+    else:
       new_angle = np.clip(actuators.steeringAngleDeg, -1212., 1212.)
       adjusted_alpha = np.interp(CS.out.vEgoRaw, self.params.SMOOTHING_ANGLE_VEGO_MATRIX, self.params.SMOOTHING_ANGLE_ALPHA_MATRIX) + self.smoothing_factor
       adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.))  # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
@@ -142,7 +142,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.angle_min_torque)
       else:
         # Calculate target torque based on the absolute curvature value and the speed. Higher curvature and speeds should naturally command higher torque.
-        active_min_torque = 0.30 * self.angle_max_torque
+        active_min_torque = 0.25 * self.angle_max_torque
         target_torque = float(np.clip(abs(actuators.torque) * self.angle_max_torque, active_min_torque, self.angle_max_torque))
 
         # Ramp up or down toward the target torque smoothly
