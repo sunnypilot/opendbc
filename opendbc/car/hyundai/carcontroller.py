@@ -120,21 +120,11 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
 
     # angle control
-    else:
+    if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
       new_angle = np.clip(actuators.steeringAngleDeg, -1212., 1212.)
       adjusted_alpha = np.interp(CS.out.vEgoRaw, self.params.SMOOTHING_ANGLE_VEGO_MATRIX, self.params.SMOOTHING_ANGLE_ALPHA_MATRIX) + self.smoothing_factor
       adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.))  # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
       new_angle = (adjusted_alpha_limited * new_angle + (1 - adjusted_alpha_limited) * self.apply_angle_last)
-
-      # Example values for curvature-based torque scaling (tune these as needed)
-      speed_multiplier = np.interp(CS.out.vEgoRaw, [0, 16.67, 30.0], [1.0, 1.4, 1.8])
-
-      # Define torque values at different curvature breakpoints factoring in speed.
-      TORQUE_VALUES_AT_CURVATURE = [0.25 * self.angle_max_torque * speed_multiplier,
-                                    0.50 * self.angle_max_torque * speed_multiplier,
-                                    0.65 * self.angle_max_torque * speed_multiplier,
-                                    0.75 * self.angle_max_torque * speed_multiplier,
-                                    self.angle_max_torque]
 
       # Reset apply_angle_last if the driver is intervening
       if CS.out.steeringPressed:
@@ -152,8 +142,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.angle_min_torque)
       else:
         # Calculate target torque based on the absolute curvature value and the speed. Higher curvature and speeds should naturally command higher torque.
-        target_torque = np.interp(abs(actuators.curvature), self.params.CURVATURE_BREAKPOINTS, TORQUE_VALUES_AT_CURVATURE)
-        target_torque = float(np.clip(target_torque, self.angle_min_torque, self.angle_max_torque))
+        active_min_torque = 0.30 * self.angle_max_torque
+        target_torque = float(np.clip(abs(actuators.torque) * self.angle_max_torque, active_min_torque, self.angle_max_torque))
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
