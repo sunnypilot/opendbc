@@ -5,6 +5,7 @@ from opendbc.car.subaru.carcontroller import CarController
 from opendbc.car.subaru.carstate import CarState
 from opendbc.car.subaru.values import CAR, GLOBAL_ES_ADDR, SubaruFlags, SubaruSafetyFlags
 
+from opendbc.sunnypilot.car.subaru.values import SubaruFlagsSP, SubaruSafetyFlagsSP
 
 class CarInterface(CarInterfaceBase):
   CarState = CarState
@@ -102,6 +103,9 @@ class CarInterface(CarInterfaceBase):
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
     stock_cp.dashcamOnly = bool(stock_cp.flags & (SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID))
+
+    if not stock_cp.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID):
+      stock_cp.autoResumeSng = True
 
     return ret
 
