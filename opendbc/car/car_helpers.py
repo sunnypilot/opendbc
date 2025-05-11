@@ -11,6 +11,9 @@ from opendbc.car.mock.values import CAR as MOCK
 from opendbc.car.values import BRANDS
 from opendbc.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 
+from opendbc.car.subaru.values import SubaruFlags
+from opendbc.sunnypilot.car.subaru.values import SubaruFlagsSP, SubaruSafetyFlagsSP
+
 FRAME_FINGERPRINT = 100  # 1s
 
 
@@ -150,7 +153,7 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
 
 
 def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, alpha_long_allowed: bool,
-            num_pandas: int = 1, cached_params: CarParamsT | None = None, fixed_fingerprint: str | None = None):
+            num_pandas: int = 1, cached_params: CarParamsT | None = None, fixed_fingerprint: str | None = None, params = None):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(can_recv, can_send, set_obd_multiplexing, num_pandas, cached_params,
                                                                           fixed_fingerprint)
 
@@ -165,6 +168,17 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
   CP_SP = CarInterface.get_params_sp(CP, candidate, fingerprints, car_fw, alpha_long_allowed, docs=False)
+
+  if CP.brand == 'subaru' and not CP.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID):
+    stop_and_go = params.get_bool("SubaruStopAndGo")
+    stop_and_go_manual_parking_brake = params.get_bool("SubaruStopAndGoManualParkingBrake")
+
+    if stop_and_go:
+      CP_SP.flags |= SubaruFlagsSP.STOP_AND_GO.value
+    if stop_and_go_manual_parking_brake:
+      CP_SP.flags |= SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE.value
+    if stop_and_go or stop_and_go_manual_parking_brake:
+      CP_SP.safetyParam |= SubaruSafetyFlagsSP.STOP_AND_GO
 
   return interfaces[CP.carFingerprint](CP, CP_SP)
 
