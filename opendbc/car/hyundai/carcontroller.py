@@ -78,14 +78,14 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     self.angle_min_torque = self.params.ANGLE_MIN_TORQUE
     self.angle_max_torque = self.params.ANGLE_MAX_TORQUE
-    # self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
+    self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
     self._params = Params() if PARAMS_AVAILABLE else None
     if PARAMS_AVAILABLE:
       self.live_tuning = self._params.get_bool("HkgAngleLiveTuning")
       self.smoothing_factor = float(self._params.get("HkgTuningAngleSmoothingFactor")) / 10.0 if self._params.get("HkgTuningAngleSmoothingFactor") else 0.0
       self.angle_min_torque = int(self._params.get("HkgTuningAngleMinTorque")) if self._params.get("HkgTuningAngleMinTorque") else 0
       self.angle_max_torque = int(self._params.get("HkgTuningAngleMaxTorque")) if self._params.get("HkgTuningAngleMaxTorque") else 0
-      # self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles")) if self._params.get("HkgTuningOverridingCycles") else 0
+      self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles")) if self._params.get("HkgTuningOverridingCycles") else 0
 
 
   def update(self, CC, CC_SP, CS, now_nanos):
@@ -105,8 +105,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         self.angle_min_torque = int(minTorqueParam)
       if (maxTorqueParam := self._params.get("HkgTuningAngleMaxTorque")) and int(maxTorqueParam) != self.angle_max_torque:
         self.angle_max_torque = int(maxTorqueParam)
-      # if (overrideCyclesParam := self._params.get("HkgTuningOverridingCycles")) and int(overrideCyclesParam) != self.angle_torque_override_cycles:
-      #   self.angle_torque_override_cycles = int(overrideCyclesParam)
+      if (overrideCyclesParam := self._params.get("HkgTuningOverridingCycles")) and int(overrideCyclesParam) != self.angle_torque_override_cycles:
+        self.angle_torque_override_cycles = int(overrideCyclesParam)
 
     # TODO: needed for angle control cars?
     # >90 degree steering fault prevention
@@ -122,8 +122,6 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     # angle control
     else:
       new_angle = np.clip(actuators.steeringAngleDeg, -1212., 1212.)
-      active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_torque)  # 0.3 is the minimum torque when the user is not overriding
-      torque_alpha = 0.08
 
       if abs(new_angle - self.apply_angle_last) > 0.1:  # If there's a significant difference between the new angle and the last applied angle, apply smoothing
         adjusted_alpha = np.interp(CS.out.vEgoRaw, self.params.SMOOTHING_ANGLE_VEGO_MATRIX, self.params.SMOOTHING_ANGLE_ALPHA_MATRIX) + self.smoothing_factor
@@ -137,16 +135,19 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
                                                            CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
 
       if CS.out.steeringPressed:  # User is overriding
-        torque_alpha = 0.015  # Bigger alpha for user override so we can ramp down the torque faster
         target_torque = self.angle_min_torque
+        torque_delta = self.lkas_max_torque - target_torque
+        adaptive_ramp_rate = max(torque_delta / self.angle_torque_override_cycles, 1)  # Ensure at least 1 unit per cycle
+        self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.angle_min_torque)
       else:
-        target_torque = np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque])
+        active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_torque)  # 0.3 is the minimum torque when the user is not overriding
+        target_torque = int(np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque]))
 
-      target_torque = np.clip(target_torque, self.angle_min_torque, self.angle_max_torque)
-      if abs(self.lkas_max_torque - target_torque) >= 1:
-        self.lkas_max_torque = (target_torque * torque_alpha) + (self.lkas_max_torque * (1 - torque_alpha))
-      else:
-        self.lkas_max_torque = target_torque
+        # Ramp up or down toward the target torque smoothly
+        if self.lkas_max_torque > target_torque:
+          self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_RATE, target_torque)
+        else:
+          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_RATE, target_torque)
 
       # Safety clamp
       self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.angle_min_torque, self.angle_max_torque))
