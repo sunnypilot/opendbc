@@ -12,6 +12,7 @@ from opendbc.car import Bus, structs
 from opendbc.car.interfaces import CarStateBase
 
 from opendbc.car.subaru.values import SubaruFlags
+from opendbc.sunnypilot.car.subaru import subarucan_ext
 from opendbc.sunnypilot.car.subaru.values import SubaruFlagsSP
 from opendbc.can.parser import CANParser
 
@@ -37,8 +38,8 @@ class SnGCarController:
     self.throtle_cmd = False
     self.speed_cmd = False
 
-  def stop_and_go(self, CC: structs.CarControl, CS: CarStateBase, frame: int,
-                  throttle_cmd: bool = False, speed_cmd: bool = False) -> tuple[bool, bool]:
+  def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int,
+             throttle_cmd: bool = False, speed_cmd: bool = False) -> None:
     """
     Manages stop-and-go functionality for adaptive cruise control (ACC).
 
@@ -119,7 +120,24 @@ class SnGCarController:
 
     self.prev_close_distance = close_distance
 
-    return throttle_cmd, speed_cmd
+    self.throtle_cmd = throttle_cmd
+    self.speed_cmd = speed_cmd
+
+  def create_stop_and_go(self, packer, CS, pcm_cancel_cmd, frame):
+    can_sends = []
+
+    if not self.enabled:
+      return can_sends
+
+    if self.CP.flags & SubaruFlags.PREGLOBAL:
+      can_sends.append(subarucan_ext.create_preglobal_throttle(packer, CS.throttle_msg["COUNTER"] + 1, CS.throttle_msg, self.throtle_cmd))
+    else:
+      can_sends.append(subarucan_ext.create_throttle(packer, CS.throttle_msg["COUNTER"] + 1, CS.throttle_msg, self.throtle_cmd))
+
+      if frame % 2 == 0:
+        can_sends.append(subarucan_ext.create_brake_pedal(packer, frame // 2, CS.brake_pedal_msg, self.speed_cmd, pcm_cancel_cmd))
+
+    return can_sends
 
 
 class SnGCarState:

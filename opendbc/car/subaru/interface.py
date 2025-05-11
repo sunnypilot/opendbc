@@ -5,8 +5,6 @@ from opendbc.car.subaru.carcontroller import CarController
 from opendbc.car.subaru.carstate import CarState
 from opendbc.car.subaru.values import CAR, GLOBAL_ES_ADDR, SubaruFlags, SubaruSafetyFlags
 
-from opendbc.sunnypilot.car.subaru.values import SubaruFlagsSP, SubaruSafetyFlagsSP
-
 class CarInterface(CarInterfaceBase):
   CarState = CarState
   CarController = CarController
