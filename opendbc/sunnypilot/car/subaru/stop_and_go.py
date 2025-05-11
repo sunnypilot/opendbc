@@ -55,7 +55,7 @@ class SnGCarController:
     """
 
     if not self.enabled:
-      return throttle_cmd, speed_cmd
+      return
 
     close_distance = CS.es_distance_msg["Close_Distance"]
     has_lead_car = CS.es_distance_msg["Car_Follow"] == 1
