@@ -78,14 +78,14 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     self.angle_min_torque = self.params.ANGLE_MIN_TORQUE
     self.angle_max_torque = self.params.ANGLE_MAX_TORQUE
-    self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
+    # self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
     self._params = Params() if PARAMS_AVAILABLE else None
     if PARAMS_AVAILABLE:
       self.live_tuning = self._params.get_bool("HkgAngleLiveTuning")
       self.smoothing_factor = float(self._params.get("HkgTuningAngleSmoothingFactor")) / 10.0 if self._params.get("HkgTuningAngleSmoothingFactor") else 0.0
       self.angle_min_torque = int(self._params.get("HkgTuningAngleMinTorque")) if self._params.get("HkgTuningAngleMinTorque") else 0
       self.angle_max_torque = int(self._params.get("HkgTuningAngleMaxTorque")) if self._params.get("HkgTuningAngleMaxTorque") else 0
-      self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles")) if self._params.get("HkgTuningOverridingCycles") else 0
+      # self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles")) if self._params.get("HkgTuningOverridingCycles") else 0
 
 
   def update(self, CC, CC_SP, CS, now_nanos):
@@ -105,8 +105,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         self.angle_min_torque = int(minTorqueParam)
       if (maxTorqueParam := self._params.get("HkgTuningAngleMaxTorque")) and int(maxTorqueParam) != self.angle_max_torque:
         self.angle_max_torque = int(maxTorqueParam)
-      if (overrideCyclesParam := self._params.get("HkgTuningOverridingCycles")) and int(overrideCyclesParam) != self.angle_torque_override_cycles:
-        self.angle_torque_override_cycles = int(overrideCyclesParam)
+      # if (overrideCyclesParam := self._params.get("HkgTuningOverridingCycles")) and int(overrideCyclesParam) != self.angle_torque_override_cycles:
+      #   self.angle_torque_override_cycles = int(overrideCyclesParam)
 
     # TODO: needed for angle control cars?
     # >90 degree steering fault prevention
