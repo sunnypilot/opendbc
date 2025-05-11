@@ -136,7 +136,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       self.apply_angle_last = apply_std_steer_angle_limits(new_angle, self.apply_angle_last, CS.out.vEgoRaw,
                                                            CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
 
-      if abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD:  # User is overriding
+      if CS.out.steeringPressed:  # User is overriding
         torque_alpha = 0.015  # Bigger alpha for user override so we can ramp down the torque faster
         target_torque = self.angle_min_torque
       else:
