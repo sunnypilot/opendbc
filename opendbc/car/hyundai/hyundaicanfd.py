@@ -152,7 +152,8 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "SET_ME_3": 0x3,
     "SET_ME_TMP_64": 0x64,
     "DISTANCE_SETTING": hud_control.leadDistanceBars,
-    "NEW_SIGNAL_3": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else 2), # lead car indicator 0 = no lead/disabled, 1 = gray, 2 = white
+    # NEW_SIGNAL_3: lead car indicator 0 = no lead/disabled, 1 = gray, 2 = white
+    "NEW_SIGNAL_3": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else 2),
     "NEW_SIGNAL_15": int(hyundaicanfd_ext.leadDistance), # lead car distance indicator
   }
 
