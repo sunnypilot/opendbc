@@ -146,9 +146,9 @@ class SnGCarState:
     self.CP_SP = CP_SP
 
     self.enabled = CP_SP.flags & (SubaruFlagsSP.STOP_AND_GO | SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE)
-    self.cruise_state = 0
-    self.brake_pedal_msg = {}
-    self.throttle_msg = {}
+    self.cruise_state: float = 0
+    self.brake_pedal_msg: dict[str, float] = {}
+    self.throttle_msg: dict[str, float] = {}
 
   def update(self, can_parsers: dict[StrEnum, CANParser]) -> None:
     if not self.enabled:
