@@ -122,6 +122,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     # angle control
     else:
       new_angle = np.clip(actuators.steeringAngleDeg, -1212., 1212.)
+      active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_torque)  # 0.3 is the minimum torque when the user is not overriding
+      torque_alpha = 0.07
 
       if abs(new_angle - self.apply_angle_last) > 0.1:  # If there's a significant difference between the new angle and the last applied angle, apply smoothing
         adjusted_alpha = np.interp(CS.out.vEgoRaw, self.params.SMOOTHING_ANGLE_VEGO_MATRIX, self.params.SMOOTHING_ANGLE_ALPHA_MATRIX) + self.smoothing_factor
@@ -134,27 +136,20 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       self.apply_angle_last = apply_std_steer_angle_limits(new_angle, self.apply_angle_last, CS.out.vEgoRaw,
                                                            CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
 
-      # Dynamic torque adjustment based on driver override
-      USER_OVERRIDING = abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD
-
-      if USER_OVERRIDING:
-        # When the user is overriding, ramp down the torque gradually
-        torque_delta = self.lkas_max_torque - self.angle_min_torque
-        adaptive_ramp_rate = max(torque_delta / self.angle_torque_override_cycles, 1)  # Ensure at least 1 unit per cycle
-        self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.angle_min_torque)
+      if abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD:  # User is overriding
+        torque_alpha = 0.3  # Bigger alpha for user override so we can ramp down the torque faster
+        target_torque = self.angle_min_torque
       else:
-        active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_torque)  # 0.3 is the minimum torque when the user is not overriding
-        target_torque_interp = np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque])
-        target_torque = float(np.clip(target_torque_interp, self.angle_min_torque, self.angle_max_torque))
+        target_torque = np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque])
 
-        if abs(self.lkas_max_torque - target_torque) < 1:
-          self.lkas_max_torque = target_torque
-        else:
-          torque_alpha = 0.07
-          self.lkas_max_torque = (target_torque * torque_alpha) + (self.lkas_max_torque * (1 - torque_alpha))
+      target_torque = np.clip(target_torque, self.angle_min_torque, self.angle_max_torque)
+      if abs(self.lkas_max_torque - target_torque) >= 1:
+        self.lkas_max_torque = (target_torque * torque_alpha) + (self.lkas_max_torque * (1 - torque_alpha))
+      else:
+        self.lkas_max_torque = target_torque
 
-        # Safety clamp
-        self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.angle_min_torque, self.angle_max_torque))
+      # Safety clamp
+      self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.angle_min_torque, self.angle_max_torque))
 
     if not CC.latActive:
       apply_torque = 0
