@@ -141,9 +141,9 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         adaptive_ramp_rate = max(torque_delta / self.angle_torque_override_cycles, 1)  # Ensure at least 1 unit per cycle
         self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.angle_min_torque)
       else:
-        # Calculate target torque based on the absolute curvature value and the speed. Higher curvature and speeds should naturally command higher torque.
-        active_min_torque = 0.15 * self.angle_max_torque
-        target_torque = float(np.clip(abs(actuators.torque) * self.angle_max_torque, active_min_torque, self.angle_max_torque))
+        active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_torque)  # 0.3 is the minimum torque when the user is not overriding
+        target_torque_interp = np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque])
+        target_torque = float(np.clip(target_torque_interp, self.angle_min_torque, self.angle_max_torque))
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
