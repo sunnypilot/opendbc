@@ -56,44 +56,58 @@ class SnGCarController:
     if not self.enabled:
       return throttle_cmd, speed_cmd
 
+    close_distance = CS.es_distance_msg["Close_Distance"]
+    has_lead_car = CS.es_distance_msg["Car_Follow"] == 1
+    cruise_state = CS.cruise_state
+    is_standstill = CS.out.standstill
+    is_acc_enabled = CC.enabled
+    distance_increasing = close_distance > self.prev_close_distance
+
+    # PREGLOBAL
     if self.CP.flags & SubaruFlags.PREGLOBAL:
       # Initiate the ACC resume sequence if conditions are met
-      if (CC.enabled                                          # ACC active
-        and CS.es_distance_msg["Car_Follow"] == 1             # lead car
-        and CS.out.standstill                                 # must be standing still
-        and CS.es_distance_msg["Close_Distance"] > _SNG_ACC_MIN_DIST             # acc resume trigger low threshold
-        and CS.es_distance_msg["Close_Distance"] < _SNG_ACC_MAX_DIST             # acc resume trigger high threshold
-        and CS.es_distance_msg["Close_Distance"] > self.prev_close_distance):    # distance with lead car is increasing
+      if (is_acc_enabled and                                         # ACC active
+         has_lead_car and                                            # Lead car present
+         is_standstill and                                           # Must be standing still
+         _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST and  # Above minimum and below maximum resume distance
+         distance_increasing):                                       # Distance with lead car is increasing
         self.sng_acc_resume = True
+
+    # non-PREGLOBAL
     else:
       if self.manual_parking_brake:
         # Send brake message with non-zero speed in standstill to avoid non-EPB ACC disengage
-        if (CC.enabled                                        # ACC active
-          and CS.es_distance_msg["Car_Follow"] == 1           # lead car
-          and CS.out.standstill
-          and frame > self.standstill_start + 50):       # standstill for >0.5 second
+        if (is_acc_enabled and                   # ACC active
+           has_lead_car and                      # Lead car present
+           is_standstill and                     # Vehicle is stopped
+           frame > self.standstill_start + 50):  # Standstill for >0.5 second
           speed_cmd = True
       else:
-        # Record manual hold set while in standstill and no car in front
-        if CS.out.standstill and self.prev_cruise_state == 1 and CS.cruise_state == 3 and CS.es_distance_msg["Car_Follow"] == 0:
+        # Electric parking brake
+        # Record manual hold when stopped with no car in front and cruise state changes appropriately
+        if (is_standstill and
+           self.prev_cruise_state == 1 and
+           cruise_state == 3 and
+           not has_lead_car):
           self.manual_hold = True
+
         # Cancel manual hold when car starts moving
-        if not CS.out.standstill:
+        if not is_standstill:
           self.manual_hold = False
+
         # Initiate the ACC resume sequence if conditions are met
-        if (CC.enabled                                        # ACC active
-          and not self.manual_hold
-          and CS.es_distance_msg["Car_Follow"] == 1           # lead car
-          and CS.cruise_state == 3                            # ACC HOLD (only with EPB)
-          and CS.es_distance_msg["Close_Distance"] > _SNG_ACC_MIN_DIST           # acc resume trigger low threshold
-          and CS.es_distance_msg["Close_Distance"] < _SNG_ACC_MAX_DIST           # acc resume trigger high threshold
-          and CS.es_distance_msg["Close_Distance"] > self.prev_close_distance):  # distance with lead car is increasing
+        if (is_acc_enabled and                                         # ACC active
+           not self.manual_hold and                                    # Not in manual hold
+           has_lead_car and                                            # Lead car present
+           cruise_state == 3 and                                       # ACC HOLD (only with EPB)
+           _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST and  # Above minimum and below maximum resume distance
+           distance_increasing):                                       # Distance with lead car is increasing
           self.sng_acc_resume = True
 
-      if CS.out.standstill and not self.prev_standstill:
+      if is_standstill and not self.prev_standstill:
         self.standstill_start = frame
-      self.prev_standstill = CS.out.standstill
-      self.prev_cruise_state = CS.cruise_state
+      self.prev_standstill = is_standstill
+      self.prev_cruise_state = cruise_state
 
     if self.sng_acc_resume:
       if self.sng_acc_resume_cnt < 5:
@@ -103,7 +117,7 @@ class SnGCarController:
         self.sng_acc_resume = False
         self.sng_acc_resume_cnt = -1
 
-    self.prev_close_distance = CS.es_distance_msg["Close_Distance"]
+    self.prev_close_distance = close_distance
 
     return throttle_cmd, speed_cmd
 
