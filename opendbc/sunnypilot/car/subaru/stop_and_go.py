@@ -155,7 +155,8 @@ class SnGCarState:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 
-    if not self.CP.flags & SubaruFlags.PREGLOBAL and self.CP_SP.flags & SubaruFlagsSP.STOP_AND_GO:
+    if not self.CP.flags & SubaruFlags.PREGLOBAL:
       self.cruise_state = cp_cam.vl["ES_DashStatus"]["Cruise_State"]
       self.brake_pedal_msg = copy.copy(cp.vl["Brake_Pedal"])
-      self.throttle_msg = copy.copy(cp.vl["Throttle"])
+
+    self.throttle_msg = copy.copy(cp.vl["Throttle"])
