@@ -231,22 +231,22 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     # TODO: figure out positions
     ret.wheelSpeeds = self.get_wheel_speeds(
-      cp.vl["WHEEL_SPEEDS"]["WHL_SpdFLVal"],
-      cp.vl["WHEEL_SPEEDS"]["WHL_SpdFRVal"],
-      cp.vl["WHEEL_SPEEDS"]["WHL_SpdRLVal"],
-      cp.vl["WHEEL_SPEEDS"]["WHL_SpdRRVal"],
+      cp.vl["WHL_01_10ms"]["WHL_SpdFLVal"],
+      cp.vl["WHL_01_10ms"]["WHL_SpdFRVal"],
+      cp.vl["WHL_01_10ms"]["WHL_SpdRLVal"],
+      cp.vl["WHL_01_10ms"]["WHL_SpdRRVal"],
     )
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.wheelSpeeds.fl <= STANDSTILL_THRESHOLD and ret.wheelSpeeds.fr <= STANDSTILL_THRESHOLD and \
                      ret.wheelSpeeds.rl <= STANDSTILL_THRESHOLD and ret.wheelSpeeds.rr <= STANDSTILL_THRESHOLD
 
-    ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEERING_RATE"]
-    ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEERING_ANGLE"]
-    ret.steeringTorque = cp.vl["MDPS"]["STEERING_COL_TORQUE"]
-    ret.steeringTorqueEps = cp.vl["MDPS"]["STEERING_OUT_TORQUE"]
+    ret.steeringRateDeg = cp.vl["SAS_01_10ms"]["SAS_SpdVal"]
+    ret.steeringAngleDeg = cp.vl["SAS_01_10ms"]["SAS_AnglVal"]
+    ret.steeringTorque = cp.vl["MDPS_01_10ms"]["MDPS_StrTqSnsrVal"]
+    ret.steeringTorqueEps = cp.vl["MDPS_01_10ms"]["MDPS_OutTqVal"]
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
-    ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
+    ret.steerFaultTemporary = cp.vl["MDPS_01_10ms"]["MDPS_LkaFailSta"] != 0
 
     # TODO: alt signal usage may be described by cp.vl['BLINKERS']['USE_ALT_LAMP']
     left_blinker_sig, right_blinker_sig = "LEFT_LAMP", "RIGHT_LAMP"
@@ -307,9 +307,9 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
   def get_can_parsers_canfd(self, CP):
     pt_messages = [
-      ("WHEEL_SPEEDS", 100),
-      ("STEERING_SENSORS", 100),
-      ("MDPS", 100),
+      ("WHL_01_10ms", 100),
+      ("SAS_01_10ms", 100),
+      ("MDPS_01_10ms", 100),
       ("TCS", 50),
       ("CRUISE_BUTTONS_ALT", 50),
       ("BLINKERS", 4),
