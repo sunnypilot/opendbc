@@ -147,11 +147,14 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         target_torque_interp = np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque])
         target_torque = float(np.clip(target_torque_interp, self.angle_min_torque, self.angle_max_torque))
 
-        # Ramp up or down toward the target torque smoothly
-        if self.lkas_max_torque > target_torque:
-          self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_RATE, target_torque)
+        if abs(self.lkas_max_torque - target_torque) < 1:
+          self.lkas_max_torque = target_torque
         else:
-          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_RATE, target_torque)
+          torque_alpha = 0.07
+          self.lkas_max_torque = (target_torque * torque_alpha) + (self.lkas_max_torque * (1 - torque_alpha))
+
+        # Safety clamp
+        self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.angle_min_torque, self.angle_max_torque))
 
     if not CC.latActive:
       apply_torque = 0
