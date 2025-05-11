@@ -35,7 +35,6 @@ class CarControllerParams:
 
   # More torque optimization
   # The torque is calculated based on the curvature of the road and the speed of the car and it's a percentage of the maximum torque.
-  CURVATURE_BREAKPOINTS = [0.0, 0.003, 0.01, 0.018, 0.025]
   SMOOTHING_ANGLE_VEGO_MATRIX = [0, 8.5, 11, 13.8, 22.22]
   SMOOTHING_ANGLE_ALPHA_MATRIX = [0.05, 0.1, 0.3, 0.6, 1]
 
