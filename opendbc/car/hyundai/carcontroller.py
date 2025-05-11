@@ -123,7 +123,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     else:
       new_angle = np.clip(actuators.steeringAngleDeg, -1212., 1212.)
       active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_torque)  # 0.3 is the minimum torque when the user is not overriding
-      torque_alpha = 0.1  # 0.07 felt too slow on the simulation
+      torque_alpha = 0.08
 
       if abs(new_angle - self.apply_angle_last) > 0.1:  # If there's a significant difference between the new angle and the last applied angle, apply smoothing
         adjusted_alpha = np.interp(CS.out.vEgoRaw, self.params.SMOOTHING_ANGLE_VEGO_MATRIX, self.params.SMOOTHING_ANGLE_ALPHA_MATRIX) + self.smoothing_factor
@@ -137,7 +137,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
                                                            CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
 
       if abs(CS.out.steeringTorque) > self.params.STEER_THRESHOLD:  # User is overriding
-        torque_alpha = 0.3  # Bigger alpha for user override so we can ramp down the torque faster
+        torque_alpha = 0.015  # Bigger alpha for user override so we can ramp down the torque faster
         target_torque = self.angle_min_torque
       else:
         target_torque = np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque])
