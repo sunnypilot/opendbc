@@ -97,3 +97,6 @@ class ModularAssistiveDrivingSystem:
 @auto_dataclass
 class CarControlSP:
   mads: 'ModularAssistiveDrivingSystem' = field(default_factory=lambda: ModularAssistiveDrivingSystem())
+  leadDistance: float = auto_field()
+  leadRelSpeed: float = auto_field()
+  leadVisible: bool = auto_field()
