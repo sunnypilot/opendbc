@@ -26,9 +26,14 @@ non_tested_cars = [
   HONDA.HONDA_ODYSSEY_CHN,
   VOLKSWAGEN.VOLKSWAGEN_CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
   SUBARU.SUBARU_FORESTER_HYBRID,
-  TESLA.TESLA_MODEL_3,
-  HYUNDAI.GENESIS_GV80_2025, # We are still working on the 2025 GV80, so the routes come and go
-  HYUNDAI.HYUNDAI_IONIQ_5_PE, # We are still working on the 2025 Ioniq 5, so the routes come and go
+  TESLA.TESLA_MODEL_3
+]
+
+# HKG Angle Steering (LFA2) (Still WIP, hence why ignored)
+non_tested_cars += [
+  HYUNDAI.GENESIS_GV80_2025,
+  HYUNDAI.HYUNDAI_IONIQ_5_PE,
+  HYUNDAI.KIA_EV6_2025,
 ]
 
 
