@@ -8,7 +8,7 @@ See the LICENSE.md file in the root directory for more details.
 import copy
 from enum import StrEnum
 
-from opendbc.car import Bus, structs
+from opendbc.car import Bus, structs, DT_CTRL
 from opendbc.car.interfaces import CarStateBase
 
 from opendbc.car.subaru.values import SubaruFlags
@@ -24,8 +24,7 @@ class SnGCarController:
 
     self.enabled = CP_SP.flags & (SubaruFlagsSP.STOP_AND_GO | SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE)
     self.manual_parking_brake = CP_SP.flags & SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE
-    self.prev_standstill = False
-    self.standstill_start = 0
+    self.last_standstill_frame = 0
     self.sng_acc_resume = False
     self.sng_acc_resume_cnt = -1
     self.manual_hold = False
@@ -61,6 +60,10 @@ class SnGCarController:
     is_acc_enabled = CC.enabled
     should_resume = CC.cruiseControl.resume
 
+    if not is_standstill:
+      self.last_standstill_frame = frame
+    is_in_standstill = (frame - self.last_standstill_frame) * DT_CTRL > 0.5  # Standstill for >0.5 second
+
     # PREGLOBAL
     if self.CP.flags & SubaruFlags.PREGLOBAL:
       # Initiate the ACC resume sequence if conditions are met
@@ -77,7 +80,7 @@ class SnGCarController:
         if (is_acc_enabled and                   # ACC active
            lead_visible and                      # Lead car present
            is_standstill and                     # Vehicle is stopped
-           frame > self.standstill_start + 50):  # Standstill for >0.5 second
+           is_in_standstill):
           speed_cmd = True
       else:
         # Electric parking brake
@@ -99,9 +102,6 @@ class SnGCarController:
            should_resume):
           self.sng_acc_resume = True
 
-      if is_standstill and not self.prev_standstill:
-        self.standstill_start = frame
-      self.prev_standstill = is_standstill
       self.prev_cruise_state = cruise_state
 
     if self.sng_acc_resume:
