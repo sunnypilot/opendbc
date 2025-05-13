@@ -57,8 +57,10 @@ class SnGCarController:
     if not self.enabled:
       return
 
+    hud_control = CC.hudControl
+
     close_distance = CS.es_distance_msg["Close_Distance"]
-    has_lead_car = CS.es_distance_msg["Car_Follow"] == 1
+    lead_visible = hud_control.leadVisible
     cruise_state = CS.cruise_state
     is_standstill = CS.out.standstill
     is_acc_enabled = CC.enabled
@@ -68,7 +70,7 @@ class SnGCarController:
     if self.CP.flags & SubaruFlags.PREGLOBAL:
       # Initiate the ACC resume sequence if conditions are met
       if (is_acc_enabled and                                         # ACC active
-         has_lead_car and                                            # Lead car present
+         lead_visible and                                            # Lead car present
          is_standstill and                                           # Must be standing still
          _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST and  # Above minimum and below maximum resume distance
          distance_increasing):                                       # Distance with lead car is increasing
@@ -79,7 +81,7 @@ class SnGCarController:
       if self.manual_parking_brake:
         # Send brake message with non-zero speed in standstill to avoid non-EPB ACC disengage
         if (is_acc_enabled and                   # ACC active
-           has_lead_car and                      # Lead car present
+           lead_visible and                      # Lead car present
            is_standstill and                     # Vehicle is stopped
            frame > self.standstill_start + 50):  # Standstill for >0.5 second
           speed_cmd = True
@@ -89,7 +91,7 @@ class SnGCarController:
         if (is_standstill and
            self.prev_cruise_state == 1 and
            cruise_state == 3 and
-           not has_lead_car):
+           not lead_visible):
           self.manual_hold = True
 
         # Cancel manual hold when car starts moving
@@ -99,7 +101,7 @@ class SnGCarController:
         # Initiate the ACC resume sequence if conditions are met
         if (is_acc_enabled and                                         # ACC active
            not self.manual_hold and                                    # Not in manual hold
-           has_lead_car and                                            # Lead car present
+           lead_visible and                                            # Lead car present
            cruise_state == 3 and                                       # ACC HOLD (only with EPB)
            _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST and  # Above minimum and below maximum resume distance
            distance_increasing):                                       # Distance with lead car is increasing
