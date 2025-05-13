@@ -16,6 +16,9 @@ from opendbc.sunnypilot.car.subaru import subarucan_ext
 from opendbc.sunnypilot.car.subaru.values import SubaruFlagsSP
 from opendbc.can.parser import CANParser
 
+_SNG_ACC_MIN_DIST = 3
+_SNG_ACC_MAX_DIST = 4.5
+
 
 class SnGCarController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
@@ -24,6 +27,7 @@ class SnGCarController:
 
     self.enabled = CP_SP.flags & (SubaruFlagsSP.STOP_AND_GO | SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE)
     self.manual_parking_brake = CP_SP.flags & SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE
+    self.prev_close_distance = 0
     self.last_standstill_frame = 0
     self.sng_acc_resume = False
     self.sng_acc_resume_cnt = -1
@@ -54,32 +58,31 @@ class SnGCarController:
 
     hud_control = CC.hudControl
 
+    close_distance = CS.es_distance_msg["Close_Distance"]
     lead_visible = hud_control.leadVisible
     cruise_state = CS.cruise_state
     is_standstill = CS.out.standstill
-    is_pcm_standstill = CS.out.cruiseState.standstill
-    is_acc_enabled = CC.enabled
-    should_resume = CC.cruiseControl.resume
+    in_resume_distance = _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST  # Above minimum and below maximum resume distance
+    distance_increasing = close_distance > self.prev_close_distance  # Distance with lead car is increasing
+    resume_allowed = in_resume_distance and distance_increasing
 
     if not is_standstill:
       self.last_standstill_frame = frame
       self.manual_hold = False
-    is_in_standstill = (frame - self.last_standstill_frame) * DT_CTRL > 0.5  # Standstill for >0.5 second
+    is_in_standstill = (frame - self.last_standstill_frame) * DT_CTRL > 0.5  # Standstill for > 0.5 second
 
+    should_resume = False
     # PREGLOBAL
     if self.CP.flags & SubaruFlags.PREGLOBAL:
       # Initiate the ACC resume sequence if conditions are met
-      if (is_acc_enabled and                                         # ACC active
-         lead_visible and                                            # Lead car present
-         is_standstill and                                           # Must be standing still
-         should_resume):
-        self.sng_acc_resume = True
+      if is_standstill:
+        should_resume = True
 
     # non-PREGLOBAL
     else:
       if self.manual_parking_brake:
         # Send brake message with non-zero speed in standstill to avoid non-EPB ACC disengage
-        if (is_acc_enabled and                   # ACC active
+        if (CC.enabled and                   # ACC active
            lead_visible and                      # Lead car present
            is_standstill and                     # Vehicle is stopped
            is_in_standstill):
@@ -87,20 +90,18 @@ class SnGCarController:
       else:
         # Electric parking brake
         # Record manual hold when stopped with no car in front and cruise state changes appropriately
-        if (is_pcm_standstill and
+        if (is_standstill and
            self.prev_cruise_state == 1 and
+           CS.out.cruiseState.standstill and
            not lead_visible):
           self.manual_hold = True
 
         # Initiate the ACC resume sequence if conditions are met
-        if (is_acc_enabled and                                         # ACC active
-           not self.manual_hold and                                    # Not in manual hold
-           lead_visible and                                            # Lead car present
-           is_pcm_standstill and                                       # ACC HOLD (only with EPB)
-           should_resume):
-          self.sng_acc_resume = True
+        if CS.out.cruiseState.standstill and not self.manual_hold:  # ACC HOLD (only with EPB) and not in manual hold
+          should_resume = True
 
-      self.prev_cruise_state = cruise_state
+    if CC.enabled and lead_visible and resume_allowed and should_resume:
+      self.sng_acc_resume = True
 
     if self.sng_acc_resume:
       if self.sng_acc_resume_cnt < 5:
@@ -109,6 +110,9 @@ class SnGCarController:
       else:
         self.sng_acc_resume = False
         self.sng_acc_resume_cnt = -1
+
+    self.prev_cruise_state = cruise_state
+    self.prev_close_distance = close_distance
 
     self.throttle_cmd = throttle_cmd
     self.speed_cmd = speed_cmd
