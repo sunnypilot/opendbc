@@ -9,6 +9,7 @@ import copy
 from enum import StrEnum
 
 from opendbc.car import Bus, structs, DT_CTRL
+from opendbc.car.can_definitions import CanData
 from opendbc.car.interfaces import CarStateBase
 
 from opendbc.car.subaru.values import SubaruFlags
@@ -99,7 +100,7 @@ class SnGCarController:
 
     return send_resume
 
-  def create_stop_and_go(self, packer, CC, CS, pcm_cancel_cmd, frame):
+  def create_stop_and_go(self, packer, CC: structs.CarControl, CS: CarStateBase, pcm_cancel_cmd: bool, frame: int) -> list[CanData]:
     can_sends = []
 
     if not self.enabled:
@@ -111,9 +112,10 @@ class SnGCarController:
       can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, send_resume))
     else:
       if self.manual_parking_brake and frame % 2 == 0:
-        can_sends.append(subarucan_ext.create_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg, pcm_cancel_cmd, send_resume))
+        can_sends.append(subarucan_ext.create_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg,
+                                                                               pcm_cancel_cmd, send_resume))
       else:
-        can_sends.append(subarucan_ext.create_stop_and_go(packer, CS.throttle, send_resume))
+        can_sends.append(subarucan_ext.create_stop_and_go(packer, CS.throttle_msg, send_resume))
 
     return can_sends
 
