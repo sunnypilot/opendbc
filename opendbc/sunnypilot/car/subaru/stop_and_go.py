@@ -57,6 +57,7 @@ class SnGCarController:
     lead_visible = hud_control.leadVisible
     cruise_state = CS.cruise_state
     is_standstill = CS.out.standstill
+    is_pcm_standstill = CS.out.cruiseState.standstill
     is_acc_enabled = CC.enabled
     should_resume = CC.cruiseControl.resume
 
@@ -85,7 +86,7 @@ class SnGCarController:
       else:
         # Electric parking brake
         # Record manual hold when stopped with no car in front and cruise state changes appropriately
-        if (is_standstill and
+        if (is_pcm_standstill and
            self.prev_cruise_state == 1 and
            not lead_visible):
           self.manual_hold = True
@@ -98,7 +99,7 @@ class SnGCarController:
         if (is_acc_enabled and                                         # ACC active
            not self.manual_hold and                                    # Not in manual hold
            lead_visible and                                            # Lead car present
-           is_standstill and                                       # ACC HOLD (only with EPB)
+           is_pcm_standstill and                                       # ACC HOLD (only with EPB)
            should_resume):
           self.sng_acc_resume = True
 
