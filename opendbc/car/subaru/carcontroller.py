@@ -138,8 +138,7 @@ class CarController(CarControllerBase, SnGCarController):
         if self.frame % 2 == 0:
           can_sends.append(subarucan.create_es_static_2(self.packer))
 
-    SnGCarController.update(self, CC, CS, self.frame)
-    can_sends.extend(self.create_stop_and_go(self.packer, CS, pcm_cancel_cmd, self.frame))
+    can_sends.extend(self.create_stop_and_go(self.packer, CC, CS, pcm_cancel_cmd, self.frame))
 
     new_actuators = actuators.as_builder()
     new_actuators.torque = self.apply_torque_last / self.p.STEER_MAX

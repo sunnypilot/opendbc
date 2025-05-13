@@ -34,11 +34,8 @@ class SnGCarController:
     self.manual_hold = False
     self.prev_cruise_state = 0
 
-    self.throttle_cmd = False
-    self.speed_cmd = False
-
   def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int,
-             throttle_cmd: bool = False, speed_cmd: bool = False) -> None:
+             throttle_cmd: bool = False, speed_cmd: bool = False) -> tuple[bool, bool]:
     """
     Manages stop-and-go functionality for adaptive cruise control (ACC).
 
@@ -54,7 +51,7 @@ class SnGCarController:
     """
 
     if not self.enabled:
-      return
+      return throttle_cmd, speed_cmd
 
     hud_control = CC.hudControl
 
@@ -113,22 +110,23 @@ class SnGCarController:
     self.prev_cruise_state = CS.cruise_state
     self.prev_close_distance = close_distance
 
-    self.throttle_cmd = throttle_cmd
-    self.speed_cmd = speed_cmd
+    return throttle_cmd, speed_cmd
 
-  def create_stop_and_go(self, packer, CS, pcm_cancel_cmd, frame):
+  def create_stop_and_go(self, packer, CC, CS, pcm_cancel_cmd, frame):
     can_sends = []
 
     if not self.enabled:
       return can_sends
 
+    throttle_cmd, speed_cmd = self.update(CC, CS, frame)
+
     if self.CP.flags & SubaruFlags.PREGLOBAL:
-      can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, self.throttle_cmd))
+      can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, throttle_cmd))
     else:
       if frame % 2 == 0 and self.manual_parking_brake:
-        can_sends.append(subarucan_ext.create_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg, pcm_cancel_cmd, self.speed_cmd))
+        can_sends.append(subarucan_ext.create_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg, pcm_cancel_cmd, speed_cmd))
       else:
-        can_sends.append(subarucan_ext.create_stop_and_go(packer, CS.throttle, self.throttle_cmd))
+        can_sends.append(subarucan_ext.create_stop_and_go(packer, CS.throttle, throttle_cmd))
 
     return can_sends
 
