@@ -98,25 +98,22 @@ class Bus(StrEnum):
   ap_party = auto()
 
 
-def apply_driver_steer_torque_limits(apply_torque: int, apply_torque_last: int, driver_torque: float, LIMITS, steer_max: int = None):
-  # some safety modes utilize a dynamic max steer
+def apply_driver_steer_torque_limits(apply_torque: int, apply_torque_last: int, driver_torque: float, LIMITS, steer_max: int = None) -> int:
   if steer_max is None:
     steer_max = LIMITS.STEER_MAX
 
-  # limits due to driver torque
-  driver_max_torque = steer_max + (LIMITS.STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.STEER_DRIVER_FACTOR) * LIMITS.STEER_DRIVER_MULTIPLIER
-  driver_min_torque = -steer_max + (-LIMITS.STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.STEER_DRIVER_FACTOR) * LIMITS.STEER_DRIVER_MULTIPLIER
-  max_steer_allowed = max(min(steer_max, driver_max_torque), 0)
-  min_steer_allowed = min(max(-steer_max, driver_min_torque), 0)
-  apply_torque = np.clip(apply_torque, min_steer_allowed, max_steer_allowed)
+  direction = np.sign(apply_torque)  # -1, 0, or +1
+  apply_torque_abs = abs(apply_torque)
+  apply_torque_last_abs = abs(apply_torque_last)
 
-  # slow rate if steer torque increases in magnitude
-  if apply_torque_last > 0:
-    apply_torque = np.clip(apply_torque, max(apply_torque_last - LIMITS.STEER_DELTA_DOWN, -LIMITS.STEER_DELTA_UP),
-                        apply_torque_last + LIMITS.STEER_DELTA_UP)
-  else:
-    apply_torque = np.clip(apply_torque, apply_torque_last - LIMITS.STEER_DELTA_UP,
-                        min(apply_torque_last + LIMITS.STEER_DELTA_DOWN, LIMITS.STEER_DELTA_UP))
+  driver_max_torque = steer_max + (LIMITS.STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.STEER_DRIVER_FACTOR) * LIMITS.STEER_DRIVER_MULTIPLIER
+  max_steer_allowed = int(min(driver_max_torque, steer_max))
+
+  max_delta_up = min(max_steer_allowed, apply_torque_last_abs + LIMITS.STEER_DELTA_UP)  # smallest of the two (so we don't go over max_steer_allowed)
+  max_delta_down = max(0, apply_torque_last_abs - LIMITS.STEER_DELTA_DOWN)  # largest of the two (so we don't go negative)
+  apply_torque_abs = int(np.clip(apply_torque_abs, max_delta_down, max_delta_up))  # Apply delta limits to the absolute value to stay within the range
+
+  apply_torque = direction * apply_torque_abs  # reapply the sign
 
   return int(round(float(apply_torque)))
 
