@@ -56,7 +56,7 @@ class SnGCarController:
 
     lead_visible = hud_control.leadVisible
     cruise_state = CS.cruise_state
-    is_standstill = CS.out.cruiseState.standstill
+    is_standstill = CS.out.standstill
     is_acc_enabled = CC.enabled
     should_resume = CC.cruiseControl.resume
 
@@ -140,16 +140,14 @@ class SnGCarState:
     self.brake_pedal_msg: dict[str, float] = {}
     self.throttle_msg: dict[str, float] = {}
 
-  def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
+  def update(self, can_parsers: dict[StrEnum, CANParser]) -> None:
     if not self.enabled:
       return
 
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 
-    if self.CP.flags & SubaruFlags.PREGLOBAL:
-      ret.cruiseState.standstill = cp_cam.vl["ES_Distance"]["Standstill"] == 1
-    else:
+    if not self.CP.flags & SubaruFlags.PREGLOBAL:
       self.cruise_state = cp_cam.vl["ES_DashStatus"]["Cruise_State"]
       self.brake_pedal_msg = copy.copy(cp.vl["Brake_Pedal"])
 
