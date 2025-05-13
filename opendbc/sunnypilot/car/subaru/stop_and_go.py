@@ -130,7 +130,7 @@ class SnGCarController:
       return can_sends
 
     if self.CP.flags & SubaruFlags.PREGLOBAL:
-      can_sends.append(subarucan_ext.create_preglobal_throttle(packer, CS.throttle_msg["COUNTER"] + 1, CS.throttle_msg, self.throtle_cmd))
+      can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, self.throtle_cmd))
     else:
       can_sends.append(subarucan_ext.create_throttle(packer, CS.throttle_msg["COUNTER"] + 1, CS.throttle_msg, self.throtle_cmd))
 

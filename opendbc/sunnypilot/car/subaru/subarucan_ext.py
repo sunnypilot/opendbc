@@ -44,7 +44,7 @@ def create_throttle(packer, frame, throttle_msg, throttle_cmd):
   return packer.make_can_msg("Throttle", CanBus.camera, values)
 
 
-def create_preglobal_throttle(packer, frame, throttle_msg, throttle_cmd):
+def create_preglobal_stop_and_go(packer, throttle_msg, throttle_cmd):
   values = {s: throttle_msg[s] for s in [
     "Throttle_Pedal",
     "Signal1",
@@ -60,7 +60,7 @@ def create_preglobal_throttle(packer, frame, throttle_msg, throttle_cmd):
     "Signal4",
   ]}
 
-  values["COUNTER"] = frame % 0x10
+  values["COUNTER"] = (throttle_msg["COUNTER"] + 1) % 0x10
 
   if throttle_cmd:
     values["Throttle_Pedal"] = 5
