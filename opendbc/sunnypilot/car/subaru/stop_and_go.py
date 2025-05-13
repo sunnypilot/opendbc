@@ -63,6 +63,7 @@ class SnGCarController:
 
     if not is_standstill:
       self.last_standstill_frame = frame
+      self.manual_hold = False
     is_in_standstill = (frame - self.last_standstill_frame) * DT_CTRL > 0.5  # Standstill for >0.5 second
 
     # PREGLOBAL
@@ -90,10 +91,6 @@ class SnGCarController:
            self.prev_cruise_state == 1 and
            not lead_visible):
           self.manual_hold = True
-
-        # Cancel manual hold when car starts moving
-        if not is_standstill:
-          self.manual_hold = False
 
         # Initiate the ACC resume sequence if conditions are met
         if (is_acc_enabled and                                         # ACC active
