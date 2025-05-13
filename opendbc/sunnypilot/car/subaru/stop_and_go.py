@@ -126,8 +126,10 @@ class SnGCarController:
     if self.CP.flags & SubaruFlags.PREGLOBAL:
       can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, self.throttle_cmd))
     else:
-      can_sends.extend(subarucan_ext.create_stop_and_go(packer, frame, CS.throttle, CS.brake_pedal_msg, pcm_cancel_cmd,
-                                                        self.throttle_cmd, self.speed_cmd))
+      if frame % 2 == 0 and self.manual_parking_brake:
+        can_sends.append(subarucan_ext.create_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg, pcm_cancel_cmd, self.speed_cmd))
+      else:
+        can_sends.append(subarucan_ext.create_stop_and_go(packer, CS.throttle, self.throttle_cmd))
 
     return can_sends
 
