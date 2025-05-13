@@ -16,9 +16,6 @@ from opendbc.sunnypilot.car.subaru import subarucan_ext
 from opendbc.sunnypilot.car.subaru.values import SubaruFlagsSP
 from opendbc.can.parser import CANParser
 
-_SNG_ACC_MIN_DIST = 3
-_SNG_ACC_MAX_DIST = 4.5
-
 
 class SnGCarController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
@@ -27,7 +24,6 @@ class SnGCarController:
 
     self.enabled = CP_SP.flags & (SubaruFlagsSP.STOP_AND_GO | SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE)
     self.manual_parking_brake = CP_SP.flags & SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE
-    self.prev_close_distance = 0
     self.prev_standstill = False
     self.standstill_start = 0
     self.sng_acc_resume = False
@@ -59,12 +55,11 @@ class SnGCarController:
 
     hud_control = CC.hudControl
 
-    close_distance = CS.es_distance_msg["Close_Distance"]
     lead_visible = hud_control.leadVisible
     cruise_state = CS.cruise_state
     is_standstill = CS.out.cruiseState.standstill
     is_acc_enabled = CC.enabled
-    distance_increasing = close_distance > self.prev_close_distance
+    should_resume = CC.cruiseControl.resume
 
     # PREGLOBAL
     if self.CP.flags & SubaruFlags.PREGLOBAL:
@@ -72,8 +67,7 @@ class SnGCarController:
       if (is_acc_enabled and                                         # ACC active
          lead_visible and                                            # Lead car present
          is_standstill and                                           # Must be standing still
-         _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST and  # Above minimum and below maximum resume distance
-         distance_increasing):                                       # Distance with lead car is increasing
+         should_resume):
         self.sng_acc_resume = True
 
     # non-PREGLOBAL
@@ -103,8 +97,7 @@ class SnGCarController:
            not self.manual_hold and                                    # Not in manual hold
            lead_visible and                                            # Lead car present
            cruise_state == 3 and                                       # ACC HOLD (only with EPB)
-           _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST and  # Above minimum and below maximum resume distance
-           distance_increasing):                                       # Distance with lead car is increasing
+           should_resume):
           self.sng_acc_resume = True
 
       if is_standstill and not self.prev_standstill:
@@ -119,8 +112,6 @@ class SnGCarController:
       else:
         self.sng_acc_resume = False
         self.sng_acc_resume_cnt = -1
-
-    self.prev_close_distance = close_distance
 
     self.throttle_cmd = throttle_cmd
     self.speed_cmd = speed_cmd
