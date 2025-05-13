@@ -41,7 +41,7 @@ def create_throttle(packer, frame, throttle_msg, throttle_cmd):
   if throttle_cmd:
     values["Throttle_Pedal"] = 5
 
-  return packer.make_can_msg("Throttle", 2, values)
+  return packer.make_can_msg("Throttle", CanBus.camera, values)
 
 
 def create_preglobal_throttle(packer, frame, throttle_msg, throttle_cmd):
@@ -65,4 +65,4 @@ def create_preglobal_throttle(packer, frame, throttle_msg, throttle_cmd):
   if throttle_cmd:
     values["Throttle_Pedal"] = 5
 
-  return packer.make_can_msg("Throttle", 2, values)
+  return packer.make_can_msg("Throttle", CanBus.camera, values)
