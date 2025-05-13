@@ -84,7 +84,6 @@ class SnGCarController:
         # Record manual hold when stopped with no car in front and cruise state changes appropriately
         if (is_standstill and
            self.prev_cruise_state == 1 and
-           cruise_state == 3 and
            not lead_visible):
           self.manual_hold = True
 
@@ -96,7 +95,7 @@ class SnGCarController:
         if (is_acc_enabled and                                         # ACC active
            not self.manual_hold and                                    # Not in manual hold
            lead_visible and                                            # Lead car present
-           cruise_state == 3 and                                       # ACC HOLD (only with EPB)
+           is_standstill and                                       # ACC HOLD (only with EPB)
            should_resume):
           self.sng_acc_resume = True
 
