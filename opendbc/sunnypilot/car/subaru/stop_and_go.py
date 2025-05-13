@@ -30,7 +30,7 @@ class SnGCarController:
     self.prev_close_distance = 0
     self.last_standstill_frame = 0
     self.sng_acc_resume = False
-    self.sng_acc_resume_cnt = -1
+    self.last_resume_frame = 0
     self.manual_hold = False
     self.prev_cruise_state = 0
 
@@ -44,18 +44,14 @@ class SnGCarController:
         frame: Current frame number
 
     Returns:
-        bool: Updated send_resume
+        bool: True if resume command should be sent, False otherwise
     """
 
     if not self.enabled:
       return False
 
-    send_resume = False
-
-    hud_control = CC.hudControl
-
     close_distance = CS.es_distance_msg["Close_Distance"]
-    lead_visible = hud_control.leadVisible
+    lead_visible = CC.hudControl.leadVisible
     is_standstill = CS.out.standstill
     is_pcm_standstill = CS.out.cruiseState.standstill
 
@@ -68,43 +64,35 @@ class SnGCarController:
     distance_increasing = close_distance > self.prev_close_distance
     resume_allowed = in_resume_distance and distance_increasing
 
-    # PREGLOBAL
     if self.CP.flags & SubaruFlags.PREGLOBAL:
-      # PREGLOBAL vehicles simply need to be stopped
       should_resume = is_standstill
-
-    # non-PREGLOBAL
     else:
       if self.manual_parking_brake:
-        # For manual parking brake, ensure vehicle has been stopped for a minimum time
         should_resume = is_standstill and is_in_standstill
       else:
-        # For electronic parking brake, handle manual hold logic
+        # For EPB vehicles, track manual hold state
         if (is_standstill and
            self.prev_cruise_state == 1 and
            is_pcm_standstill and
            not lead_visible):
           self.manual_hold = True
 
-        # Only resume if ACC is in HOLD state (only with EPB) and not in manual hold state
         should_resume = is_pcm_standstill and not self.manual_hold
 
-    # Apply resume command if criteria are met
+    send_resume = False
     if CC.enabled and lead_visible and should_resume:
       if self.manual_parking_brake:
-        # For manual parking brake, send brake message with non-zero speed in standstill to avoid non-EPB ACC disengage
         send_resume = True
-      elif resume_allowed:
-        # For vehicles with proper distance tracking, initiate ACC resume sequence
-        self.sng_acc_resume = True
-
-    if self.sng_acc_resume:
-      if self.sng_acc_resume_cnt < 5:
-        send_resume = True
-        self.sng_acc_resume_cnt += 1
       else:
+        self.sng_acc_resume = resume_allowed
+
+    # Handle ACC resume sequence state machine
+    if not self.sng_acc_resume:
+      self.last_resume_frame = frame
+    else:
+      send_resume = (frame - self.last_resume_frame) < 5
+      if not send_resume:
         self.sng_acc_resume = False
-        self.sng_acc_resume_cnt = -1
 
     self.prev_cruise_state = CS.cruise_state
     self.prev_close_distance = close_distance
@@ -122,7 +110,7 @@ class SnGCarController:
     if self.CP.flags & SubaruFlags.PREGLOBAL:
       can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, send_resume))
     else:
-      if frame % 2 == 0 and self.manual_parking_brake:
+      if self.manual_parking_brake and frame % 2 == 0:
         can_sends.append(subarucan_ext.create_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg, pcm_cancel_cmd, send_resume))
       else:
         can_sends.append(subarucan_ext.create_stop_and_go(packer, CS.throttle, send_resume))
