@@ -35,7 +35,7 @@ class SnGCarController:
     self.manual_hold = False
     self.prev_cruise_state = 0
 
-    self.throtle_cmd = False
+    self.throttle_cmd = False
     self.speed_cmd = False
 
   def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int,
@@ -120,7 +120,7 @@ class SnGCarController:
 
     self.prev_close_distance = close_distance
 
-    self.throtle_cmd = throttle_cmd
+    self.throttle_cmd = throttle_cmd
     self.speed_cmd = speed_cmd
 
   def create_stop_and_go(self, packer, CS, pcm_cancel_cmd, frame):
@@ -130,12 +130,10 @@ class SnGCarController:
       return can_sends
 
     if self.CP.flags & SubaruFlags.PREGLOBAL:
-      can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, self.throtle_cmd))
+      can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, self.throttle_cmd))
     else:
-      can_sends.append(subarucan_ext.create_throttle(packer, CS.throttle_msg["COUNTER"] + 1, CS.throttle_msg, self.throtle_cmd))
-
-      if frame % 2 == 0:
-        can_sends.append(subarucan_ext.create_brake_pedal(packer, frame // 2, CS.brake_pedal_msg, self.speed_cmd, pcm_cancel_cmd))
+      can_sends.extend(subarucan_ext.create_stop_and_go(packer, frame, CS.throttle, CS.brake_pedal_msg, pcm_cancel_cmd,
+                                                        self.throttle_cmd, self.speed_cmd))
 
     return can_sends
 
