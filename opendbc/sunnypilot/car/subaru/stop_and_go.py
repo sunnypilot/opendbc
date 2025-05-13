@@ -34,8 +34,7 @@ class SnGCarController:
     self.manual_hold = False
     self.prev_cruise_state = 0
 
-  def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int,
-             throttle_cmd: bool = False, speed_cmd: bool = False) -> tuple[bool, bool]:
+  def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> bool:
     """
     Manages stop-and-go functionality for adaptive cruise control (ACC).
 
@@ -43,15 +42,15 @@ class SnGCarController:
         CC: Car control data
         CS: Car state data
         frame: Current frame number
-        throttle_cmd: Initial throttle command state
-        speed_cmd: Initial speed command state
 
     Returns:
-        tuple[bool, bool]: Updated (throttle_cmd, speed_cmd)
+        bool: Updated send_resume
     """
 
     if not self.enabled:
-      return throttle_cmd, speed_cmd
+      return False
+
+    send_resume = False
 
     hud_control = CC.hudControl
 
@@ -94,14 +93,14 @@ class SnGCarController:
     if CC.enabled and lead_visible and should_resume:
       if self.manual_parking_brake:
         # For manual parking brake, send brake message with non-zero speed in standstill to avoid non-EPB ACC disengage
-        speed_cmd = True
+        send_resume = True
       elif resume_allowed:
         # For vehicles with proper distance tracking, initiate ACC resume sequence
         self.sng_acc_resume = True
 
     if self.sng_acc_resume:
       if self.sng_acc_resume_cnt < 5:
-        throttle_cmd = True
+        send_resume = True
         self.sng_acc_resume_cnt += 1
       else:
         self.sng_acc_resume = False
@@ -110,7 +109,7 @@ class SnGCarController:
     self.prev_cruise_state = CS.cruise_state
     self.prev_close_distance = close_distance
 
-    return throttle_cmd, speed_cmd
+    return send_resume
 
   def create_stop_and_go(self, packer, CC, CS, pcm_cancel_cmd, frame):
     can_sends = []
@@ -118,15 +117,15 @@ class SnGCarController:
     if not self.enabled:
       return can_sends
 
-    throttle_cmd, speed_cmd = self.update(CC, CS, frame)
+    send_resume = self.update(CC, CS, frame)
 
     if self.CP.flags & SubaruFlags.PREGLOBAL:
-      can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, throttle_cmd))
+      can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, send_resume))
     else:
       if frame % 2 == 0 and self.manual_parking_brake:
-        can_sends.append(subarucan_ext.create_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg, pcm_cancel_cmd, speed_cmd))
+        can_sends.append(subarucan_ext.create_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg, pcm_cancel_cmd, send_resume))
       else:
-        can_sends.append(subarucan_ext.create_stop_and_go(packer, CS.throttle, throttle_cmd))
+        can_sends.append(subarucan_ext.create_stop_and_go(packer, CS.throttle, send_resume))
 
     return can_sends
 
