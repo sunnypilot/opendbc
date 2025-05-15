@@ -25,15 +25,27 @@ class SnGCarController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     self.CP = CP
     self.CP_SP = CP_SP
-
     self.enabled = CP_SP.flags & (SubaruFlagsSP.STOP_AND_GO | SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE)
     self.manual_parking_brake = CP_SP.flags & SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE
+
     self.prev_close_distance = 0
     self.last_standstill_frame = 0
-    self.sng_acc_resume = False
-    self.last_resume_frame = 0
-    self.manual_hold = False
     self.prev_cruise_state = 0
+    self.epb_resume_frames_remaining = 0
+    self.manual_hold = False
+
+  def update_epb_resume_sequence(self, should_resume: bool) -> bool:
+    if self.manual_parking_brake:
+      return False
+
+    if should_resume:
+      self.epb_resume_frames_remaining = 5
+
+    send_resume = self.epb_resume_frames_remaining > 0
+    if self.epb_resume_frames_remaining > 0:
+      self.epb_resume_frames_remaining -= 1
+
+    return send_resume
 
   def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> bool:
     """
@@ -47,53 +59,44 @@ class SnGCarController:
     Returns:
         bool: True if resume command should be sent, False otherwise
     """
-
     if not self.enabled:
       return False
 
-    close_distance = CS.es_distance_msg["Close_Distance"]
-    lead_visible = CC.hudControl.leadVisible
-    is_standstill = CS.out.standstill
-    is_pcm_standstill = CS.out.cruiseState.standstill
+    if not CC.enabled or not CC.hudControl.leadVisible:
+      return False
 
-    if not is_standstill:
+    close_distance = CS.es_distance_msg["Close_Distance"]
+    in_standstill = CS.out.standstill
+    pcm_standstill = CS.out.cruiseState.standstill
+
+    if not in_standstill:
       self.last_standstill_frame = frame
       self.manual_hold = False
 
-    is_in_standstill = (frame - self.last_standstill_frame) * DT_CTRL > 0.5  # In standstill for > 0.5 second
+    # Check if we've been in standstill long enough
+    standstill_duration = (frame - self.last_standstill_frame) * DT_CTRL
+    in_standstill_hold = standstill_duration > 0.5
+
+    # Car state distance-based conditions (EPB only)
     in_resume_distance = _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST
     distance_increasing = close_distance > self.prev_close_distance
-    resume_allowed = in_resume_distance and distance_increasing
+    distance_resume_allowed = in_resume_distance and distance_increasing
 
     if self.CP.flags & SubaruFlags.PREGLOBAL:
-      should_resume = is_standstill
+      # Pre-Global: Resume sequence with stock ACC distance conditions
+      should_resume = in_standstill and distance_resume_allowed
+      send_resume = self.update_epb_resume_sequence(should_resume)
+    elif self.manual_parking_brake:
+      # Global with manual parking brake: Direct resume without sequence
+      send_resume = in_standstill and in_standstill_hold
     else:
-      if self.manual_parking_brake:
-        should_resume = is_standstill and is_in_standstill
-      else:
-        # For EPB vehicles, track manual hold state
-        if (is_standstill and
-           self.prev_cruise_state == 1 and
-           is_pcm_standstill and
-           not lead_visible):
-          self.manual_hold = True
+      # Global with EPB: Resume sequence with stock ACC distance conditions
+      # Track manual hold state
+      if in_standstill and pcm_standstill and self.prev_cruise_state == 1:
+        self.manual_hold = True
 
-        should_resume = is_pcm_standstill and not self.manual_hold
-
-    send_resume = False
-    if CC.enabled and lead_visible and should_resume:
-      if self.manual_parking_brake:
-        send_resume = True
-      else:
-        self.sng_acc_resume = resume_allowed
-
-    # Handle ACC resume sequence state machine
-    if not self.sng_acc_resume:
-      self.last_resume_frame = frame
-    else:
-      send_resume = (frame - self.last_resume_frame) < 5
-      if not send_resume:
-        self.sng_acc_resume = False
+      should_resume = pcm_standstill and not self.manual_hold and distance_resume_allowed
+      send_resume = self.update_epb_resume_sequence(should_resume)
 
     self.prev_cruise_state = CS.cruise_state
     self.prev_close_distance = close_distance
