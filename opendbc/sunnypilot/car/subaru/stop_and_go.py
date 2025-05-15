@@ -85,6 +85,8 @@ class SnGCarController:
     if self.manual_parking_brake:
       # Manual parking brake: Direct resume without sequence
       send_resume = in_standstill and in_standstill_hold
+      if send_resume:
+        self.last_standstill_frame = frame
     elif self.CP.flags & SubaruFlags.PREGLOBAL:
       # Pre-Global with EPB: Resume sequence with stock ACC distance conditions
       should_resume = in_standstill and distance_resume_allowed
