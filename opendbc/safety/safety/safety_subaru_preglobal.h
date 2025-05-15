@@ -14,6 +14,7 @@
 #define MSG_SUBARU_PG_ES_LKAS               0x164
 #define MSG_SUBARU_PG_ES_Distance           0x161
 #define MSG_SUBARU_PG_Steering_Torque       0x371
+#define MSG_SUBARU_PG_Brake_Pedal           0xD1
 
 #define SUBARU_PG_MAIN_BUS 0
 #define SUBARU_PG_CAM_BUS  2
@@ -24,6 +25,7 @@
 
 #define SUBARU_PG_STOP_AND_GO_TX_MSGS \
   {MSG_SUBARU_PG_Throttle,    SUBARU_PG_CAM_BUS,  8, .check_relay = true}, \
+  {MSG_SUBARU_PG_Brake_Pedal, SUBARU_PG_CAM_BUS,  4, .check_relay = true}, \
 
 static bool subaru_pg_reversed_driver_torque = false;
 

@@ -82,13 +82,13 @@ class SnGCarController:
     distance_increasing = close_distance > self.prev_close_distance
     distance_resume_allowed = in_resume_distance and distance_increasing
 
-    if self.CP.flags & SubaruFlags.PREGLOBAL:
-      # Pre-Global: Resume sequence with stock ACC distance conditions
+    if self.manual_parking_brake:
+      # Manual parking brake: Direct resume without sequence
+      send_resume = in_standstill and in_standstill_hold
+    elif self.CP.flags & SubaruFlags.PREGLOBAL:
+      # Pre-Global with EPB: Resume sequence with stock ACC distance conditions
       should_resume = in_standstill and distance_resume_allowed
       send_resume = self.update_epb_resume_sequence(should_resume)
-    elif self.manual_parking_brake:
-      # Global with manual parking brake: Direct resume without sequence
-      send_resume = in_standstill and in_standstill_hold
     else:
       # Global with EPB: Resume sequence with stock ACC distance conditions
       # Track manual hold state
@@ -112,11 +112,13 @@ class SnGCarController:
     send_resume = self.update_stop_and_go(CC, CS, frame)
 
     if self.CP.flags & SubaruFlags.PREGLOBAL:
-      can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, send_resume))
+      if self.manual_parking_brake and frame % 2 == 0:
+        can_sends.append(subarucan_ext.create_preglobal_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg, send_resume))
+      else:
+        can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, send_resume))
     else:
       if self.manual_parking_brake and frame % 2 == 0:
-        can_sends.append(subarucan_ext.create_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg,
-                                                                               pcm_cancel_cmd, send_resume))
+        can_sends.append(subarucan_ext.create_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg, pcm_cancel_cmd, send_resume))
       else:
         can_sends.append(subarucan_ext.create_stop_and_go(packer, CS.throttle_msg, send_resume))
 
@@ -142,6 +144,6 @@ class SnGCarState:
 
     if not self.CP.flags & SubaruFlags.PREGLOBAL:
       self.cruise_state = cp_cam.vl["ES_DashStatus"]["Cruise_State"]
-      self.brake_pedal_msg = copy.copy(cp.vl["Brake_Pedal"])
 
+    self.brake_pedal_msg = copy.copy(cp.vl["Brake_Pedal"])
     self.throttle_msg = copy.copy(cp.vl["Throttle"])

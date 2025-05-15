@@ -67,3 +67,16 @@ def create_preglobal_stop_and_go(packer, throttle_msg, throttle_cmd):
     values["Throttle_Pedal"] = 5
 
   return packer.make_can_msg("Throttle", CanBus.camera, values)
+
+
+def create_preglobal_stop_and_go_manual_parking_brake(packer, brake_pedal_msg, speed_cmd):
+  values = {s: brake_pedal_msg[s] for s in [
+    "Speed",
+    "Brake_Pedal",
+    "Signal1",
+  ]}
+
+  if speed_cmd:
+    values["Speed"] = 3
+
+  return packer.make_can_msg("Brake_Pedal", CanBus.camera, values)
