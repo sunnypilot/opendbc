@@ -22,6 +22,7 @@ legend = ["LAT_ACCEL_FACTOR", "MAX_LAT_ACCEL_MEASURED", "FRICTION"]
 # Guess
 "FORD_BRONCO_SPORT_MK1" = [nan, 1.5, nan]
 "FORD_ESCAPE_MK4" = [nan, 1.5, nan]
+"FORD_ESCAPE_MK4_5" = [nan, 1.5, nan]
 "FORD_EXPLORER_MK6" = [nan, 1.5, nan]
 "FORD_F_150_MK14" = [nan, 1.5, nan]
 "FORD_FOCUS_MK4" = [nan, 1.5, nan]
@@ -83,3 +84,4 @@ legend = ["LAT_ACCEL_FACTOR", "MAX_LAT_ACCEL_MEASURED", "FRICTION"]
 # Manually checked
 "HONDA_CIVIC_2022" = [2.5, 1.2, 0.15]
 "HONDA_HRV_3G" = [2.5, 1.2, 0.2]
+"HONDA_PILOT_4G" = [1.0, 1.0, 0.2]
