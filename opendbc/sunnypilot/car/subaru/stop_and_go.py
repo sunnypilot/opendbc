@@ -47,7 +47,7 @@ class SnGCarController:
 
     return send_resume
 
-  def update(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> bool:
+  def update_stop_and_go(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> bool:
     """
     Manages stop-and-go functionality for adaptive cruise control (ACC).
 
@@ -109,7 +109,7 @@ class SnGCarController:
     if not self.enabled:
       return can_sends
 
-    send_resume = self.update(CC, CS, frame)
+    send_resume = self.update_stop_and_go(CC, CS, frame)
 
     if self.CP.flags & SubaruFlags.PREGLOBAL:
       can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, send_resume))
