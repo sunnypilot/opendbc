@@ -117,8 +117,7 @@ inline void m_update_control_state(void) {
       allowed = false;
     } else if ((m_mads_state.braking.transition == MADS_EDGE_FALLING) &&
                (m_mads_state.current_disengage.active_reason == MADS_DISENGAGE_REASON_BRAKE) &&
-               (m_mads_state.current_disengage.pending_reasons == MADS_DISENGAGE_REASON_BRAKE) &&
-                m_mads_state.pause_lateral_on_brake) {
+               (m_mads_state.current_disengage.pending_reasons == MADS_DISENGAGE_REASON_BRAKE)) {
       m_mads_state.controls_requested_lat = true;
     } else if (m_mads_state.braking.current) {
       allowed = false;
