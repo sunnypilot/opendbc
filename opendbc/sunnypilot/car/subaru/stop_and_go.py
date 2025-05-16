@@ -32,7 +32,6 @@ class SnGCarController:
     self.last_standstill_frame = 0
     self.prev_cruise_state = 0
     self.epb_resume_frames_remaining = 0
-    self.manual_parking_brake_frames = 0
     self.manual_hold = False
 
   def update_epb_resume_sequence(self, should_resume: bool) -> bool:
@@ -88,12 +87,8 @@ class SnGCarController:
         # Manual parking brake: Direct resume without sequence
         send_resume = in_standstill and in_standstill_hold
 
-        if not send_resume:
+        if (frame - self.last_standstill_frame) * DT_CTRL >= 0.55:
           self.last_standstill_frame = frame
-          self.manual_parking_brake_frames = frame
-
-        if frame - self.manual_parking_brake_frames > 5:
-          send_resume = False
       else:
         # Pre-Global with EPB: Resume sequence with stock ACC distance conditions
         should_resume = in_standstill and distance_resume_allowed
