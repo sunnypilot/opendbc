@@ -84,6 +84,7 @@ inline void m_update_binary_state(BinaryStateTracking *state) {
 inline void m_update_control_state(void) {
   bool allowed = true;
 
+  // Initial control requests from button or ACC transitions
   if ((m_mads_state.acc_main.transition == MADS_EDGE_RISING) ||
       (m_mads_state.mads_button.transition == MADS_EDGE_RISING) ||
       (m_mads_state.op_controls_allowed.transition == MADS_EDGE_RISING)) {
