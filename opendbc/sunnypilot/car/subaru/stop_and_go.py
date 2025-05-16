@@ -75,7 +75,7 @@ class SnGCarController:
 
     # Check if we've been in standstill long enough
     standstill_duration = (frame - self.last_standstill_frame) * DT_CTRL
-    in_standstill_hold = standstill_duration > 1.0
+    in_standstill_hold = standstill_duration > 0.75
 
     # Car state distance-based conditions (EPB only)
     in_resume_distance = _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST
@@ -87,7 +87,7 @@ class SnGCarController:
         # Manual parking brake: Direct resume without sequence
         send_resume = in_standstill and in_standstill_hold
 
-        if (frame - self.last_standstill_frame) * DT_CTRL >= 1.1:
+        if (frame - self.last_standstill_frame) * DT_CTRL >= 0.8:
           self.last_standstill_frame = frame
       else:
         # Pre-Global with EPB: Resume sequence with stock ACC distance conditions
