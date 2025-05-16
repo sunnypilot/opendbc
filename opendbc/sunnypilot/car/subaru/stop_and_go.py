@@ -125,15 +125,15 @@ class SnGCarController:
     send_resume = self.update_stop_and_go(CC, CS, frame)
 
     if self.CP.flags & SubaruFlags.PREGLOBAL:
-      if self.manual_parking_brake and frame % 2 == 0:
-        can_sends.append(subarucan_ext.create_preglobal_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg, send_resume))
-      else:
-        can_sends.append(subarucan_ext.create_preglobal_stop_and_go(packer, CS.throttle_msg, send_resume))
+      can_sends.append(subarucan_ext.create_preglobal_throttle(packer, CS.throttle_msg, send_resume))
+
+      if frame % 2 == 0:
+        can_sends.append(subarucan_ext.create_preglobal_brake_pedal(packer, CS.brake_pedal_msg, send_resume and self.manual_parking_brake))
     else:
-      if self.manual_parking_brake and frame % 2 == 0:
-        can_sends.append(subarucan_ext.create_stop_and_go_manual_parking_brake(packer, CS.brake_pedal_msg, pcm_cancel_cmd, send_resume))
-      else:
-        can_sends.append(subarucan_ext.create_stop_and_go(packer, CS.throttle_msg, send_resume))
+      can_sends.append(subarucan_ext.create_throttle(packer, CS.throttle_msg, send_resume))
+
+      if frame % 2 == 0:
+        can_sends.append(subarucan_ext.create_brake_pedal(packer, CS.brake_pedal_msg, pcm_cancel_cmd, send_resume and self.manual_parking_brake))
 
     return can_sends
 

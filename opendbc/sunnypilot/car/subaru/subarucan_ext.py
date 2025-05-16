@@ -5,7 +5,7 @@ def create_counter(msg):
   return (msg["COUNTER"] + 1) % 0x10
 
 
-def create_stop_and_go(packer, throttle_msg, throttle_cmd):
+def create_throttle(packer, throttle_msg, throttle_cmd):
   values = {s: throttle_msg[s] for s in [
     "CHECKSUM",
     "Signal1",
@@ -24,7 +24,7 @@ def create_stop_and_go(packer, throttle_msg, throttle_cmd):
   return packer.make_can_msg("Throttle", CanBus.camera, values)
 
 
-def create_stop_and_go_manual_parking_brake(packer, brake_pedal_msg, pcm_cancel_cmd, speed_cmd):
+def create_brake_pedal(packer, brake_pedal_msg, pcm_cancel_cmd, speed_cmd):
   values = {s: brake_pedal_msg[s] for s in [
     "Signal1",
     "Speed",
@@ -45,7 +45,7 @@ def create_stop_and_go_manual_parking_brake(packer, brake_pedal_msg, pcm_cancel_
   return packer.make_can_msg("Brake_Pedal", CanBus.camera, values)
 
 
-def create_preglobal_stop_and_go(packer, throttle_msg, throttle_cmd):
+def create_preglobal_throttle(packer, throttle_msg, throttle_cmd):
   values = {s: throttle_msg[s] for s in [
     "Throttle_Pedal",
     "Signal1",
@@ -69,7 +69,7 @@ def create_preglobal_stop_and_go(packer, throttle_msg, throttle_cmd):
   return packer.make_can_msg("Throttle", CanBus.camera, values)
 
 
-def create_preglobal_stop_and_go_manual_parking_brake(packer, brake_pedal_msg, speed_cmd):
+def create_preglobal_brake_pedal(packer, brake_pedal_msg, speed_cmd):
   values = {s: brake_pedal_msg[s] for s in [
     "Speed",
     "Brake_Pedal",
