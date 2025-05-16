@@ -1,6 +1,7 @@
 #pragma once
 
 #include "safety_declarations.h"
+#include "safety_subaru_common.h"
 
 // Preglobal platform
 // 0x161 is ES_CruiseThrottle
@@ -13,9 +14,18 @@
 #define MSG_SUBARU_PG_ES_LKAS               0x164
 #define MSG_SUBARU_PG_ES_Distance           0x161
 #define MSG_SUBARU_PG_Steering_Torque       0x371
+#define MSG_SUBARU_PG_Brake_Pedal           0xD1
 
 #define SUBARU_PG_MAIN_BUS 0
 #define SUBARU_PG_CAM_BUS  2
+
+#define SUBARU_PG_COMMON_TX_MSGS \
+  {MSG_SUBARU_PG_ES_Distance, SUBARU_PG_MAIN_BUS, 8, .check_relay = true}, \
+  {MSG_SUBARU_PG_ES_LKAS,     SUBARU_PG_MAIN_BUS, 8, .check_relay = true}, \
+
+#define SUBARU_PG_STOP_AND_GO_TX_MSGS \
+  {MSG_SUBARU_PG_Throttle,    SUBARU_PG_CAM_BUS,  8, .check_relay = true}, \
+  {MSG_SUBARU_PG_Brake_Pedal, SUBARU_PG_CAM_BUS,  4, .check_relay = true}, \
 
 static bool subaru_pg_reversed_driver_torque = false;
 
@@ -80,13 +90,22 @@ static bool subaru_preglobal_tx_hook(const CANPacket_t *to_send) {
     }
 
   }
+
+  // FIXME-SP: only allow specific bits in certain states
+  if (addr == MSG_SUBARU_PG_Throttle) {
+    tx = subaru_stop_and_go;
+  }
   return tx;
 }
 
 static safety_config subaru_preglobal_init(uint16_t param) {
   static const CanMsg SUBARU_PG_TX_MSGS[] = {
-    {MSG_SUBARU_PG_ES_Distance, SUBARU_PG_MAIN_BUS, 8, .check_relay = true},
-    {MSG_SUBARU_PG_ES_LKAS,     SUBARU_PG_MAIN_BUS, 8, .check_relay = true}
+    SUBARU_PG_COMMON_TX_MSGS
+  };
+
+  static const CanMsg subaru_pg_stop_and_go_tx_msgs[] = {
+    SUBARU_PG_COMMON_TX_MSGS
+    SUBARU_PG_STOP_AND_GO_TX_MSGS
   };
 
   // TODO: do checksum and counter checks after adding the signals to the outback dbc file
@@ -98,10 +117,15 @@ static safety_config subaru_preglobal_init(uint16_t param) {
     {.msg = {{MSG_SUBARU_PG_Brake_Pedal,     SUBARU_PG_MAIN_BUS, 4, .ignore_checksum = true, .ignore_counter = true, .frequency = 50U}, { 0 }, { 0 }}},
   };
 
+  subaru_common_init();
+
   const int SUBARU_PG_PARAM_REVERSED_DRIVER_TORQUE = 4;
 
   subaru_pg_reversed_driver_torque = GET_FLAG(param, SUBARU_PG_PARAM_REVERSED_DRIVER_TORQUE);
-  return BUILD_SAFETY_CFG(subaru_preglobal_rx_checks, SUBARU_PG_TX_MSGS);
+
+  safety_config ret = subaru_stop_and_go ? BUILD_SAFETY_CFG(subaru_preglobal_rx_checks, subaru_pg_stop_and_go_tx_msgs) : \
+                                           BUILD_SAFETY_CFG(subaru_preglobal_rx_checks, SUBARU_PG_TX_MSGS);
+  return ret;
 }
 
 const safety_hooks subaru_preglobal_hooks = {
