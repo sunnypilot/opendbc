@@ -435,21 +435,22 @@ class MadsSafetyTestBase(unittest.TestCase):
 
   def test_disengage_on_brake(self):
     try:
-      self._mads_states_cleanup()
-      for disengage_on_brake in (True, False):
-        self.safety.set_mads_params(True, disengage_on_brake, False)
+      for enable_mads in (True, False):
+        for disengage_on_brake in (True, False):
+          self._mads_states_cleanup()
+          self.safety.set_mads_params(enable_mads, disengage_on_brake, False)
 
-        self.safety.set_controls_allowed_lat(True)
-        self._rx(self._speed_msg(0))
-        self.assertTrue(self.safety.get_controls_allowed_lat())
+          self.safety.set_controls_allowed_lat(True)
+          self._rx(self._speed_msg(0))
+          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
 
-        self._rx(self._user_brake_msg(True))
-        self._rx(self._speed_msg(0))
-        self.assertEqual(not disengage_on_brake, self.safety.get_controls_allowed_lat())
+          self._rx(self._user_brake_msg(True))
+          self._rx(self._speed_msg(0))
+          self.assertEqual(enable_mads and not disengage_on_brake, self.safety.get_controls_allowed_lat())
 
-        self._rx(self._user_brake_msg(False))
-        self._rx(self._speed_msg(0))
-        self.assertEqual(not disengage_on_brake, self.safety.get_controls_allowed_lat())
+          self._rx(self._user_brake_msg(False))
+          self._rx(self._speed_msg(0))
+          self.assertEqual(enable_mads and not disengage_on_brake, self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
 
