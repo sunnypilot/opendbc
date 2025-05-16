@@ -25,7 +25,7 @@ typedef enum __attribute__((packed)) {
 
 typedef enum __attribute__((packed)) {
   MADS_DISENGAGE_REASON_NONE = 0,                         ///< No disengagement
-  MADS_DISENGAGE_REASON_BRAKE = 1,                        ///< Brake pedal pressed
+  MADS_DISENGAGE_REASON_ENFORCE_EXIT = 1,                 ///< Enforced control exits due to vehicle events
   MADS_DISENGAGE_REASON_LAG = 2,                          ///< System lag detected
   MADS_DISENGAGE_REASON_BUTTON = 4,                       ///< User button press
   MADS_DISENGAGE_REASON_ACC_MAIN_OFF = 8,                 ///< ACC system turned off
@@ -69,7 +69,7 @@ typedef struct {
   ButtonStateTracking mads_button;
   BinaryStateTracking acc_main;
   BinaryStateTracking op_controls_allowed;
-  BinaryStateTracking braking;
+  BinaryStateTracking enforced_exit;
 
   DisengageState current_disengage;
 
