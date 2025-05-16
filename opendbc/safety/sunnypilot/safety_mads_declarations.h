@@ -31,7 +31,7 @@ typedef enum __attribute__((packed)) {
   MADS_DISENGAGE_REASON_ACC_MAIN_OFF = 8,                 ///< ACC system turned off
   MADS_DISENGAGE_REASON_NON_PCM_ACC_MAIN_DESYNC = 16,     ///< ACC sync error
   MADS_DISENGAGE_REASON_HEARTBEAT_ENGAGED_MISMATCH = 32,  ///< Heartbeat mismatch
-  MADS_DISENGAGE_REASON_STEERING_DISENGAGE = 64,    ///< Driver steering override
+  MADS_DISENGAGE_REASON_STEERING_DISENGAGE = 64,          ///< Steering disengage
 } DisengageReason;
 
 // ===============================
@@ -72,6 +72,7 @@ typedef struct {
   BinaryStateTracking acc_main;
   BinaryStateTracking op_controls_allowed;
   BinaryStateTracking braking;
+  BinaryStateTracking mads_steering_disengage;
 
   DisengageState current_disengage;
 
@@ -99,7 +100,7 @@ extern uint32_t heartbeat_engaged_mads_mismatches;
 
 extern void mads_set_system_state(bool enabled, bool disengage_lateral_on_brake, bool pause_lateral_on_brake);
 extern void mads_set_alternative_experience(const int *mode);
-extern void mads_state_update(bool op_vehicle_moving, bool op_acc_main, bool op_allowed, bool is_braking);
+extern void mads_state_update(bool op_vehicle_moving, bool op_acc_main, bool op_allowed, bool is_braking, bool steering_disengage);
 extern void mads_exit_controls(DisengageReason reason);
 extern bool mads_is_lateral_control_allowed_by_mads(void);
 extern void mads_heartbeat_engaged_check(void);
