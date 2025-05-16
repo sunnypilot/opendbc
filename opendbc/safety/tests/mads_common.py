@@ -350,15 +350,15 @@ class MadsSafetyTestBase(unittest.TestCase):
     """Tests behavior when controls are requested while brake is engaged
 
     Sequence:
-    1. Enable MADS with disengage on brake
-    2. Brake to disengage lateral control
+    1. Enable MADS with pause lateral on brake
+    2. Brake to pause lateral control
     3. Set control request while braking
     4. Release brake
     5. Verify controls become allowed
     """
     try:
       self._mads_states_cleanup()
-      self.safety.set_mads_params(True, False, True)  # enable MADS with disengage on brake
+      self.safety.set_mads_params(True, False, True)  # enable MADS with pause lateral on brake
 
       # Initial state
       self.safety.set_controls_allowed_lat(True)
@@ -385,15 +385,15 @@ class MadsSafetyTestBase(unittest.TestCase):
     """Tests behavior when ACC main is turned off while brake is engaged
 
     Sequence:
-    1. Enable MADS with disengage on brake
-    2. Brake to disengage lateral control
+    1. Enable MADS with pause lateral on brake
+    2. Brake to pause lateral control
     3. Turn ACC main off while braking
     4. Release brake
     5. Verify controls remain disengaged
     """
     try:
       self._mads_states_cleanup()
-      self.safety.set_mads_params(True, False, True)  # enable MADS with disengage on brake
+      self.safety.set_mads_params(True, False, True)  # enable MADS with pause lateral on brake
 
       # Initial state - enable with ACC main
       self.safety.set_acc_main_on(True)

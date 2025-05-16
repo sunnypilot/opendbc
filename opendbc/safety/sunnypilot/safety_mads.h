@@ -103,8 +103,13 @@ inline void m_update_control_state(void) {
     allowed = false;  // No matter what, no further control processing on this cycle
   }
 
+  if (m_mads_state.disengage_lateral_on_brake && m_mads_state.braking.transition == MADS_EDGE_RISING) {
+    mads_exit_controls(MADS_DISENGAGE_REASON_BRAKE);
+    allowed = false;
+  }
+
   // Secondary control conditions - only checked if primary conditions don't block further control processing
-  if (allowed && (m_mads_state.disengage_lateral_on_brake || m_mads_state.pause_lateral_on_brake)) {
+  if (allowed && m_mads_state.pause_lateral_on_brake) {
     // Brake rising edge immediately blocks controls
     // Brake release might request controls if brake was the ONLY reason for disengagement
     if (m_mads_state.braking.transition == MADS_EDGE_RISING) {
