@@ -97,16 +97,16 @@ inline void m_update_control_state(void) {
 
   // Secondary control conditions - only checked if primary conditions don't block further control processing
   if (allowed && m_mads_state.disengage_lateral_on_brake) {
-    // Exit rising edge immediately blocks controls
-    // Exit release might request controls if exit was the ONLY reason for disengagement
-    if (m_mads_state.enforced_exit.transition == MADS_EDGE_RISING) {
-      mads_exit_controls(MADS_DISENGAGE_REASON_ENFORCE_EXIT);
+    // Brake rising edge immediately blocks controls
+    // Brake release might request controls if brake was the ONLY reason for disengagement
+    if (m_mads_state.braking.transition == MADS_EDGE_RISING) {
+      mads_exit_controls(MADS_DISENGAGE_REASON_BRAKE);
       allowed = false;
-    } else if ((m_mads_state.enforced_exit.transition == MADS_EDGE_FALLING) &&
-               (m_mads_state.current_disengage.active_reason == MADS_DISENGAGE_REASON_ENFORCE_EXIT) &&
-               (m_mads_state.current_disengage.pending_reasons == MADS_DISENGAGE_REASON_ENFORCE_EXIT)) {
+    } else if ((m_mads_state.braking.transition == MADS_EDGE_FALLING) &&
+               (m_mads_state.current_disengage.active_reason == MADS_DISENGAGE_REASON_BRAKE) &&
+               (m_mads_state.current_disengage.pending_reasons == MADS_DISENGAGE_REASON_BRAKE)) {
       m_mads_state.controls_requested_lat = true;
-    } else if (m_mads_state.enforced_exit.current) {
+    } else if (m_mads_state.braking.current) {
       allowed = false;
     } else {
     }
@@ -164,16 +164,16 @@ inline bool mads_is_lateral_control_allowed_by_mads(void) {
   return m_mads_state.system_enabled && m_mads_state.controls_allowed_lat;
 }
 
-inline void mads_state_update(const bool op_vehicle_moving, const bool op_acc_main, const bool op_allowed, const bool enforced_exit) {
+inline void mads_state_update(const bool op_vehicle_moving, const bool op_acc_main, const bool op_allowed, const bool is_braking) {
   m_mads_state.is_vehicle_moving = op_vehicle_moving;
   m_mads_state.acc_main.current = op_acc_main;
   m_mads_state.op_controls_allowed.current = op_allowed;
   m_mads_state.mads_button.current = mads_button_press;
-  m_mads_state.enforced_exit.current = enforced_exit;
+  m_mads_state.braking.current = is_braking;
 
   m_update_binary_state(&m_mads_state.acc_main);
   m_update_binary_state(&m_mads_state.op_controls_allowed);
-  m_update_binary_state(&m_mads_state.enforced_exit);
+  m_update_binary_state(&m_mads_state.braking);
   m_update_button_state(&m_mads_state.mads_button);
 
   m_update_control_state();
