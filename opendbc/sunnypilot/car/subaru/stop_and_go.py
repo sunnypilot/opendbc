@@ -32,6 +32,7 @@ class SnGCarController:
     self.last_standstill_frame = 0
     self.prev_cruise_state = 0
     self.epb_resume_frames_remaining = 0
+    self.manual_parking_brake_frames = 0
     self.manual_hold = False
 
   def update_epb_resume_sequence(self, should_resume: bool) -> bool:
@@ -82,21 +83,33 @@ class SnGCarController:
     distance_increasing = close_distance > self.prev_close_distance
     distance_resume_allowed = in_resume_distance and distance_increasing
 
-    if self.manual_parking_brake:
-      # Manual parking brake: Direct resume without sequence
-      send_resume = in_standstill and in_standstill_hold
-    elif self.CP.flags & SubaruFlags.PREGLOBAL:
-      # Pre-Global with EPB: Resume sequence with stock ACC distance conditions
-      should_resume = in_standstill and distance_resume_allowed
-      send_resume = self.update_epb_resume_sequence(should_resume)
-    else:
-      # Global with EPB: Resume sequence with stock ACC distance conditions
-      # Track manual hold state
-      if in_standstill and pcm_standstill and self.prev_cruise_state == 1:
-        self.manual_hold = True
+    if self.CP.flags & SubaruFlags.PREGLOBAL:
+      if self.manual_parking_brake:
+        # Manual parking brake: Direct resume without sequence
+        send_resume = in_standstill and in_standstill_hold
 
-      should_resume = pcm_standstill and not self.manual_hold and distance_resume_allowed
-      send_resume = self.update_epb_resume_sequence(should_resume)
+        if not send_resume:
+          self.last_standstill_frame = frame
+          self.manual_parking_brake_frames = frame
+
+        if frame - self.manual_parking_brake_frames > 5:
+          send_resume = False
+      else:
+        # Pre-Global with EPB: Resume sequence with stock ACC distance conditions
+        should_resume = in_standstill and distance_resume_allowed
+        send_resume = self.update_epb_resume_sequence(should_resume)
+    else:
+      if self.manual_parking_brake:
+        # Manual parking brake: Direct resume without sequence
+        send_resume = in_standstill and in_standstill_hold
+      else:
+        # Global with EPB: Resume sequence with stock ACC distance conditions
+        # Track manual hold state
+        if in_standstill and pcm_standstill and self.prev_cruise_state == 1:
+          self.manual_hold = True
+
+        should_resume = pcm_standstill and not self.manual_hold and distance_resume_allowed
+        send_resume = self.update_epb_resume_sequence(should_resume)
 
     self.prev_cruise_state = CS.cruise_state
     self.prev_close_distance = close_distance
