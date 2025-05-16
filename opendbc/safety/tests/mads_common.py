@@ -420,7 +420,7 @@ class MadsSafetyTestBase(unittest.TestCase):
   def test_steering_disengage_with_control_request(self):
     try:
       self._mads_states_cleanup()
-      self.safety.set_mads_params(True, False)
+      self.safety.set_mads_params(True, False, False)
 
       self.safety.set_controls_requested_lat(True)
       self._rx(self._speed_msg(0))
