@@ -71,7 +71,7 @@ typedef struct {
   BinaryStateTracking acc_main;
   BinaryStateTracking op_controls_allowed;
   BinaryStateTracking braking;
-  BinaryStateTracking steering_disengage;
+  BinaryStateTracking mads_steering_disengage;
 
   DisengageState current_disengage;
 
