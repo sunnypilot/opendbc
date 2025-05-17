@@ -148,8 +148,6 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         target_torque = int(np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque]))
         if not steer_up:
           target_torque = int(np.interp(abs(new_angle), [0., 180.], [target_torque, self.angle_min_torque,]))
-          angle_ramp_rate_multiplier = np.interp(abs(new_angle), [0., 180.], [1, 3])  # Ramp up/down faster when the angle is close to 180 degrees
-          angle_ramp_rate = int(angle_ramp_rate * angle_ramp_rate_multiplier)
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
