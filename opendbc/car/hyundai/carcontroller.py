@@ -71,6 +71,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.accel_last = 0
     self.apply_torque_last = 0
     self.apply_angle_last = 0
+    self.new_angle = 0
     self.lkas_max_torque = 0
     self.last_button_frame = 0
     self.angle_limit_counter = 0
@@ -131,8 +132,10 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       # Reset apply_angle_last if the driver is intervening
       if CS.out.steeringPressed:
         self.apply_angle_last = actuators.steeringAngleDeg # We go straight to the desired angle if the driver is intervening
-      self.apply_angle_last = apply_std_steer_angle_limits(new_angle, self.apply_angle_last, CS.out.vEgoRaw,
-                                                           CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
+
+      steer_up = self.apply_angle_last * new_angle >= 0. and abs(new_angle) > abs(self.apply_angle_last)
+      self.new_angle = apply_std_steer_angle_limits(new_angle, self.apply_angle_last, CS.out.vEgoRaw,
+                                                     CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
 
       if CS.out.steeringPressed:  # User is overriding
         target_torque = self.angle_min_torque
@@ -142,6 +145,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       else:
         active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_torque)  # 0.3 is the minimum torque when the user is not overriding
         target_torque = int(np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque]))
+        if not steer_up:
+          target_torque = int(np.interp(abs(new_angle), [180., 0.], [self.angle_min_torque, target_torque]))
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
@@ -151,6 +156,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
       # Safety clamp
       self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.angle_min_torque, self.angle_max_torque))
+      self.apply_angle_last = self.new_angle
 
     if not CC.latActive:
       apply_torque = 0
@@ -195,7 +201,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     new_actuators = actuators.as_builder()
     new_actuators.torque = apply_torque / self.params.STEER_MAX
     new_actuators.torqueOutputCan = apply_torque
-    new_actuators.steeringAngleDeg = self.apply_angle_last
+    new_actuators.steeringAngleDeg = self.new_angle
     new_actuators.accel = self.tuning.actual_accel
 
     self.frame += 1
