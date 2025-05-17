@@ -177,8 +177,8 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
       {0.3, 0.15, 0.15} //Shane's conservative values
     },
     .angle_rate_down_lookup = {
-      {5., 25., 25.}, //Shane's conservative values
-      {0.36, 0.26, 0.26} //Shane's conservative values
+      {11., 25., 25.},
+      {0.36, 0.26, 0.26}
     },
   };
 
