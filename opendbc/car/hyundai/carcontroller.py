@@ -123,6 +123,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     # angle control
     else:
       new_angle = np.clip(actuators.steeringAngleDeg, -1212., 1212.)
+      angle_ramp_rate = self.params.ANGLE_RAMP_RATE
 
       if abs(new_angle - self.apply_angle_last) > 0.1:  # If there's a significant difference between the new angle and the last applied angle, apply smoothing
         adjusted_alpha = np.interp(CS.out.vEgoRaw, self.params.SMOOTHING_ANGLE_VEGO_MATRIX, self.params.SMOOTHING_ANGLE_ALPHA_MATRIX) + self.smoothing_factor
@@ -146,13 +147,15 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_torque)  # 0.3 is the minimum torque when the user is not overriding
         target_torque = int(np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque]))
         if not steer_up:
-          target_torque = int(np.interp(abs(new_angle), [180., 0.], [self.angle_min_torque, target_torque]))
+          target_torque = int(np.interp(abs(new_angle), [0., 180.], [target_torque, self.angle_min_torque,]))
+          angle_ramp_rate_multiplier = np.interp(abs(new_angle), [0., 180.], [1, 3])  # Ramp up/down faster when the angle is close to 180 degrees
+          angle_ramp_rate = int(angle_ramp_rate * angle_ramp_rate_multiplier)
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
-          self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_DOWN_RATE, target_torque)
+          self.lkas_max_torque = max(self.lkas_max_torque - angle_ramp_rate, target_torque)
         else:
-          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
+          self.lkas_max_torque = min(self.lkas_max_torque + angle_ramp_rate, target_torque)
 
       # Safety clamp
       self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.angle_min_torque, self.angle_max_torque))
