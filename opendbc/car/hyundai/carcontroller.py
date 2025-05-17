@@ -148,9 +148,9 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
-          self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_RATE, target_torque)
+          self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_DOWN_RATE, target_torque)
         else:
-          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_RATE, target_torque)
+          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
 
       # Safety clamp
       self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.angle_min_torque, self.angle_max_torque))
