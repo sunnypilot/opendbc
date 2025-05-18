@@ -98,8 +98,18 @@ inline void m_update_control_state(void) {
     allowed = false;  // No matter what, no further control processing on this cycle
   }
 
+  if (m_mads_state.mads_steering_disengage.transition == MADS_EDGE_RISING) {
+    mads_exit_controls(MADS_DISENGAGE_REASON_STEERING_DISENGAGE);
+    allowed = false;  // No matter what, no further control processing on this cycle
+  }
+
+  if (m_mads_state.disengage_lateral_on_brake && (m_mads_state.braking.transition == MADS_EDGE_RISING)) {
+    mads_exit_controls(MADS_DISENGAGE_REASON_BRAKE);
+    allowed = false;
+  }
+
   // Secondary control conditions - only checked if primary conditions don't block further control processing
-  if (allowed && (m_mads_state.disengage_lateral_on_brake || m_mads_state.pause_lateral_on_brake)) {
+  if (allowed && m_mads_state.pause_lateral_on_brake) {
     // Brake rising edge immediately blocks controls
     // Brake release might request controls if brake was the ONLY reason for disengagement
     if (m_mads_state.braking.transition == MADS_EDGE_RISING) {
@@ -170,16 +180,18 @@ inline bool mads_is_lateral_control_allowed_by_mads(void) {
   return m_mads_state.system_enabled && m_mads_state.controls_allowed_lat;
 }
 
-inline void mads_state_update(const bool op_vehicle_moving, const bool op_acc_main, const bool op_allowed, const bool is_braking) {
+inline void mads_state_update(const bool op_vehicle_moving, const bool op_acc_main, const bool op_allowed, const bool is_braking, const bool _steering_disengage) {
   m_mads_state.is_vehicle_moving = op_vehicle_moving;
   m_mads_state.acc_main.current = op_acc_main;
   m_mads_state.op_controls_allowed.current = op_allowed;
   m_mads_state.mads_button.current = mads_button_press;
   m_mads_state.braking.current = is_braking;
+  m_mads_state.mads_steering_disengage.current = _steering_disengage;
 
   m_update_binary_state(&m_mads_state.acc_main);
   m_update_binary_state(&m_mads_state.op_controls_allowed);
   m_update_binary_state(&m_mads_state.braking);
+  m_update_binary_state(&m_mads_state.mads_steering_disengage);
   m_update_button_state(&m_mads_state.mads_button);
 
   m_update_control_state();

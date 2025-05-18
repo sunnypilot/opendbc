@@ -350,15 +350,15 @@ class MadsSafetyTestBase(unittest.TestCase):
     """Tests behavior when controls are requested while brake is engaged
 
     Sequence:
-    1. Enable MADS with disengage on brake
-    2. Brake to disengage lateral control
+    1. Enable MADS with pause lateral on brake
+    2. Brake to pause lateral control
     3. Set control request while braking
     4. Release brake
     5. Verify controls become allowed
     """
     try:
       self._mads_states_cleanup()
-      self.safety.set_mads_params(True, False, True)  # enable MADS with disengage on brake
+      self.safety.set_mads_params(True, False, True)  # enable MADS with pause lateral on brake
 
       # Initial state
       self.safety.set_controls_allowed_lat(True)
@@ -385,15 +385,15 @@ class MadsSafetyTestBase(unittest.TestCase):
     """Tests behavior when ACC main is turned off while brake is engaged
 
     Sequence:
-    1. Enable MADS with disengage on brake
-    2. Brake to disengage lateral control
+    1. Enable MADS with pause lateral on brake
+    2. Brake to pause lateral control
     3. Turn ACC main off while braking
     4. Release brake
     5. Verify controls remain disengaged
     """
     try:
       self._mads_states_cleanup()
-      self.safety.set_mads_params(True, False, True)  # enable MADS with disengage on brake
+      self.safety.set_mads_params(True, False, True)  # enable MADS with pause lateral on brake
 
       # Initial state - enable with ACC main
       self.safety.set_acc_main_on(True)
@@ -414,6 +414,42 @@ class MadsSafetyTestBase(unittest.TestCase):
       self._rx(self._speed_msg(0))
       self.assertFalse(self.safety.get_controls_allowed_lat())
 
+    finally:
+      self._mads_states_cleanup()
+
+  def test_steering_disengage_with_control_request(self):
+    try:
+      self._mads_states_cleanup()
+      self.safety.set_mads_params(True, False, False)
+
+      self.safety.set_controls_allowed_lat(True)
+      self._rx(self._speed_msg(0))
+      self.assertTrue(self.safety.get_controls_allowed_lat())
+
+      self.safety.set_steering_disengage(True)
+      self._rx(self._speed_msg(0))
+      self.assertFalse(self.safety.get_controls_allowed_lat())
+
+    finally:
+      self._mads_states_cleanup()
+
+  def test_disengage_on_brake(self):
+    try:
+      for disengage_on_brake in (True, False):
+        self._mads_states_cleanup()
+        self.safety.set_mads_params(True, disengage_on_brake, False)
+
+        self.safety.set_controls_allowed_lat(True)
+        self._rx(self._speed_msg(0))
+        self.assertTrue(self.safety.get_controls_allowed_lat())
+
+        self._rx(self._user_brake_msg(True))
+        self._rx(self._speed_msg(0))
+        self.assertEqual(not disengage_on_brake, self.safety.get_controls_allowed_lat())
+
+        self._rx(self._user_brake_msg(False))
+        self._rx(self._speed_msg(0))
+        self.assertEqual(not disengage_on_brake, self.safety.get_controls_allowed_lat())
     finally:
       self._mads_states_cleanup()
 
