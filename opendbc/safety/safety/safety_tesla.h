@@ -31,10 +31,6 @@ static void tesla_rx_hook(const CANPacket_t *to_push) {
 
       // Disengage on normal user override, or if high angle rate fault from user overriding extremely quickly
       steering_disengage = (hands_on_level >= 3) || ((eac_status == 0) && (eac_error_code == 9));
-
-      if (steering_disengage) {
-        mads_exit_controls(MADS_DISENGAGE_REASON_DRIVER_STEERING_OVERRIDE);
-      }
     }
 
     // Vehicle speed
