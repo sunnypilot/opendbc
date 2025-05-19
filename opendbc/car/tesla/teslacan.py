@@ -13,9 +13,7 @@ class TeslaCAN:
     ret += sum(dat)
     return ret & 0xFF
 
-  def create_steering_control(self, angle, enabled, counter, use_lka_mode):
-    control_type = 2 if use_lka_mode else 1
-
+  def create_steering_control(self, angle, enabled, counter, control_type):
     values = {
       "DAS_steeringAngleRequest": -angle,
       "DAS_steeringHapticRequest": 0,

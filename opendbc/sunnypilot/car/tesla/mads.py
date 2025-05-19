@@ -9,7 +9,7 @@ from collections import namedtuple
 from opendbc.car import structs
 
 MadsDataSP = namedtuple("MadsDataSP",
-                        ["use_lka_mode"])
+                        ["control_type"])
 
 
 class MadsCarController:
@@ -18,10 +18,11 @@ class MadsCarController:
     self.mads = MadsDataSP(False)
 
   @staticmethod
-  def mads_status_update(CC_SP: structs.CarControlSP) -> MadsDataSP:
-    use_lka_mode = CC_SP.mads.available
+  def mads_status_update(CC: structs.CarControl, CC_SP: structs.CarControlSP) -> MadsDataSP:
+    mads_steering_only = CC_SP.mads.available and not CC.enabled
+    control_type = 2 if mads_steering_only else 1
 
-    return MadsDataSP(use_lka_mode)
+    return MadsDataSP(control_type)
 
-  def update(self, CC_SP: structs.CarControlSP) -> None:
-    self.mads = self.mads_status_update(CC_SP)
+  def update(self, CC: structs.CarControl, CC_SP: structs.CarControlSP) -> None:
+    self.mads = self.mads_status_update(CC, CC_SP)

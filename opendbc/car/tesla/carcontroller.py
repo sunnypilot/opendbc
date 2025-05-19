@@ -16,7 +16,7 @@ class CarController(CarControllerBase, MadsCarController):
     self.tesla_can = TeslaCAN(self.packer)
 
   def update(self, CC, CC_SP, CS, now_nanos):
-    MadsCarController.update(self, CC_SP)
+    MadsCarController.update(self, CC, CC_SP)
     actuators = CC.actuators
     can_sends = []
 
@@ -31,7 +31,7 @@ class CarController(CarControllerBase, MadsCarController):
                                                            CS.out.steeringAngleDeg, lat_active, CarControllerParams.ANGLE_LIMITS)
 
       can_sends.append(self.tesla_can.create_steering_control(self.apply_angle_last, lat_active, (self.frame // 2) % 16,
-                                                              self.mads.use_lka_mode))
+                                                              self.mads.control_type))
 
     if self.frame % 10 == 0:
       can_sends.append(self.tesla_can.create_steering_allowed((self.frame // 10) % 16))
