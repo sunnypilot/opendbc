@@ -4,19 +4,16 @@ from opendbc.car import Bus, apply_std_steer_angle_limits
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.tesla.teslacan import TeslaCAN
 from opendbc.car.tesla.values import CarControllerParams
-from opendbc.sunnypilot.car.tesla.mads import MadsCarController
 
 
-class CarController(CarControllerBase, MadsCarController):
+class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP, CP_SP):
-    CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
-    MadsCarController.__init__(self)
+    super().__init__(dbc_names, CP, CP_SP)
     self.apply_angle_last = 0
     self.packer = CANPacker(dbc_names[Bus.party])
     self.tesla_can = TeslaCAN(self.packer)
 
   def update(self, CC, CC_SP, CS, now_nanos):
-    MadsCarController.update(self, CC_SP)
     actuators = CC.actuators
     can_sends = []
 
@@ -30,8 +27,7 @@ class CarController(CarControllerBase, MadsCarController):
       self.apply_angle_last = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo,
                                                            CS.out.steeringAngleDeg, lat_active, CarControllerParams.ANGLE_LIMITS)
 
-      can_sends.append(self.tesla_can.create_steering_control(self.apply_angle_last, lat_active, (self.frame // 2) % 16,
-                                                              self.mads.use_lka_mode))
+      can_sends.append(self.tesla_can.create_steering_control(self.apply_angle_last, lat_active, (self.frame // 2) % 16))
 
     if self.frame % 10 == 0:
       can_sends.append(self.tesla_can.create_steering_allowed((self.frame // 10) % 16))
