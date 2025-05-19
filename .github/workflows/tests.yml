@@ -17,9 +17,14 @@ jobs:
         include:
           - os: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
           - os: macos-latest
+          - os: macos-15
     steps:
     - uses: commaai/timeout@v1
     - uses: actions/checkout@v4
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/pre-commit/
+        key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}-${{ matrix.os }}
     - run: ./test.sh
 
   safety_tests:
@@ -47,10 +52,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: opendbc/safety/tests/misra/cppcheck/
-          key: cppcheck-cache-${{ runner.os }}-${{ github.ref }}
-          restore-keys: |
-            cppcheck-cache-${{ runner.os }}-${{ github.ref }}
-            cppcheck-cache-${{ runner.os }}-
+          key: cppcheck-cache-${{ runner.os }}-${{ hashFiles('opendbc/safety/tests/misra/install.sh') }}
       - name: Run MISRA C:2012 analysis
         timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 2 || 3) }}
         run: cd opendbc/safety/tests/misra && ./test_misra.sh
@@ -58,7 +60,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: opendbc/safety/tests/misra/cppcheck/
-          key: cppcheck-cache-${{ runner.os }}-${{ github.ref }}
+          key: cppcheck-cache-${{ runner.os }}-${{ hashFiles('opendbc/safety/tests/misra/install.sh') }}
 
   misra_mutation:
     name: MISRA C:2012 Mutation
@@ -72,10 +74,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: opendbc/safety/tests/misra/cppcheck/
-          key: cppcheck-cache-${{ runner.os }}-${{ github.ref }}
-          restore-keys: |
-            cppcheck-cache-${{ runner.os }}-${{ github.ref }}
-            cppcheck-cache-${{ runner.os }}-
+          key: cppcheck-cache-${{ runner.os }}-${{ hashFiles('opendbc/safety/tests/misra/install.sh') }}
       - name: MISRA mutation tests
         timeout-minutes: 5
         run: |
@@ -88,7 +87,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: opendbc/safety/tests/misra/cppcheck/
-          key: cppcheck-cache-${{ runner.os }}-${{ github.ref }}
+          key: cppcheck-cache-${{ runner.os }}-${{ hashFiles('opendbc/safety/tests/misra/install.sh') }}
 
   mutation:
     name: Safety mutation tests
