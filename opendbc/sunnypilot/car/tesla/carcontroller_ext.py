@@ -29,10 +29,10 @@ class CarControllerExt:
 
     limit = TORQUE_TO_ANGLE_CLIP
     if apply_angle * torsion_bar_torque >= 0:
-      # Manually steering in the same direction as OP
+      # user override in the same direction
       strength = TORQUE_TO_ANGLE_MULTIPLIER_OUTER
     else:
-      # User is opposing OP direction
+      # user override in the opposite direction
       strength = TORQUE_TO_ANGLE_MULTIPLIER_INNER
 
     torque = torsion_bar_torque - deadzone if torsion_bar_torque > 0 else torsion_bar_torque + deadzone
@@ -47,17 +47,12 @@ class CarControllerExt:
                              abs(CS.out.steeringAngleDeg - apply_angle) > CONTINUED_OVERRIDE_ANGLE and \
                              not CS.out.standstill
 
-    # If fully hands off for 1 second then reset override (in case of continued disagreement above)
     if CS.hands_on_level > 0:
       self.last_hands_nanos = now_nanos
-    elif now_nanos - self.last_hands_nanos > 1e9:
-      self.steering_override = False
 
-    if not lat_active:
-      self.steering_override = False
-
-    # Reset override when disengaged to ensure a fresh activation always engages steering.
-    if not lat_active:
+    # Reset steering override when lateral control is inactive, OR
+    # when hands have been off the wheel for more than 1 second
+    if not lat_active or (now_nanos - self.last_hands_nanos > 1e9):
       self.steering_override = False
 
     lat_active = lat_active and not self.steering_override
