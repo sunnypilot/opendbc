@@ -11,7 +11,7 @@ class CarInterface(CarInterfaceBase):
   CarController = CarController
 
   @staticmethod
-  def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, experimental_long, docs) -> structs.CarParams:
+  def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, alpha_long, docs) -> structs.CarParams:
     ret.brand = "subaru"
     ret.radarUnavailable = True
     # for HYBRID CARS to be upstreamed, we need:
@@ -86,15 +86,22 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unknown car: {candidate}")
 
-    ret.experimentalLongitudinalAvailable = not (ret.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.PREGLOBAL |
-                                                              SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID))
-    ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
+    ret.alphaLongitudinalAvailable = not (ret.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.PREGLOBAL |
+                                                       SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID))
+    ret.openpilotLongitudinalControl = alpha_long and ret.alphaLongitudinalAvailable
 
     if ret.flags & SubaruFlags.GLOBAL_GEN2 and ret.openpilotLongitudinalControl:
       ret.flags |= SubaruFlags.DISABLE_EYESIGHT.value
 
     if ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= SubaruSafetyFlags.LONG.value
+
+    return ret
+
+  @staticmethod
+  def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+    stock_cp.dashcamOnly = bool(stock_cp.flags & (SubaruFlags.LKAS_ANGLE | SubaruFlags.HYBRID))
 
     return ret
 
