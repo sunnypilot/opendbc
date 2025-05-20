@@ -6,6 +6,7 @@ from opendbc.car.interfaces import RadarInterfaceBase
 from opendbc.car.hyundai.values import DBC
 
 from opendbc.sunnypilot.car.hyundai.radar_interface_ext import RadarInterfaceExt
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 RADAR_START_ADDR = 0x500
 RADAR_MSG_COUNT = 32
@@ -31,8 +32,10 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.radar_off_can = CP.radarUnavailable
     self.rcp = get_radar_can_parser(CP)
 
-    if self.rcp is None:
-      self.initialize_radar_ext(self.trigger_msg)
+
+    if not (self.CP_SP.flags & (HyundaiFlagsSP.RADAR_FULL_RADAR | HyundaiFlagsSP.RADAR_LEAD_ONLY)):
+      if self.rcp is None:
+        self.initialize_radar_ext(self.trigger_msg)
 
   def update(self, can_strings):
     if self.radar_off_can or (self.rcp is None):
@@ -57,8 +60,9 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     if not self.rcp.can_valid:
       ret.errors.canError = True
 
-    if self.use_radar_interface_ext:
-      return self.update_ext(ret)
+    if not (self.CP_SP.flags & (HyundaiFlagsSP.RADAR_FULL_RADAR | HyundaiFlagsSP.RADAR_LEAD_ONLY)):
+      if self.use_radar_interface_ext:
+        return self.update_ext(ret)
 
     for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
       msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
