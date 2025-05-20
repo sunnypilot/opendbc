@@ -5,6 +5,7 @@ from opendbc.car import ACCELERATION_DUE_TO_GRAVITY, Bus, AngleSteeringLimits, D
 from opendbc.car.interfaces import CarControllerBase, ISO_LATERAL_ACCEL
 from opendbc.car.tesla.teslacan import TeslaCAN
 from opendbc.car.tesla.values import CarControllerParams
+from opendbc.sunnypilot.car.tesla.mads import MadsCarController
 from opendbc.car.vehicle_model import VehicleModel
 
 MAX_ANGLE_RATE = 10  # deg/20ms frame, EPS faults at 12 at a standstill
@@ -54,9 +55,10 @@ def get_safety_CP():
   return CarInterface.get_non_essential_params("TESLA_MODEL_Y")
 
 
-class CarController(CarControllerBase):
+class CarController(CarControllerBase, MadsCarController):
   def __init__(self, dbc_names, CP, CP_SP):
-    super().__init__(dbc_names, CP, CP_SP)
+    CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
+    MadsCarController.__init__(self)
     self.apply_angle_last = 0
     self.packer = CANPacker(dbc_names[Bus.party])
     self.tesla_can = TeslaCAN(self.packer)
@@ -65,6 +67,7 @@ class CarController(CarControllerBase):
     self.VM = VehicleModel(get_safety_CP())
 
   def update(self, CC, CC_SP, CS, now_nanos):
+    MadsCarController.update(self, CC, CC_SP)
     actuators = CC.actuators
     can_sends = []
 
@@ -79,7 +82,8 @@ class CarController(CarControllerBase):
                                                              CS.out.steeringAngleDeg, lat_active,
                                                              CarControllerParams.ANGLE_LIMITS, self.VM)
 
-      can_sends.append(self.tesla_can.create_steering_control(self.apply_angle_last, lat_active))
+      can_sends.append(self.tesla_can.create_steering_control(self.apply_angle_last, lat_active, (self.frame // 2) % 16,
+                                                              self.mads.control_type))
 
     if self.frame % 10 == 0:
       can_sends.append(self.tesla_can.create_steering_allowed())
