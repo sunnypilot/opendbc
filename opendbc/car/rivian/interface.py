@@ -22,11 +22,12 @@ class CarInterface(CarInterfaceBase):
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     ret.steerControlType = structs.CarParams.SteerControlType.torque
-    ret.radarUnavailable = True
+    ret.radarUnavailable = False
 
-    # TODO: pending finding/handling missing set speed and fixing up radar parser
-    ret.alphaLongitudinalAvailable = False
-    if alpha_long:
+    long_upgrade_installed = 0x31a in fingerprint[5]
+
+    ret.alphaLongitudinalAvailable = long_upgrade_installed
+    if alpha_long or long_upgrade_installed:
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs[0].safetyParam |= RivianSafetyFlags.LONG_CONTROL.value
 
