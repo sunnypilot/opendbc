@@ -6,7 +6,6 @@ See the LICENSE.md file in the root directory for more details.
 """
 import numpy as np
 
-from opendbc.car import structs
 from opendbc.car.interfaces import CarStateBase
 
 TORQUE_TO_ANGLE_MULTIPLIER_OUTER = 4  # Higher = easier to influence when manually steering more than OP
