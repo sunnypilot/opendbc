@@ -5,64 +5,35 @@ from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.tesla.teslacan import TeslaCAN
 from opendbc.car.tesla.values import CarControllerParams
 
+from opendbc.sunnypilot.car.tesla.carcontroller_ext import CarControllerExt
 from opendbc.sunnypilot.car.tesla.mads import MadsCarController
 
 
-def torque_blended_angle(apply_angle, torsion_bar_torque):
-  deadzone = CarControllerParams.TORQUE_TO_ANGLE_DEADZONE
-  if abs(torsion_bar_torque) < deadzone:
-    return apply_angle
-
-  limit = CarControllerParams.TORQUE_TO_ANGLE_CLIP
-  if apply_angle * torsion_bar_torque >= 0:
-    # Manually steering in the same direction as OP
-    strength = CarControllerParams.TORQUE_TO_ANGLE_MULTIPLIER_OUTER
-  else:
-    # User is opposing OP direction
-    strength = CarControllerParams.TORQUE_TO_ANGLE_MULTIPLIER_INNER
-
-  torque = torsion_bar_torque - deadzone if torsion_bar_torque > 0 else torsion_bar_torque + deadzone
-  return apply_angle + np.clip(torque, -limit, limit) * strength
-
-
-class CarController(CarControllerBase, MadsCarController):
+class CarController(CarControllerBase, MadsCarController, CarControllerExt):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     MadsCarController.__init__(self)
+    CarControllerExt.__init__(self)
     self.apply_angle_last = 0
     self.packer = CANPacker(dbc_names[Bus.party])
     self.tesla_can = TeslaCAN(self.packer)
-    self.last_hands_nanos = 0
 
   def update(self, CC, CC_SP, CS, now_nanos):
     MadsCarController.update(self, CC, CC_SP)
     actuators = CC.actuators
     can_sends = []
 
+    # Tesla EPS enforces disabling steering on heavy lateral override force.
+    # When enabling in a tight curve, we wait until user reduces steering force to start steering.
+    # Canceling is done on rising edge and is handled generically with CC.cruiseControl.cancel
+    lat_active = CC.latActive and CS.hands_on_level < 3
+
     if self.frame % 2 == 0:
-      # Detect a user override of the steering wheel when...
-      CS.steering_override = (CS.hands_on_level >= 3 or  # user is applying lots of force or...
-        (CS.steering_override and  # already overriding and...
-         abs(CS.out.steeringAngleDeg - actuators.steeringAngleDeg) > CarControllerParams.CONTINUED_OVERRIDE_ANGLE) and
-         not CS.out.standstill)  # continued angular disagreement while moving.
-
-      # If fully hands off for 1 second then reset override (in case of continued disagreement above)
-      if CS.hands_on_level > 0:
-        self.last_hands_nanos = now_nanos
-      elif now_nanos - self.last_hands_nanos > 1e9:
-        CS.steering_override = False
-
-      # Reset override when disengaged to ensure a fresh activation always engages steering.
-      if not CC.latActive:
-        CS.steering_override = False
-
-      # Temporarily disable LKAS if user is overriding or if OP lat isn't active
-      lat_active = CC.latActive and not CS.steering_override
-
-      apply_torque_blended_angle = torque_blended_angle(actuators.steeringAngleDeg, CS.out.steeringTorque)
+      # Virtual torque blending
+      lat_active, apply_angle = self.update_torque_blending(CS, lat_active, actuators.steeringAngleDeg, now_nanos)
 
       # Angular rate limit based on speed
-      self.apply_angle_last = apply_std_steer_angle_limits(apply_torque_blended_angle, self.apply_angle_last, CS.out.vEgo,
+      self.apply_angle_last = apply_std_steer_angle_limits(apply_angle, self.apply_angle_last, CS.out.vEgo,
                                                            CS.out.steeringAngleDeg, CC.latActive, CarControllerParams.ANGLE_LIMITS)
 
       can_sends.append(self.tesla_can.create_steering_control(self.apply_angle_last, lat_active, (self.frame // 2) % 16,

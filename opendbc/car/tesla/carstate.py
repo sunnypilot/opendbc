@@ -17,7 +17,6 @@ class CarState(CarStateBase):
 
     self.hands_on_level = 0
     self.das_control = None
-    self.steering_override = False
 
   def update(self, can_parsers) -> structs.CarState:
     cp_party = can_parsers[Bus.party]
@@ -45,8 +44,7 @@ class CarState(CarStateBase):
     ret.steeringTorque = -epas_status["EPAS3S_torsionBarTorque"]
 
     # This matches stock logic, but with halved minimum frames (0.25-0.3s)
-    ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > STEER_THRESHOLD, 15) or \
-                          self.steering_override
+    ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > STEER_THRESHOLD, 15)
 
     eac_status = self.can_define.dv["EPAS3S_sysStatus"]["EPAS3S_eacStatus"].get(int(epas_status["EPAS3S_eacStatus"]), None)
     ret.steerFaultPermanent = eac_status == "EAC_FAULT"
