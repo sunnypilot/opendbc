@@ -43,9 +43,10 @@ class CarControllerExt:
       return lat_active, apply_angle
 
     # Detect user override of the steering wheel
-    self.steering_override = CS.out.steeringPressed and \
-                             abs(CS.out.steeringAngleDeg - apply_angle) > CONTINUED_OVERRIDE_ANGLE and \
-                             not CS.out.standstill
+    self.steering_override = CS.hands_on_level >= 3 or \
+                             (self.steering_override and
+                              abs(CS.out.steeringAngleDeg - apply_angle) > CONTINUED_OVERRIDE_ANGLE and
+                              not CS.out.standstill)
 
     if CS.hands_on_level > 0:
       self.last_hands_nanos = now_nanos
