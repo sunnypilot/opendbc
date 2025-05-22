@@ -14,6 +14,7 @@ from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_trac
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
+from openpilot.common.params import Params
 
 ButtonType = structs.CarState.ButtonEvent.Type
 Ecu = structs.CarParams.Ecu
@@ -194,6 +195,6 @@ class CarInterface(CarInterfaceBase):
     if CP.flags & HyundaiFlags.ENABLE_BLINKERS:
       disable_ecu(can_recv, can_send, bus=CanBus(CP).ECAN, addr=0x7B1, com_cont_req=b'\x28\x83\x01')
 
-    if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
+    if Params().get_bool("HyundaiRadarTracksToggle"):
       enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
       CP.radarUnavailable = False
