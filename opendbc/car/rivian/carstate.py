@@ -1,4 +1,4 @@
-import copy
+import copy, math
 from opendbc.can.parser import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.interfaces import CarStateBase
