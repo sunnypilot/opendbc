@@ -124,7 +124,8 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
   }
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
-def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, latactive, leftBlinker, rightBlinker, msg_161, msg_162, is_metric, out, lfa_icon):
+def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, latactive, leftBlinker, rightBlinker, msg_161, msg_162, is_metric,
+                main_cruise_enabled, out, lfa_icon):
   for f in {"FAULT_LSS", "FAULT_HDA", "FAULT_DAS", "FAULT_LFA", "FAULT_DAW"}:
     msg_162[f] = 0
 
@@ -179,6 +180,13 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, latacti
     })
 
     msg_162["LEAD"] = 0
+
+  if not main_cruise_enabled:
+    msg_161.update({
+      "SETSPEED_HUD": 0,
+      "SETSPEED_SPEED": 255,
+      "DISTANCE_CAR": 0,
+    })
 
   return [packer.make_can_msg(msg, CAN.ECAN, data) for msg, data in [("CCNC_0x161", msg_161), ("CCNC_0x162", msg_162)]]
 
