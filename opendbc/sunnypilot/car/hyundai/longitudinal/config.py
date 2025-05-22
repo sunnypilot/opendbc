@@ -47,7 +47,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.35,
     v_ego_stopping=0.05,
     lookahead_jerk_bp=[2., 5., 20.],
-    lookahead_jerk_upper_v=[0.5, 0.5, 1.0],
+    lookahead_jerk_upper_v=[0.5, 0.75, 1.0],
     lookahead_jerk_lower_v=[0.05, 0.10, 0.5],
     jerk_limits=2.5,
   ),
