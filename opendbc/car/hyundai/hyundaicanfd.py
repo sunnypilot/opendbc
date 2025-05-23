@@ -183,12 +183,12 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
 
     msg_162["LEAD"] = 0
 
-  if not main_cruise_enabled:
-    msg_161.update({
-      "SETSPEED_HUD": 0,
-      "SETSPEED_SPEED": 255,
-      "DISTANCE_CAR": 0,
-    })
+    if not main_cruise_enabled:
+      msg_161.update({
+        "SETSPEED_HUD": 0,
+        "SETSPEED_SPEED": 255,
+        "DISTANCE_CAR": 0,
+      })
 
   return [packer.make_can_msg(msg, CAN.ECAN, data) for msg, data in [("CCNC_0x161", msg_161), ("CCNC_0x162", msg_162)]]
 
