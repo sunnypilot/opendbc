@@ -142,6 +142,7 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
     msg_161["SOUNDS_4"] = 0
 
   LANE_CHANGE_SPEED_MIN = 8.9408  # 20 * 0.44704
+  curvature = {i: (31 if i == -1 else 13 - abs(i + 15)) if i < 0 else 15 + i for i in range(-15, 16)}
 
   msg_161.update({
     "DAW_ICON": 0,
@@ -152,6 +153,7 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
                       2 if out.leftBlindspot or out.vEgo < LANE_CHANGE_SPEED_MIN else 6),
     "LANELINE_RIGHT": (1 if not hud.rightLaneVisible else 4 if hud.rightLaneDepart else 0 if not lfa_icon
                        else 2 if out.rightBlindspot or out.vEgo < LANE_CHANGE_SPEED_MIN else 6),
+    "LANELINE_CURVATURE": curvature.get(max(-15, min(int(out.steeringAngleDeg / 3), 15)), 14) if lfa_icon else 15,
     "LCA_LEFT_ARROW": 2 if leftBlinker else 0,
     "LCA_RIGHT_ARROW": 2 if rightBlinker else 0,
     "LANE_LEFT": 1 if leftBlinker else 0,
