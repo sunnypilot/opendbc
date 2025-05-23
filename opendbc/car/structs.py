@@ -95,5 +95,16 @@ class ModularAssistiveDrivingSystem:
 
 
 @auto_dataclass
+class MapSP:
+  entries: list['MapSP.Entry'] = field(default_factory=list)
+
+  @auto_dataclass
+  class Entry:
+    key: str = auto_field()
+    value: str = auto_field()
+
+
+@auto_dataclass
 class CarControlSP:
   mads: 'ModularAssistiveDrivingSystem' = field(default_factory=lambda: ModularAssistiveDrivingSystem())
+  params: 'MapSP' = field(default_factory=lambda: MapSP())

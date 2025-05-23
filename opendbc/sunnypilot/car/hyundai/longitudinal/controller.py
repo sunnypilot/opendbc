@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from opendbc.car import structs, DT_CTRL
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
+from opendbc.sunnypilot.car import get_param
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update, JERK_THRESHOLD
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
@@ -271,7 +272,7 @@ class LongitudinalController:
       stopping=self.stopping,
     )
 
-  def update(self, CC: structs.CarControl, CS: CarStateBase) -> None:
+  def update(self, CC: structs.CarControl, CC_SP: structs.CarControlSP, CS: CarStateBase) -> None:
     """Update longitudinal control calculations.
 
     This is the main entry point called externally.
@@ -292,3 +293,7 @@ class LongitudinalController:
     self.get_tuning_state()
 
     self.long_control_state_last = long_control_state
+
+    tuning_param = get_param(CC_SP.params, "HyundaiLongitudinalTuning")
+    print("========== LONG TUNE PARAM ==========")
+    print(f"tuning_param: {tuning_param}")
