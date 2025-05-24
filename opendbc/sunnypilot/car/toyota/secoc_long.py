@@ -1,7 +1,8 @@
-from opendbc.car import structs
 from opendbc.car.secoc import add_mac
 from opendbc.car.toyota.values import ToyotaFlags
+from opendbc.car import create_button_events, structs
 
+ButtonType = structs.CarState.ButtonEvent.Type
 
 class SecOCLong:
   def __init__(self, CP: structs.CarParams):
@@ -58,15 +59,36 @@ class SecOCLong:
     self.secoc_acc_message_counter += 1
     return acc_cmd_2
 
+class SecOCLongCarState:
+  def __init__(self, CP: structs.CarParams):
+    self.CP = CP
+    self.desired_distance = 0
+    self.distance_button = 0
+
+  def set_desired_distance(self, desired_distance):
+    self.desired_distance = desired_distance
+
+  def update(self, ret: structs.CarState, cp):
+    if self.CP.flags & ToyotaFlags.SECOC:
+      pcm_follow_distance = cp.vl["PCM_CRUISE_2"]["PCM_FOLLOW_DISTANCE"]
+
+      prev_distance_button = self.distance_button
+      if self.desired_distance != pcm_follow_distance:
+        self.distance_button = not self.distance_button
+      elif self.distance_button != 0:
+        self.distance_button = 0
+
+      ret.buttonEvents = create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
 class SecOCLongCarController:
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
     self.SECOC_LONG = SecOCLong(CP)
 
-  def update(self, CS, can_sends, prev_reset_timer):
+  def update(self, CS, CC, can_sends, prev_reset_timer):
     self.SECOC_LONG.update_car_state(CS)
     self.SECOC_LONG.set_can_sends(can_sends)
     if self.CP.flags & ToyotaFlags.SECOC:
+      CS.SECOC_LONG_CAR_STATE.set_desired_distance(4 - CC.hudControl.leadDistanceBars)
       if CS.secoc_synchronization['RESET_CNT'] != prev_reset_timer:
         self.SECOC_LONG.reset_counter()
