@@ -1,5 +1,11 @@
-def get_param(params: list, key: str) -> str:
-  for param in params:
-    if param.key == key:
-      return param.value
-  return "0"
+"""
+Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
+
+This file is part of sunnypilot and is licensed under the MIT License.
+See the LICENSE.md file in the root directory for more details.
+"""
+from opendbc.car import structs
+
+
+def get_param(params: list[structs.CarControlSP.Param], key: str) -> str:
+  return next((p.value for p in params if p.key == key), "0")
