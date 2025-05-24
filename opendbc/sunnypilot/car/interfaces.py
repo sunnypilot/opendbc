@@ -1,0 +1,48 @@
+"""
+Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
+
+This file is part of sunnypilot and is licensed under the MIT License.
+See the LICENSE.md file in the root directory for more details.
+"""
+from opendbc.car import structs
+from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+
+
+def setup_interfaces(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
+                     params_list: list[dict[str, str]]) -> None:
+
+  params_dict = {k: v for param in params_list for k, v in param.items()}
+
+  _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
+  _initialize_radar_tracks(CP, CP_SP, params_dict)
+
+
+def _initialize_custom_longitudinal_tuning(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
+                                           params_dict: dict[str, str]) -> None:
+
+  # Hyundai Custom Longitudinal Tuning
+  if CP.brand == 'hyundai':
+    hyundai_longitudinal_tuning = int(params_dict["HyundaiLongitudinalTuning"])
+    if hyundai_longitudinal_tuning == LongitudinalTuningType.DYNAMIC:
+      CP_SP.flags |= HyundaiFlagsSP.LONG_TUNING_DYNAMIC.value
+    if hyundai_longitudinal_tuning == LongitudinalTuningType.PREDICTIVE:
+      CP_SP.flags |= HyundaiFlagsSP.LONG_TUNING_PREDICTIVE.value
+
+  CP_SP = CI.get_longitudinal_tuning_sp(CP, CP_SP)
+
+
+def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
+  if CP.brand == 'hyundai':
+    hyundai_radar_track = bool(int(params_dict["HyundaiRadarTracks"]))
+    hyundai_radar_tracks_toggle = bool(int(params_dict["HyundaiRadarTracksToggle"]))
+
+    if CP.flags & HyundaiFlags.MANDO_RADAR and CP.radarUnavailable:
+      # Having this automatic without a toggle causes a weird process replay diff because
+      # somehow it sees fewer logs than intended
+      if hyundai_radar_tracks_toggle:
+        CP_SP.flags |= HyundaiFlagsSP.ENABLE_RADAR_TRACKS.value
+        if hyundai_radar_track:
+          CP.radarUnavailable = False

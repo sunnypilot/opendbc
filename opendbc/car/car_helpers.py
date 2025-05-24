@@ -4,12 +4,14 @@ import time
 from opendbc.car import gen_empty_fingerprint
 from opendbc.car.can_definitions import CanRecvCallable, CanSendCallable
 from opendbc.car.carlog import carlog
-from opendbc.car.structs import CarParams, CarParamsT
+from opendbc.car.structs import CarParams, CarParamsT, CarParamsSP
 from opendbc.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from opendbc.car.fw_versions import ObdCallback, get_fw_versions_ordered, get_present_ecus, match_fw_to_car
 from opendbc.car.mock.values import CAR as MOCK
 from opendbc.car.values import BRANDS
 from opendbc.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
+
+from opendbc.sunnypilot.car import interfaces as sunnypilot_interfaces
 
 FRAME_FINGERPRINT = 100  # 1s
 
@@ -150,7 +152,8 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
 
 
 def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, alpha_long_allowed: bool,
-            num_pandas: int = 1, cached_params: CarParamsT | None = None, fixed_fingerprint: str | None = None):
+            num_pandas: int = 1, cached_params: CarParamsT | None = None,
+            fixed_fingerprint: str | None = None, init_params_list_sp: list[dict[str, str]] = None):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(can_recv, can_send, set_obd_multiplexing, num_pandas, cached_params,
                                                                           fixed_fingerprint)
 
@@ -165,6 +168,8 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
   CP_SP = CarInterface.get_params_sp(CP, candidate, fingerprints, car_fw, alpha_long_allowed, docs=False)
+
+  sunnypilot_interfaces.setup_interfaces(CarInterface, CP, CP_SP, init_params_list_sp)
 
   return interfaces[CP.carFingerprint](CP, CP_SP)
 
