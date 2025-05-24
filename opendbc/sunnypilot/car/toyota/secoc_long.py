@@ -75,8 +75,6 @@ class SecOCLongCarState:
       prev_distance_button = self.distance_button
       if self.desired_distance != pcm_follow_distance:
         self.distance_button = not self.distance_button
-      elif self.distance_button != 0:
-        self.distance_button = 0
 
       ret.buttonEvents = create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
