@@ -66,6 +66,7 @@ class CarParamsSP:
 
   neuralNetworkLateralControl: 'CarParamsSP.NeuralNetworkLateralControl' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl())
   customAccControl: 'CarParamsSP.CustomAccControl' = field(default_factory=lambda: CarParamsSP.CustomAccControl())
+
   @auto_dataclass
   class NeuralNetworkLateralControl:
     model: 'CarParamsSP.NeuralNetworkLateralControl.Model' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl.Model())
@@ -112,6 +113,12 @@ class ModularAssistiveDrivingSystem:
 @auto_dataclass
 class CarControlSP:
   mads: 'ModularAssistiveDrivingSystem' = field(default_factory=lambda: ModularAssistiveDrivingSystem())
+  params: list['CarControlSP.Param'] = auto_field()
   leadDistance: float = auto_field()
   leadRelSpeed: float = auto_field()
   leadVisible: bool = auto_field()
+
+  @auto_dataclass
+  class Param:
+    key: str = auto_field()
+    value: str = auto_field()
