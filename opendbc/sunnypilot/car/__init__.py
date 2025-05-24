@@ -7,5 +7,5 @@ See the LICENSE.md file in the root directory for more details.
 from opendbc.car import structs
 
 
-def get_param(params: list[structs.CarControlSP.Param], key: str) -> str:
-  return next((p.value for p in params if p.key == key), "0")
+def get_param(params: list[structs.CarControlSP.Param], key: str, default_key: str = "0") -> str:
+  return next((p.value for p in params if p.key == key), default_key)
