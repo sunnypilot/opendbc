@@ -293,7 +293,3 @@ class LongitudinalController:
     self.get_tuning_state()
 
     self.long_control_state_last = long_control_state
-
-    tuning_param = int(get_param(CC_SP.params, "HyundaiLongitudinalTuning"))
-    print("========== LONG TUNE PARAM ==========")
-    print(f"tuning_param: {tuning_param}")
