@@ -6,6 +6,7 @@ See the LICENSE.md file in the root directory for more details.
 """
 import numpy as np
 
+from opendbc.car import structs
 from opendbc.car.interfaces import CarStateBase
 
 TORQUE_TO_ANGLE_MULTIPLIER_OUTER = 4  # Higher = easier to influence when manually steering more than OP
@@ -15,10 +16,9 @@ TORQUE_TO_ANGLE_CLIP = 10.  # Steering (usually) disengages at 2.5 Nm, this limi
 CONTINUED_OVERRIDE_ANGLE = 10.  # The angle difference between OP and user to continue overriding steering (prevents oscillation)
 
 
-class CarControllerExt:
+class TorqueBlendingCarController:
   def __init__(self):
     self.enabled = True  # TODO-SP: always on for now, couple with toggle
-    self.steering_override = False
     self.last_hands_nanos = 0
 
   @staticmethod
@@ -38,13 +38,14 @@ class CarControllerExt:
     torque = torsion_bar_torque - deadzone if torsion_bar_torque > 0 else torsion_bar_torque + deadzone
     return apply_angle + np.clip(torque, -limit, limit) * strength
 
-  def update_torque_blending(self, CS: CarStateBase, lat_active: bool, apply_angle: float, now_nanos: int) -> tuple[bool, float]:
+  def update_torque_blending(self, CS: CarStateBase, CC: structs.CarControl, lat_active: bool, apply_angle: float,
+                             now_nanos: int) -> tuple[bool, float]:
     if not self.enabled:
       return lat_active, apply_angle
 
     # Detect user override of the steering wheel
-    self.steering_override = CS.hands_on_level >= 3 or \
-                             (self.steering_override and
+    CS.steering_override = CS.hands_on_level >= 3 or \
+                             (CS.steering_override and
                               abs(CS.out.steeringAngleDeg - apply_angle) > CONTINUED_OVERRIDE_ANGLE and
                               not CS.out.standstill)
 
@@ -53,11 +54,25 @@ class CarControllerExt:
 
     # Reset steering override when lateral control is inactive, OR
     # when hands have been off the wheel for more than 1 second
-    if not lat_active or (now_nanos - self.last_hands_nanos > 1e9):
-      self.steering_override = False
+    if not CC.latActive or (now_nanos - self.last_hands_nanos > 1e9):
+      CS.steering_override = False
 
-    lat_active = lat_active and not self.steering_override
+    lat_active = CC.latActive and not CS.steering_override
 
     apply_angle = self.torque_blended_angle(apply_angle, CS.out.steeringTorque)
 
     return lat_active, apply_angle
+
+
+class TorqueBlendingCarState:
+  def __init__(self):
+    self.enabled = True  # TODO-SP: always on for now, couple with toggle
+    self.steering_override = False
+
+  def update_torque_blending(self, ret: structs.CarState, eac_status: bool, eac_error_code: bool) -> None:
+    if not self.enabled:
+      return
+
+    ret.steeringPressed = ret.steeringPressed or self.steering_override
+
+    ret.steeringDisengage = (eac_status == "EAC_INHIBITED" and eac_error_code == "EAC_ERROR_HIGH_ANGLE_RATE_SAFETY")

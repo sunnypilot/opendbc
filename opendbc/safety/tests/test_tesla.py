@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from parameterized import parameterized_class
 import unittest
 
 from opendbc.car.tesla.values import TeslaSafetyFlags
@@ -7,10 +8,17 @@ from opendbc.can.can_define import CANDefine
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.common import CANPackerPanda
+from opendbc.sunnypilot.car.tesla.values import TeslaSafetyFlagsSP
 
 MSG_DAS_steeringControl = 0x488
 MSG_APS_eacMonitor = 0x27d
 MSG_DAS_Control = 0x2b9
+
+
+VIRTUAL_TORQUE_BLENDING_SAFETY_PARAM_SP = [
+  {"SAFETY_PARAM_SP": TeslaSafetyFlagsSP.DEFAULT},
+  {"SAFETY_PARAM_SP": TeslaSafetyFlagsSP.VIRTUAL_TORQUE_BLENDING},
+]
 
 
 class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyTest, common.LongitudinalAccelSafetyTest):
@@ -37,6 +45,8 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
   cnt_epas = 0
 
   packer: CANPackerPanda
+
+  SAFETY_PARAM_SP: int = 0
 
   def setUp(self):
     self.packer = CANPackerPanda("tesla_model3_party")
@@ -105,21 +115,27 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
   def test_steering_wheel_disengage(self):
     # Tesla disengages when the user forcibly overrides the locked-in angle steering control
     # Either when the hands on level is high, or if there is a high angle rate fault
-    for hands_on_level in range(4):
+    for hands_on_level in range(5):
       for eac_status in range(8):
         for eac_error_code in range(16):
-          self.safety.set_controls_allowed(True)
+          for virtual_torque_blending_enabled in (True, False):
+            self.safety.set_controls_allowed(True)
 
-          should_disengage = hands_on_level >= 3 or (eac_status == 0 and eac_error_code == 9)
-          self.assertTrue(self._rx(self._angle_meas_msg(0, hands_on_level=hands_on_level, eac_status=eac_status,
-                                                        eac_error_code=eac_error_code)))
-          self.assertNotEqual(should_disengage, self.safety.get_controls_allowed())
-          self.assertEqual(should_disengage, self.safety.get_steering_disengage_prev())
+            virtual_torque_blending = TeslaSafetyFlagsSP.VIRTUAL_TORQUE_BLENDING if virtual_torque_blending_enabled else 0
+            hands_on_level_check = False if virtual_torque_blending_enabled else (hands_on_level >= 3)
+            hands_on_level = 0 if virtual_torque_blending_enabled else hands_on_level
+            self.safety.set_current_safety_param_sp(virtual_torque_blending)
 
-          # Should not recover
-          self.assertTrue(self._rx(self._angle_meas_msg(0, hands_on_level=0, eac_status=1, eac_error_code=0)))
-          self.assertNotEqual(should_disengage, self.safety.get_controls_allowed())
-          self.assertFalse(self.safety.get_steering_disengage_prev())
+            should_disengage = hands_on_level_check or (eac_status == 0 and eac_error_code == 9)
+            self.assertTrue(self._rx(self._angle_meas_msg(0, hands_on_level=hands_on_level, eac_status=eac_status,
+                                                          eac_error_code=eac_error_code)))
+            self.assertNotEqual(should_disengage, self.safety.get_controls_allowed())
+            self.assertEqual(should_disengage, self.safety.get_steering_disengage_prev())
+
+            # Should not recover
+            self.assertTrue(self._rx(self._angle_meas_msg(0, hands_on_level=0, eac_status=1, eac_error_code=0)))
+            self.assertNotEqual(should_disengage, self.safety.get_controls_allowed())
+            self.assertFalse(self.safety.get_steering_disengage_prev())
 
   def test_autopark_summon_while_enabled(self):
     # We should not respect Autopark that activates while controls are allowed
@@ -189,6 +205,7 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
       self.assertEqual(enable_mads, self._tx(no_lkas_msg))
 
 
+@parameterized_class(VIRTUAL_TORQUE_BLENDING_SAFETY_PARAM_SP)
 class TestTeslaStockSafety(TestTeslaSafetyBase):
 
   LONGITUDINAL = False
@@ -196,6 +213,7 @@ class TestTeslaStockSafety(TestTeslaSafetyBase):
   def setUp(self):
     super().setUp()
     self.safety = libsafety_py.libsafety
+    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.tesla, 0)
     self.safety.init_tests()
 
@@ -230,6 +248,7 @@ class TestTeslaStockSafety(TestTeslaSafetyBase):
     self.assertFalse(self._tx(no_aeb_msg))
 
 
+@parameterized_class(VIRTUAL_TORQUE_BLENDING_SAFETY_PARAM_SP)
 class TestTeslaLongitudinalSafety(TestTeslaSafetyBase):
   RELAY_MALFUNCTION_ADDRS = {0: (MSG_DAS_steeringControl, MSG_APS_eacMonitor, MSG_DAS_Control)}
   FWD_BLACKLISTED_ADDRS = {2: [MSG_DAS_steeringControl, MSG_APS_eacMonitor, MSG_DAS_Control]}
@@ -237,6 +256,7 @@ class TestTeslaLongitudinalSafety(TestTeslaSafetyBase):
   def setUp(self):
     super().setUp()
     self.safety = libsafety_py.libsafety
+    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.tesla, TeslaSafetyFlags.LONG_CONTROL)
     self.safety.init_tests()
 

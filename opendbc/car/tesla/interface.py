@@ -3,6 +3,7 @@ from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.tesla.carcontroller import CarController
 from opendbc.car.tesla.carstate import CarState
 from opendbc.car.tesla.values import TeslaSafetyFlags
+from opendbc.sunnypilot.car.tesla.values import TeslaFlagsSP, TeslaSafetyFlagsSP
 
 
 class CarInterface(CarInterfaceBase):
@@ -38,5 +39,10 @@ class CarInterface(CarInterfaceBase):
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
 
     stock_cp.enableBsm = True
+
+    ret.flags |= TeslaFlagsSP.VIRTUAL_TORQUE_BLENDING.value
+
+    if ret.flags & TeslaFlagsSP.VIRTUAL_TORQUE_BLENDING:
+      ret.safetyParam |= TeslaSafetyFlagsSP.VIRTUAL_TORQUE_BLENDING
 
     return ret
