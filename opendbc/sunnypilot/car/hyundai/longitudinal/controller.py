@@ -170,9 +170,8 @@ class LongitudinalController:
 
     # If custom tuning is disabled, use upstream fixed values
     if not self.enabled:
-      jerk_limit = 5.0 if long_control_state == LongCtrlState.pid else 1.0
       self.jerk_upper = 3.0
-      self.jerk_lower = jerk_limit
+      self.jerk_lower = 5.0 if long_control_state == LongCtrlState.pid else 1.0
       return
 
     velocity = CS.out.vEgo
