@@ -22,6 +22,7 @@ WRITE_DATA_RESPONSE = bytes([uds.SERVICE_TYPE.WRITE_DATA_BY_IDENTIFIER + 0x40])
 CONFIG_DATA_ID = bytes([0x01, 0x42])
 DEFAULT_CONFIG = bytes([0x00, 0x00, 0x00, 0x01, 0x00, 0x00])
 TRACKS_ENABLED_CONFIG = bytes([0x00, 0x00, 0x00, 0x01, 0x00, 0x01])
+TRACKS_ENABLED_CONFIG_BYTES = b"\x00\x00\x01\x00\x01"
 
 
 def enable_radar_tracks(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, retry=2):
@@ -42,7 +43,7 @@ def enable_radar_tracks(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, retry=2
 
           carlog.error(f"radar_tracks: current config: {current_config.hex()}")
 
-          if current_config == b"\x00\x00\x01\x00\x01":
+          if current_config == TRACKS_ENABLED_CONFIG_BYTES:
             carlog.error("radar_tracks: already enabled, skipping ...")
           else:
             carlog.error("radar_tracks: reconfigure radar to output radar points ...")
