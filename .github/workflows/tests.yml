@@ -19,6 +19,8 @@ jobs:
           - os: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
     - uses: commaai/timeout@v1
+      with: 
+        timeout: '240'
     - uses: actions/checkout@v4
     - name: Restore cached cppcheck
       uses: actions/cache@v4
@@ -41,6 +43,8 @@ jobs:
         flags: ['--ubsan']
     steps:
     - uses: commaai/timeout@v1
+      with: 
+          timeout: '240'
     - uses: actions/checkout@v4
     - name: Run safety tests
       run: ./opendbc/safety/tests/test.sh ${{ matrix.flags }}

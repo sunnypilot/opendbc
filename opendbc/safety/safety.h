@@ -1,6 +1,6 @@
 #pragma once
 
-#include "opendbc/sunnypilot/safety_mads.h"
+#include "opendbc/safety/sunnypilot/safety_mads.h"
 
 #include "opendbc/safety/safety_declarations.h"
 #include "opendbc/safety/board/can.h"
