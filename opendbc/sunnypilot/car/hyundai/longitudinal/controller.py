@@ -100,12 +100,12 @@ class LongitudinalController:
 
     # Upper jerk limit varies based on speed and control state
     if long_control_state == LongCtrlState.pid:
-      upper_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 2.0, 1.6]))
+      upper_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 1.6, 1.6]))
     else:
       upper_limit = 0.5  # Default for non-PID states
 
     # Lower jerk limit varies based on speed
-    lower_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [3.0, 3.0, 2.5]))
+    lower_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 3.0, 2.5]))
 
     return upper_limit, lower_limit
 
