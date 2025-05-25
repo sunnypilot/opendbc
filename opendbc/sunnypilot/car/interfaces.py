@@ -14,19 +14,16 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 
 def setup_interfaces(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
-                     can_recv: CanSendCallable, can_send: CanRecvCallable,
-                     params_list: list[dict[str, str]]) -> tuple[structs.CarParams, structs.CarParamsSP]:
+                     can_recv: CanSendCallable, can_send: CanRecvCallable, params_list: list[dict[str, str]]) -> None:
 
   params_dict = {k: v for param in params_list for k, v in param.items()}
 
-  CP, CP_SP = _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
-  CP, CP_SP = _initialize_radar_tracks(CP, CP_SP, can_recv, can_send, params_dict)
-
-  return CP, CP_SP
+  _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
+  _initialize_radar_tracks(CP, CP_SP, can_recv, can_send, params_dict)
 
 
 def _initialize_custom_longitudinal_tuning(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
-                                           params_dict: dict[str, str]) -> tuple[structs.CarParams, structs.CarParamsSP]:
+                                           params_dict: dict[str, str]) -> None:
 
   # Hyundai Custom Longitudinal Tuning
   if CP.brand == 'hyundai':
@@ -38,11 +35,9 @@ def _initialize_custom_longitudinal_tuning(CI: CarInterfaceBase, CP: structs.Car
 
   CP_SP = CI.get_longitudinal_tuning_sp(CP, CP_SP)
 
-  return CP, CP_SP
-
 
 def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanSendCallable, can_send: CanRecvCallable,
-                             params_dict: dict[str, str]) -> tuple[structs.CarParams, structs.CarParamsSP]:
+                             params_dict: dict[str, str]) -> None:
   if CP.brand == 'hyundai':
     hyundai_radar_track = bool(int(params_dict["HyundaiRadarTracks"]))
     hyundai_radar_tracks_toggle = bool(int(params_dict["HyundaiRadarTracksToggle"]))
@@ -57,5 +52,3 @@ def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, 
 
     if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
       hyundai_enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
-
-  return CP, CP_SP
