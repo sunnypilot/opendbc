@@ -11,7 +11,7 @@ from opendbc.car.mock.values import CAR as MOCK
 from opendbc.car.values import BRANDS
 from opendbc.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 
-from opendbc.sunnypilot.car import interfaces as sunnypilot_interfaces
+from opendbc.sunnypilot.car.interfaces import setup_interfaces as sunnypilot_interfaces
 
 FRAME_FINGERPRINT = 100  # 1s
 
@@ -152,8 +152,7 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
 
 
 def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, alpha_long_allowed: bool,
-            num_pandas: int = 1, cached_params: CarParamsT | None = None,
-            fixed_fingerprint: str | None = None, init_params_list_sp: list[dict[str, str]] = None):
+            num_pandas: int = 1, cached_params: CarParamsT | None = None, fixed_fingerprint: str | None = None):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(can_recv, can_send, set_obd_multiplexing, num_pandas, cached_params,
                                                                           fixed_fingerprint)
 
@@ -169,7 +168,7 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
   CP.fuzzyFingerprint = not exact_match
   CP_SP = CarInterface.get_params_sp(CP, candidate, fingerprints, car_fw, alpha_long_allowed, docs=False)
 
-  sunnypilot_interfaces.setup_interfaces(CarInterface, CP, CP_SP, can_recv, can_send, init_params_list_sp)
+  sunnypilot_interfaces(CP, can_recv, can_send)
 
   return interfaces[CP.carFingerprint](CP, CP_SP)
 
