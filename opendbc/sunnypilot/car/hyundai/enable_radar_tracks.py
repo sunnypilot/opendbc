@@ -42,7 +42,7 @@ def enable_radar_tracks(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, retry=2
 
           carlog.error(f"radar_tracks: current config: {current_config.hex()}")
 
-          if current_config == b"\x00\x00\x01\x00\x00":
+          if current_config == b"\x00\x00\x01\x00\x01":
             carlog.error("radar_tracks: already enabled, skipping ...")
           else:
             carlog.error("radar_tracks: reconfigure radar to output radar points ...")
