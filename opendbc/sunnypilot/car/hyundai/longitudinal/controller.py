@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from opendbc.car import structs, DT_CTRL
 from opendbc.car.interfaces import CarStateBase
-from opendbc.car.hyundai.values import CarControllerParams
+from opendbc.car.hyundai.values import CarControllerParams, HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update, JERK_THRESHOLD
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
@@ -170,8 +170,12 @@ class LongitudinalController:
 
     # If custom tuning is disabled, use upstream fixed values
     if not self.enabled:
-      self.jerk_upper = 3.0
-      self.jerk_lower = 5.0 if long_control_state == LongCtrlState.pid else 1.0
+      if self.CP.flags & HyundaiFlags.CANFD:
+        self.jerk_upper = 3.0
+        self.jerk_lower = 5.0 if long_control_state == LongCtrlState.pid else 1.0
+      else:
+        self.jerk_upper = 3.0 if long_control_state == LongCtrlState.pid else 1.0
+        self.jerk_lower = 5.0
       return
 
     velocity = CS.out.vEgo
