@@ -5,19 +5,22 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 from opendbc.car import structs
+from opendbc.car.can_definitions import CanRecvCallable, CanSendCallable
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks as hyundai_enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 
 def setup_interfaces(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
+                     can_recv: CanSendCallable, can_send: CanRecvCallable,
                      params_list: list[dict[str, str]]) -> tuple[structs.CarParams, structs.CarParamsSP]:
 
   params_dict = {k: v for param in params_list for k, v in param.items()}
 
   CP, CP_SP = _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
-  CP, CP_SP = _initialize_radar_tracks(CP, CP_SP, params_dict)
+  CP, CP_SP = _initialize_radar_tracks(CP, CP_SP, can_recv, can_send, params_dict)
 
   return CP, CP_SP
 
@@ -38,7 +41,7 @@ def _initialize_custom_longitudinal_tuning(CI: CarInterfaceBase, CP: structs.Car
   return CP, CP_SP
 
 
-def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
+def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanSendCallable, can_send: CanRecvCallable,
                              params_dict: dict[str, str]) -> tuple[structs.CarParams, structs.CarParamsSP]:
   if CP.brand == 'hyundai':
     hyundai_radar_track = bool(int(params_dict["HyundaiRadarTracks"]))
@@ -51,5 +54,8 @@ def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
         CP_SP.flags |= HyundaiFlagsSP.ENABLE_RADAR_TRACKS.value
         if hyundai_radar_track:
           CP.radarUnavailable = False
+
+    if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
+      hyundai_enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
 
   return CP, CP_SP

@@ -193,6 +193,3 @@ class CarInterface(CarInterfaceBase):
     # for blinkers
     if CP.flags & HyundaiFlags.ENABLE_BLINKERS:
       disable_ecu(can_recv, can_send, bus=CanBus(CP).ECAN, addr=0x7B1, com_cont_req=b'\x28\x83\x01')
-
-    if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
-      enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
