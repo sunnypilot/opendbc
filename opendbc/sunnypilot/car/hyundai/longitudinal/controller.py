@@ -172,7 +172,7 @@ class LongitudinalController:
     if not self.enabled:
       if self.CP.flags & HyundaiFlags.CANFD:
         self.jerk_upper = 3.0
-        self.jerk_lower = 5.0 if long_control_state == LongCtrlState.pid else 1.0
+        self.jerk_lower = 5.0 if CC.enabled else 1.0
       else:
         self.jerk_upper = 3.0 if long_control_state == LongCtrlState.pid else 1.0
         self.jerk_lower = 5.0
