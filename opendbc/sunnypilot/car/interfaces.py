@@ -14,7 +14,7 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 
 def setup_interfaces(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
-                     can_recv: CanSendCallable, can_send: CanRecvCallable, params_list: list[dict[str, str]]) -> None:
+                     can_recv: CanRecvCallable, can_send: CanSendCallable, params_list: list[dict[str, str]]) -> None:
 
   params_dict = {k: v for param in params_list for k, v in param.items()}
 
@@ -36,7 +36,7 @@ def _initialize_custom_longitudinal_tuning(CI: CarInterfaceBase, CP: structs.Car
   CP_SP = CI.get_longitudinal_tuning_sp(CP, CP_SP)
 
 
-def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanSendCallable, can_send: CanRecvCallable,
+def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanRecvCallable, can_send: CanSendCallable,
                              params_dict: dict[str, str]) -> None:
   if CP.brand == 'hyundai':
     hyundai_radar_track = bool(int(params_dict["HyundaiRadarTracks"]))
