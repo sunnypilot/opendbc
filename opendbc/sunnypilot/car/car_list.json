@@ -2479,6 +2479,33 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
+  "Ram 2500 2020-24": {
+    "platform": "RAM_HD_5TH_GEN",
+    "make": "Ram",
+    "brand": "chrysler",
+    "model": "2500",
+    "year": [
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+      "2024"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Ram 3500 2019-22": {
+    "platform": "RAM_HD_5TH_GEN",
+    "make": "Ram",
+    "brand": "chrysler",
+    "model": "3500",
+    "year": [
+      "2019",
+      "2020",
+      "2021",
+      "2022"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
   "Rivian R1S 2022-24": {
     "platform": "RIVIAN_R1_GEN1",
     "make": "Rivian",
@@ -2572,6 +2599,17 @@
     ],
     "package": "EyeSight Driver Assistance"
   },
+  "Subaru Forester 2017-18": {
+    "platform": "SUBARU_FORESTER_PREGLOBAL",
+    "make": "Subaru",
+    "brand": "subaru",
+    "model": "Forester",
+    "year": [
+      "2017",
+      "2018"
+    ],
+    "package": "EyeSight Driver Assistance"
+  },
   "Subaru Forester 2019-21": {
     "platform": "SUBARU_FORESTER",
     "make": "Subaru",
@@ -2608,6 +2646,19 @@
     ],
     "package": "EyeSight Driver Assistance"
   },
+  "Subaru Legacy 2015-18": {
+    "platform": "SUBARU_LEGACY_PREGLOBAL",
+    "make": "Subaru",
+    "brand": "subaru",
+    "model": "Legacy",
+    "year": [
+      "2015",
+      "2016",
+      "2017",
+      "2018"
+    ],
+    "package": "EyeSight Driver Assistance"
+  },
   "Subaru Legacy 2020-22": {
     "platform": "SUBARU_LEGACY",
     "make": "Subaru",
@@ -2619,6 +2670,29 @@
       "2022"
     ],
     "package": "All"
+  },
+  "Subaru Outback 2015-17": {
+    "platform": "SUBARU_OUTBACK_PREGLOBAL",
+    "make": "Subaru",
+    "brand": "subaru",
+    "model": "Outback",
+    "year": [
+      "2015",
+      "2016",
+      "2017"
+    ],
+    "package": "EyeSight Driver Assistance"
+  },
+  "Subaru Outback 2018-19": {
+    "platform": "SUBARU_OUTBACK_PREGLOBAL_2018",
+    "make": "Subaru",
+    "brand": "subaru",
+    "model": "Outback",
+    "year": [
+      "2018",
+      "2019"
+    ],
+    "package": "EyeSight Driver Assistance"
   },
   "Subaru Outback 2020-22": {
     "platform": "SUBARU_OUTBACK",
