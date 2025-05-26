@@ -1,18 +1,6 @@
 import numpy as np
-from opendbc.car.carlog import carlog
-
-try:
-  # TODO-SP: We shouldn't really import params from here, but it's the easiest way to get the params for
-  #  live tuning temporarily while we understand the angle steering better
-  from openpilot.common.params import Params
-  PARAMS_AVAILABLE = True
-except ImportError:
-  carlog.warning("Unable to import Params from openpilot.common.params.")
-  PARAMS_AVAILABLE = False
-
 from opendbc.can.packer import CANPacker
-from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
-                        make_tester_present_msg, structs
+from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, common_fault_avoidance, make_tester_present_msg, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
 from opendbc.car.hyundai.hyundaicanfd import CanBus
@@ -28,9 +16,9 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 # EPS faults if you apply torque while the steering angle is above 90 degrees for more than 1 second
 # All slightly below EPS thresholds to avoid fault
-MAX_FAULT_ANGLE = 85
-MAX_FAULT_ANGLE_FRAMES = 89
-MAX_FAULT_ANGLE_CONSECUTIVE_FRAMES = 2
+MAX_ANGLE = 85
+MAX_ANGLE_FRAMES = 89
+MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 
 
 def process_hud_alert(enabled, fingerprint, hud_control):
@@ -73,20 +61,6 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.apply_angle_last = 0
     self.lkas_max_torque = 0
     self.last_button_frame = 0
-    self.angle_limit_counter = 0
-    self.smoothing_factor = 0.6
-
-    self.angle_min_torque = self.params.ANGLE_MIN_TORQUE
-    self.angle_max_torque = self.params.ANGLE_MAX_TORQUE
-    self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
-    self._params = Params() if PARAMS_AVAILABLE else None
-    if PARAMS_AVAILABLE:
-      self.live_tuning = self._params.get_bool("HkgAngleLiveTuning")
-      self.smoothing_factor = float(self._params.get("HkgTuningAngleSmoothingFactor")) / 10.0 if self._params.get("HkgTuningAngleSmoothingFactor") else 0.0
-      self.angle_min_torque = int(self._params.get("HkgTuningAngleMinTorque")) if self._params.get("HkgTuningAngleMinTorque") else 0
-      self.angle_max_torque = int(self._params.get("HkgTuningAngleMaxTorque")) if self._params.get("HkgTuningAngleMaxTorque") else 0
-      self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles")) if self._params.get("HkgTuningOverridingCycles") else 0
-
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
@@ -96,61 +70,15 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     actuators = CC.actuators
     hud_control = CC.hudControl
-    apply_torque = 0
-
-    if PARAMS_AVAILABLE and self.live_tuning and self._params and self.frame % 500 == 0:
-      if (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")) and float(smoothingFactorParam) != self.smoothing_factor:
-        self.smoothing_factor = float(smoothingFactorParam) / 10.0
-      if (minTorqueParam := self._params.get("HkgTuningAngleMinTorque")) and int(minTorqueParam) != self.angle_min_torque:
-        self.angle_min_torque = int(minTorqueParam)
-      if (maxTorqueParam := self._params.get("HkgTuningAngleMaxTorque")) and int(maxTorqueParam) != self.angle_max_torque:
-        self.angle_max_torque = int(maxTorqueParam)
-      if (overrideCyclesParam := self._params.get("HkgTuningOverridingCycles")) and int(overrideCyclesParam) != self.angle_torque_override_cycles:
-        self.angle_torque_override_cycles = int(overrideCyclesParam)
-
-    # TODO: needed for angle control cars?
-    # >90 degree steering fault prevention
-    self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_FAULT_ANGLE, CC.latActive,
-                                                                       self.angle_limit_counter, MAX_FAULT_ANGLE_FRAMES,
-                                                                       MAX_FAULT_ANGLE_CONSECUTIVE_FRAMES)
 
     # steering torque
-    if not self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
-      new_torque = int(round(actuators.torque * self.params.STEER_MAX))
-      apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
+    new_torque = int(round(actuators.torque * self.params.STEER_MAX))
+    apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
 
-    # angle control
-    else:
-      new_angle = np.clip(actuators.steeringAngleDeg, -1212., 1212.)
-
-      if abs(new_angle - self.apply_angle_last) > 0.1:  # If there's a significant difference between the new angle and the last applied angle, apply smoothing
-        adjusted_alpha = np.interp(CS.out.vEgoRaw, self.params.SMOOTHING_ANGLE_VEGO_MATRIX, self.params.SMOOTHING_ANGLE_ALPHA_MATRIX) + self.smoothing_factor
-        adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.))  # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
-        new_angle = (new_angle * adjusted_alpha_limited) + (self.apply_angle_last * (1 - adjusted_alpha_limited))
-
-      # Reset apply_angle_last if the driver is intervening
-      if CS.out.steeringPressed:
-        self.apply_angle_last = actuators.steeringAngleDeg # We go straight to the desired angle if the driver is intervening
-      self.apply_angle_last = apply_std_steer_angle_limits(new_angle, self.apply_angle_last, CS.out.vEgoRaw,
-                                                           CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
-
-      if CS.out.steeringPressed:  # User is overriding
-        target_torque = self.angle_min_torque
-        torque_delta = self.lkas_max_torque - target_torque
-        adaptive_ramp_rate = max(torque_delta / self.angle_torque_override_cycles, 1)  # Ensure at least 1 unit per cycle
-        self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.angle_min_torque)
-      else:
-        active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_torque)  # 0.3 is the minimum torque when the user is not overriding
-        target_torque = int(np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque]))
-
-        # Ramp up or down toward the target torque smoothly
-        if self.lkas_max_torque > target_torque:
-          self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_DOWN_RATE, target_torque)
-        else:
-          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
-
-      # Safety clamp
-      self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.angle_min_torque, self.angle_max_torque))
+    # >90 degree steering fault prevention
+    self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_ANGLE, CC.latActive,
+                                                                       self.angle_limit_counter, MAX_ANGLE_FRAMES,
+                                                                       MAX_ANGLE_CONSECUTIVE_FRAMES)
 
     if not CC.latActive:
       apply_torque = 0
