@@ -75,6 +75,18 @@ def apply_tesla_steer_angle_limits(apply_angle: float, apply_angle_last: float, 
   return float(np.clip(new_apply_angle, -limits.STEER_ANGLE_MAX, limits.STEER_ANGLE_MAX))
 
 
+def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
+                                    lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, smoothing_factor) -> float:
+  new_angle = np.clip(apply_angle, -1212., 1212.)
+
+  if abs(new_angle - apply_angle_last) > 0.1:  # If there's a significant difference between the new angle and the last applied angle, apply smoothing
+    adjusted_alpha = np.interp(v_ego_raw, CarControllerParams.SMOOTHING_ANGLE_VEGO_MATRIX, CarControllerParams.SMOOTHING_ANGLE_ALPHA_MATRIX) + smoothing_factor
+    adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.))  # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
+    new_angle = (new_angle * adjusted_alpha_limited) + (apply_angle_last * (1 - adjusted_alpha_limited))
+
+  return apply_tesla_steer_angle_limits(new_angle, apply_angle_last, v_ego_raw, steering_angle, lat_active, limits, VM)
+
+
 def get_safety_CP():
   from opendbc.car.hyundai.interface import CarInterface
   return CarInterface.get_non_essential_params("HYUNDAI_IONIQ_5_PE")
@@ -171,17 +183,9 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # angle control
     else:
-      # new_angle = np.clip(actuators.steeringAngleDeg, -1212., 1212.)
-
-      # if abs(new_angle - self.apply_angle_last) > 0.1:  # If there's a significant difference between the new angle and the last applied angle, apply smoothing
-      # adjusted_alpha = np.interp(CS.out.vEgoRaw, self.params.SMOOTHING_ANGLE_VEGO_MATRIX, self.params.SMOOTHING_ANGLE_ALPHA_MATRIX) + self.smoothing_factor
-      # adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.))  # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
-      # new_angle = (new_angle * adjusted_alpha_limited) + (self.apply_angle_last * (1 - adjusted_alpha_limited))
-
-      self.apply_angle_last = apply_tesla_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
-                                                             CS.out.steeringAngleDeg, CC.latActive,
-                                                             CarControllerParams.ANGLE_LIMITS, self.VM)
-
+      self.apply_angle_last = apply_hyundai_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
+                                                               CS.out.steeringAngleDeg, CC.latActive,
+                                                               CarControllerParams.ANGLE_LIMITS, self.VM, self.smoothing_factor)
       if CS.out.steeringPressed:  # User is overriding
         target_torque = self.angle_min_torque
         torque_delta = self.lkas_max_torque - target_torque
