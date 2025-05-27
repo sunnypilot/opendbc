@@ -19,7 +19,6 @@ CONTINUED_OVERRIDE_ANGLE = 10.  # The angle difference between OP and user to co
 class TorqueBlendingCarController:
   def __init__(self):
     self.enabled = True  # TODO-SP: always on for now, couple with toggle
-    self.last_hands_nanos = 0
 
   @staticmethod
   def torque_blended_angle(apply_angle, torsion_bar_torque):
