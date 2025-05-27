@@ -19,6 +19,7 @@ CONTINUED_OVERRIDE_ANGLE = 10.  # The angle difference between OP and user to co
 class TorqueBlendingCarController:
   def __init__(self):
     self.enabled = True  # TODO-SP: always on for now, couple with toggle
+    self.steering_override = False
 
   @staticmethod
   def torque_blended_angle(apply_angle, torsion_bar_torque):
@@ -42,16 +43,16 @@ class TorqueBlendingCarController:
       return lat_active, apply_angle
 
     # Detect user override of the steering wheel
-    CS.steering_override = CS.hands_on_level >= 3 or \
-                             (CS.steering_override and
+    self.steering_override = CS.hands_on_level >= 3 or \
+                             (CS.out.steeringPressed and
                               abs(CS.out.steeringAngleDeg - apply_angle) > CONTINUED_OVERRIDE_ANGLE and
                               not CS.out.standstill)
 
     # Reset steering override when lateral control is inactive
     if not CC.latActive:
-      CS.steering_override = False
+      self.steering_override = False
 
-    lat_active = CC.latActive and not CS.steering_override
+    lat_active = CC.latActive and not self.steering_override
 
     apply_angle = self.torque_blended_angle(apply_angle, CS.out.steeringTorque)
 
@@ -61,12 +62,9 @@ class TorqueBlendingCarController:
 class TorqueBlendingCarState:
   def __init__(self):
     self.enabled = True  # TODO-SP: always on for now, couple with toggle
-    self.steering_override = False
 
   def update_torque_blending(self, ret: structs.CarState, eac_status: str, eac_error_code: str) -> None:
     if not self.enabled:
       return
-
-    ret.steeringPressed = ret.steeringPressed or self.steering_override
 
     ret.steeringDisengage = (eac_status == "EAC_INHIBITED" and eac_error_code == "EAC_ERROR_HIGH_ANGLE_RATE_SAFETY")
