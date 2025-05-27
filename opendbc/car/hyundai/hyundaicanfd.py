@@ -175,10 +175,8 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
     rightlanequal = msg_1b5["RIGHT_QUAL"]
     leftlaneraw = msg_1b5["LEFT_POSITION"]
     rightlaneraw = msg_1b5["RIGHT_POSITION"]
-    leftlaneorig = meters_to_ui_units(leftlaneraw)
-    rightlaneorig = meters_to_ui_units(rightlaneraw)
-    leftlane = leftlaneorig
-    rightlane = rightlaneorig
+    leftlane = meters_to_ui_units(leftlaneraw)
+    rightlane = meters_to_ui_units(rightlaneraw)
 
     if leftlanequal not in (2, 3):
       leftlane = 0
