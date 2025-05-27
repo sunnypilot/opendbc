@@ -128,11 +128,13 @@ def meters_to_ui_units(meters: float, nominal_m: float = 1.7, center_ui: int = 1
   value = abs(int(round(center_ui + (meters - nominal_m) * scale_per_m)))
   return value
 
-def normalize_lane_lines(left_m: float, right_m: float, total_ui: int = 30) -> tuple[int, int]:
-  total_m = left_m + right_m
-  left_ui = round((left_m / total_m) * total_ui)
-  right_ui = total_ui - left_ui
-  return left_ui, right_ui
+def normalize_lane_lines(left_ui: float, right_ui: float, total_ui: int = 30) -> tuple[int, int]:
+  total_input = left_ui + right_ui
+  if total_input == 0:
+    return total_ui // 2, total_ui // 2
+  left_scaled = round((left_ui / total_input) * total_ui)
+  right_scaled = total_ui - left_scaled
+  return left_scaled, right_scaled
 
 def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBlinker, rightBlinker, msg_161, msg_162, msg_1b5,
                 is_metric, main_cruise_enabled, out, lfa_icon):
