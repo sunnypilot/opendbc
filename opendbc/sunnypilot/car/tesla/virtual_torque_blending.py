@@ -64,7 +64,7 @@ class TorqueBlendingCarState:
     self.enabled = True  # TODO-SP: always on for now, couple with toggle
     self.steering_override = False
 
-  def update_torque_blending(self, ret: structs.CarState, eac_status: bool, eac_error_code: bool) -> None:
+  def update_torque_blending(self, ret: structs.CarState, eac_status: str, eac_error_code: str) -> None:
     if not self.enabled:
       return
 
