@@ -217,26 +217,19 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
 
     msg_161.update({
       "SETSPEED": 3 if enabled else 1,
-      "SETSPEED_HUD": 2 if enabled else 1,
-      "SETSPEED_SPEED": 25 if (s := round(out.vCruiseCluster * (1 if is_metric else CV.KPH_TO_MPH))) > 100 else s,
+      "SETSPEED_HUD": 0 if not main_cruise_enabled else 2 if enabled else 1,
+      "SETSPEED_SPEED": 255 if not main_cruise_enabled else 25 if (s := round(out.vCruiseCluster * (1 if is_metric else CV.KPH_TO_MPH))) > 100 else s,
       "DISTANCE": hud.leadDistanceBars,
       "DISTANCE_SPACING": 1 if enabled else 0,
       "DISTANCE_LEAD": 2 if enabled and hud.leadVisible else 1 if enabled else 0,
-      "DISTANCE_CAR": 2 if enabled else 1,
+      "DISTANCE_CAR": 0 if not main_cruise_enabled else 2 if enabled else 1,
       "SLA_ICON": 0,
       "NAV_ICON": 0,
       "TARGET": 0,
     })
 
-    msg_162["LEAD"] = 2 if enabled else 1
+    msg_162["LEAD"] = 0 if not main_cruise_enabled else 2 if enabled else 1
     msg_162["LEAD_DISTANCE"] = msg_1b5["LEAD_DISTANCE"]
-
-    if not main_cruise_enabled:
-      msg_161.update({
-        "SETSPEED_HUD": 0,
-        "SETSPEED_SPEED": 255,
-        "DISTANCE_CAR": 0,
-      })
 
   return [packer.make_can_msg(msg, CAN.ECAN, data) for msg, data in [("CCNC_0x161", msg_161), ("CCNC_0x162", msg_162)]]
 
