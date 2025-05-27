@@ -159,16 +159,38 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
     "LKA_ICON": 0,
     "LFA_ICON": 2 if lfa_icon else 0,
     "CENTERLINE": 1 if lfa_icon else 0,
-    "LANELINE_LEFT": (1 if not hud.leftLaneVisible else 4 if hud.leftLaneDepart else 0 if not lfa_icon else
-                      2 if out.leftBlindspot or out.vEgo < LANE_CHANGE_SPEED_MIN else 6),
-    "LANELINE_RIGHT": (1 if not hud.rightLaneVisible else 4 if hud.rightLaneDepart else 0 if not lfa_icon
-                       else 2 if out.rightBlindspot or out.vEgo < LANE_CHANGE_SPEED_MIN else 6),
+
+    "LANELINE_LEFT": (
+      0 if not lfa_icon else # gray if mads off
+      1 if not hud.leftLaneVisible else # hidden if not detected
+      4 if hud.leftLaneDepart else # orange if ldw
+      6 if leftBlinker or rightBlinker else # green if lane change
+      2), # white
+    "LANELINE_RIGHT": (
+      0 if not lfa_icon else # gray if mads off
+      1 if not hud.rightLaneVisible else # hidden if not detected
+      4 if hud.rightLaneDepart else # orange if ldw
+      6 if leftBlinker or rightBlinker else # green if lane change
+      2), # white
+
     "LANELINE_CURVATURE": curvature.get(max(-15, min(int(out.steeringAngleDeg / 3), 15)), 14) if lfa_icon else 15,
     "LCA_LEFT_ARROW": 2 if leftBlinker else 0,
     "LCA_RIGHT_ARROW": 2 if rightBlinker else 0,
-    "LANE_LEFT": 1 if leftBlinker else 0,
-    "LANE_RIGHT": 1 if rightBlinker else 0,
+
+    "LCA_LEFT_ICON": (
+      0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else # hidden if mads off or below speed
+      1 if out.leftBlindspot else # gray if blocked
+      2 if leftBlinker or rightBlinker else # green if lane change
+      4), # white
+    "LCA_RIGHT_ICON": (
+      0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else # hidden if mads off or below speed
+      1 if out.rightBlindspot else # gray if blocked
+      2 if leftBlinker or rightBlinker else # green if lane change
+      4), # white
   })
+
+# VAL_ 353 LANELINE_LEFT 0 "GRAY" 1 "HIDDEN" 2 "WHITE" 4 "ORANGE" 6 "GREEN";
+# VAL_ 353 LCA_LEFT_ICON 0 "HIDDEN" 1 "GRAY" 2 "GREEN" 4 "WHITE";
 
   if lfa_icon and (leftBlinker or rightBlinker):
     leftlanequal = msg_1b5["LEFT_QUAL"]
