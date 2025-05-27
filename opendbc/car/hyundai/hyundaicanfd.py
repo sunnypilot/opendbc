@@ -159,13 +159,13 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
     "LKA_ICON": 0,
     "LFA_ICON": 2 if lfa_icon else 0,
     "CENTERLINE": 1 if lfa_icon else 0,
+    "LANELINE_CURVATURE": curvature.get(max(-15, min(int(out.steeringAngleDeg / 3), 15)), 14) if lfa_icon else 15,
     "LANELINE_LEFT": (0 if not lfa_icon else 1 if not hud.leftLaneVisible else 4 if hud.leftLaneDepart else 6 if leftBlinker or rightBlinker else 2),
     "LANELINE_RIGHT": (0 if not lfa_icon else 1 if not hud.rightLaneVisible else 4 if hud.rightLaneDepart else 6 if leftBlinker or rightBlinker else 2),
-    "LANELINE_CURVATURE": curvature.get(max(-15, min(int(out.steeringAngleDeg / 3), 15)), 14) if lfa_icon else 15,
-    "LCA_LEFT_ARROW": 2 if leftBlinker else 0,
-    "LCA_RIGHT_ARROW": 2 if rightBlinker else 0,
     "LCA_LEFT_ICON": (0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.leftBlindspot else 2 if leftBlinker or rightBlinker else 4),
     "LCA_RIGHT_ICON": (0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.rightBlindspot else 2 if leftBlinker or rightBlinker else 4),
+    "LCA_LEFT_ARROW": 2 if leftBlinker else 0,
+    "LCA_RIGHT_ARROW": 2 if rightBlinker else 0,
   })
 
   if lfa_icon and (leftBlinker or rightBlinker):
