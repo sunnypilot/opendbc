@@ -170,7 +170,7 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
     "LANE_RIGHT": 1 if rightBlinker else 0,
   })
 
-  if lfa_icon:
+  if lfa_icon and (leftBlinker or rightBlinker):
     leftlanequal = msg_1b5["LEFT_QUAL"]
     rightlanequal = msg_1b5["RIGHT_QUAL"]
     leftlaneraw = msg_1b5["LEFT_POSITION"]
