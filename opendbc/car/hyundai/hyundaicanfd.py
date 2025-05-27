@@ -229,7 +229,8 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
       "TARGET": 0,
     })
 
-    msg_162["LEAD"] = 0
+    msg_162["LEAD"] = 2 if enabled else 1
+    msg_162["LEAD_DISTANCE"] = msg_1b5["LEAD_DISTANCE"]
 
     if not main_cruise_enabled:
       msg_161.update({
