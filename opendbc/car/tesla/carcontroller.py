@@ -30,7 +30,7 @@ class CarController(CarControllerBase, MadsCarController, TorqueBlendingCarContr
 
     if self.frame % 2 == 0:
       # Virtual torque blending
-      lat_active, apply_angle = self.update_torque_blending(CS, CC, lat_active, actuators.steeringAngleDeg, now_nanos)
+      lat_active, apply_angle = self.update_torque_blending(CS, CC, lat_active, actuators.steeringAngleDeg)
 
       # Angular rate limit based on speed
       self.apply_angle_last = apply_std_steer_angle_limits(apply_angle, self.apply_angle_last, CS.out.vEgo,

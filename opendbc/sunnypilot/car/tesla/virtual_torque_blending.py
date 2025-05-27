@@ -38,8 +38,7 @@ class TorqueBlendingCarController:
     torque = torsion_bar_torque - deadzone if torsion_bar_torque > 0 else torsion_bar_torque + deadzone
     return apply_angle + np.clip(torque, -limit, limit) * strength
 
-  def update_torque_blending(self, CS: CarStateBase, CC: structs.CarControl, lat_active: bool, apply_angle: float,
-                             now_nanos: int) -> tuple[bool, float]:
+  def update_torque_blending(self, CS: CarStateBase, CC: structs.CarControl, lat_active: bool, apply_angle: float) -> tuple[bool, float]:
     if not self.enabled:
       return lat_active, apply_angle
 
@@ -49,12 +48,8 @@ class TorqueBlendingCarController:
                               abs(CS.out.steeringAngleDeg - apply_angle) > CONTINUED_OVERRIDE_ANGLE and
                               not CS.out.standstill)
 
-    if CS.hands_on_level > 0:
-      self.last_hands_nanos = now_nanos
-
-    # Reset steering override when lateral control is inactive, OR
-    # when hands have been off the wheel for more than 1 second
-    if not CC.latActive or (now_nanos - self.last_hands_nanos > 1e9):
+    # Reset steering override when lateral control is inactive
+    if not CC.latActive:
       CS.steering_override = False
 
     lat_active = CC.latActive and not CS.steering_override
