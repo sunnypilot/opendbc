@@ -1,7 +1,7 @@
 #pragma once
 
-#include "safety_declarations.h"
-#include "safety_hyundai_common.h"
+#include "opendbc/safety/safety_declarations.h"
+#include "opendbc/safety/modes/hyundai_common.h"
 
 #define HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(bus) \
   {0x1CF, bus, 8, .check_relay = false},  /* CRUISE_BUTTON */   \
@@ -147,7 +147,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
     .max_torque = 330,
     .max_rt_delta = 112,
     .max_rate_up = 3,
-    .max_rate_down = 4,
+    .max_rate_down = 3,
     .driver_torque_allowance = 250,
     .driver_torque_multiplier = 2,
     .type = TorqueDriverLimited,

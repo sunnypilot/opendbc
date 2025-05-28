@@ -28,9 +28,9 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest, common.
   STANDSTILL_THRESHOLD = 12  # 0.375 kph
   FWD_BLACKLISTED_ADDRS = {2: [0x50, 0x2a4]}
 
-  MAX_RATE_UP = 2
+  MAX_RATE_UP = 3
   MAX_RATE_DOWN = 3
-  MAX_TORQUE_LOOKUP = [0], [270]
+  MAX_TORQUE_LOOKUP = [0], [330]
 
   MAX_RT_DELTA = 112
 
