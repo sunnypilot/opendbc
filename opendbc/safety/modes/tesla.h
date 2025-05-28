@@ -185,7 +185,7 @@ static void tesla_rx_hook(const CANPacket_t *to_push) {
       const int eac_error_code = GET_BYTE(to_push, 2) >> 4;  // EPAS3S_eacErrorCode
 
       // Disengage on normal user override, or if high angle rate fault from user overriding extremely quickly
-      const bool hands_on_level_check = tesla_virtual_torque_blending ? false : (hands_on_level >= 3);
+      const bool hands_on_level_check = (!tesla_virtual_torque_blending && (hands_on_level >= 3));
       steering_disengage = hands_on_level_check || ((eac_status == 0) && (eac_error_code == 9));
     }
 
