@@ -17,7 +17,7 @@
            {0x1cc, 0, 4, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 100U}}},       /* DOORS_LIGHTS / BRAKE */ \
 
 #define NISSAN_PRO_PILOT_RX_CHECKS(alt_eps_bus)                                                                         \
-  {.msg = {{0x1B6, alt_eps_bus, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 10U}, { 0 }, { 0 }}},  \
+  {.msg = {{0x1B6, alt_eps_bus, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 10U}, { 0 }, { 0 }}},  \
 
 static bool nissan_alt_eps = false;
 
