@@ -22,10 +22,8 @@ class CarControllerParams:
     # ([0, 9, 25], [1.2, 0.7, 0.1]),
     # ([0, 5, 25], [0.6, 0.4, 0.15]), # felt too aggressive
     # ([0, 5, 25], [1, 0.5, 0.26]), # felt too aggressive
-    # ([5, 25], [0.3, 0.15]),
-    # ([11, 25], [0.36, 0.26]),
-    ([0., 5., 25.], [2.5, 1.5, 0.2]),  # Tesla
-    ([0., 5., 25.], [5., 2.0, 0.3]),  # Tesla
+    ([5, 25], [0.3, 0.15]),
+    ([11, 25], [0.36, 0.26]),
   )
 
   # Stock LFA system is seen sending 250 max, but for LKAS events it's 175 max.
@@ -35,7 +33,6 @@ class CarControllerParams:
   ANGLE_RAMP_UP_RATE = 2  # Max rate of change of torque
   ANGLE_RAMP_DOWN_RATE = 3  # Max rate of change of torque
   ANGLE_TORQUE_OVERRIDE_CYCLES = 17  # The number of cycles it takes to ramp down to min torque when the user intervenes.
-  STEER_STEP = 1  # Angle command is sent at 100 Hz
 
   # More torque optimization
   # The torque is calculated based on the curvature of the road and the speed of the car and it's a percentage of the maximum torque.
