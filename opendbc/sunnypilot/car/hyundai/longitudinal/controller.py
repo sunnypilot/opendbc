@@ -11,8 +11,9 @@ from dataclasses import dataclass
 from opendbc.car import structs, DT_CTRL
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
-from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update, JERK_THRESHOLD
-from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+from opendbc.sunnypilot.car import get_param
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update, \
+                                                                JERK_THRESHOLD, LongitudinalTuningType
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
@@ -41,6 +42,8 @@ class LongitudinalController:
     self.CP = CP
     self.CP_SP = CP_SP
 
+    self.long_tuning_param = LongitudinalTuningType.OFF
+
     self.tuning = LongitudinalState()
     self.car_config = get_car_config(CP)
     self.long_control_state_last = LongCtrlState.off
@@ -58,7 +61,7 @@ class LongitudinalController:
 
   @property
   def enabled(self) -> bool:
-    return bool(self.CP_SP.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE))
+    return self.long_tuning_param != LongitudinalTuningType.OFF
 
   def get_stopping_state(self, actuators: structs.CarControl.Actuators) -> None:
     stopping = actuators.longControlState == LongCtrlState.stopping
@@ -204,9 +207,9 @@ class LongitudinalController:
 
     # Predictive tuning uses calculated desired jerk directly
     # Dynamic tuning applies a ramped approach for smoother transitions
-    if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_PREDICTIVE:
+    if self.long_tuning_param == LongitudinalTuningType.PREDICTIVE:
       self.jerk_lower = desired_jerk_lower
-    else:
+    elif self.long_tuning_param == LongitudinalTuningType.DYNAMIC:
       self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk)
 
     # Disable jerk when longitudinal control is inactive
@@ -271,15 +274,18 @@ class LongitudinalController:
       stopping=self.stopping,
     )
 
-  def update(self, CC: structs.CarControl, CS: CarStateBase) -> None:
+  def update(self, CC: structs.CarControl, CC_SP: structs.CarControlSP, CS: CarStateBase) -> None:
     """Update longitudinal control calculations.
 
     This is the main entry point called externally.
 
     Args:
         CC: Car control signals including actuators
+        CC_SP: sunnypilot car control signals including longitudinal tuning parameters and flags
         CS: Car state information
     """
+
+    self.long_tuning_param = int(get_param(CC_SP.params, "HyundaiLongitudinalTuning", str(LongitudinalTuningType.OFF)))
 
     actuators = CC.actuators
     long_control_state = actuators.longControlState
