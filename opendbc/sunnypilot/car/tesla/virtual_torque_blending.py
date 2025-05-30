@@ -15,6 +15,13 @@ TORQUE_TO_ANGLE_DEADZONE = 0.5  # This equates to hands-on level 1, so we don't 
 TORQUE_TO_ANGLE_CLIP = 10.  # Steering (usually) disengages at 2.5 Nm, this limit exists only in case the EPAS gives bad data
 CONTINUED_OVERRIDE_ANGLE = 10.  # The angle difference between OP and user to continue overriding steering (prevents oscillation)
 
+LOW_SPEED_ALLOWED = False
+
+
+def get_allowed_speed(speed: float) -> bool:
+  # 13.5 m/s = ~30 MPH
+  return (LOW_SPEED_ALLOWED and speed < 13.5) or speed >= 13.5
+
 
 class TorqueBlendingCarController:
   def __init__(self):
@@ -39,7 +46,7 @@ class TorqueBlendingCarController:
     return apply_angle + np.clip(torque, -limit, limit) * strength
 
   def update_torque_blending(self, CS: CarStateBase, CC: structs.CarControl, lat_active: bool, apply_angle: float) -> tuple[bool, float]:
-    if not self.enabled:
+    if not self.enabled or not get_allowed_speed(CS.out.vEgo):
       return lat_active, apply_angle
 
     # Detect user override of the steering wheel
@@ -64,7 +71,7 @@ class TorqueBlendingCarState:
     self.enabled = True  # TODO-SP: always on for now, couple with toggle
 
   def update_torque_blending(self, ret: structs.CarState, eac_status: str, eac_error_code: str) -> None:
-    if not self.enabled:
+    if not self.enabled or not get_allowed_speed(ret.vEgo):
       return
 
     ret.steeringDisengage = (eac_status == "EAC_INHIBITED" and eac_error_code == "EAC_ERROR_HIGH_ANGLE_RATE_SAFETY")
