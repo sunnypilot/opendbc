@@ -22,8 +22,10 @@ class CarControllerParams:
     # ([0, 9, 25], [1.2, 0.7, 0.1]),
     # ([0, 5, 25], [0.6, 0.4, 0.15]), # felt too aggressive
     # ([0, 5, 25], [1, 0.5, 0.26]), # felt too aggressive
-    ([5, 25], [0.3, 0.15]),
-    ([11, 25], [0.36, 0.26]),
+    # ([5, 25], [0.3, 0.15]),
+    # ([11, 25], [0.36, 0.26]),
+    ([],[]), #Tesla controls 
+    ([],[]), #Tesla controls 
   )
 
   # Stock LFA system is seen sending 250 max, but for LKAS events it's 175 max.
