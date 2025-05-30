@@ -172,14 +172,14 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
   const AngleSteeringLimits HYUNDAI_CANFD_ANGLE_STEERING_LIMITS = {
     .max_angle = 1800,
     .angle_deg_to_can = 10,
-    .angle_rate_up_lookup = {
-      {5., 25., 25.}, //Shane's conservative values
-      {0.3, 0.15, 0.15} //Shane's conservative values
-    },
-    .angle_rate_down_lookup = {
-      {11., 25., 25.},
-      {0.36, 0.26, 0.26}
-    },
+    .frequency = 100,
+  };
+
+  // NOTE: based off IONIQ_5 to match openpilot
+  const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
+    .slip_factor = -0.0008688329819908074,  // calc_slip_factor(VM)
+    .steer_ratio = 14.26,
+    .wheelbase = 2.97,
   };
 
   bool tx = true;
@@ -195,7 +195,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
       int desired_angle = (GET_BYTE(to_send, 11) << 6) | (GET_BYTE(to_send, 10) >> 2);
       desired_angle = to_signed(desired_angle, 14);
 
-      if (steer_angle_cmd_checks(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS)) {
+      if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, HYUNDAI_STEERING_PARAMS)) {
         tx = false;
       }
     } else {
