@@ -1794,14 +1794,25 @@
     ],
     "package": "All"
   },
-  "Kia Niro EV 2023-24": {
+  "Kia Niro EV (with HDA II) 2025": {
     "platform": "KIA_NIRO_EV_2ND_GEN",
     "make": "Kia",
     "brand": "hyundai",
-    "model": "Niro EV",
+    "model": "Niro EV (with HDA II)",
+    "year": [
+      "2025"
+    ],
+    "package": "Highway Driving Assist II"
+  },
+  "Kia Niro EV (without HDA II) 2023-25": {
+    "platform": "KIA_NIRO_EV_2ND_GEN",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Niro EV (without HDA II)",
     "year": [
       "2023",
-      "2024"
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -2438,6 +2449,33 @@
       "2022",
       "2023",
       "2024"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Ram 2500 2020-24": {
+    "platform": "RAM_HD_5TH_GEN",
+    "make": "Ram",
+    "brand": "chrysler",
+    "model": "2500",
+    "year": [
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+      "2024"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Ram 3500 2019-22": {
+    "platform": "RAM_HD_5TH_GEN",
+    "make": "Ram",
+    "brand": "chrysler",
+    "model": "3500",
+    "year": [
+      "2019",
+      "2020",
+      "2021",
+      "2022"
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },

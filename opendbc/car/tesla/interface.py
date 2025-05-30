@@ -15,7 +15,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.tesla)]
 
-    ret.steerLimitTimer = 1.0
+    ret.steerLimitTimer = 0.4
     ret.steerActuatorDelay = 0.1
     ret.steerAtStandstill = True
 
@@ -30,5 +30,13 @@ class CarInterface(CarInterfaceBase):
       ret.vEgoStopping = 0.1
       ret.vEgoStarting = 0.1
       ret.stoppingDecelRate = 0.3
+
+    return ret
+
+  @staticmethod
+  def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+
+    stock_cp.enableBsm = True
 
     return ret
