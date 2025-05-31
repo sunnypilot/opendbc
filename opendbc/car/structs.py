@@ -100,3 +100,9 @@ class CarControlSP:
   leadDistance: float = auto_field()
   leadRelSpeed: float = auto_field()
   leadVisible: bool = auto_field()
+  params: list['CarControlSP.Param'] = auto_field()
+
+  @auto_dataclass
+  class Param:
+    key: str = auto_field()
+    value: str = auto_field()

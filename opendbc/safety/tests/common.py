@@ -1,5 +1,6 @@
 import os
 import abc
+import math
 import unittest
 import importlib
 import numpy as np
@@ -13,11 +14,22 @@ from opendbc.safety.tests.mads_common import MadsSafetyTestBase
 
 MAX_WRONG_COUNTERS = 5
 MAX_SAMPLE_VALS = 6
+VEHICLE_SPEED_FACTOR = 1000
 
 MessageFunction = Callable[[float], libsafety_py.CANPacket]
 
+
 def sign_of(a):
   return 1 if a > 0 else -1
+
+
+def away_round(x):
+  # non-banker's/away from zero rounding, C++ CANParser uses this style
+  return math.floor(x + 0.5) if x >= 0 else math.ceil(x - 0.5)
+
+
+def round_speed(v):
+  return round(v * VEHICLE_SPEED_FACTOR) / VEHICLE_SPEED_FACTOR
 
 
 def make_msg(bus, addr, length=8, dat=None):
@@ -251,6 +263,7 @@ class TorqueSteeringSafetyTestBase(PandaSafetyTestBase, abc.ABC):
       max_torque = self._get_max_torque(speed)
       for enabled in [0, 1]:
         for t in range(int(-max_torque * 1.5), int(max_torque * 1.5)):
+          self._mads_states_cleanup()
           self.safety.set_controls_allowed(enabled)
           self._set_prev_torque(t)
           if abs(t) > max_torque or (not enabled and abs(t) > 0):
@@ -527,6 +540,7 @@ class MotorTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
       max_torque = self._get_max_torque(speed)
       for controls_allowed in [True, False]:
         for torque in np.arange(-max_torque - 1000, max_torque + 1000, self.MAX_RATE_UP):
+          self._mads_states_cleanup()
           self.safety.set_controls_allowed(controls_allowed)
           self.safety.set_rt_torque_last(torque)
           self.safety.set_torque_meas(torque, torque)
@@ -740,6 +754,7 @@ class AngleSteeringSafetyTest(VehicleSpeedSafetyTest):
           self._reset_angle_measurement(angle_meas)
 
           for angle_cmd in np.arange(-90, 91, 10):
+            self._mads_states_cleanup()
             self._set_prev_desired_angle(angle_cmd)
 
             # controls_allowed is checked if actuation bit is 1, else the angle must be close to meas (inactive)
@@ -952,16 +967,9 @@ class PandaCarSafetyTest(PandaSafetyTest, MadsSafetyTestBase):
     self._rx(self._user_gas_msg(1))
     self.assertTrue(self.safety.get_controls_allowed())
 
-  def test_disengage_on_gas(self):
+  def test_no_disengage_on_gas(self):
     self._rx(self._user_gas_msg(0))
     self.safety.set_controls_allowed(True)
-    self._rx(self._user_gas_msg(self.GAS_PRESSED_THRESHOLD + 1))
-    self.assertFalse(self.safety.get_controls_allowed())
-
-  def test_alternative_experience_no_disengage_on_gas(self):
-    self._rx(self._user_gas_msg(0))
-    self.safety.set_controls_allowed(True)
-    self.safety.set_alternative_experience(ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
     self._rx(self._user_gas_msg(self.GAS_PRESSED_THRESHOLD + 1))
     # Test we allow lateral, but not longitudinal
     self.assertTrue(self.safety.get_controls_allowed())

@@ -10,8 +10,8 @@ from opendbc.car.hyundai.carcontroller import CarController
 from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.radar_interface import RadarInterface
 
-from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -174,6 +174,13 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
+  def _get_longitudinal_tuning_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP) -> structs.CarParamsSP:
+    if ret.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE):
+      get_longitudinal_tune(stock_cp)
+
+    return ret
+
+  @staticmethod
   def init(CP, CP_SP, can_recv, can_send):
     if CP.openpilotLongitudinalControl and not ((CP.flags & (HyundaiFlags.CANFD_CAMERA_SCC | HyundaiFlags.CAMERA_SCC)) or
                                                 (CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC)):
@@ -185,6 +192,3 @@ class CarInterface(CarInterfaceBase):
     # for blinkers
     if CP.flags & HyundaiFlags.ENABLE_BLINKERS:
       disable_ecu(can_recv, can_send, bus=CanBus(CP).ECAN, addr=0x7B1, com_cont_req=b'\x28\x83\x01')
-
-    if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
-      enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
