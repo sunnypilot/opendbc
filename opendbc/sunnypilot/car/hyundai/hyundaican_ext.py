@@ -17,13 +17,6 @@ class HyundaiCanEXTParams:
   leadRelSpeed: float = 0.0
   leadVisible: bool = False
 
-@dataclass
-class HyundaiCanFDEXTParams:
-  objectStatus: int = 0
-  leadDistance: float = 0.0
-  leadRelSpeed: float = 0.0
-  leadVisible: bool = False
-
 
 class HyundaiCanEXT:
   # Hysteresis parameters for lead visibility
@@ -34,7 +27,6 @@ class HyundaiCanEXT:
 
   def __init__(self):
     self.hyundaican_ext = HyundaiCanEXTParams()
-    self.hyundaicanfd_ext = HyundaiCanFDEXTParams()
     self.lead_visible_on_counter: int = 0
     self.lead_visible_off_counter: int = 0
     self.global_hysteretic_lead_visible: bool = False
@@ -81,20 +73,6 @@ class HyundaiCanEXT:
 
     return self.hyundaican_ext
 
-  def hyundaicanfd (self, CC_SP: structs.CarControlSP) -> HyundaiCanFDEXTParams:
-    lead_distance = CC_SP.leadDistance
-    lead_rel_speed = CC_SP.leadRelSpeed
-
-    objectStatus = self._calculate_object_gap(lead_distance)
-
-    self.hyundaicanfd_ext.objectStatus = objectStatus
-    self.hyundaicanfd_ext.leadDistance = lead_distance
-    self.hyundaicanfd_ext.leadRelSpeed = lead_rel_speed
-    self.hyundaicanfd_ext.leadVisible = self.global_hysteretic_lead_visible
-
-    return self.hyundaicanfd_ext
-
   def update (self, CC_SP: structs.CarControlSP) -> None:
     self._update_global_hysteretic_lead_state(CC_SP.leadVisible)
     self.hyundaican(CC_SP)
-    self.hyundaicanfd(CC_SP)
