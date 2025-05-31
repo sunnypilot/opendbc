@@ -19,32 +19,24 @@ class HyundaiCanEXTParams:
 
 
 class HyundaiCanEXT:
-  # Hysteresis parameters for lead visibility
-  # Turns on if lead is present for ON_FRAMES
+  # Hysteresis parameters
   LEAD_VISIBLE_HYSTERESIS_ON_FRAMES: int = 1
-  # Turns off if lead is absent for OFF_FRAMES
-  LEAD_VISIBLE_HYSTERESIS_OFF_FRAMES: int = 5 # e.g., 0.1 sec at 50Hz
+  LEAD_VISIBLE_HYSTERESIS_OFF_FRAMES: int = 10
+  OBJECT_GAP_HYSTERESIS_FRAMES: int = 10
 
   def __init__(self):
     self.hyundaican_ext = HyundaiCanEXTParams()
-    self.lead_visible_on_counter: int = 0
-    self.lead_visible_off_counter: int = 0
-    self.global_hysteretic_lead_visible: bool = False
+    self.lead_on_counter = 0
+    self.lead_off_counter = 0
+    self.lead_visible = False
+    self.gap_counter = 0
+    self.object_gap = 0
 
-  def _update_global_hysteretic_lead_state(self, raw_lead_present: bool) -> None:
-    """ Updates the global hysteretic lead state based on raw_lead_present and internal counters. """
-    if raw_lead_present:
-      self.lead_visible_on_counter = min(self.lead_visible_on_counter + 1, self.LEAD_VISIBLE_HYSTERESIS_ON_FRAMES)
-      self.lead_visible_off_counter = 0
-    else:
-      self.lead_visible_off_counter = min(self.lead_visible_off_counter + 1, self.LEAD_VISIBLE_HYSTERESIS_OFF_FRAMES)
-      self.lead_visible_on_counter = 0
-
-    if self.lead_visible_on_counter >= self.LEAD_VISIBLE_HYSTERESIS_ON_FRAMES:
-      self.global_hysteretic_lead_visible = True
-    elif self.lead_visible_off_counter >= self.LEAD_VISIBLE_HYSTERESIS_OFF_FRAMES:
-      self.global_hysteretic_lead_visible = False
-    # If neither counter has reached its threshold, global_hysteretic_lead_visible retains its previous state.
+  def _hysteresis_update(self, current, new_value, counter, threshold):
+    if new_value == current:
+      return current, 0
+    counter += 1
+    return (new_value, 0) if counter >= threshold else (current, counter)
 
   def _calculate_object_gap(self, lead_distance: float | None) -> int:
     if lead_distance is None or lead_distance == 0:
@@ -58,21 +50,34 @@ class HyundaiCanEXT:
     else:
       return 5
 
+  def _update_lead_visible_hysteresis(self, raw_lead_visible: bool) -> None:
+    if raw_lead_visible:
+      self.lead_on_counter += 1
+      self.lead_off_counter = 0
+      if self.lead_on_counter >= self.LEAD_VISIBLE_HYSTERESIS_ON_FRAMES:
+        self.lead_visible = True
+    else:
+      self.lead_off_counter += 1
+      self.lead_on_counter = 0
+      if self.lead_off_counter >= self.LEAD_VISIBLE_HYSTERESIS_OFF_FRAMES:
+        self.lead_visible = False
+
   def hyundaican(self, CC_SP: structs.CarControlSP) -> HyundaiCanEXTParams:
     lead_distance = CC_SP.leadDistance
     lead_rel_speed = CC_SP.leadRelSpeed
+    objectRelGap = 0 if lead_distance == 0 else 2 if lead_rel_speed < -0.2 else 1
 
-    objectGap = self._calculate_object_gap(lead_distance)
-    objectRelGap = 0 if objectGap == 0 else 2 if lead_rel_speed < -0.2 else 1
+    self._update_lead_visible_hysteresis(CC_SP.leadVisible)
+    self.object_gap, self.gap_counter = self._hysteresis_update(self.object_gap, self._calculate_object_gap(lead_distance),
+                                                                self.gap_counter, self.OBJECT_GAP_HYSTERESIS_FRAMES)
 
-    self.hyundaican_ext.objectGap = objectGap
+    self.hyundaican_ext.objectGap = self.object_gap
     self.hyundaican_ext.objectRelGap = objectRelGap
     self.hyundaican_ext.leadDistance = lead_distance
     self.hyundaican_ext.leadRelSpeed = lead_rel_speed
-    self.hyundaican_ext.leadVisible = self.global_hysteretic_lead_visible
+    self.hyundaican_ext.leadVisible = self.lead_visible
 
     return self.hyundaican_ext
 
-  def update (self, CC_SP: structs.CarControlSP) -> None:
-    self._update_global_hysteretic_lead_state(CC_SP.leadVisible)
+  def update(self, CC_SP: structs.CarControlSP) -> None:
     self.hyundaican(CC_SP)
