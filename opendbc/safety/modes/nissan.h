@@ -2,7 +2,7 @@
 
 #include "opendbc/safety/safety_declarations.h"
 
-#define NISSAN_COMMON_RX_CHECKS                                                                                                  \
+#define NISSAN_COMMON_RX_CHECKS                                                                                                                               \
   {.msg = {{0x2, 0, 5, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 100U},                                      \
            {0x2, 1, 5, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 100U}, { 0 }}},  /* STEER_ANGLE_SENSOR */   \
   {.msg = {{0x285, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 50U},                                     \
@@ -16,7 +16,7 @@
            {0x454, 1, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 10U},                                     \
            {0x1cc, 0, 4, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 100U}}},       /* DOORS_LIGHTS / BRAKE */ \
 
-#define NISSAN_PRO_PILOT_RX_CHECKS(alt_eps_bus)                                                                         \
+#define NISSAN_PRO_PILOT_RX_CHECKS(alt_eps_bus)                                                                                                      \
   {.msg = {{0x1B6, alt_eps_bus, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 10U}, { 0 }, { 0 }}},  \
 
 static bool nissan_alt_eps = false;

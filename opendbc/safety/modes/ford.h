@@ -170,7 +170,7 @@ static void ford_rx_hook(const CANPacket_t *to_push) {
       pcm_cruise_check(cruise_engaged);
       acc_main_on = (cruise_state == 3U) || cruise_engaged;
     }
-    
+
     if (addr == FORD_Steering_Data_FD1) {
       mads_button_press = GET_BIT(to_push, 40U) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
     }

@@ -850,7 +850,7 @@ bool steer_angle_cmd_checks_vm(int desired_angle, bool steer_control_enabled, co
 
   bool violation = false;
 
-  if (controls_allowed && steer_control_enabled) {
+  if (is_lat_active() && steer_control_enabled) {
     // *** ISO lateral jerk limit ***
     // calculate maximum angle rate per second
     const float speed = MAX(fudged_speed, 1.0);
@@ -885,7 +885,7 @@ bool steer_angle_cmd_checks_vm(int desired_angle, bool steer_control_enabled, co
   }
 
   // No angle control allowed when controls are not allowed
-  violation |= !controls_allowed && steer_control_enabled;
+  violation |= !is_lat_active() && steer_control_enabled;
 
   return violation;
 }
