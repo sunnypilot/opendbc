@@ -168,11 +168,6 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
     "LCA_RIGHT_ARROW": 2 if rightBlinker else 0,
   })
 
-  if lfa_icon and out.vEgo >= LANE_CHANGE_SPEED_MIN:
-    curvature = int(out.steeringAngleDeg / 2)
-    msg_161["LANELINE_CURVATURE"] = (min(abs(curvature), 15) + (-1 if curvature < 0 else 0))
-    msg_161["LANELINE_CURVATURE_DIRECTION"] = 1 if curvature < 0 else 0
-
   if lfa_icon and (leftBlinker or rightBlinker):
     leftlanequal = msg_1b5["LEFT_QUAL"]
     rightlanequal = msg_1b5["RIGHT_QUAL"]
