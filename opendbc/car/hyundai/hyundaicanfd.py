@@ -220,7 +220,7 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
         (40 if is_metric else 25) if (s := round(out.vCruiseCluster * (1 if is_metric else CV.KPH_TO_MPH))) > (145 if is_metric else 90) else s
       ),
       "DISTANCE": hud.leadDistanceBars,
-      "DISTANCE_SPACING": 1 if enabled else 0,
+      "DISTANCE_SPACING": 0 if not main_cruise_enabled else 1 if enabled else 3,
       "DISTANCE_LEAD": 0 if not main_cruise_enabled else 2 if enabled and hud.leadVisible else 1 if hud.leadVisible else 0,
       "DISTANCE_CAR": 0 if not main_cruise_enabled else 2 if enabled else 1,
       "SLA_ICON": 0,
