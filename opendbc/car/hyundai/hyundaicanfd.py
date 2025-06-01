@@ -154,12 +154,15 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
     msg_161["SOUNDS_4"] = 0
 
   LANE_CHANGE_SPEED_MIN = 8.9408  # 20 * 0.44704
+  curvature = int(out.steeringAngleDeg / 3)
 
   msg_161.update({
     "DAW_ICON": 0,
     "LKA_ICON": 0,
     "LFA_ICON": 2 if lfa_icon else 0,
     "CENTERLINE": 1 if lfa_icon else 0,
+    "LANELINE_CURVATURE": (min(abs(curvature), 15) + (-1 if curvature < 0 else 0)) if lfa_icon else 0,
+    "LANELINE_CURVATURE_DIRECTION": 1 if curvature < 0 and lfa_icon else 0,
     "LANELINE_LEFT": (0 if not lfa_icon else 1 if not hud.leftLaneVisible else 4 if hud.leftLaneDepart else 6 if leftBlinker or rightBlinker else 2),
     "LANELINE_RIGHT": (0 if not lfa_icon else 1 if not hud.rightLaneVisible else 4 if hud.rightLaneDepart else 6 if leftBlinker or rightBlinker else 2),
     "LCA_LEFT_ICON": (0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.leftBlindspot else 2 if leftBlinker or rightBlinker else 4),
@@ -167,38 +170,6 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
     "LCA_LEFT_ARROW": 2 if leftBlinker else 0,
     "LCA_RIGHT_ARROW": 2 if rightBlinker else 0,
   })
-
-  if lfa_icon and out.vEgo >= LANE_CHANGE_SPEED_MIN:
-    leftlanequal = msg_1b5["LEFT_QUAL"]
-    rightlanequal = msg_1b5["RIGHT_QUAL"]
-    leftlanecurvature = msg_1b5["LEFT_CURVATURE"]
-    rightlanecurvature = msg_1b5["RIGHT_CURVATURE"]
-
-    if leftlanequal not in (2, 3):
-      leftlanecurvature = 0
-    if rightlanequal not in (2, 3):
-      rightlanecurvature = 0
-
-    if leftlanecurvature == rightlanecurvature == 0:
-      curvature = 0
-    elif leftlanecurvature == 0:
-      curvature = rightlanecurvature
-    elif rightlanecurvature == 0:
-      curvature = leftlanecurvature
-    else:
-      curvature = (leftlanecurvature + rightlanecurvature) / 2
-
-    curvature = -curvature * 6
-    clipped_curvature = max(0, min(0.032767, abs(curvature)))
-    scaled_curvature = round((clipped_curvature / 0.032767) * 15)
-    value = max(0, min(scaled_curvature, 15) + (-1 if curvature < 0 else 0))
-    print(f"{curvature}\t{clipped_curvature}\t{scaled_curvature}\t{value}")
-
-    msg_161["LANELINE_CURVATURE"] = value
-    msg_161["LANELINE_CURVATURE_DIRECTION"] = 1 if curvature < 0 else 0
-  else:
-    msg_161["LANELINE_CURVATURE"] = 0
-    msg_161["LANELINE_CURVATURE_DIRECTION"] = 0
 
   if lfa_icon and (leftBlinker or rightBlinker):
     leftlanequal = msg_1b5["LEFT_QUAL"]
