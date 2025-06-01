@@ -147,7 +147,7 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "ACC_ObjDist": int(hyundaicanfd_ext.leadDistance),
     "ACC_ObjRelSpd": hyundaicanfd_ext.leadRelSpeed,
     "ObjValid": int(not hyundaicanfd_ext.leadVisible),
-    "OBJ_STATUS": hyundaicanfd_ext.objectStatus,
+    "OBJ_STATUS": 2,
     "SET_ME_2": 0x4,
     "SET_ME_3": 0x3,
     "SET_ME_TMP_64": 0x64,
