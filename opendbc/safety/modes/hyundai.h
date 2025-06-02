@@ -64,6 +64,8 @@ static const CanMsg HYUNDAI_TX_MSGS[] = {
 
 static bool hyundai_legacy = false;
 
+static int hyundai_lda_button_frames = 0;
+
 static uint8_t hyundai_get_counter(const CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
 
@@ -165,7 +167,12 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
     }
 
     if (addr == 0x391) {
-      mads_button_press = GET_BIT(to_push, 4U) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
+      if (GET_BIT(to_push, 4U)) {
+        hyundai_lda_button_frames += 1;
+      } else {
+        hyundai_lda_button_frames = 0;
+      }
+      mads_button_press = (GET_BIT(to_push, 4U) && (hyundai_lda_button_frames >= 2)) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
     }
 
     // ACC steering wheel buttons
