@@ -233,7 +233,6 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     self.is_metric = cp.vl["CRUISE_BUTTONS_ALT"]["DISTANCE_UNIT"] != 1
     speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
-    # speed_offset = 0.1 if self.is_metric else 0.2
 
     if self.CP.flags & (HyundaiFlags.EV | HyundaiFlags.HYBRID):
       offset = 255. if self.CP.flags & HyundaiFlags.EV else 1023.
@@ -257,18 +256,10 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
       cp.vl["WHEEL_SPEEDS"]["WHL_SpdRLVal"],
       cp.vl["WHEEL_SPEEDS"]["WHL_SpdRRVal"],
     )
-    # ret.vEgoRaw = cp.vl["CRUISE_BUTTONS_ALT"]["CLUSTER_SPEED_MPH"] * speed_factor + speed_offset
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.wheelSpeeds.fl <= STANDSTILL_THRESHOLD and ret.wheelSpeeds.fr <= STANDSTILL_THRESHOLD and \
                      ret.wheelSpeeds.rl <= STANDSTILL_THRESHOLD and ret.wheelSpeeds.rr <= STANDSTILL_THRESHOLD
-
-    # self.cluster_speed_counter += 1
-    # if self.cluster_speed_counter > CLUSTER_SAMPLE_RATE:
-    #   self.cluster_speed = cp.vl["CRUISE_BUTTONS_ALT"]["CLUSTER_SPEED_MPH"]
-    #   self.cluster_speed_counter = 0
-
-    # ret.vEgoCluster = self.cluster_speed * speed_factor + speed_offset
 
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEERING_RATE"]
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEERING_ANGLE"]
