@@ -120,3 +120,8 @@ class CarControlSP:
   class Param:
     key: str = auto_field()
     value: str = auto_field()
+
+
+@auto_dataclass
+class CarStateSP:
+  pass
