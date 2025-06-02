@@ -260,6 +260,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.last_button_frame = 0
     self.angle_limit_counter = 0
     self.smoothing_factor = 0.6
+    self.last_override_frame = 0
 
     self.angle_min_torque = self.params.ANGLE_MIN_TORQUE
     self.angle_max_torque = self.params.ANGLE_MAX_TORQUE
@@ -282,6 +283,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     actuators = CC.actuators
     hud_control = CC.hudControl
     apply_torque = 0
+    recently_overridden = self.frame - self.last_override_frame < 10
 
     if PARAMS_AVAILABLE and self.live_tuning and self._params and self.frame % 500 == 0:
       if (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")) and float(smoothingFactorParam) != self.smoothing_factor:
@@ -310,6 +312,9 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
                                                                CS.out.steeringAngleDeg, CC.latActive,
                                                                CarControllerParams.ANGLE_LIMITS, self.VM, self.smoothing_factor)
       if CS.out.steeringPressed:  # User is overriding
+        # Let's try to consider that the override is not a true or false but a progressive depending on how much torque is being applied to the col
+        self.last_override_frame = self.frame
+        self.recently_overridden = True
         target_torque = self.angle_min_torque
         torque_delta = self.lkas_max_torque - target_torque
         adaptive_ramp_rate = max(torque_delta / self.angle_torque_override_cycles, 1)  # Ensure at least 1 unit per cycle
@@ -324,6 +329,10 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
           self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_DOWN_RATE, target_torque)
+        elif recently_overridden and self.lkas_max_torque < target_torque:
+          # If recently overridden, ramp up slower and every other frame to avoid fighting the controls
+          if self.frame % 2 == 0:
+            self.lkas_max_torque = min(self.lkas_max_torque + 1, target_torque)
         else:
           self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
 
