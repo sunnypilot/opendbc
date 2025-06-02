@@ -283,7 +283,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     actuators = CC.actuators
     hud_control = CC.hudControl
     apply_torque = 0
-    recently_overridden = self.frame - self.last_override_frame < 10
+    recently_overridden = self.frame - self.last_override_frame < 50
 
     if PARAMS_AVAILABLE and self.live_tuning and self._params and self.frame % 500 == 0:
       if (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")) and float(smoothingFactorParam) != self.smoothing_factor:
@@ -329,12 +329,9 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
           self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_DOWN_RATE, target_torque)
-        elif recently_overridden and self.lkas_max_torque < target_torque:
-          # If recently overridden, ramp up slower and every other frame to avoid fighting the controls
-          if self.frame % 2 == 0:
-            self.lkas_max_torque = min(self.lkas_max_torque + 1, target_torque)
         else:
-          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
+          if not recently_overridden:
+            self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
 
       # Safety clamp
       self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.angle_min_torque, self.angle_max_torque))
