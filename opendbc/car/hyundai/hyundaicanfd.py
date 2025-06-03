@@ -166,16 +166,24 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
     if msg_1b5["LEFT_QUAL"] not in (2, 3): leftlane = 0
     if msg_1b5["RIGHT_QUAL"] not in (2, 3): rightlane = 0
 
-    if leftlaneraw == -2.0248375: leftlane = 30 - rightlane
-    if rightlaneraw == 2.0248375: rightlane = 30 - leftlane
+    if leftlaneraw == -2.0248375:
+      leftlane = 30 - rightlane
+    if rightlaneraw == 2.0248375:
+      rightlane = 30 - leftlane
 
-    if leftlaneraw == rightlaneraw == 0: leftlane = rightlane = 15
-    elif leftlaneraw == 0: leftlane = 30 - rightlane
-    elif rightlaneraw == 0: rightlane = 30 - leftlane
+    if leftlaneraw == rightlaneraw == 0:
+      leftlane = rightlane = 15
+    elif leftlaneraw == 0:
+      leftlane = 30 - rightlane
+    elif rightlaneraw == 0:
+      rightlane = 30 - leftlane
 
     total = leftlane + rightlane
-    if total == 0: leftlane = rightlane = 15
-    else: leftlane = round((leftlane / total) * 30); rightlane = 30 - leftlane
+    if total == 0:
+      leftlane = rightlane = 15
+    else:
+      leftlane = round((leftlane / total) * 30)
+      rightlane = 30 - leftlane
 
     msg_161["LANELINE_LEFT_POSITION"] = leftlane
     msg_161["LANELINE_RIGHT_POSITION"] = rightlane
