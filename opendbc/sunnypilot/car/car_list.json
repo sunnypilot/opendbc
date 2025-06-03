@@ -1525,7 +1525,7 @@
       "2024",
       "2025"
     ],
-    "package": "All"
+    "package": "Smart Cruise Control (SCC)"
   },
   "Hyundai Sonata Hybrid 2020-23": {
     "platform": "HYUNDAI_SONATA_HYBRID",
@@ -1549,7 +1549,7 @@
       "2024",
       "2025"
     ],
-    "package": "All"
+    "package": "Smart Cruise Control (SCC)"
   },
   "Hyundai Staria 2023": {
     "platform": "HYUNDAI_STARIA_4TH_GEN",
@@ -1783,7 +1783,7 @@
     "year": [
       "2025"
     ],
-    "package": "Highway Driving Assist"
+    "package": "Smart Cruise Control (SCC)"
   },
   "Kia K5 Hybrid 2020-22": {
     "platform": "KIA_K5_HEV_2020",
