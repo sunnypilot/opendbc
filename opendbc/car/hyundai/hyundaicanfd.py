@@ -126,7 +126,7 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
 
 def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBlinker, rightBlinker, msg_161, msg_162, msg_1b5,
                 is_metric, main_cruise_enabled, out, lfa_icon):
-  for f in {"FAULT_LSS", "FAULT_HDA", "FAULT_DAS", "FAULT_LFA", "FAULT_DAW"}:
+  for f in {"FAULT_LSS", "FAULT_HDA", "FAULT_DAS", "FAULT_LFA", "FAULT_DAW", "FAULT_ESS"}:
     msg_162[f] = 0
 
   if msg_161["ALERTS_2"] == 5:  # CONSIDER_TAKING_A_BREAK
