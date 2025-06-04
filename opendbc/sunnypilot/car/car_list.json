@@ -1734,6 +1734,16 @@
     ],
     "package": "Highway Driving Assist"
   },
+  "Kia EV9 2025": {
+    "platform": "KIA_EV9",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "EV9",
+    "year": [
+      "2025"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Kia Forte 2019-21": {
     "platform": "KIA_FORTE",
     "make": "Kia",
