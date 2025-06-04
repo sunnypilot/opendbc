@@ -17,11 +17,12 @@ class CarState(CarStateBase):
     self.sccm_wheel_touch = None
     self.vdm_adas_status = None
 
-  def update(self, can_parsers) -> structs.CarState:
+  def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
     cp_adas = can_parsers[Bus.adas]
     ret = structs.CarState()
+    ret_sp = structs.CarStateSP()
 
     # Vehicle speed
     ret.vEgoRaw = cp.vl["ESP_Status"]["ESP_Vehicle_Speed"] * CV.KPH_TO_MS
@@ -54,7 +55,7 @@ class CarState(CarStateBase):
     if not self.CP.openpilotLongitudinalControl:
       ret.cruiseState.speed = -1
     ret.cruiseState.available = True  # cp.vl["VDM_AdasSts"]["VDM_AdasInterfaceStatus"] == 1
-    ret.cruiseState.standstill = cp.vl["VDM_AdasSts"]["VDM_AdasAccelRequestAcknowledged"] == 1
+    ret.cruiseState.standstill = cp.vl["VDM_AdasSts"]["VDM_AdasVehicleHoldStatus"] == 1
 
     # TODO: log ACM_Unkown2=3 as a fault. need to filter it at the start and end of routes though
     # ACM_FaultStatus hasn't been seen yet
@@ -68,10 +69,7 @@ class CarState(CarStateBase):
     ret.gearShifter = GEAR_MAP.get(int(cp.vl["VDM_PropStatus"]["VDM_Prndl_Status"]), GearShifter.unknown)
 
     # Doors
-    ret.doorOpen = (cp_adas.vl["IndicatorLights"]["RearDriverDoor"] != 2 or
-                    cp_adas.vl["IndicatorLights"]["FrontPassengerDoor"] != 2 or
-                    cp_adas.vl["IndicatorLights"]["DriverDoor"] != 2 or
-                    cp_adas.vl["IndicatorLights"]["RearPassengerDoor"] != 2)
+    ret.doorOpen = any(cp_adas.vl["IndicatorLights"][door] != 2 for door in ("RearDriverDoor", "FrontPassengerDoor", "DriverDoor", "RearPassengerDoor"))
 
     # Blinkers
     ret.leftBlinker = cp_adas.vl["IndicatorLights"]["TurnLightLeft"] in (1, 2)
@@ -92,7 +90,7 @@ class CarState(CarStateBase):
     self.sccm_wheel_touch = copy.copy(cp.vl["SCCM_WheelTouch"])
     self.vdm_adas_status = copy.copy(cp.vl["VDM_AdasSts"])
 
-    return ret
+    return ret, ret_sp
 
   @staticmethod
   def get_can_parsers(CP, CP_SP):
