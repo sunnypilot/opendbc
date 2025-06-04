@@ -32,13 +32,15 @@ class HyundaiCanEXT:
     self.gap_counter = 0
     self.object_gap = 0
 
-  def _hysteresis_update(self, current, new_value, counter, threshold):
+  @staticmethod
+  def _hysteresis_update(current, new_value, counter, threshold):
     if new_value == current:
       return current, 0
     counter += 1
     return (new_value, 0) if counter >= threshold else (current, counter)
 
-  def _calculate_object_gap(self, lead_distance: float | None) -> int:
+  @staticmethod
+  def _calculate_object_gap(lead_distance: float | None) -> int:
     if lead_distance is None or lead_distance == 0:
       return 0
     elif lead_distance < 20:
@@ -68,8 +70,10 @@ class HyundaiCanEXT:
     objectRelGap = 0 if lead_distance == 0 else 2 if lead_rel_speed < -0.2 else 1
 
     self._update_lead_visible_hysteresis(CC_SP.leadVisible)
-    self.object_gap, self.gap_counter = self._hysteresis_update(self.object_gap, self._calculate_object_gap(lead_distance),
-                                                                self.gap_counter, self.OBJECT_GAP_HYSTERESIS_FRAMES)
+    self.object_gap, self.gap_counter = (
+      HyundaiCanEXT._hysteresis_update(self.object_gap,
+                                       HyundaiCanEXT._calculate_object_gap(lead_distance),
+                                       self.gap_counter, self.OBJECT_GAP_HYSTERESIS_FRAMES))
 
     self.hyundaican_ext.objectGap = self.object_gap
     self.hyundaican_ext.objectRelGap = objectRelGap
