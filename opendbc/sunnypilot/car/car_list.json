@@ -1348,16 +1348,6 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Hyundai Kona 2022": {
-    "platform": "HYUNDAI_KONA_2022",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Kona",
-    "year": [
-      "2022"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
   "Hyundai Kona 2024-25": {
     "platform": "HYUNDAI_KONA_2ND_GEN",
     "make": "Hyundai",
