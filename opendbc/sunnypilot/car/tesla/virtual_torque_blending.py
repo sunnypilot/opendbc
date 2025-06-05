@@ -16,11 +16,11 @@ TORQUE_TO_ANGLE_CLIP = 10.  # Steering (usually) disengages at 2.5 Nm, this limi
 CONTINUED_OVERRIDE_ANGLE = 10.  # The angle difference between OP and user to continue overriding steering (prevents oscillation)
 
 LOW_SPEED_ALLOWED = False
+LOW_SPEED_THRESHOLD = 6.7  # ~15 MPH
 
 
 def get_allowed_speed(speed: float) -> bool:
-  # 13.5 m/s = ~30 MPH
-  return (LOW_SPEED_ALLOWED and speed < 13.5) or speed >= 13.5
+  return (LOW_SPEED_ALLOWED and speed < LOW_SPEED_THRESHOLD) or speed >= LOW_SPEED_THRESHOLD
 
 
 class TorqueBlendingCarController:
