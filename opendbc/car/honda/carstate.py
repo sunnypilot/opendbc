@@ -62,11 +62,6 @@ def get_can_messages(CP, gearbox_msg):
         ("ACC_HUD", 10),
         ("ACC_CONTROL", 50),
       ]
-  else:  # Nidec signals
-    if CP.carFingerprint == CAR.HONDA_ODYSSEY_CHN:
-      messages.append(("CRUISE_PARAMS", 10))
-    else:
-      messages.append(("CRUISE_PARAMS", 50))
 
   if CP.carFingerprint not in (CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_BOSCH_DIESEL, CAR.HONDA_CRV_HYBRID, CAR.HONDA_INSIGHT,
                                CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.HONDA_ODYSSEY_CHN, CAR.HONDA_FREED, CAR.HONDA_HRV, *HONDA_BOSCH_RADARLESS,
@@ -110,13 +105,14 @@ class CarState(CarStateBase):
     # However, on cars without a digital speedometer this is not always present (HRV, FIT, CRV 2016, ILX and RDX)
     self.dash_speed_seen = False
 
-  def update(self, can_parsers) -> structs.CarState:
+  def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
     if self.CP.enableBsm:
       cp_body = can_parsers[Bus.body]
 
     ret = structs.CarState()
+    ret_sp = structs.CarStateSP()
 
     # car params
     v_weight_v = [0., 1.]  # don't trust smooth speed at low values to avoid premature zero snapping
@@ -281,7 +277,7 @@ class CarState(CarStateBase):
       *create_button_events(self.cruise_setting, prev_cruise_setting, SETTINGS_BUTTONS_DICT),
     ]
 
-    return ret
+    return ret, ret_sp
 
   def get_can_parsers(self, CP, CP_SP):
     pt_messages = get_can_messages(CP, self.gearbox_msg)
