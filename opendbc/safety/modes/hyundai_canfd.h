@@ -172,7 +172,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
   const AngleSteeringLimits HYUNDAI_CANFD_ANGLE_STEERING_LIMITS = {
     .max_angle = 1800,
     .angle_deg_to_can = 10,
-    .frequency = 100,
+    .frequency = 100U,
   };
 
   // NOTE: based off IONIQ_5 to match openpilot

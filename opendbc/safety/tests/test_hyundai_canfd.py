@@ -64,14 +64,6 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest):
     values = {"TORQUE_REQUEST": torque, "STEER_REQ": steer_req}
     return self.packer.make_can_msg_panda(self.STEER_MSG, self.STEER_BUS, values)
 
-  def _angle_cmd_msg(self, angle: float, enabled: bool):
-    values = {"LKAS_ANGLE_CMD": angle, "LKAS_ANGLE_ACTIVE": 2 if enabled else 1}
-    return self.packer.make_can_msg_panda(self.STEER_MSG, self.STEER_BUS, values)
-
-  def _angle_meas_msg(self, angle: float):
-    values = {"STEERING_ANGLE": angle}
-    return self.packer.make_can_msg_panda("STEERING_SENSORS", self.PT_BUS, values)
-
   def _speed_msg(self, speed):
     values = {f"WHL_Spd{pos}Val": speed * 3.6 for pos in ["FL", "FR", "RL", "RR"]}
     return self.packer.make_can_msg_panda("WHEEL_SPEEDS", self.PT_BUS, values)
@@ -153,6 +145,25 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
   ANGLE_RATE_UP = None
   ANGLE_RATE_DOWN = None
 
+  # Real time limits
+  LATERAL_FREQUENCY = 100  # Hz
+
+  cnt_angle_cmd = 0
+
+  def _angle_cmd_msg(self, angle: float, enabled: bool, increment_timer: bool = True):
+    if increment_timer:
+      self.safety.set_timer(self.cnt_angle_cmd * int(1e6 / self.LATERAL_FREQUENCY))
+      self.__class__.cnt_angle_cmd += 1
+    values = {"LKAS_ANGLE_CMD": angle, "LKAS_ANGLE_ACTIVE": 2 if enabled else 1}
+    return self.packer.make_can_msg_panda(self.STEER_MSG, self.STEER_BUS, values)
+
+  def _angle_meas_msg(self, angle: float):
+    values = {"STEERING_ANGLE": angle}
+    return self.packer.make_can_msg_panda("STEERING_SENSORS", self.PT_BUS, values)
+
+  def _get_steer_cmd_angle_max(self, speed):
+    return get_max_angle(max(speed, 1), self.VM)
+
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
@@ -191,7 +202,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         # max_angle = round_angle(get_max_angle(speed, self.VM), 1) * sign # with offset 1 i couldn't make it work, should be fine "without" tolerance
         max_angle = round_angle(get_max_angle(speed, self.VM)) * sign
         max_angle = np.clip(max_angle, -self.STEER_ANGLE_MAX, self.STEER_ANGLE_MAX)
-        self._tx(self._angle_cmd_msg(max_angle, True))
+        self.safety.set_desired_angle_last(round(max_angle * self.DEG_TO_CAN))
 
         self.assertTrue(self._tx(self._angle_cmd_msg(max_angle, True)))
 
@@ -223,6 +234,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         self.assertTrue(self._tx(self._angle_cmd_msg(max_angle_delta, True)))
 
         # Don't change
+        self.safety.set_desired_angle_last(round(max_angle_delta * self.DEG_TO_CAN))
         self.assertTrue(self._tx(self._angle_cmd_msg(max_angle_delta, True)))
 
         # Down
@@ -234,6 +246,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         self.assertFalse(self._tx(self._angle_cmd_msg(max_angle_delta, True)))
 
         # Don't change
+        self.safety.set_desired_angle_last(round(max_angle_delta * self.DEG_TO_CAN))
         self.assertTrue(self._tx(self._angle_cmd_msg(max_angle_delta, True)))
 
         # Down
