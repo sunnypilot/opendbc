@@ -18,7 +18,6 @@ MAX_SET_SPEED = 85 * CV.MPH_TO_MS
 MIN_SET_SPEED = 20 * CV.MPH_TO_MS
 
 
-
 class CarStateExt:
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
