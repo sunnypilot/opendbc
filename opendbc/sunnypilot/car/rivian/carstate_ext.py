@@ -75,7 +75,9 @@ class CarStateExt:
         ret.rightBlindspot = cp_park.vl["BSM_BlindSpotIndicator"]["BSM_BlindSpotIndicator_Right"] != 0
 
   @staticmethod
-  def get_parser(CP, CP_SP, messages) -> None:
+  def get_parser(CP, CP_SP) -> dict[StrEnum, CANParser]:
+    messages = {}
+
     if CP_SP.flags & RivianFlagsSP.LONGITUDINAL_HARNESS_UPGRADE:
       alt_messages = [
         ("WheelButtons", 20),
@@ -83,3 +85,5 @@ class CarStateExt:
       ]
 
       messages[Bus.alt] = CANParser(DBC[CP.carFingerprint][Bus.alt], alt_messages, 5)
+
+    return messages

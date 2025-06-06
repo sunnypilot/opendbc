@@ -123,12 +123,11 @@ class CarState(CarStateBase, CarStateExt):
       ("ACM_tsrCmd", 10),
     ]
 
-    messages = {
+    messages_ext = CarStateExt.get_parser(CP, CP_SP)
+
+    return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
       Bus.adas: CANParser(DBC[CP.carFingerprint][Bus.pt], adas_messages, 1),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, 2),
+      **messages_ext,
     }
-
-    CarStateExt.get_parser(CP, CP_SP, messages)
-
-    return messages
