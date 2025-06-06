@@ -22,17 +22,30 @@ class CarInterface(CarInterfaceBase):
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     ret.steerControlType = structs.CarParams.SteerControlType.torque
-    ret.radarUnavailable = False
+    ret.radarUnavailable = True
 
-    long_upgrade_installed = 0x31a in fingerprint[5]
-
-    ret.alphaLongitudinalAvailable = long_upgrade_installed
-    if alpha_long or long_upgrade_installed:
+    # TODO: pending finding/handling missing set speed and fixing up radar parser
+    ret.alphaLongitudinalAvailable = False
+    if alpha_long:
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs[0].safetyParam |= RivianSafetyFlags.LONG_CONTROL.value
 
     ret.longitudinalActuatorDelay = 0.35
     ret.vEgoStopping = 0.25
     ret.stopAccel = 0
+
+    return ret
+
+  @staticmethod
+  def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+    stock_cp.radarUnavailable = False
+
+    long_upgrade_installed = 0x31a in fingerprint[5]
+
+    stock_cp.alphaLongitudinalAvailable = long_upgrade_installed
+    if alpha_long and stock_cp.alphaLongitudinalAvailable:
+      stock_cp.openpilotLongitudinalControl = True
+      stock_cp.safetyConfigs[0].safetyParam |= RivianSafetyFlags.LONG_CONTROL.value
 
     return ret
