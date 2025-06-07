@@ -13,19 +13,19 @@ def disable_ecu(can_recv, can_send, bus=0, addr=0x7d0, sub_addr=None, com_cont_r
 
   This is used to disable the radar in some cars. Openpilot will emulate the radar.
   WARNING: THIS DISABLES AEB!"""
-  carlog.warning(f"ecu disable {hex(addr), sub_addr} ...")
+  carlog.error(f"ecu disable {hex(addr), sub_addr} ...")
 
   for i in range(retry):
     try:
       query = IsoTpParallelQuery(can_send, can_recv, bus, [(addr, sub_addr)], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE])
 
       for _, _ in query.get_data(timeout).items():
-        carlog.warning("communication control disable tx/rx ...")
+        carlog.error("communication control disable tx/rx ...")
 
         query = IsoTpParallelQuery(can_send, can_recv, bus, [(addr, sub_addr)], [com_cont_req], [COM_CONT_RESPONSE])
         query.get_data(0)
 
-        carlog.warning("ecu disabled")
+        carlog.error("ecu disabled")
         return True
 
     except Exception:
