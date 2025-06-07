@@ -335,7 +335,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
             self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
 
       # Safety clamp
-      self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.angle_min_active_torque, self.angle_max_torque))
+      self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.params.ANGLE_MIN_TORQUE, self.angle_max_torque))
 
     if not CC.latActive:
       apply_torque = 0
