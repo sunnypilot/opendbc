@@ -25,14 +25,17 @@ class CarStateExt:
     self.CP_SP = CP_SP
 
     self.set_speed = 10
-    self.prev_increase_btn = False
-    self.increase_counter = 0
-    self.prev_decrease_btn = False
-    self.decrease_counter = 0
+    self.increase_button = False
+    self.decrease_button = False
     self.distance_button = 0
+    self.increase_counter = 0
+    self.decrease_counter = 0
 
   def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp_park = can_parsers[Bus.alt]
+
+    prev_increase_button = self.increase_button
+    prev_decrease_button = self.decrease_button
 
     if self.CP_SP.flags & RivianFlagsSP.LONGITUDINAL_HARNESS_UPGRADE:
       if self.CP.openpilotLongitudinalControl:
@@ -44,25 +47,25 @@ class CarStateExt:
           self.distance_button = right_scroll
 
         # button logic for set-speed
-        increase_btn = cp_park.vl["WheelButtons"]["RightButton_RightClick"] == 2
-        decrease_btn = cp_park.vl["WheelButtons"]["RightButton_LeftClick"] == 2
+        self.increase_button = cp_park.vl["WheelButtons"]["RightButton_RightClick"] == 2
+        self.decrease_button = cp_park.vl["WheelButtons"]["RightButton_LeftClick"] == 2
 
-        self.increase_counter = self.increase_counter + 1 if increase_btn else 0
-        self.decrease_counter = self.decrease_counter + 1 if decrease_btn else 0
+        self.increase_counter = self.increase_counter + 1 if self.increase_button else 0
+        self.decrease_counter = self.decrease_counter + 1 if self.decrease_button else 0
 
         set_speed_mph = self.set_speed * CV.MS_TO_MPH
-        if increase_btn and self.increase_counter % 66 == 0:
-          self.set_speed = (int(math.ceil((set_speed_mph + 1) / 5.0)) * 5) * CV.MPH_TO_MS
-        elif not self.prev_increase_btn and increase_btn:
-          self.set_speed += CV.MPH_TO_MS
 
-        if decrease_btn and self.decrease_counter % 66 == 0:
-          self.set_speed = (int(math.floor((set_speed_mph - 1) / 5.0)) * 5) * CV.MPH_TO_MS
-        elif not self.prev_decrease_btn and decrease_btn:
-          self.set_speed -= CV.MPH_TO_MS
+        if self.increase_button:
+          if self.increase_counter % 66 == 0:
+            self.set_speed = (int(math.ceil((set_speed_mph + 1) / 5.0)) * 5) * CV.MPH_TO_MS
+          elif not prev_increase_button:
+            self.set_speed += CV.MPH_TO_MS
 
-        self.prev_increase_btn = increase_btn
-        self.prev_decrease_btn = decrease_btn
+        if self.decrease_button:
+          if self.decrease_counter % 66 == 0:
+            self.set_speed = (int(math.floor((set_speed_mph - 1) / 5.0)) * 5) * CV.MPH_TO_MS
+          elif not prev_decrease_button:
+            self.set_speed -= CV.MPH_TO_MS
 
         if not ret.cruiseState.enabled:
           self.set_speed = ret.vEgo
