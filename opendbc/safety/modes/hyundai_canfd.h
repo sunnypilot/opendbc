@@ -188,7 +188,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
   // steering
   const int steer_addr = (hyundai_canfd_lka_steering && !hyundai_longitudinal) ? hyundai_canfd_get_lka_addr() : 0x12a;
   if (addr == steer_addr) {
-    if (hyundai_canfd_angle_steering) {
+    if (hyundai_canfd_angle_steering && !hyundai_longitudinal) {
       const int lkas_angle_active = (GET_BYTE(to_send, 9) >> 4) & 0x3U;
       const bool steer_angle_req = lkas_angle_active != 1;
 
