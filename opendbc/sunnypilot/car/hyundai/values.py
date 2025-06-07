@@ -7,6 +7,8 @@ See the LICENSE.md file in the root directory for more details.
 
 from enum import IntFlag
 
+RADAR_ADDRESS = 0x7d0  # Default radar address for Hyundai
+ADAS_ECU_ADDRESS = 0x730  # Default ADAS ECU address for Hyundai
 
 class HyundaiSafetyFlagsSP:
   DEFAULT = 0
