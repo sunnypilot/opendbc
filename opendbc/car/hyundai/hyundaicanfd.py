@@ -72,8 +72,9 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   ret = []
   if CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
     lkas_msg = "LKAS_ALT" if CP.flags & HyundaiFlags.CANFD_LKA_STEERING_ALT else "LKAS"
+    lfa_msg = "LFA_ALT" if CP.flags & HyundaiFlags.CANFD_LKA_STEERING_ALT else "LFA"
     if CP.openpilotLongitudinalControl:
-      ret.append(packer.make_can_msg("LFA", CAN.ECAN, lfa_values))
+      ret.append(packer.make_can_msg(lfa_msg, CAN.ECAN, lfa_values))
     ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, lkas_values))
   else:
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, lfa_values))
