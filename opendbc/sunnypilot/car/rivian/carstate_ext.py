@@ -32,12 +32,11 @@ class CarStateExt:
     self.decrease_counter = 0
 
   def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
-    cp_park = can_parsers[Bus.alt]
-
     prev_increase_button = self.increase_button
     prev_decrease_button = self.decrease_button
 
     if self.CP_SP.flags & RivianFlagsSP.LONGITUDINAL_HARNESS_UPGRADE:
+      cp_park = can_parsers[Bus.alt]
       if self.CP.openpilotLongitudinalControl:
         # distance scroll wheel
         right_scroll = cp_park.vl["WheelButtons"]["RightButton_Scroll"]
