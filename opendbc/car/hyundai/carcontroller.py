@@ -303,7 +303,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
                                                                        MAX_FAULT_ANGLE_CONSECUTIVE_FRAMES)
 
     # steering torque
-    if not self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING or self.CP.openpilotLongitudinalControl:
+    if not self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
       new_torque = int(round(actuators.torque * self.params.STEER_MAX))
       apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
 
@@ -358,7 +358,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # tester present - w/ no response (keeps relevant ECU disabled)
     if self.frame % 100 == 0 and not ((self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC) or self.ESCC.enabled) and \
-      (self.CP.openpilotLongitudinalControl or self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING):
+      self.CP.openpilotLongitudinalControl:
       # for longitudinal control, either radar or ADAS driving ECU
       addr, bus = 0x7d0, self.CAN.ECAN if self.CP.flags & HyundaiFlags.CANFD else 0
       if self.CP.flags & (HyundaiFlags.CANFD_LKA_STEERING.value | HyundaiFlags.CANFD_ANGLE_STEERING):
