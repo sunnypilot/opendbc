@@ -31,6 +31,6 @@ def disable_ecu(can_recv, can_send, bus=0, addr=0x7d0, sub_addr=None, com_cont_r
     except Exception:
       carlog.exception("ecu disable exception")
 
-    carlog.error(f"ecu disable retry ({i + 1}) ...")
+    carlog.error(f"ecu disable retry ({i + 1}) [bus: {bus}, addr: {hex(addr), sub_addr}] ...")
   carlog.error("ecu disable failed")
   return False

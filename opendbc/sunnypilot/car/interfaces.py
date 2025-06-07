@@ -16,7 +16,7 @@ from opendbc.sunnypilot.car.hyundai.values import RADAR_ADDRESS, ADAS_ECU_ADDRES
 def setup_interfaces(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
   assert CP_SP
   _initialize_radar_tracks(CP, can_recv, can_send)
-  # _disable_ecus(CP, can_recv, can_send)
+  _disable_ecus(CP, can_recv, can_send)
 
 
 def _initialize_radar_tracks(CP: structs.CarParams, can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
@@ -29,5 +29,5 @@ def _disable_ecus(CP: structs.CarParams, can_recv: CanRecvCallable = None, can_s
   if CP.brand != 'hyundai':
     return 
   
-  if CP.openpilotLongitudinalControl and CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+  if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
     disable_ecu(can_recv, can_send, bus=HyundaiCanBus(CP).ECAN, addr=ADAS_ECU_ADDRESS, com_cont_req=b'\x28\x83\x01')
