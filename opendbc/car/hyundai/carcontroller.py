@@ -358,10 +358,10 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # tester present - w/ no response (keeps relevant ECU disabled)
     if self.frame % 100 == 0 and not ((self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC) or self.ESCC.enabled) and \
-            self.CP.openpilotLongitudinalControl:
+      (self.CP.openpilotLongitudinalControl or self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING):
       # for longitudinal control, either radar or ADAS driving ECU
       addr, bus = 0x7d0, self.CAN.ECAN if self.CP.flags & HyundaiFlags.CANFD else 0
-      if self.CP.flags & HyundaiFlags.CANFD_LKA_STEERING.value:
+      if self.CP.flags & (HyundaiFlags.CANFD_LKA_STEERING.value | HyundaiFlags.CANFD_ANGLE_STEERING):
         addr, bus = 0x730, self.CAN.ECAN
       can_sends.append(make_tester_present_msg(addr, bus, suppress_response=True))
 
