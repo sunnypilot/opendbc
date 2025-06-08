@@ -183,6 +183,7 @@ def get_max_angle(v_ego_raw: float, VM: VehicleModel):
 
 def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
                                      lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, smoothing_factor, recently_overridden) -> float:
+  # apply_angle_last = steering_angle if recently_overridden else apply_angle_last  # Reset last angle if recently overridden
   new_angle = np.clip(apply_angle, -819.2, 819.1)
   v_ego_raw = max(v_ego_raw, 1)
 
@@ -331,8 +332,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         if self.lkas_max_torque > target_torque:
           self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_DOWN_RATE, target_torque)
         else:
-          if not recently_overridden:
-            self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
+          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE if not recently_overridden else 1, target_torque)
 
       # Safety clamp
       self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.params.ANGLE_MIN_TORQUE, self.angle_max_torque))
