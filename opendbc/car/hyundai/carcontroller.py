@@ -309,8 +309,9 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # angle control
     else:
+      steering_active = CC.latActive and not CS.out.steeringPressed
       self.apply_angle_last = apply_hyundai_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
-                                                               CS.out.steeringAngleDeg, CC.latActive,
+                                                               CS.out.steeringAngleDeg, steering_active,
                                                                CarControllerParams.ANGLE_LIMITS, self.VM, self.smoothing_factor)
       if CS.out.steeringPressed:  # User is overriding
         # Let's try to consider that the override is not a true or false but a progressive depending on how much torque is being applied to the col
