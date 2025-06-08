@@ -197,7 +197,7 @@ def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float
   max_angle_delta = get_max_angle_delta(v_ego_raw, VM)
 
   # prevent fault
-  max_angle_delta = min(max_angle_delta, MAX_ANGLE_RATE if not recently_overridden else .5)
+  max_angle_delta = min(max_angle_delta, MAX_ANGLE_RATE)
   new_apply_angle = rate_limit(apply_angle, apply_angle_last, -max_angle_delta, max_angle_delta)
 
   # *** max lateral accel limit ***
@@ -205,7 +205,7 @@ def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
 
   # angle is current angle when inactive
-  if not lat_active:
+  if not lat_active or recently_overridden:
     new_apply_angle = steering_angle
 
   # prevent fault
