@@ -70,6 +70,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     self.cluster_speed_counter = CLUSTER_SAMPLE_RATE
 
     self.params = CarControllerParams(CP)
+    self.was_overriding = False  # used to track if the user is overriding the car
 
   def recent_button_interaction(self) -> bool:
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
@@ -268,6 +269,10 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
     if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
       ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["MDPS"]["LKA_ANGLE_FAULT"] != 0
+      currently_pressed = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
+      still_over_threshold = abs(ret.steeringTorque) > self.params.NO_LONGER_OVERRIDING_THRESHOLD
+      self.was_overriding = currently_pressed or (self.was_overriding and still_over_threshold)
+      ret.steeringPressed = self.update_steering_pressed(self.was_overriding,5)
 
     # TODO: alt signal usage may be described by cp.vl['BLINKERS']['USE_ALT_LAMP']
     left_blinker_sig, right_blinker_sig = "LEFT_LAMP", "RIGHT_LAMP"
