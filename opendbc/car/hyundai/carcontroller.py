@@ -183,7 +183,7 @@ def get_max_angle(v_ego_raw: float, VM: VehicleModel):
 
 def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
                                      lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, smoothing_factor, recently_overridden) -> float:
-  # apply_angle_last = steering_angle if recently_overridden else apply_angle_last  # Reset last angle if recently overridden
+  apply_angle_last = steering_angle if recently_overridden else apply_angle_last  # Reset last angle if recently overridden
   new_angle = np.clip(apply_angle, -819.2, 819.1)
   v_ego_raw = max(v_ego_raw, 1)
 
