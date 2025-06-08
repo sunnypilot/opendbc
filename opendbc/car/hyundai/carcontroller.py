@@ -284,7 +284,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     actuators = CC.actuators
     hud_control = CC.hudControl
     apply_torque = 0
-    recently_overridden = self.frame - self.last_override_frame < 100
+    recently_overridden = self.frame - self.last_override_frame < 50
 
     # if PARAMS_AVAILABLE and self.live_tuning and self._params and self.frame % 500 == 0:
     #   if (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")) and float(smoothingFactorParam) != self.smoothing_factor:
