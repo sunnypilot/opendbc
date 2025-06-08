@@ -49,16 +49,16 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest, common.
   BUTTONS_TX_BUS = 1
 
   def _torque_driver_msg(self, torque):
-    values = {"STEERING_COL_TORQUE": torque}
-    return self.packer.make_can_msg_panda("MDPS", self.PT_BUS, values)
+    values = {"MDPS_StrTqSnsrVal": torque}
+    return self.packer.make_can_msg_panda("MDPS_01_10ms", self.PT_BUS, values)
 
   def _torque_cmd_msg(self, torque, steer_req=1):
-    values = {"TORQUE_REQUEST": torque, "STEER_REQ": steer_req}
+    values = {"ADAS_StrTqReqVal": torque, "STEER_REQ": steer_req}
     return self.packer.make_can_msg_panda(self.STEER_MSG, self.STEER_BUS, values)
 
   def _speed_msg(self, speed):
     values = {f"WHL_Spd{pos}Val": speed * 0.03125 for pos in ["FL", "FR", "RL", "RR"]}
-    return self.packer.make_can_msg_panda("WHEEL_SPEEDS", self.PT_BUS, values)
+    return self.packer.make_can_msg_panda("WHL_01_10ms", self.PT_BUS, values)
 
   def _user_brake_msg(self, brake):
     values = {"DriverBraking": brake}
@@ -99,7 +99,7 @@ class TestHyundaiCanfdLFASteeringBase(TestHyundaiCanfdBase):
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0)}  # LFA, LFAHDA_CLUSTER
   FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0]}
 
-  STEER_MSG = "LFA"
+  STEER_MSG = "ADAS_CMD_30_10ms"
   BUTTONS_TX_BUS = 2
   SAFETY_PARAM: int
 
@@ -219,7 +219,7 @@ class TestHyundaiCanfdLKASteeringLongEV(HyundaiLongitudinalBase, TestHyundaiCanf
   DISABLED_ECU_UDS_MSG = (0x730, 1)
   DISABLED_ECU_ACTUATION_MSG = (0x1a0, 1)
 
-  STEER_MSG = "LFA"
+  STEER_MSG = "ADAS_CMD_30_10ms"
   GAS_MSG = ("ACCELERATOR", "ACCELERATOR_PEDAL")
   STEER_BUS = 1
 
