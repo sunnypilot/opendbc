@@ -182,7 +182,8 @@ def get_max_angle(v_ego_raw: float, VM: VehicleModel):
   return math.degrees(VM.get_steer_from_curvature(max_curvature, v_ego_raw, 0))  # deg
 
 def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
-                                     lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, smoothing_factor) -> float:
+                                     lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, smoothing_factor, steering_pressed) -> float:
+  apply_angle = apply_angle if not steering_pressed else steering_angle  # If the steering wheel is pressed, use the current steering angle
   new_angle = np.clip(apply_angle, -819.2, 819.1)
   v_ego_raw = max(v_ego_raw, 1)
 
@@ -308,10 +309,9 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # angle control
     else:
-      steering_active = CC.latActive and not CS.out.steeringPressed
       self.apply_angle_last = apply_hyundai_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
-                                                               CS.out.steeringAngleDeg, steering_active,
-                                                               CarControllerParams.ANGLE_LIMITS, self.VM, self.smoothing_factor)
+                                                               CS.out.steeringAngleDeg, CC.latActive,
+                                                               CarControllerParams.ANGLE_LIMITS, self.VM, self.smoothing_factor, CS.out.steeringPressed)
       if CS.out.steeringPressed:  # User is overriding
         # Let's try to consider that the override is not a true or false but a progressive depending on how much torque is being applied to the col
         self.last_override_frame = self.frame
