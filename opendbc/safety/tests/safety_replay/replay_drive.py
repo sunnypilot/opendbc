@@ -18,6 +18,7 @@ DEBUG_VARS = {
   'current_disengage_reason': lambda safety: safety.mads_get_current_disengage_reason(),
   'stock_acc_main': lambda safety: safety.get_acc_main_on(),
   'mads_acc_main': lambda safety: safety.get_mads_acc_main(),
+  'desired_angle_last': lambda safety: safety.get_desired_angle_last(),
 }
 
 
@@ -89,17 +90,27 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
             last_good = last_good_states[canmsg.address]
             print(f"\nBlocked message at {(msg.logMonoTime - start_t) / 1e9:.3f}s:")
             print(f"Address: {hex(canmsg.address)} (bus {canmsg.src})")
-            print("Current state:")
+          
+            # Header with tab-separated columns
+            print("\nVariable\t\tLast Good State\t\tCurrent State")
+            print("-" * 80)
+          
             for var, getter in DEBUG_VARS.items():
-              print(f"  {var}: {getter(safety)}")
-
+              current_val = getter(safety)
+              last_val = last_good[var] if last_good['timestamp'] is not None else "N/A"
+          
+              # Align columns based on variable name length
+              tab_count = 1 if len(var) >= 16 else 2  # crude spacing control
+              tabs = '\t' * tab_count
+              print(f"{var}{tabs}\t{last_val}\t\t{current_val}")
+          
             if last_good['timestamp'] is not None:
-              print(f"\nLast good state ({last_good['timestamp']:.3f}s):")
-              for var in DEBUG_VARS:
-                print(f"  {var}: {last_good[var]}")
+              print(f"\nLast good timestamp: {last_good['timestamp']:.3f}s")
             else:
               print("\nNo previous good state found for this address")
+          
             print("-" * 80)
+
         else:  # Update last good state if message is allowed
           last_good_states[canmsg.address].update({
             'timestamp': (msg.logMonoTime - start_t) / 1e9,
