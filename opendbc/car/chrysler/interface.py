@@ -13,7 +13,7 @@ class CarInterface(CarInterfaceBase):
   RadarInterface = RadarInterface
 
   @staticmethod
-  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, docs) -> structs.CarParams:
+  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
     ret.brand = "chrysler"
     ret.dashcamOnly = candidate in RAM_HD
 
@@ -85,5 +85,8 @@ class CarInterface(CarInterfaceBase):
     if candidate == CAR.RAM_1500_5TH_GEN:
       stock_cp.minSteerSpeed = 0.5
       stock_cp.minEnableSpeed = 14.5
+
+    if candidate == CAR.RAM_HD_5TH_GEN:
+      stock_cp.dashcamOnly = False
 
     return ret

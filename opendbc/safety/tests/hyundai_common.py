@@ -18,7 +18,6 @@ ENABLE_BUTTONS = (Buttons.RESUME, Buttons.SET, Buttons.CANCEL)
 
 
 class HyundaiButtonBase:
-  # pylint: disable=no-member,abstract-method
   BUTTONS_TX_BUS = 0  # tx on this bus, rx on 0
   SCC_BUS = 0  # rx on this bus
 
@@ -75,7 +74,6 @@ class HyundaiButtonBase:
 
 
 class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
-  # pylint: disable=no-member,abstract-method
 
   DISABLED_ECU_UDS_MSG: tuple[int, int]
   DISABLED_ECU_ACTUATION_MSG: tuple[int, int]
@@ -158,7 +156,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
 
             # Test initial state
             self._mads_states_cleanup()
-            self.safety.set_mads_params(enable_mads, False)
+            self.safety.set_mads_params(enable_mads, False, False)
 
             self.assertFalse(self.safety.get_acc_main_on())
 
@@ -191,7 +189,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self.safety.set_safety_hooks(default_safety_mode, default_safety_param)
 
         self._mads_states_cleanup()
-        self.safety.set_mads_params(enable_mads, False)
+        self.safety.set_mads_params(enable_mads, False, False)
 
         # Initial state
         self._rx(self._main_cruise_button_msg(0))
@@ -226,7 +224,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self.safety.set_safety_hooks(default_safety_mode, default_safety_param)
 
         self._mads_states_cleanup()
-        self.safety.set_mads_params(enable_mads, False)
+        self.safety.set_mads_params(enable_mads, False, False)
         self.safety.set_controls_allowed_lat(True)
 
         # Start with matched states
@@ -269,7 +267,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self.safety.set_safety_hooks(default_safety_mode, default_safety_param)
 
         self._mads_states_cleanup()
-        self.safety.set_mads_params(enable_mads, False)
+        self.safety.set_mads_params(enable_mads, False, False)
 
         # Create initial mismatch
         self._rx(self._main_cruise_button_msg(1))  # Press button

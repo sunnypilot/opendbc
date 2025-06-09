@@ -17,10 +17,6 @@ class Btn:
   SET = 3
   RESUME = 4
 
-HONDA_NIDEC = 0
-HONDA_BOSCH = 1
-
-
 # Honda safety has several different configurations tested here:
 #  * Nidec
 #    * normal (PCM-enable)
@@ -32,7 +28,6 @@ HONDA_BOSCH = 1
 
 
 class HondaButtonEnableBase(common.PandaCarSafetyTest):
-  # pylint: disable=no-member,abstract-method
 
   # override these inherited tests since we're using button enable
   def test_disable_control_allowed_from_cruise(self):
@@ -139,7 +134,6 @@ class HondaButtonEnableBase(common.PandaCarSafetyTest):
 
 
 class HondaPcmEnableBase(common.PandaCarSafetyTest):
-  # pylint: disable=no-member,abstract-method
 
   def test_buttons(self):
     """
@@ -238,6 +232,7 @@ class HondaBase(common.PandaCarSafetyTest):
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_steer_safety_check(self):
+    self._mads_states_cleanup()
     self.safety.set_controls_allowed(0)
     self.assertTrue(self._tx(self._send_steer_msg(0x0000)))
     self.assertFalse(self._tx(self._send_steer_msg(0x1000)))
@@ -253,7 +248,7 @@ class HondaBase(common.PandaCarSafetyTest):
       for enable_mads in (True, False):
         with self.subTest("enable_mads", mads_enabled=enable_mads):
           self._mads_states_cleanup()
-          self.safety.set_mads_params(enable_mads, False)
+          self.safety.set_mads_params(enable_mads, False, False)
 
           # Verify initial state
           self._rx(self._lkas_button_msg(False, 0))
