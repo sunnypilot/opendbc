@@ -61,8 +61,8 @@ class CarControllerParams:
 
     if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
       self.STEER_DRIVER_ALLOWANCE = 250
-      self.STEER_THRESHOLD = 250
-      self.NO_LONGER_OVERRIDING_THRESHOLD = 100  # The threshold below which we stop overriding the steering angle
+      self.STEER_THRESHOLD = 350
+      self.NO_LONGER_OVERRIDING_THRESHOLD = 150  # The threshold below which we stop overriding the steering angle
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.
