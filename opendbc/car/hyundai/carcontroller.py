@@ -34,135 +34,6 @@ MAX_FAULT_ANGLE = 85
 MAX_FAULT_ANGLE_FRAMES = 89
 MAX_FAULT_ANGLE_CONSECUTIVE_FRAMES = 2
 
-
-class LKASTorqueCalculator:
-  def __init__(self, freq_hz=50.):
-    # Global parameters
-    self.min_torque = CarControllerParams.ANGLE_MIN_TORQUE
-    self.max_torque = CarControllerParams.ANGLE_MAX_TORQUE
-    self.max_from_speed = 96
-    self.rate_limit = 500
-    self.la_deadzone = 0.38
-
-    # Control gains
-    self.k1 = 200  # Lateral acceleration gain
-    self.k2 = 20  # Lateral jerk gain
-    self.k3 = 1.0  # Lateral acceleration power
-    self.k4 = 1  # Lateral jerk power
-    self.k5 = 10  # Speed feedforward gain
-
-    # State variable for rate limiting
-    self.old_output = 0
-
-    # Simple history for derivative (just last 2 values)
-    self.lat_accel_history = np.array([0.0, 0.0])  # [previous, current]
-
-    # Time step (assuming fixed frequency control loop)
-    self.dt = 1./freq_hz  # Default 50Hz (0.02s)
-
-  def sign(self, number):
-    """Return the sign of a number"""
-    if number > 0:
-      return 1
-    elif number == 0:
-      return 0
-    else:
-      return -1
-
-  def apply_rate_limit(self, old_val, new_val, limit):
-    """Apply rate limiting to prevent sudden changes"""
-    return min(max(new_val, old_val - limit), old_val + limit)
-
-  def apply_deadzone(self, val, deadzone):
-    """Apply deadzone to eliminate small values/noise"""
-    if abs(val) <= deadzone:
-      return 0.0
-    elif val < 0.0:
-      return val + deadzone
-    else:
-      return val - deadzone
-
-  def calculate_derivative(self, current_value):
-    """
-    Calculate derivative (lateral jerk) using numpy for clean history management
-
-    Args:
-        current_value: Current desired lateral acceleration
-
-    Returns:
-        float: Derivative (lateral jerk)
-    """
-    # Shift history: [old_previous, old_current] -> [old_current, new_current]
-    self.lat_accel_history = np.roll(self.lat_accel_history, -1)
-    self.lat_accel_history[-1] = current_value
-
-    # Calculate derivative: (current - previous) / dt
-    derivative = (self.lat_accel_history[1] - self.lat_accel_history[0]) / self.dt
-
-    return derivative
-
-  def calculate_torque(self, desired_lat_accel, ego_velocity, lkas_active: bool, min_active_torque=None):
-    """
-    Calculate LKAS torque command in real-time
-
-    Args:
-        desired_lat_accel: Desired lateral acceleration (v2)
-        ego_velocity: Vehicle ego velocity (v4)
-        lkas_active: LKAS active flag (v5) - 1.0 means system disabled
-        max_from_speed: Optional maximum torque from speed (v6) - if not provided, uses self.max_from_speed
-
-    Returns:
-        float: Calculated torque command (0-250)
-    """
-    # Calculate lateral jerk as derivative of lateral acceleration
-    desired_lat_jerk = self.calculate_derivative(desired_lat_accel)
-
-    # Apply deadzone to lateral acceleration
-    la = self.apply_deadzone(desired_lat_accel, self.la_deadzone)
-    lj = desired_lat_jerk
-
-    # If lateral acceleration is zero (in deadzone), zero out jerk too
-    if la == 0.0:
-      lj = 0.0
-
-    # Calculate lateral acceleration component
-    fla = min(abs(self.k1 * la) ** self.k3, self.max_torque)
-
-    # Calculate lateral jerk component
-    flj = min(abs(self.k2 * lj) ** self.k4, self.max_torque)
-
-    # Start with lateral acceleration component
-    out = fla
-
-    # Add speed feedforward component
-    flv = min(min_active_torque or self.max_from_speed, self.k5 * ego_velocity)
-    out = out + flv
-
-    # Apply initial bounds
-    out = max(min(out, self.max_torque), self.min_torque)
-
-    # Apply jerk component based on sign relationship
-    if self.sign(la) == self.sign(lj):
-      out = out - flj  # Same sign: subtract (damping)
-    else:
-      out = out + flj  # Opposite sign: add (enhancement)
-
-    # System disable check
-    if not lkas_active:
-      out = 0.0
-
-    # Apply final bounds
-    out = max(min(out, self.max_torque), self.min_torque)
-
-    # Apply rate limiting
-    out = self.apply_rate_limit(self.old_output, out, self.rate_limit)
-
-    # Update state for next iteration
-    self.old_output = out
-
-    return out
-
-
 MAX_ANGLE_RATE = 5
 # Add extra tolerance for average banked road since safety doesn't have the roll
 AVERAGE_ROAD_ROLL = 0.06  # ~3.4 degrees, 6% superelevation. higher actual roll lowers lateral acceleration
@@ -250,7 +121,6 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.car_fingerprint = CP.carFingerprint
-    self.calc = LKASTorqueCalculator(freq_hz=100)
 
     # Vehicle model used for lateral limiting
     self.VM = VehicleModel(get_safety_CP())
@@ -321,12 +191,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         adaptive_ramp_rate = max(torque_delta / self.angle_torque_override_cycles, 1)  # Ensure at least 1 unit per cycle
         self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.params.ANGLE_MIN_TORQUE)
       else:
-        target_torque = self.calc.calculate_torque(
-          desired_lat_accel=actuators.curvature * CS.out.vEgoRaw ** 2,
-          ego_velocity=CS.out.vEgoRaw,
-          lkas_active=CC.latActive,
-          min_active_torque=self.angle_min_active_torque
-        )
+        active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_active_torque)  # 0.3 is the minimum torque when the user is not overriding
+        target_torque = int(np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque]))
 
         # Ramp up or down toward the target torque smoothly
         if self.lkas_max_torque > target_torque:
