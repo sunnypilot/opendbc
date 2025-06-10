@@ -286,6 +286,8 @@ class CarInterfaceBase(ABC):
     else:
       self.v_ego_cluster_seen = True
 
+    ret_sp.vEgoCluster = ret.vEgoCluster
+
     # Many cars apply hysteresis to the ego dash speed
     ret.vEgoCluster = apply_hysteresis(ret.vEgoCluster, self.CS.out.vEgoCluster, self.CS.cluster_speed_hyst_gap)
     if abs(ret.vEgo) < self.CS.cluster_min_speed:
