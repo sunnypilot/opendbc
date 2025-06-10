@@ -65,6 +65,7 @@ class CarParamsSP:
   safetyParam: int = auto_field()  # flags for custom safety flags
 
   neuralNetworkLateralControl: 'CarParamsSP.NeuralNetworkLateralControl' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl())
+  customAccControl: 'CarParamsSP.CustomAccControl' = field(default_factory=lambda: CarParamsSP.CustomAccControl())
 
   @auto_dataclass
   class NeuralNetworkLateralControl:
@@ -75,6 +76,22 @@ class CarParamsSP:
     class Model:
       path: str = auto_field()
       name: str = auto_field()
+
+  @auto_dataclass
+  class CustomAccControl:
+    mode: 'CarParamsSP.CustomAccControl.Mode' = field(default_factory=lambda: CarParamsSP.CustomAccControl.Mode.disabled)
+    increments: 'CarParamsSP.CustomAccControl.Increments' = field(default_factory=lambda: CarParamsSP.CustomAccControl.Increments())
+
+    @auto_dataclass
+    class Increments:
+      shortIncrement: int = auto_field()
+      longIncrement: int = auto_field()
+
+    class Mode(StrEnum):
+      disabled = auto()
+      custom = auto()
+      reverse = auto()
+
 
 
 @auto_dataclass
