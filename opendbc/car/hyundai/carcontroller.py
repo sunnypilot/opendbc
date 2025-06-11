@@ -52,28 +52,54 @@ def get_max_angle(v_ego_raw: float, VM: VehicleModel):
   max_curvature = MAX_LATERAL_ACCEL / (v_ego_raw ** 2)  # 1/m
   return math.degrees(VM.get_steer_from_curvature(max_curvature, v_ego_raw, 0))  # deg
 
+def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: float, smoothing_factor: float) -> float:
+  """
+  Smooth the steering angle change based on vehicle speed and an optional smoothing offset.
+
+  This function helps prevent abrupt steering changes by blending the new desired angle (`apply_angle`)
+  with the previously applied angle (`apply_angle_last`). The blend factor (alpha) is dynamically calculated
+  based on the vehicle's current speed using a predefined lookup table, and optionally increased with a constant
+  `smoothing_factor`.
+
+  Behavior:
+    - At low speeds, the smoothing is strong, keeping the steering more stable.
+    - At higher speeds, the smoothing is relaxed, allowing quicker responses.
+    - The `smoothing_factor` is **added** to the interpolated alpha and capped at a max of `1.0`.
+    - If the angle change is negligible (≤ 0.1 deg), smoothing is skipped for responsiveness.
+
+  Parameters:
+    v_ego_raw (float): Raw vehicle speed in m/s.
+    apply_angle (float): New target steering angle in degrees.
+    apply_angle_last (float): Previously applied steering angle in degrees.
+    smoothing_factor (float): Additional constant offset added to the interpolated smoothing alpha.
+
+  Returns:
+    float: Smoothed steering angle.
+  """
+  if abs(apply_angle - apply_angle_last) > 0.1:
+    adjusted_alpha = np.interp(v_ego_raw, CarControllerParams.SMOOTHING_ANGLE_VEGO_MATRIX, CarControllerParams.SMOOTHING_ANGLE_ALPHA_MATRIX) + smoothing_factor
+    adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.))  # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
+    return (apply_angle * adjusted_alpha_limited) + (apply_angle_last * (1 - adjusted_alpha_limited))
+  return apply_angle
+
 def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
                                      lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, smoothing_factor, recently_overridden) -> float:
   apply_angle_last = steering_angle if recently_overridden else apply_angle_last  # Reset last angle if recently overridden
-  new_angle = np.clip(apply_angle, -819.2, 819.1)
-  v_ego_raw = max(v_ego_raw, 1)
+  apply_angle = np.clip(apply_angle, -819.2, 819.1)
 
-  if abs(new_angle - apply_angle_last) > 0.1:  # If there's a significant difference between the new angle and the last applied angle, apply smoothing
-    adjusted_alpha = np.interp(v_ego_raw, CarControllerParams.SMOOTHING_ANGLE_VEGO_MATRIX, CarControllerParams.SMOOTHING_ANGLE_ALPHA_MATRIX) + smoothing_factor
-    adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.))  # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
-    new_angle = (new_angle * adjusted_alpha_limited) + (apply_angle_last * (1 - adjusted_alpha_limited))
-
-  apply_angle = new_angle
+  # If the vehicle speed is above the maximum speed in the smoothing matrix, apply smoothing
+  if abs(v_ego_raw) > CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
+    apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, apply_angle_last, smoothing_factor)
 
   # *** max lateral jerk limit ***
-  max_angle_delta = get_max_angle_delta(v_ego_raw, VM)
+  max_angle_delta = get_max_angle_delta(max(v_ego_raw, 1), VM)
 
   # prevent fault
   max_angle_delta = min(max_angle_delta, MAX_ANGLE_RATE)
   new_apply_angle = rate_limit(apply_angle, apply_angle_last, -max_angle_delta, max_angle_delta)
 
   # *** max lateral accel limit ***
-  max_angle = get_max_angle(v_ego_raw, VM)
+  max_angle = get_max_angle(max(v_ego_raw, 1), VM)
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
 
   # angle is current angle when inactive
