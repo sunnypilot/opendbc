@@ -270,7 +270,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
       ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["MDPS"]["LKA_ANGLE_FAULT"] != 0
       HOD_Dir_Status = cp.vl["HOD_FD_01_100ms"]["HOD_Dir_Status"]
-      ret.steeringPressed = self.update_steering_pressed(HOD_Dir_Status > 2, 5)
+      ret.steeringPressed = self.update_steering_pressed(HOD_Dir_Status >= 2, 5)
       # currently_pressed = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
       # still_over_threshold = abs(ret.steeringTorque) > self.params.NO_LONGER_OVERRIDING_THRESHOLD
       # self.was_overriding = currently_pressed or (self.was_overriding and still_over_threshold)
