@@ -374,6 +374,11 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
         ("SCC_CONTROL", 50),
       ]
 
+    if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+      pt_messages += [
+        ("HOD_FD_01_100ms", 10),
+      ]
+
     cam_messages = []
     if CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
       block_lfa_msg = "CAM_0x362" if CP.flags & HyundaiFlags.CANFD_LKA_STEERING_ALT else "CAM_0x2a4"
