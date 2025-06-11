@@ -84,11 +84,14 @@ def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: floa
 
 def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
                                      lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, smoothing_factor, recently_overridden) -> float:
-  apply_angle_last = steering_angle if recently_overridden else apply_angle_last  # Reset last angle if recently overridden
   apply_angle = np.clip(apply_angle, -819.2, 819.1)
 
+  if recently_overridden:
+    apply_angle_last = steering_angle
+    apply_angle = np.clip(apply_angle, steering_angle - 0.08, steering_angle + 0.08)
+
   # If the vehicle speed is above the maximum speed in the smoothing matrix, apply smoothing
-  if abs(v_ego_raw) > CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
+  if not recently_overridden and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
     apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, apply_angle_last, smoothing_factor)
 
   # *** max lateral jerk limit ***
@@ -181,7 +184,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     actuators = CC.actuators
     hud_control = CC.hudControl
     apply_torque = 0
-    recently_overridden = self.frame - self.last_override_frame < 50
+    recently_overridden = self.frame - self.last_override_frame <= 50
 
     # if PARAMS_AVAILABLE and self.live_tuning and self._params and self.frame % 500 == 0:
     #   if (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")) and float(smoothingFactorParam) != self.smoothing_factor:
@@ -224,7 +227,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         if self.lkas_max_torque > target_torque:
           self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_DOWN_RATE, target_torque)
         else:
-          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE if not recently_overridden else 1, target_torque)
+          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
 
       # Safety clamp
       self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.params.ANGLE_MIN_TORQUE, self.angle_max_torque))
