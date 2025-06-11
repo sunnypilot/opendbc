@@ -80,7 +80,7 @@ def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: floa
   return apply_angle
 
 
-OVERRIDE_FRAME_WINDOW = [0, 75]
+OVERRIDE_FRAME_WINDOW = [0, 1]
 OVERRIDE_ANGLE_CAP = [0.1, float(MAX_ANGLE_RATE)]
 OVERRIDE_FRAME_WINDOW_MAX = OVERRIDE_FRAME_WINDOW[-1]
 def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
