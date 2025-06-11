@@ -82,16 +82,21 @@ def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: floa
     return (apply_angle * adjusted_alpha_limited) + (apply_angle_last * (1 - adjusted_alpha_limited))
   return apply_angle
 
+
+OVERRIDE_FRAME_WINDOW = [0, 250]
+OVERRIDE_ANGLE_CAP = [0.01, 1.]
+OVERRIDE_FRAME_WINDOW_MAX = OVERRIDE_FRAME_WINDOW[-1]
 def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
-                                     lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, smoothing_factor, recently_overridden) -> float:
+                                     lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, smoothing_factor, frames_since_override) -> float:
   apply_angle = np.clip(apply_angle, -819.2, 819.1)
 
-  if recently_overridden:
+  if frames_since_override < OVERRIDE_FRAME_WINDOW_MAX:
+    override_cap = np.interp(frames_since_override, OVERRIDE_FRAME_WINDOW, OVERRIDE_ANGLE_CAP)
     apply_angle_last = steering_angle
-    apply_angle = np.clip(apply_angle, steering_angle - 0.08, steering_angle + 0.08)
+    apply_angle = np.clip(apply_angle, steering_angle - override_cap, steering_angle + override_cap)
 
   # If the vehicle speed is above the maximum speed in the smoothing matrix, apply smoothing
-  if not recently_overridden and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
+  if not frames_since_override and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
     apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, apply_angle_last, smoothing_factor)
 
   # *** max lateral jerk limit ***
@@ -106,7 +111,7 @@ def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
 
   # angle is current angle when inactive
-  if not lat_active or recently_overridden:
+  if not lat_active or frames_since_override:
     new_apply_angle = steering_angle
 
   # prevent fault
@@ -184,7 +189,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     actuators = CC.actuators
     hud_control = CC.hudControl
     apply_torque = 0
-    recently_overridden = self.frame - self.last_override_frame <= 50
+    frames_since_override = self.frame - self.last_override_frame
 
     # if PARAMS_AVAILABLE and self.live_tuning and self._params and self.frame % 500 == 0:
     #   if (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")) and float(smoothingFactorParam) != self.smoothing_factor:
@@ -211,7 +216,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     else:
       self.apply_angle_last = apply_hyundai_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
                                                                CS.out.steeringAngleDeg, CC.latActive,
-                                                               CarControllerParams.ANGLE_LIMITS, self.VM, self.smoothing_factor, recently_overridden)
+                                                               CarControllerParams.ANGLE_LIMITS, self.VM, self.smoothing_factor, frames_since_override)
       if CS.out.steeringPressed:  # User is overriding
         # Let's try to consider that the override is not a true or false but a progressive depending on how much torque is being applied to the col
         self.last_override_frame = self.frame
