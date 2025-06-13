@@ -374,6 +374,9 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
         ("SCC_CONTROL", 50),
       ]
 
+    # test speed limit
+    cam_messages.append(("CLUSTER_SPEED_LIMIT", 10))
+
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, CanBus(CP).ECAN),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, CanBus(CP).CAM),
