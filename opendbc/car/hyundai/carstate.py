@@ -324,6 +324,8 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.blockPcmEnable = not self.recent_button_interaction()
 
+    ret_sp.speedLimit = cp_cam.vl["CLUSTER_SPEED_LIMIT"]["SPEED_LIMIT_1"]
+
     return ret, ret_sp
 
   def get_can_parsers_canfd(self, CP):
