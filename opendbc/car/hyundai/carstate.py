@@ -324,7 +324,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.blockPcmEnable = not self.recent_button_interaction()
 
-    ret_sp.speedLimit = cp_cam.vl["CLUSTER_SPEED_LIMIT"]["SPEED_LIMIT_1"]
+    ret_sp.speedLimit = cp_cam.vl["CLUSTER_SPEED_LIMIT"]["SPEED_LIMIT_1"] * speed_factor
 
     return ret, ret_sp
 
