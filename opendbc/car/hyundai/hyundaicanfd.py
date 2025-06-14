@@ -43,15 +43,14 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     "LKA_ASSIST": 0,
     "STEER_REQ": 1 if lat_active else 0,
     "STEER_MODE": 0,
-    "HAS_LANE_SAFETY": 0,  # hide LKAS settings
-    "NEW_SIGNAL_2": 0,
+    "HAS_LANE_SAFETY": 1,
   }
 
   lkas_values = copy.copy(common_values)
   lkas_values["LKA_AVAILABLE"] = 0
 
   lfa_values = copy.copy(common_values)
-  lfa_values["NEW_SIGNAL_1"] = 0
+  lfa_values["LKA_RcgSta"] = 3 if lat_active else 0
 
   ret = []
   if CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
@@ -117,8 +116,9 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
 
 def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
   values = {
-    "HDA_ICON": 1 if enabled else 0,
-    "LFA_ICON": lfa_icon,
+    "HDA_OptUsmSta": 2 if enabled else 0,
+    "HDA_CntrlModSta": 2 if enabled else 1,
+    "HDA_LFA_SymSta": lfa_icon,
   }
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 

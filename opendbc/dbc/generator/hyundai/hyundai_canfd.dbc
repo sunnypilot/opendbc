@@ -106,18 +106,21 @@ BO_ 298 LFA: 16 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
  SG_ LKA_MODE : 24|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_1 : 27|2@1+ (1,0) [0|255] "" XXX
- SG_ LKA_WARNING : 32|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKA_RcgSta : 27|3@1+ (1,0) [0|7] ""  CLU,CGW
+ SG_ LKA_LHLnWrnSta : 30|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ LKA_RHLnWrnSta : 32|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ LKA_HndsoffSnd : 34|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ LKA_StrSnd : 36|2@1+ (1,0) [0|3] ""  CLU,CGW
  SG_ LKA_ICON : 38|2@1+ (1,0) [0|255] "" XXX
  SG_ TORQUE_REQUEST : 41|11@1+ (1,-1024) [0|4095] "" XXX
- SG_ STEER_REQ : 52|1@1+ (1,0) [0|1] "" XXX
+ SG_ STEER_REQ : 52|2@1+ (1,0) [0|1] "" XXX
  SG_ LFA_BUTTON : 56|1@1+ (1,0) [0|255] "" XXX
- SG_ LKA_ASSIST : 62|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKA_SysWrn : 60|4@1+ (1,0) [0|15] ""  CLU,CGW
  SG_ STEER_MODE : 65|3@1+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_2 : 70|2@0+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_4 : 72|4@1+ (1,0) [0|15] "" XXX
- SG_ HAS_LANE_SAFETY : 80|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_3 : 111|8@0+ (1,0) [0|255] "" XXX
+ SG_ LKA_UsmMod : 80|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ Info_PedtrnDst : 84|3@1+ (1,0) [0|7] ""  CGW
+ SG_ ADAS_Damping_Gain : 104|8@1+ (1,0) [0|255] ""  CGW
+
 
 BO_ 304 GEAR_SHIFTER: 16 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -394,13 +397,13 @@ BO_ 474 ADRV_0x1da: 32 ADRV
 BO_ 480 LFAHDA_CLUSTER: 16 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_4 : 24|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_5 : 25|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_2 : 30|1@0+ (1,0) [0|1] "" XXX
- SG_ HDA_ICON : 31|1@1+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_1 : 32|3@1+ (1,0) [0|7] "" XXX
- SG_ LFA_ICON : 47|2@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_3 : 49|1@0+ (1,0) [0|1] "" XXX
+ SG_ HDA_OptUsmSta : 24|3@1+ (1,0) [0|7] ""  CLU,CGW
+ SG_ HDA_CntrlModSta : 30|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ HDA_InfoPUDis : 32|3@1+ (1,0) [0|7] ""  CLU,CGW
+ SG_ HDA_LFA_SymSta : 47|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ HDA_LFA_WrnSnd : 49|2@1+ (1,0) [0|3] ""  CLU
+ SG_ HDA_InfoPUDis1 : 51|3@1+ (1,0) [0|7] ""  CLU,CGW
+ SG_ HDA_TDMRMDclReq : 54|2@1+ (1,0) [0|3] ""  Dummy
 
 BO_ 485 BLINDSPOTS_FRONT_CORNER_1: 16 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
