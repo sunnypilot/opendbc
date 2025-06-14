@@ -65,7 +65,7 @@ class CarController(CarControllerBase, EsccCarController, HyundaiCanEXT, Longitu
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
-    HyundaiCanEXT.update(self, CC_SP)
+    HyundaiCanEXT.update(self, CC_SP, CC, CS)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
     if self.frame % 2 == 0:
       LongitudinalController.update(self, CC, CC_SP, CS)
