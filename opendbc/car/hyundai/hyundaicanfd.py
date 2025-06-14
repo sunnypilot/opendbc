@@ -98,7 +98,7 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
       "ZEROS_9",
       "CRUISE_STANDSTILL",
       "ZEROS_5",
-      "DISTANCE_SETTING",
+      "SCC_HeadwayDstSetVal",
       "VSetDis",
     ]}
   else:
@@ -137,24 +137,25 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
   values = {
     "ACCMode": 0 if not enabled else (2 if gas_override else 1),
     "MainMode_ACC": 1 if main_cruise_enabled else 0,
+    "SCC_NSCCOnOffSta": 2 if main_cruise_enabled else 0,
+    "SCC_NSCCOpSta": 0 if not enabled  else (1 if gas_override else 2),
     "StopReq": 1 if tuning.stopping else 0,
     "aReqValue": tuning.actual_accel,
     "aReqRaw": tuning.actual_accel,
     "VSetDis": set_speed,
     "JerkLowerLimit": tuning.jerk_lower,
     "JerkUpperLimit": tuning.jerk_upper,
+    "SCC_AccelLimBandUppVal": tuning.comfort_band_upper,
+    "SCC_AccelLimBandLwrVal": tuning.comfort_band_lower,
 
     "ACC_ObjDist": int(hyundaicanfd_ext.leadDistance),
     "ACC_ObjRelSpd": hyundaicanfd_ext.leadRelSpeed,
-    "ObjValid": int(not hyundaicanfd_ext.leadVisible),
-    "OBJ_STATUS": hyundaicanfd_ext.objectStatus,
-    "SET_ME_2": 0x4,
-    "SET_ME_3": 0x3,
-    "SET_ME_TMP_64": 0x64,
-    "DISTANCE_SETTING": hud_control.leadDistanceBars,
-    # lead car indicator 0 = no lead/disabled, 1 = gray, 2 = white
-    "NEW_SIGNAL_3": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else 2),
-    "NEW_SIGNAL_15": int(hyundaicanfd_ext.leadDistance), # lead car distance indicator
+    "SCC_ObjDstLvlVal": hyundaicanfd_ext.objectRelGap,
+    "SCC_HeadwayDstSetVal": hud_control.leadDistanceBars,
+    # lead car indicator 0 = no lead/disabled, 1 = gray, 2 = white/long control, 3 = long+lat control
+    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else 3),
+    # TODO: update distance (time to stop) calculation to match stock
+    "SCC_TrgtDstVal": int(hyundaicanfd_ext.leadDistance), # time to stop blue bar
   }
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)

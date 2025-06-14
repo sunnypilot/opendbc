@@ -19,7 +19,8 @@ class HyundaiCanEXTParams:
 
 @dataclass
 class HyundaiCanFDEXTParams:
-  objectStatus: int = 0
+  objectGap: int = 0
+  objectRelGap: int = 0
   leadDistance: float = 0.0
   leadRelSpeed: float = 0.0
   leadVisible: bool = False
@@ -94,6 +95,7 @@ class HyundaiCanEXT:
   def hyundaicanfd (self, CC_SP: structs.CarControlSP) -> HyundaiCanFDEXTParams:
     lead_distance = CC_SP.leadDistance
     lead_rel_speed = CC_SP.leadRelSpeed
+    objectRelGap = 0 if lead_distance == 0 else 2 if lead_rel_speed < -0.2 else 1
 
     self._update_lead_visible_hysteresis(CC_SP.leadVisible)
     self.object_gap, self.gap_counter = (
@@ -101,7 +103,8 @@ class HyundaiCanEXT:
                                      HyundaiCanEXT._calculate_object_gap(lead_distance),
                                      self.gap_counter, self.OBJECT_GAP_HYSTERESIS_FRAMES))
 
-    self.hyundaicanfd_ext.objectStatus = self.object_gap
+    self.hyundaicanfd_ext.objectGap = self.object_gap
+    self.hyundaican_ext.objectRelGap = objectRelGap
     self.hyundaicanfd_ext.leadDistance = lead_distance
     self.hyundaicanfd_ext.leadRelSpeed = lead_rel_speed
     self.hyundaicanfd_ext.leadVisible = self.lead_visible
