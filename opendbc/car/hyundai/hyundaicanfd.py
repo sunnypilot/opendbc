@@ -153,8 +153,8 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "SET_ME_3": 0x3,
     "SCC_ObjDstLvlVal": hyundaicanfd_ext.objectRelGap,
     "SCC_HeadwayDstSetVal": hud_control.leadDistanceBars,
-    # lead car indicator 0 = no lead/disabled, 1 = gray, 2 = white/long control, 3 = long+lat control
-    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else 3),
+    # lead car indicator 0 = no lead/disabled, 1 = gray, 2 = white
+    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else hyundaicanfd_ext.objectRelGap),
     # TODO: update distance (time to stop) calculation to match stock
     "SCC_TrgtDstVal": int(hyundaicanfd_ext.leadDistance), # time to stop blue bar
   }
