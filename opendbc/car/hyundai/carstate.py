@@ -284,9 +284,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     # CAN FD cars enable on main button press, set available if no TCS faults preventing engagement
     ret.cruiseState.available = cp.vl["TCS"]["ACCEnable"] == 0
     cp_cruise_info = cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp
-    if self.CP.carFingerprint not in (CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_SORENTO_4TH_GEN, CAR.GENESIS_GV80,
-                                      CAR.KIA_CARNIVAL_4TH_GEN, CAR.GENESIS_GV70_1ST_GEN):
-      self.cruise_info = copy.copy(cp_cruise_info.vl["SCC_CONTROL"])
+    self.cruise_info = copy.copy(cp_cruise_info.vl["SCC_CONTROL"])
     if self.CP.openpilotLongitudinalControl:
       # These are not used for engage/disengage since openpilot keeps track of state using the buttons
       ret.cruiseState.enabled = cp.vl["TCS"]["ACC_REQ"] == 1
@@ -363,19 +361,17 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
         ("BLINDSPOTS_REAR_CORNERS", 20),
       ]
 
-    if not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) and not CP.openpilotLongitudinalControl:
-      pt_messages += [
-        ("SCC_CONTROL", 50),
-      ]
+    pt_messages += [
+      ("SCC_CONTROL", 50),
+    ]
 
     cam_messages = []
     if CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
       block_lfa_msg = "CAM_0x362" if CP.flags & HyundaiFlags.CANFD_LKA_STEERING_ALT else "CAM_0x2a4"
       cam_messages += [(block_lfa_msg, 20)]
-    elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
-      cam_messages += [
-        ("SCC_CONTROL", 50),
-      ]
+    cam_messages += [
+      ("SCC_CONTROL", 50),
+    ]
     if self.CP.flags & HyundaiFlags.CCNC and not self.CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
       cam_messages += [
         ("CCNC_0x161", 20),
