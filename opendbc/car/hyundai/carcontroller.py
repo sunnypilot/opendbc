@@ -58,17 +58,11 @@ class LateralController:
     self.cooperation_sustain_timer = 0.0
     self.cooperation_sustain_duration = 1.0
 
-    # Ramp rates
-    override_reduction_rate_per_frame = 3  # Fast reduction when overriding
-    cooperation_reduction_rate_per_frame = 2  # Reduce gain when cooperating (make steering easier)
-    recovery_rate_per_frame = 1  # Slow recovery when no input
-    handover_adjustment_rate_per_frame = 4  # Rate to adjust for handover scenario
-
     # Per second
-    self.override_reduction_rate = override_reduction_rate_per_frame * self.control_frequency_hz
-    self.cooperation_reduction_rate = cooperation_reduction_rate_per_frame * self.control_frequency_hz
-    self.recovery_rate = recovery_rate_per_frame * self.control_frequency_hz
-    self.handover_adjustment_rate = handover_adjustment_rate_per_frame * self.control_frequency_hz
+    self.override_reduction_rate_per_second = 3000
+    self.cooperation_reduction_rate_per_second = 2000
+    self.recovery_rate_per_second = 1000
+    self.handover_adjustment_rate_per_second = 4000
 
   def update(self, steer_col_torque, desired_torque, current_angle, desired_angle, grab_level, frame_count):
     if self.previous_frame is None:
@@ -96,7 +90,7 @@ class LateralController:
     if driver_state == "override":
       self.override_detected = True
       target_gain = self.max_torque_while_overriding  # This is 25
-      self.torque_gain = max(target_gain, self.torque_gain - self.override_reduction_rate * dt)
+      self.torque_gain = max(target_gain, self.torque_gain - self.override_reduction_rate_per_second * dt)
       self.override_cooldown_timer = 2.0
     elif self.override_cooldown_timer > 0:
       self.override_cooldown_timer -= dt
@@ -108,7 +102,7 @@ class LateralController:
     if not self.override_detected:
       if driver_state == "cooperative":
         # Driver is helping - reduce gain to make steering easier
-        self.torque_gain = max(self.min_active_torque, self.torque_gain - self.cooperation_reduction_rate * dt)
+        self.torque_gain = max(self.min_active_torque, self.torque_gain - self.cooperation_reduction_rate_per_second * dt)
         self.cooperation_detected = True
         self.cooperation_sustain_timer = self.cooperation_sustain_duration
       elif self.cooperation_detected and self.cooperation_sustain_timer > 0:
@@ -118,13 +112,13 @@ class LateralController:
         # Handover scenario: adjust gain to keep driver torque just below threshold
         if abs(steer_col_torque) > self.torque_threshold * 0.8:  # Getting close to threshold
           # Reduce gain to make steering easier, helping driver stay below threshold
-          self.torque_gain = max(self.min_active_torque, self.torque_gain - self.handover_adjustment_rate * dt)
+          self.torque_gain = max(self.min_active_torque, self.torque_gain - self.handover_adjustment_rate_per_second * dt)
         elif abs(steer_col_torque) < self.torque_threshold * 0.3:  # Well below threshold
           # Can increase gain since driver isn't struggling
-          self.torque_gain = min(desired_torque, self.torque_gain + self.recovery_rate * dt)
+          self.torque_gain = min(desired_torque, self.torque_gain + self.recovery_rate_per_second * dt)
       else:
         # No driver input, gradually ramp back to full torque
-        self.torque_gain = min(desired_torque, self.torque_gain + self.recovery_rate * dt)
+        self.torque_gain = min(desired_torque, self.torque_gain + self.recovery_rate_per_second * dt)
         self.cooperation_detected = False
 
     # Clamp torque gain to valid bounds
