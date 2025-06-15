@@ -209,14 +209,15 @@ def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float
     apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, apply_angle_last)
 
   # *** max lateral jerk limit ***
-  max_angle_delta = get_max_angle_delta(max(v_ego_raw, 1), VM)
+  v_ego_padded = max(v_ego_raw, 1) + 1 # Adding 1 to our speed so we are more conservative with the limits
+  max_angle_delta = get_max_angle_delta(v_ego_padded, VM)
 
   # prevent fault
   max_angle_delta = min(max_angle_delta, MAX_ANGLE_RATE)
   new_apply_angle = rate_limit(apply_angle, apply_angle_last, -max_angle_delta, max_angle_delta)
 
   # *** max lateral accel limit ***
-  max_angle = get_max_angle(max(v_ego_raw, 1), VM)
+  max_angle = get_max_angle(v_ego_padded, VM)
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
 
   # angle is current angle when inactive
