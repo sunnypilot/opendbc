@@ -40,6 +40,126 @@ AVERAGE_ROAD_ROLL = 0.06  # ~3.4 degrees, 6% superelevation. higher actual roll 
 MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)  # ~3.6 m/s^2
 MAX_LATERAL_JERK = 3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)  # ~3.6 m/s^3
 
+
+class LateralController:
+  def __init__(self, control_frequency_hz, min_active_torque, torque_threshold):
+    self.override_detected = False
+    self.override_cooldown_timer = 0.0  # seconds
+    self.min_active_torque = min_active_torque  # Minimum torque to be considered active
+    self.torque_gain = self.min_active_torque  # Default starting point
+    self.previous_frame = None
+    self.control_frequency_hz = control_frequency_hz
+    self.torque_threshold = torque_threshold
+    self.max_torque_while_overriding = 25
+
+    # New parameters for cooperative behavior
+    self.cooperation_detected = False
+    self.cooperation_sustain_timer = 0.0
+    self.cooperation_sustain_duration = 1.0
+
+    # Ramp rates
+    self.override_reduction_rate = 15  # Fast reduction when overriding
+    self.cooperation_reduction_rate = 8  # Reduce gain when cooperating (make steering easier)
+    self.recovery_rate = 3  # Slow recovery when no input
+    self.handover_adjustment_rate = 10  # Rate to adjust for handover scenario
+
+  def update(self, steer_col_torque, desired_torque, current_angle, desired_angle, grab_level, frame_count):
+    if self.previous_frame is None:
+      dt = 1.0 / self.control_frequency_hz
+    else:
+      delta_frames = frame_count - self.previous_frame
+      dt = delta_frames / self.control_frequency_hz
+    self.previous_frame = frame_count
+
+    angle_error = desired_angle - current_angle
+
+    # Detect different driver states
+    driver_state = self.detect_driver_state(grab_level, steer_col_torque, angle_error)
+
+    # Update timers
+    if driver_state == "cooperative":
+      self.cooperation_sustain_timer = self.cooperation_sustain_duration
+      self.cooperation_detected = True
+    elif self.cooperation_sustain_timer > 0:
+      self.cooperation_sustain_timer -= dt
+      if self.cooperation_sustain_timer <= 0:
+        self.cooperation_detected = False
+
+    # Handle override logic - torque opposite to desired angle
+    if driver_state == "override":
+      self.override_detected = True
+      target_gain = self.max_torque_while_overriding  # This is 25
+      self.torque_gain = max(target_gain, self.torque_gain - self.override_reduction_rate * dt)
+      self.override_cooldown_timer = 2.0
+    elif self.override_cooldown_timer > 0:
+      self.override_cooldown_timer -= dt
+      self.override_detected = self.override_cooldown_timer > 0
+    else:
+      self.override_detected = False
+
+    # Handle cooperative and handover logic
+    if not self.override_detected:
+      if driver_state == "cooperative":
+        # Driver is helping - reduce gain to make steering easier
+        self.torque_gain = max(self.min_active_torque, self.torque_gain - self.cooperation_reduction_rate * dt)
+        self.cooperation_detected = True
+        self.cooperation_sustain_timer = self.cooperation_sustain_duration
+      elif self.cooperation_detected and self.cooperation_sustain_timer > 0:
+        # Sustain cooperative mode briefly
+        pass  # Keep current gain
+      elif driver_state == "passive" and grab_level > 1:
+        # Handover scenario: adjust gain to keep driver torque just below threshold
+        if abs(steer_col_torque) > self.torque_threshold * 0.8:  # Getting close to threshold
+          # Reduce gain to make steering easier, helping driver stay below threshold
+          self.torque_gain = max(self.min_active_torque, self.torque_gain - self.handover_adjustment_rate * dt)
+        elif abs(steer_col_torque) < self.torque_threshold * 0.3:  # Well below threshold
+          # Can increase gain since driver isn't struggling
+          self.torque_gain = min(desired_torque, self.torque_gain + self.recovery_rate * dt)
+      else:
+        # No driver input, gradually ramp back to full torque
+        self.torque_gain = min(desired_torque, self.torque_gain + self.recovery_rate * dt)
+        self.cooperation_detected = False
+
+    # Clamp torque gain to valid bounds
+    self.torque_gain = np.clip(self.torque_gain, self.min_active_torque, 250)
+
+    return self.torque_gain
+
+  def detect_driver_state(self, grab_level, steer_col_torque, angle_error):
+    """
+    Detects driver state: passive, cooperative, or override
+
+    Returns:
+    - "passive": Driver not actively steering
+    - "cooperative": Driver steering in same direction as desired correction
+    - "override": Driver steering against desired correction
+    """
+    # Driver must have hands on wheel to be considered active
+    if grab_level <= 1:
+      return "passive"
+
+    # Check if driver is applying significant torque
+    if abs(steer_col_torque) > self.torque_threshold:
+      # Check if driver torque aligns with or opposes angle correction
+      if angle_error * steer_col_torque > 0:
+        # Driver is helping with the correction (same direction)
+        return "cooperative"
+      else:
+        # Driver is working against the correction
+        return "override"
+
+    return "passive"
+
+  def get_debug_info(self):
+    """Returns debug information about current controller state"""
+    return {
+      "torque_gain": self.torque_gain,
+      "override_detected": self.override_detected,
+      "cooperation_detected": self.cooperation_detected,
+      "override_cooldown": self.override_cooldown_timer,
+      "cooperation_sustain": self.cooperation_sustain_timer
+    }
+
 def get_max_angle_rate_sec(v_ego_raw: float, VM: VehicleModel):
   max_curvature_rate_sec = MAX_LATERAL_JERK / (v_ego_raw ** 2)  # (1/m)/s
   max_angle_rate_sec = math.degrees(VM.get_steer_from_curvature(max_curvature_rate_sec, v_ego_raw, 0))  # deg/s
@@ -80,7 +200,7 @@ def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: floa
   return apply_angle
 
 def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
-                                     lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, steering_pressed) -> float:
+                                     lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel) -> float:
   apply_angle = np.clip(apply_angle, -819.2, 819.1)
 
   # If the vehicle speed is above the maximum speed in the smoothing matrix, apply smoothing
@@ -99,7 +219,7 @@ def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
 
   # angle is current angle when inactive
-  if not lat_active or steering_pressed:
+  if not lat_active:
     new_apply_angle = steering_angle
 
   # prevent fault
@@ -165,6 +285,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       self.angle_max_torque = int(self._params.get("HkgTuningAngleMaxTorque")) if self._params.get("HkgTuningAngleMaxTorque") else 0
       self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles")) if self._params.get("HkgTuningOverridingCycles") else 0
 
+    self.lateral_controller = LateralController(100., self.angle_min_active_torque, self.params.STEER_THRESHOLD)
+
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
@@ -201,22 +323,11 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     else:
       self.apply_angle_last = apply_hyundai_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
                                                                CS.out.steeringAngleDeg, CC.latActive,
-                                                               CarControllerParams.ANGLE_LIMITS, self.VM, CS.out.steeringPressed)
-      if CS.out.steeringPressed:  # User is overriding
-        # Let's try to consider that the override is not a true or false but a progressive depending on how much torque is being applied to the col
-        target_torque = self.params.ANGLE_MIN_TORQUE
-        torque_delta = self.lkas_max_torque - target_torque
-        adaptive_ramp_rate = max(torque_delta / self.angle_torque_override_cycles, 1)  # Ensure at least 1 unit per cycle
-        self.lkas_max_torque = max(self.lkas_max_torque - adaptive_ramp_rate, self.params.ANGLE_MIN_TORQUE)
-      else:
-        active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_active_torque)  # 0.3 is the minimum torque when the user is not overriding
-        target_torque = int(np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque]))
+                                                               CarControllerParams.ANGLE_LIMITS, self.VM)
 
-        # Ramp up or down toward the target torque smoothly
-        if self.lkas_max_torque > target_torque:
-          self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_DOWN_RATE, target_torque)
-        else:
-          self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
+      active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_active_torque)  # 0.3 is the minimum torque when the user is not overriding
+      target_torque = int(np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque]))
+      self.lkas_max_torque = self.lateral_controller.update(CS.out.steeringTorque, target_torque, CS.out.steeringAngleDeg, self.apply_angle_last, CS.hod_dir_status, self.frame)
 
       # Safety clamp
       self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.params.ANGLE_MIN_TORQUE, self.angle_max_torque))
