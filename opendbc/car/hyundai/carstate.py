@@ -37,6 +37,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     self.cruise_buttons: deque = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons: deque = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.lda_button = 0
+    self.hod_dir_status = 0  # 0 "HANDS OFF" 1 "HAND TOUCH (SOFT)" 2 "HAND TOUCH (STRONG)" 3 "HAND GRIP (SOFT)" 4 "HAND GRIP (STRONG)"
 
     self.gear_msg_canfd = "ACCELERATOR" if CP.flags & HyundaiFlags.EV else \
                           "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else \
@@ -268,13 +269,10 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
     if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
       ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["MDPS"]["LKA_ANGLE_FAULT"] != 0
-      hands_on_wheel = cp.vl["HOD_FD_01_100ms"]["HOD_Dir_Status"] >= 2
+      self.hod_dir_status = cp.vl["HOD_FD_01_100ms"]["HOD_Dir_Status"]
+      hands_on_wheel = self.hod_dir_status >= 1
       torque_overriding = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
-      ret.steeringPressed = self.update_steering_pressed(hands_on_wheel or torque_overriding, 5)
-      # currently_pressed = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
-      # still_over_threshold = abs(ret.steeringTorque) > self.params.NO_LONGER_OVERRIDING_THRESHOLD
-      # self.was_overriding = currently_pressed or (self.was_overriding and still_over_threshold)
-      # ret.steeringPressed = self.update_steering_pressed(self.was_overriding,5)
+      ret.steeringPressed = self.update_steering_pressed(hands_on_wheel or torque_overriding, 25 if hands_on_wheel and self.hod_dir_status == 1 else 5)
     else:
       ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
 
