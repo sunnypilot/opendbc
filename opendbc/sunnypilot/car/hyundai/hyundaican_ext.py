@@ -29,7 +29,7 @@ class HyundaiCanFDEXTParams:
 
 class HyundaiCanEXT:
   # Hysteresis parameters
-  LEAD_VISIBLE_HYSTERESIS_ON_FRAMES: int = 1
+  LEAD_VISIBLE_HYSTERESIS_ON_FRAMES: int = 10
   LEAD_VISIBLE_HYSTERESIS_OFF_FRAMES: int = 10
   OBJECT_GAP_HYSTERESIS_FRAMES: int = 10
 
@@ -43,30 +43,27 @@ class HyundaiCanEXT:
     self.object_gap = 0
 
   @staticmethod
-  def _calculate_safe_distance(speed_ms: float, distance_setting: int) -> float:
+  def _calculate_safe_distance(vEgo: float, distance_setting: int) -> float:
       """Calculate safe distance to stop based on current speed and distance setting.
 
       Args:
-          speed_ms: Current speed in meters per second
+          vEgo: Current speed in meters per second
           distance_setting: Distance setting (1-3)
-              1: 1.2 seconds following distance
-              2: 1.5 seconds following distance
-              3: 1.7 seconds following distance
 
       Returns:
           Safe stopping distance in meters
       """
       time_gaps = {
           1: 1.2,
-          2: 1.5,
-          3: 1.7
+          2: 1.7,
+          3: 2
       }
 
       # Default to shortest distance if invalid setting provided
       time_gap = time_gaps.get(distance_setting, 1.2)
 
       # Calculate distance = speed * time
-      return speed_ms * time_gap
+      return max(10, vEgo * time_gap)
 
   @staticmethod
   def _hysteresis_update(current, new_value, counter, threshold):
@@ -122,7 +119,7 @@ class HyundaiCanEXT:
   def hyundaicanfd (self, CC_SP: structs.CarControlSP, CC: structs.CarControl, CS: structs.CarState) -> HyundaiCanFDEXTParams:
     lead_distance = CC_SP.leadDistance
     lead_rel_speed = CC_SP.leadRelSpeed
-    objectRelGap = 0 if lead_distance == 0 else 2 if lead_rel_speed < -0.2 else 1
+    objectRelGap = 0 if lead_distance == 0 else 2 if lead_rel_speed < 0 else 1
 
     self._update_lead_visible_hysteresis(CC_SP.leadVisible)
     self.object_gap, self.gap_counter = (
