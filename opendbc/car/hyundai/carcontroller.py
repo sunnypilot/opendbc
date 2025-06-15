@@ -59,10 +59,10 @@ class LateralController:
     self.cooperation_sustain_duration = 1.0
 
     # Ramp rates
-    override_reduction_rate_per_frame = 15  # Fast reduction when overriding
-    cooperation_reduction_rate_per_frame = 8  # Reduce gain when cooperating (make steering easier)
-    recovery_rate_per_frame = 3  # Slow recovery when no input
-    handover_adjustment_rate_per_frame = 10  # Rate to adjust for handover scenario
+    override_reduction_rate_per_frame = 3  # Fast reduction when overriding
+    cooperation_reduction_rate_per_frame = 2  # Reduce gain when cooperating (make steering easier)
+    recovery_rate_per_frame = 1  # Slow recovery when no input
+    handover_adjustment_rate_per_frame = 4  # Rate to adjust for handover scenario
 
     # Per second
     self.override_reduction_rate = override_reduction_rate_per_frame * self.control_frequency_hz
