@@ -293,13 +293,13 @@ BO_ 416 SCC_CONTROL: 32 ADRV
  SG_ ACCMode : 68|3@1+ (1,0) [0|7] "" XXX
  SG_ ZEROS_9 : 71|5@1+ (1,0) [0|15] "" XXX
  SG_ CRUISE_STANDSTILL : 76|1@1+ (1,0) [0|1] "" XXX
- SG_ ZEROS_5 : 77|11@1+ (1,0) [0|2047] "" XXX
+ SG_ SCC_ObjDstLvlVal : 80|8@1+ (1,0) [0|255] ""  CLU,CGW
  SG_ DISTANCE_SETTING : 88|3@1+ (1,0) [0|3] "" XXX
  SG_ ZEROS_8 : 95|5@0+ (1,0) [0|31] "" XXX
  SG_ VSetDis : 103|8@0+ (1,0) [0|255] "km/h or mph" XXX
- SG_ NEW_SIGNAL_6 : 104|1@0+ (1,0) [0|1] "" XXX
- SG_ SET_ME_2 : 105|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_3 : 109|2@0+ (1,0) [0|1] "" XXX
+ SG_ SCC_NSCCOpSta : 104|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ SCC_NSCCOnOffSta : 106|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ SCC_ObjSta : 108|3@1+ (1,0) [0|7] ""  CLU,CGW
  SG_ ZEROS_10 : 111|2@0+ (1,0) [0|3] "" XXX
  SG_ ZEROS_6 : 119|16@0+ (1,0) [0|65535] "" XXX
  SG_ aReqValue : 128|11@1+ (0.01,-10.23) [-10.23|10.24] "m/s^2" XXX
@@ -400,10 +400,8 @@ BO_ 474 ADRV_0x1da: 32 ADRV
 BO_ 480 LFAHDA_CLUSTER: 16 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_4 : 24|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_5 : 25|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_2 : 30|1@0+ (1,0) [0|1] "" XXX
- SG_ HDA_ICON : 31|1@1+ (1,0) [0|1] "" XXX
+ SG_ HDA_OptUsmSta : 24|3@1+ (1,0) [0|7] ""  CLU,CGW
+ SG_ HDA_CntrlModSta : 30|2@1+ (1,0) [0|3] ""  CLU,CGW
  SG_ NEW_SIGNAL_1 : 32|3@1+ (1,0) [0|7] "" XXX
  SG_ LFA_ICON : 47|2@1+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_3 : 49|1@0+ (1,0) [0|1] "" XXX
