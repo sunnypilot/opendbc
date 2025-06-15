@@ -1,3 +1,4 @@
+import json
 import math
 import numpy as np
 from opendbc.car.carlog import carlog
@@ -58,10 +59,16 @@ class LateralController:
     self.cooperation_sustain_duration = 1.0
 
     # Ramp rates
-    self.override_reduction_rate = 15  # Fast reduction when overriding
-    self.cooperation_reduction_rate = 8  # Reduce gain when cooperating (make steering easier)
-    self.recovery_rate = 3  # Slow recovery when no input
-    self.handover_adjustment_rate = 10  # Rate to adjust for handover scenario
+    override_reduction_rate_per_frame = 15  # Fast reduction when overriding
+    cooperation_reduction_rate_per_frame = 8  # Reduce gain when cooperating (make steering easier)
+    recovery_rate_per_frame = 3  # Slow recovery when no input
+    handover_adjustment_rate_per_frame = 10  # Rate to adjust for handover scenario
+
+    # Per second
+    self.override_reduction_rate = override_reduction_rate_per_frame * self.control_frequency_hz
+    self.cooperation_reduction_rate = cooperation_reduction_rate_per_frame * self.control_frequency_hz
+    self.recovery_rate = recovery_rate_per_frame * self.control_frequency_hz
+    self.handover_adjustment_rate = handover_adjustment_rate_per_frame * self.control_frequency_hz
 
   def update(self, steer_col_torque, desired_torque, current_angle, desired_angle, grab_level, frame_count):
     if self.previous_frame is None:
@@ -123,7 +130,7 @@ class LateralController:
     # Clamp torque gain to valid bounds
     self.torque_gain = np.clip(self.torque_gain, self.min_active_torque, 250)
 
-    return self.torque_gain
+    return float(self.torque_gain)
 
   def detect_driver_state(self, grab_level, steer_col_torque, angle_error):
     """
@@ -379,6 +386,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     new_actuators.accel = self.tuning.actual_accel
 
     self.frame += 1
+    carlog.debug(self.lateral_controller.get_debug_info())
     return new_actuators, can_sends
 
   def create_can_msgs(self, apply_steer_req, apply_torque, torque_fault, set_speed_in_units, accel, stopping, hud_control, actuators, CS, CC):
