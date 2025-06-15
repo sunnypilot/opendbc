@@ -59,10 +59,10 @@ class LateralController:
     self.cooperation_sustain_duration = 1.0
 
     # Per second
-    self.override_reduction_rate_per_second = 3000
-    self.cooperation_reduction_rate_per_second = 2000
-    self.recovery_rate_per_second = 1000
-    self.handover_adjustment_rate_per_second = 4000
+    self.override_reduction_rate_per_second = 1300
+    self.cooperation_reduction_rate_per_second = 500
+    self.recovery_rate_per_second = 250
+    self.handover_adjustment_rate_per_second = 300
 
   def update(self, steer_col_torque, desired_torque, current_angle, desired_angle, grab_level, frame_count):
     if self.previous_frame is None:
