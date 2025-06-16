@@ -226,7 +226,7 @@ def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
 
   # angle is current angle when inactive
-  if not lat_active or steering_pressed:
+  if not lat_active: #or steering_pressed:
     new_apply_angle = steering_angle
 
   # prevent fault
