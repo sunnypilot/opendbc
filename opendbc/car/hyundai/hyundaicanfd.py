@@ -147,16 +147,16 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "SCC_AccelLimBandUppVal": tuning.comfort_band_upper,
     "SCC_AccelLimBandLwrVal": tuning.comfort_band_lower,
 
-    "ACC_ObjDist": int(hyundaicanfd_ext.leadDistance),
+    "ACC_ObjDist": hyundaicanfd_ext.leadDistance,
     "ACC_ObjRelSpd": hyundaicanfd_ext.leadRelSpeed,
-    "ObjValid": int(not hyundaicanfd_ext.leadVisible),
+    "ObjValid": not hyundaicanfd_ext.leadVisible,
     "SET_ME_3": 0x3,
     "SCC_ObjDstLvlVal": hyundaicanfd_ext.objectGap,
     "SCC_HeadwayDstSetVal": hud_control.leadDistanceBars,
     # lead car indicator 0 = no lead/disabled, 1 = gray, 2 = white
-    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else 2),
+    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else hyundaicanfd_ext.objectRelGap),
     # time to stop (blue bar)
-    "SCC_TrgtDstVal": min(int(hyundaicanfd_ext.stoppingDistance), int(hyundaicanfd_ext.leadDistance)),
+    "SCC_TrgtDstVal": hyundaicanfd_ext.targetDistance,
   }
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
