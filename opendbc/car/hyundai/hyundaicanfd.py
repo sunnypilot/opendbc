@@ -158,6 +158,20 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
+def create_hda2_cluster(packer, CAN, left_blinker, right_blinker, hud_control, out):
+  values = {
+    "HDA_LCFuncOptUsmSta": 2,
+    "HDA_LCFuncSta": 3 if ((hud_control.leftLaneDepart and left_blinker) or (hud_control.rightLaneDepart and right_blinker)) else 1 if (hud_control.leftLaneDepart or hud_control.rightLaneDepart) else 2,
+    "HDA_LCTurnSigReq": 1 if left_blinker else 2 if right_blinker else 0,
+    "HDA_PathSta": 4 if hud_control.rightLaneDepart else 3 if hud_control.leftLaneDepart else 2 if right_blinker else 1 if left_blinker else 0,
+    "HDA_LtLCAvailSta": 2 if hud_control.leftLaneDepart else 1 if left_blinker else 0,
+    "HDA_RtLCAvailSta": 2 if hud_control.rightLaneDepart else 1 if right_blinker else 0,
+    "HDA_LtLineLatPos": 15,
+    "HDA_RtLineLatPos": 15,
+    "HDA_LaneCvrtLvlVal": 0,
+  }
+
+  return packer.make_can_msg("ADRV_0x1ea", CAN.ECAN, values)
 
 def create_spas_messages(packer, CAN, left_blink, right_blink):
   ret = []

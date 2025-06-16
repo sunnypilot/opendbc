@@ -419,32 +419,46 @@ BO_ 485 BLINDSPOTS_FRONT_CORNER_1: 16 XXX
  SG_ NEW_SIGNAL_1 : 108|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 490 ADRV_0x1ea: 32 ADRV
- SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
- SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ SET_ME_1C : 31|8@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_1 : 32|2@1+ (1,0) [0|3] "" XXX
+ SG_ ADAS_CMD_Crc32Val : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ ADAS_CMD_AlvCnt32Val : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ HDA_LCFuncOptUsmSta : 26|3@1+ (1,0) [0|7] "" XXX
+ SG_ HDA_LCTurnSigReq : 29|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_LCFuncSta : 32|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_LtLCAvailSta : 35|5@1+ (1,0) [0|31] "" XXX
+ SG_ HDA_RtLCAvailSta : 40|3@1+ (1,0) [0|7] "" XXX
+ SG_ HDA_PathSta : 43|3@1+ (1,0) [0|7] "" XXX
+ SG_ HDA_FrntLtVehLongPos : 46|1@1+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_2 : 47|2@0+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_3 : 55|8@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_4 : 64|6@1+ (1,0) [0|31] "" XXX
- SG_ NEW_SIGNAL_5 : 72|2@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_6 : 75|5@1+ (1,0) [0|31] "" XXX
+ SG_ HDA_FrntLtVehLatPos : 64|6@1+ (1,0) [0|31] "" XXX
+ SG_ HDA_FrntLtVehSta : 72|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_FrntRtVehLongPos : 75|5@1+ (1,0) [0|31] "" XXX
  SG_ NEW_SIGNAL_7 : 80|5@1+ (1,0) [0|31] "" XXX
- SG_ NEW_SIGNAL_8 : 88|7@1+ (1,0) [0|127] "" XXX
- SG_ NEW_SIGNAL_9 : 96|1@0+ (1,0) [0|1] "" XXX
- SG_ SET_ME_FF : 120|8@1+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_10 : 143|5@0+ (1,0) [0|31] "" XXX
+ SG_ HDA_FrntRtVehLatPos : 88|7@1+ (1,0) [0|127] "" XXX
+ SG_ HDA_FrntRtVehSta : 96|1@0+ (1,0) [0|1] "" XXX
+ SG_ HDP_HzrdLmpReq : 104|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDP_HeadLmpReq : 106|3@1+ (1,0) [0|7] "" XXX
+ SG_ HDP_WiperReq : 109|5@1+ (1,0) [0|31] "" XXX
+ SG_ HDP_DfgReqSta : 114|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDP_DrUnlckReqSta : 116|4@1+ (1,0) [0|15] "" XXX
+ SG_ HDA_TtlLnNumVal : 120|4@1+ (1,0) [0|15] "" XXX
+ SG_ HDA_DrvLnNumVal : 124|15@1+ (1,0) [0|32767] "" XXX
+ SG_ HDA_LtVehLongPos : 139|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_10 : 143|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_11 : 144|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_12 : 152|6@1+ (1,0) [0|63] "" XXX
- SG_ NEW_SIGNAL_13 : 160|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_14 : 163|5@1+ (1,0) [0|31] "" XXX
+ SG_ HDA_LtVehLatPos : 152|6@1+ (1,0) [0|63] "" XXX
+ SG_ HDA_LtVehSta : 160|1@0+ (1,0) [0|1] "" XXX
+ SG_ HDA_RtVehLongPos : 163|5@1+ (1,0) [0|31] "" XXX
  SG_ NEW_SIGNAL_16 : 168|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_15 : 175|4@0+ (1,0) [0|63] "" XXX
+ SG_ HDA_RtVehLatPos : 172|3@1+ (1,0) [0|7] "" XXX
+ SG_ NEW_SIGNAL_15 : 175|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_17 : 176|2@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_18 : 184|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_19 : 208|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_20 : 212|1@0+ (1,0) [0|1] "" XXX
- SG_ SET_ME_TMP_F : 232|5@1+ (1,0) [0|31] "" XXX
- SG_ SET_ME_TMP_F_2 : 240|5@1+ (1,0) [0|31] "" XXX
+ SG_ HDA_RtVehSta : 184|1@0+ (1,0) [0|1] "" XXX
+ SG_ HDA_InfoPUDis2 : 204|4@1+ (1,0) [0|15] "" XXX
+ SG_ HDA_LaneCvrtLvlVal : 208|5@1- (1,15) [0|31] "" XXX
+ SG_ HDA_LtLineLatPos : 232|5@1+ (1,0) [0|15] "" XXX
+ SG_ HDA_RtLineLatPos : 240|5@1+ (1,0) [0|15] "" XXX
+ SG_ HDA_LCFuncWrnSnd : 248|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 506 CLUSTER_SPEED_LIMIT: 32 XXX
  SG_ SPEED_LIMIT_1 : 39|7@0+ (1,0) [0|255] "" XXX
