@@ -206,7 +206,7 @@ def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: floa
 
 def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
                                      lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel) -> float:
-  apply_angle = np.clip(apply_angle, -1212., 1212.)
+  apply_angle = np.clip(apply_angle, -819.2, 819.1)
 
   # If the vehicle speed is above the maximum speed in the smoothing matrix, apply smoothing
   if abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
@@ -314,14 +314,11 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     #   if (overrideCyclesParam := self._params.get("HkgTuningOverridingCycles")) and int(overrideCyclesParam) != self.angle_torque_override_cycles:
     #     self.angle_torque_override_cycles = int(overrideCyclesParam)
 
-    # TODO: needed for angle control cars?
-    # >90 degree steering fault prevention
-    self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_FAULT_ANGLE, CC.latActive,
-                                                                       self.angle_limit_counter, MAX_FAULT_ANGLE_FRAMES,
-                                                                       MAX_FAULT_ANGLE_CONSECUTIVE_FRAMES)
-
     # steering torque
     if not self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+      self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_FAULT_ANGLE, CC.latActive,
+                                                                         self.angle_limit_counter, MAX_FAULT_ANGLE_FRAMES,
+                                                                         MAX_FAULT_ANGLE_CONSECUTIVE_FRAMES)
       new_torque = int(round(actuators.torque * self.params.STEER_MAX))
       apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
 
@@ -334,7 +331,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
       self.apply_angle_last = apply_hyundai_steer_angle_limits(actuators.steeringAngleDeg if CC.latActive else CS.out.steeringAngleDeg, self.apply_angle_last,
                                                                CS.out.vEgoRaw, CS.out.steeringAngleDeg, CC.latActive, CarControllerParams.ANGLE_LIMITS,
-                                                               self.VM)
+                                                               self.VM, self.sm)
+      apply_steer_req = self.lkas_max_torque != 0  # TODO: revisit for angle. This is how hyundai decides it too. But we might want to do better.
 
 
       # Safety clamp
