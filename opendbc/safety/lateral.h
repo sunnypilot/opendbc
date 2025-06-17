@@ -349,10 +349,10 @@ bool steer_angle_cmd_checks_vm(int desired_angle, bool steer_control_enabled, co
     violation |= steer_control_enabled;
   }
 
-  //// reset to current angle if either controls is not allowed or there's a violation
-  //// if (violation || !is_lat_active()) {
-  // TODO: We must fix this and reset when violation
-  if (!is_lat_active()) { //Stock resets if theres a violation as well but I am seeign a bad behavior that causes a violent shake when this happens due to desync between op and panda
+  // reset to current angle if either controls is not allowed or there's a violation
+   if (violation || !is_lat_active()) {
+  //// TODO: We must fix this and reset when violation
+  //// if (!is_lat_active()) { //Stock resets if there's a violation as well but I am seeign a bad behavior that causes a violent shake when this happens due to desync between op and panda
     desired_angle_last = CLAMP(angle_meas.values[0], -limits.max_angle, limits.max_angle);
   }
 

@@ -1,4 +1,3 @@
-import json
 import math
 import numpy as np
 from opendbc.car.carlog import carlog
@@ -35,7 +34,7 @@ MAX_FAULT_ANGLE = 85
 MAX_FAULT_ANGLE_FRAMES = 89
 MAX_FAULT_ANGLE_CONSECUTIVE_FRAMES = 2
 
-MAX_ANGLE_RATE = 2 # Was 5, but I am not trusting it! 
+MAX_ANGLE_RATE = 2 # Was 5, but I am not trusting it!
 # Add extra tolerance for average banked road since safety doesn't have the roll
 AVERAGE_ROAD_ROLL = 0.06  # ~3.4 degrees, 6% superelevation. higher actual roll lowers lateral acceleration
 MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)  # ~3.6 m/s^2
@@ -206,15 +205,15 @@ def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: floa
   return apply_angle
 
 def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
-                                     lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, steering_pressed) -> float:
-  apply_angle = np.clip(apply_angle, -819.2, 819.1)
+                                     lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel) -> float:
+  apply_angle = np.clip(apply_angle, -1212., 1212.)
 
   # If the vehicle speed is above the maximum speed in the smoothing matrix, apply smoothing
   if abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
     apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, apply_angle_last)
 
   # *** max lateral jerk limit ***
-  v_ego_padded = max(v_ego_raw, 1) + 1 # Adding 1 to our speed so we are more conservative with the limits
+  v_ego_padded = max(v_ego_raw, 1)
   max_angle_delta = get_max_angle_delta(v_ego_padded, VM)
 
   # prevent fault
@@ -330,11 +329,12 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     else:
       active_min_torque = max(0.30 * self.angle_max_torque, self.angle_min_active_torque)  # 0.3 is the minimum torque when the user is not overriding
       target_torque = int(np.interp(abs(actuators.torque), [0., 1.], [active_min_torque, self.angle_max_torque]))
-      self.lkas_max_torque = self.lateral_controller.update(CS.out.steeringTorque, target_torque, CS.out.steeringAngleDeg, actuators.steeringAngleDeg, CS.hod_dir_status, self.frame)
+      self.lkas_max_torque = self.lateral_controller.update(CS.out.steeringTorque, target_torque, CS.out.steeringAngleDeg,
+                                                            actuators.steeringAngleDeg, CS.hod_dir_status, self.frame)
 
-      self.apply_angle_last = apply_hyundai_steer_angle_limits(actuators.steeringAngleDeg if CC.latActive else CS.out.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
-                                                               CS.out.steeringAngleDeg, CC.latActive,
-                                                               CarControllerParams.ANGLE_LIMITS, self.VM, self.lateral_controller.steering_pressed)
+      self.apply_angle_last = apply_hyundai_steer_angle_limits(actuators.steeringAngleDeg if CC.latActive else CS.out.steeringAngleDeg, self.apply_angle_last,
+                                                               CS.out.vEgoRaw, CS.out.steeringAngleDeg, CC.latActive, CarControllerParams.ANGLE_LIMITS,
+                                                               self.VM)
 
 
       # Safety clamp
@@ -387,7 +387,6 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     new_actuators.accel = self.tuning.actual_accel
 
     self.frame += 1
-    carlog.debug(self.lateral_controller.get_debug_info())
     return new_actuators, can_sends
 
   def create_can_msgs(self, apply_steer_req, apply_torque, torque_fault, set_speed_in_units, accel, stopping, hud_control, actuators, CS, CC):
