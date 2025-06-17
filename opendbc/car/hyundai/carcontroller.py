@@ -60,9 +60,9 @@ class LateralController:
 
     # Per second
     self.override_reduction_rate_per_second = 1300
-    self.cooperation_reduction_rate_per_second = 500
-    self.recovery_rate_per_second = 250
-    self.handover_adjustment_rate_per_second = 300
+    self.cooperation_reduction_rate_per_second = 800
+    self.recovery_rate_per_second = 300
+    self.handover_adjustment_rate_per_second = 600
 
   @property
   def steering_pressed(self):
@@ -146,7 +146,7 @@ class LateralController:
     # Check if driver is applying significant torque
     if abs(steer_col_torque) > self.torque_threshold:
       # Check if driver torque aligns with or opposes angle correction
-      if angle_error * steer_col_torque > 0:
+      if angle_error * steer_col_torque > 0 and grab_level != 4:  # Grab level 4 indicates a strong grip
         # Driver is helping with the correction (same direction)
         return "cooperative"
       else:
