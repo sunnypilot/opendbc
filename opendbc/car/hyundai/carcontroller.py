@@ -285,8 +285,6 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
     self._params = Params() if PARAMS_AVAILABLE else None
     if PARAMS_AVAILABLE:
-      # self.live_tuning = self._params.get_bool("HkgAngleLiveTuning")
-      # self.smoothing_factor = float(self._params.get("HkgTuningAngleSmoothingFactor")) / 10.0 if self._params.get("HkgTuningAngleSmoothingFactor") else 0.0
       self.angle_min_active_torque = int(self._params.get("HkgTuningAngleMinTorque")) if self._params.get("HkgTuningAngleMinTorque") else 0
       self.angle_max_torque = int(self._params.get("HkgTuningAngleMaxTorque")) if self._params.get("HkgTuningAngleMaxTorque") else 0
       self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles")) if self._params.get("HkgTuningOverridingCycles") else 0
@@ -304,16 +302,6 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     hud_control = CC.hudControl
     apply_torque = 0
 
-    # if PARAMS_AVAILABLE and self.live_tuning and self._params and self.frame % 500 == 0:
-    #   if (smoothingFactorParam := self._params.get("HkgTuningAngleSmoothingFactor")) and float(smoothingFactorParam) != self.smoothing_factor:
-    #     self.smoothing_factor = float(smoothingFactorParam) / 10.0
-    #   if (minTorqueParam := self._params.get("HkgTuningAngleMinTorque")) and int(minTorqueParam) != self.angle_min_active_torque:
-    #     self.angle_min_active_torque = int(minTorqueParam)
-    #   if (maxTorqueParam := self._params.get("HkgTuningAngleMaxTorque")) and int(maxTorqueParam) != self.angle_max_torque:
-    #     self.angle_max_torque = int(maxTorqueParam)
-    #   if (overrideCyclesParam := self._params.get("HkgTuningOverridingCycles")) and int(overrideCyclesParam) != self.angle_torque_override_cycles:
-    #     self.angle_torque_override_cycles = int(overrideCyclesParam)
-
     # steering torque
     if not self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
       self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_FAULT_ANGLE, CC.latActive,
@@ -330,9 +318,9 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
                                                             actuators.steeringAngleDeg, CS.hod_dir_status, self.frame)
 
       self.apply_angle_last = apply_hyundai_steer_angle_limits(actuators.steeringAngleDeg if CC.latActive else CS.out.steeringAngleDeg, self.apply_angle_last,
-                                                               CS.out.vEgoRaw, CS.out.steeringAngleDeg, CC.latActive, CarControllerParams.ANGLE_LIMITS,
-                                                               self.VM, self.sm)
-      apply_steer_req = self.lkas_max_torque != 0  # TODO: revisit for angle. This is how hyundai decides it too. But we might want to do better.
+                                                               CS.out.vEgoRaw, CS.out.steeringAngleDeg, CC.latActive, CarControllerParams.ANGLE_LIMITS, self.VM)
+
+      apply_steer_req = CC.latActive and self.lkas_max_torque != 0
 
 
       # Safety clamp
