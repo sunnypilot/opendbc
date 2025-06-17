@@ -199,8 +199,8 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         # angle_unit_offset = -1 if sign == -1 else 0
 
         # at limit (safety tolerance adds 1)
-        # max_angle = round_angle(get_max_angle(speed, self.VM), 1) * sign # with offset 1 i couldn't make it work, should be fine "without" tolerance
-        max_angle = round_angle(get_max_angle(speed, self.VM)) * sign
+        max_angle = round_angle(get_max_angle(speed, self.VM), 1) * sign # with offset 1 i couldn't make it work, should be fine "without" tolerance
+        # max_angle = round_angle(get_max_angle(speed, self.VM)) * sign
         max_angle = np.clip(max_angle, -self.STEER_ANGLE_MAX, self.STEER_ANGLE_MAX)
         self.safety.set_desired_angle_last(round(max_angle * self.DEG_TO_CAN))
 
