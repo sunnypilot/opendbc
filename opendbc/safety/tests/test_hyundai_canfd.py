@@ -24,11 +24,11 @@ ALL_GAS_EV_HYBRID_COMBOS = [
   {"GAS_MSG": ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL"), "SCC_BUS": 2, "SAFETY_PARAM": HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC},
 ]
 
-def round_angle(apply_angle, can_offset=0):
-  apply_angle_can = (apply_angle + 8191.1) / 0.1 + can_offset
-  # 0.49999_ == 0.5
-  rnd_offset = 1e-5 if apply_angle >= 0 else -1e-5
-  return away_round(apply_angle_can + rnd_offset) * 0.1 - 8191.1
+def round_angle(angle_deg: float, can_offset=0):
+  scaled = int(angle_deg / 0.1)
+  scaled += can_offset
+  return scaled * 0.1
+
 
 class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest):
 
@@ -195,12 +195,8 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         self.safety.set_controls_allowed(True)
         self._reset_speed_measurement(speed + 1)  # safety fudges the speed
 
-        # angle signal can't represent 0, so it biases one unit down
-        # angle_unit_offset = -1 if sign == -1 else 0
-
         # at limit (safety tolerance adds 1)
-        # max_angle = round_angle(get_max_angle(speed, self.VM), 1) * sign # with offset 1 i couldn't make it work, should be fine "without" tolerance
-        max_angle = round_angle(get_max_angle(speed, self.VM)) * sign
+        max_angle = round_angle(get_max_angle(speed, self.VM), 1) * sign
         max_angle = np.clip(max_angle, -self.STEER_ANGLE_MAX, self.STEER_ANGLE_MAX)
         self.safety.set_desired_angle_last(round(max_angle * self.DEG_TO_CAN))
 
@@ -224,9 +220,6 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         self.safety.set_controls_allowed(True)
         self._reset_speed_measurement(speed + 1)  # safety fudges the speed
         self._tx(self._angle_cmd_msg(0, True))
-
-        # # angle signal can't represent 0, so it biases one unit down
-        # angle_unit_offset = 1 if sign == -1 else 0
 
         # Stay within limits
         # Up

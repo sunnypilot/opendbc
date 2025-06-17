@@ -198,14 +198,11 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     #   if (overrideCyclesParam := self._params.get("HkgTuningOverridingCycles")) and int(overrideCyclesParam) != self.angle_torque_override_cycles:
     #     self.angle_torque_override_cycles = int(overrideCyclesParam)
 
-    # TODO: needed for angle control cars?
-    # >90 degree steering fault prevention
-    self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_FAULT_ANGLE, CC.latActive,
-                                                                       self.angle_limit_counter, MAX_FAULT_ANGLE_FRAMES,
-                                                                       MAX_FAULT_ANGLE_CONSECUTIVE_FRAMES)
-
     # steering torque
     if not self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+      self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_FAULT_ANGLE, CC.latActive,
+                                                                         self.angle_limit_counter, MAX_FAULT_ANGLE_FRAMES,
+                                                                         MAX_FAULT_ANGLE_CONSECUTIVE_FRAMES)
       new_torque = int(round(actuators.torque * self.params.STEER_MAX))
       apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
 
@@ -230,6 +227,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
           self.lkas_max_torque = max(self.lkas_max_torque - self.params.ANGLE_RAMP_DOWN_RATE, target_torque)
         else:
           self.lkas_max_torque = min(self.lkas_max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
+      apply_steer_req = self.lkas_max_torque != 0  # TODO: revisit for angle. This is how hyundai decides it too. But we might want to do better.
 
       # Safety clamp
       self.lkas_max_torque = float(np.clip(self.lkas_max_torque, self.params.ANGLE_MIN_TORQUE, self.angle_max_torque))
