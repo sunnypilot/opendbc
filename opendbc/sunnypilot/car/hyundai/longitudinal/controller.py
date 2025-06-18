@@ -142,8 +142,6 @@ class LongitudinalController:
         Dynamic lower jerk limit (m/s³)
     """
 
-    if self.CP.radarUnavailable:
-      return 5.0
 
     if accel_error < 0:
       # Scale the brake jerk values based on car config
@@ -185,8 +183,6 @@ class LongitudinalController:
 
     # Calculate lower jerk limit
     lower_jerk = max(-j_ego_lower, self.car_config.min_jerk)
-    if self.CP.radarUnavailable:
-      lower_jerk = 5.0
 
     # Final jerk limits with thresholds
     desired_jerk_upper = min(max(j_ego_upper, self.car_config.min_jerk), upper_speed_factor)
