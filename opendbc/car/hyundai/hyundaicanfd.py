@@ -43,7 +43,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     "LKA_ASSIST": 0,
     "STEER_REQ": 1 if lat_active else 0,
     "STEER_MODE": 0,
-    "HAS_LANE_SAFETY": 1,
+    "HAS_LANE_SAFETY": 0,
   }
 
   lkas_values = copy.copy(common_values)
@@ -148,6 +148,8 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "SCC_AccelLimBandLwrVal": tuning.comfort_band_lower,
 
     "ACC_ObjDist": hyundaicanfd_ext.leadDistance,
+    "ObjValid": not hyundaicanfd_ext.leadVisible,
+    "SET_ME_3": 0x3,
     "ACC_ObjRelSpd": hyundaicanfd_ext.leadRelSpeed,
     "SCC_ObjDstLvlVal": hyundaicanfd_ext.objectGap,
     "SCC_HeadwayDstSetVal": hud_control.leadDistanceBars,
