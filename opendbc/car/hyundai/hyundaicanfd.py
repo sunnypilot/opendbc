@@ -134,7 +134,7 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     a_val = np.clip(accel, accel_last - jn, accel_last + jn)  # noqa: F841
 
   values = {
-    "ACCMode": 0 if not enabled else (2 if gas_override else 1),
+    "ACCMode": 0 if not main_cruise_enabled else 4 if not enabled else 2 if gas_override else 1,
     "MainMode_ACC": 1 if main_cruise_enabled else 0,
     "SCC_NSCCOnOffSta": 2 if main_cruise_enabled else 0,
     "SCC_NSCCOpSta": 0 if not enabled  else (1 if gas_override else 2),
@@ -147,15 +147,15 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "SCC_AccelLimBandUppVal": tuning.comfort_band_upper,
     "SCC_AccelLimBandLwrVal": tuning.comfort_band_lower,
 
-    "ACC_ObjDist": hyundaicanfd_ext.leadDistance,
-    "ObjValid": not hyundaicanfd_ext.leadVisible,
+    "ACC_ObjDist": int(hyundaicanfd_ext.leadDistance),
+    "ObjValid": int(not hyundaicanfd_ext.leadVisible),
     "SET_ME_3": 0x3,
     "ACC_ObjRelSpd": hyundaicanfd_ext.leadRelSpeed,
-    "SCC_ObjDstLvlVal": hyundaicanfd_ext.objectGap,
+    "SCC_ObjDstLvlVal": hyundaicanfd_ext.objectGap, # remove this?
     "SCC_HeadwayDstSetVal": hud_control.leadDistanceBars,
-    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else hyundaicanfd_ext.objectRelGap),
+    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else 2), # use hyundaicanfd_ext.objectRelGap ?
     "SCC_TrgtDstVal": hyundaicanfd_ext.targetDistance,
-    "SCC_ObjLatPosVal": 20,
+    #"SCC_ObjLatPosVal": 20,
   }
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
