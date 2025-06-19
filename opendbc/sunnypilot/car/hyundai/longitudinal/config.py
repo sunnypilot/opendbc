@@ -74,9 +74,9 @@ CAR_SPECIFIC_CONFIGS = {
   CAR.HYUNDAI_IONIQ_PHEV: CarTuningConfig(
     lookahead_jerk_upper_v=[0.3, 1.0],
     upper_jerk_v=[3.0, 3.0, 2.5],
-    lower_jerk_v=[3.25, 3.5, 3.0],
+    lower_jerk_v=[3.25, 4.0, 3.0],
     jerk_limits=3.5,
-    min_jerk=1.0,
+    min_jerk=2.0,
   ),
   CAR.HYUNDAI_KONA_2022: CarTuningConfig(
     stopping_decel_rate=0.3,
