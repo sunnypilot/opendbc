@@ -289,7 +289,7 @@ BO_ 416 SCC_CONTROL: 32 ADRV
  SG_ ACC_ObjRelSpd : 35|9@1+ (0.1,-16.4) [-16.4|34.7] "m/s" XXX
  SG_ SET_ME_3 : 45|2@0+ (1,0) [0|3] "" XXX
  SG_ ObjValid : 46|1@0+ (1,0) [0|3] "" XXX
- SG_ SCC_ObjLatPosVal : 47|9@1+ (0.1,-20) [-20|31.1] "m"  CLU,CGW
+ SG_ SET_ME_TMP_64 : 55|8@0+ (1,0) [0|63] "" XXX
  SG_ SCC_SysFlrSta : 64|2@1+ (1,0) [0|3] ""  CLU,CGW
  SG_ MainMode_ACC : 66|1@1+ (1,0) [0|1] "" XXX
  SG_ ACCMode : 68|3@1+ (1,0) [0|7] "" XXX

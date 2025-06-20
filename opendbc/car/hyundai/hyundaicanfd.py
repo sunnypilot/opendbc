@@ -123,7 +123,7 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
 
-def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed, hud_control,
+def create_acc_control(packer, CAN, enabled, accel_last, accel, gas_override, set_speed, hud_control,
                        hyundaicanfd_ext, main_cruise_enabled, tuning):
   jerk = 5
   jn = jerk / 50
@@ -150,19 +150,19 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "ACC_ObjDist": int(hyundaicanfd_ext.leadDistance),
     "ObjValid": int(not hyundaicanfd_ext.leadVisible),
     "SET_ME_3": 0x3,
+    "SET_ME_TMP_64": 0x64,
     "ACC_ObjRelSpd": hyundaicanfd_ext.leadRelSpeed,
-    "SCC_ObjDstLvlVal": hyundaicanfd_ext.objectGap, # remove this?
+    "SCC_ObjDstLvlVal": hyundaicanfd_ext.objectGap,
     "SCC_HeadwayDstSetVal": hud_control.leadDistanceBars,
-    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else 2), # use hyundaicanfd_ext.objectRelGap ?
+    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else hyundaicanfd_ext.objectRelGap),
     "SCC_TrgtDstVal": hyundaicanfd_ext.targetDistance,
-    #"SCC_ObjLatPosVal": 20,
   }
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
-def create_hda2_cluster(packer, CAN, left_blinker, right_blinker, hud_control, out):
+def create_hda2_cluster(packer, CAN, enabled, left_blinker, right_blinker, hud_control, out):
   values = {
-    "HDA_LCFuncOptUsmSta": 2,
+    "HDA_LCFuncOptUsmSta": 2 if enabled else 0,
     "HDA_LCFuncSta": 3 if ((hud_control.leftLaneDepart and left_blinker) or (hud_control.rightLaneDepart and right_blinker)) else 1 if (hud_control.leftLaneDepart or hud_control.rightLaneDepart) else 2,
     "HDA_LCTurnSigReq": 1 if left_blinker else 2 if right_blinker else 0,
     "HDA_PathSta": 4 if hud_control.rightLaneDepart else 3 if hud_control.leftLaneDepart else 2 if right_blinker else 1 if left_blinker else 0,
