@@ -160,16 +160,16 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, gas_override, se
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
-def create_hda2_cluster(packer, CAN, enabled, left_blinker, right_blinker, hud_control, out):
+def create_hda2_cluster(packer, CAN, enabled, left_blinker, right_blinker, hud_control, hyundaicanfd_ext):
   values = {
-    "HDA_LCFuncOptUsmSta": 2 if enabled else 0,
-    "HDA_LCFuncSta": 3 if ((hud_control.leftLaneDepart and left_blinker) or (hud_control.rightLaneDepart and right_blinker)) else 1 if (hud_control.leftLaneDepart or hud_control.rightLaneDepart) else 2,
+    "HDA_LCFuncOptUsmSta": 2,
+    "HDA_LCFuncSta": 0 if not enabled else 3 if ((hud_control.leftLaneDepart and left_blinker) or (hud_control.rightLaneDepart and right_blinker)) else 1 if (hud_control.leftLaneDepart or hud_control.rightLaneDepart) else 2,
     "HDA_LCTurnSigReq": 1 if left_blinker else 2 if right_blinker else 0,
     "HDA_PathSta": 4 if hud_control.rightLaneDepart else 3 if hud_control.leftLaneDepart else 2 if right_blinker else 1 if left_blinker else 0,
     "HDA_LtLCAvailSta": 2 if hud_control.leftLaneDepart else 1 if left_blinker else 0,
     "HDA_RtLCAvailSta": 2 if hud_control.rightLaneDepart else 1 if right_blinker else 0,
-    "HDA_LtLineLatPos": 15,
-    "HDA_RtLineLatPos": 15,
+    "HDA_LtLineLatPos": hyundaicanfd_ext.leftLanePosition,
+    "HDA_RtLineLatPos": hyundaicanfd_ext.rightLanePosition,
     "HDA_LaneCvrtLvlVal": 0,
   }
 

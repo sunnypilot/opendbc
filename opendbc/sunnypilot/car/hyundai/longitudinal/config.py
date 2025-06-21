@@ -68,7 +68,9 @@ CAR_SPECIFIC_CONFIGS = {
     lookahead_jerk_bp=[2., 5., 20.],
     lookahead_jerk_upper_v=[0.25, 0.5, 1.0],
     lookahead_jerk_lower_v=[0.05, 0.10, 0.3],
-    jerk_limits=2.0,
+    jerk_limits=5.0,
+    upper_jerk_v=[5.0, 5.0, 4.0],
+    lower_jerk_v=[3.0, 3.0, 3.5],
   ),
   CAR.KIA_NIRO_PHEV_2022: CarTuningConfig(
     stopping_decel_rate=0.3,

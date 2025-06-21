@@ -25,6 +25,8 @@ class HyundaiCanFDEXTParams:
   leadRelSpeed: float = 0.0
   leadVisible: bool = False
   targetDistance: float = 0.0
+  leftLanePosition: float = 0.0
+  rightLanePosition: float = 0.0
 
 
 class HyundaiCanEXT:
@@ -134,8 +136,43 @@ class HyundaiCanEXT:
     self.hyundaicanfd_ext.leadRelSpeed = lead_rel_speed
     self.hyundaicanfd_ext.leadVisible = self.lead_visible
     self.hyundaicanfd_ext.targetDistance = safe_distance if lead_distance == 0 else min (safe_distance, lead_distance)
+    self.hyundaicanfd_ext.leftLanePosition, self.hyundaicanfd_ext.rightLanePosition = self._calculate_lane_positions(CS)
 
     return self.hyundaicanfd_ext
+
+  def _calculate_lane_positions(self, CS: structs.CarState) -> tuple[float, float]:
+    leftlaneraw, rightlaneraw = CS.leftLanePosition, CS.rightLanePosition
+    leftlanequal, rightlanequal = CS.leftLaneQuality, CS.rightLaneQuality
+
+    scale_per_m = 15 / 1.7
+    leftlane = abs(int(round(15 + (leftlaneraw - 1.7) * scale_per_m)))
+    rightlane = abs(int(round(15 + (rightlaneraw - 1.7) * scale_per_m)))
+
+    if leftlanequal not in (2, 3):
+      leftlane = 0
+    if rightlanequal not in (2, 3):
+      rightlane = 0
+
+    if leftlaneraw == -2.0248375:
+      leftlane = 30 - rightlane
+    if rightlaneraw == 2.0248375:
+      rightlane = 30 - leftlane
+
+    if leftlaneraw == rightlaneraw == 0:
+      leftlane = rightlane = 15
+    elif leftlaneraw == 0:
+      leftlane = 30 - rightlane
+    elif rightlaneraw == 0:
+      rightlane = 30 - leftlane
+
+    total = leftlane + rightlane
+    if total == 0:
+      leftlane = rightlane = 15
+    else:
+      leftlane = round((leftlane / total) * 30)
+      rightlane = 30 - leftlane
+
+    return leftlane, rightlane
 
   def update(self, CC_SP: structs.CarControlSP, CC: structs.CarControl, CS: structs.CarState) -> None:
     self.hyundaican(CC_SP)
