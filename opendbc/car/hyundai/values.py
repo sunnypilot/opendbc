@@ -16,14 +16,8 @@ class CarControllerParams:
   ACCEL_MAX = 2.0 # m/s
 
   ANGLE_LIMITS: AngleSteeringLimits = AngleSteeringLimits(
-    # LKAS angle command is unlimited, but LFA is limited to 176.7 deg (but does not fault if requesting above)
+    # LKAS angle command is unlimited, but LFA is limited to 176.7 deg (but does not fault if requesting above, it's just clamped)
     180,  # deg
-    # ([0, 9, 25], [1, 0.6, 0.1]),
-    # ([0, 9, 25], [1.2, 0.7, 0.1]),
-    # ([0, 5, 25], [0.6, 0.4, 0.15]), # felt too aggressive
-    # ([0, 5, 25], [1, 0.5, 0.26]), # felt too aggressive
-    # ([5, 25], [0.3, 0.15]),
-    # ([11, 25], [0.36, 0.26]),
     ([],[]), #Tesla controls
     ([],[]), #Tesla controls
   )
@@ -31,9 +25,9 @@ class CarControllerParams:
   # Stock LFA system is seen sending 250 max, but for LKAS events it's 175 max.
   # 250 can at least achieve 4 m/s^2, 80 corresponds to ~2.5 m/s^2
   ANGLE_MAX_TORQUE = 250  # The maximum amount of torque that will be allowed
-  ANGLE_MIN_TORQUE = 25  # equivalent to ~0.8 m/s^2 of torque (based on ANGLE_MAX_TORQUE) when overriding
-  ANGLE_RAMP_UP_RATE = 2  # Max rate of change of torque
-  ANGLE_RAMP_DOWN_RATE = 3  # Max rate of change of torque
+  ANGLE_MIN_TORQUE = 25  # The minimum amount of torque that will be allowed while overriding. (to keep some feedback to the driver)
+  ANGLE_RAMP_UP_RATE = 2  # Max rate of change for torque increasing.
+  ANGLE_RAMP_DOWN_RATE = 3  # Max rate of change for torque decreasing. (when the user is overriding the system)
   ANGLE_TORQUE_OVERRIDE_CYCLES = 17  # The number of cycles it takes to ramp down to min torque when the user intervenes.
 
   # More torque optimization
@@ -50,7 +44,6 @@ class CarControllerParams:
     self.STEER_DRIVER_FACTOR = 1
     self.STEER_THRESHOLD = 150
     self.STEER_STEP = 1  # 100 Hz
-    self.NO_LONGER_OVERRIDING_THRESHOLD = 100
 
     if CP.flags & HyundaiFlags.CANFD:
       self.STEER_MAX = 270
@@ -61,9 +54,7 @@ class CarControllerParams:
       self.STEER_DELTA_DOWN = 3
 
     if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
-      self.STEER_DRIVER_ALLOWANCE = 250
       self.STEER_THRESHOLD = 350
-      self.NO_LONGER_OVERRIDING_THRESHOLD = 150  # The threshold below which we stop overriding the steering angle
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.
@@ -161,6 +152,7 @@ class HyundaiFlags(IntFlag):
   ALT_LIMITS_2 = 2 ** 26
 
   CANFD_ANGLE_STEERING = 2 ** 27
+
 
 class Footnote(Enum):
   CANFD = CarFootnote(
@@ -390,7 +382,7 @@ class CAR(Platforms):
   )
   HYUNDAI_IONIQ_5_PE = HyundaiCanFDPlatformConfig(
     [
-      HyundaiCarDocs("Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025+", "Highway Driving Assist II & Lane Follow Assist 2",
+      HyundaiCarDocs("Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025", "Highway Driving Assist II & Lane Follow Assist 2",
                      car_parts=CarParts.common([CarHarness.hyundai_q]))
     ],
     HYUNDAI_IONIQ_5.specs,

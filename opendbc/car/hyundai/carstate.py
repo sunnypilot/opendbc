@@ -70,7 +70,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     self.cluster_speed_counter = CLUSTER_SAMPLE_RATE
 
     self.params = CarControllerParams(CP)
-    self.was_overriding = False  # used to track if the user is overriding the car
+    self.is_canfd_angle_steering = CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING
 
   def recent_button_interaction(self) -> bool:
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
@@ -266,29 +266,24 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     ret.steeringTorque = cp.vl["MDPS"]["STEERING_COL_TORQUE"]
     ret.steeringTorqueEps = cp.vl["MDPS"]["STEERING_OUT_TORQUE"]
     ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
-    if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+    if self.is_canfd_angle_steering:
       ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["MDPS"]["LKA_ANGLE_FAULT"] != 0
       hands_on_wheel = cp.vl["HOD_FD_01_100ms"]["HOD_Dir_Status"] >= 2
       torque_overriding = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
       ret.steeringPressed = self.update_steering_pressed(hands_on_wheel or torque_overriding, 5)
-      # currently_pressed = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
-      # still_over_threshold = abs(ret.steeringTorque) > self.params.NO_LONGER_OVERRIDING_THRESHOLD
-      # self.was_overriding = currently_pressed or (self.was_overriding and still_over_threshold)
-      # ret.steeringPressed = self.update_steering_pressed(self.was_overriding,5)
     else:
       ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
 
     # TODO: alt signal usage may be described by cp.vl['BLINKERS']['USE_ALT_LAMP']
     left_blinker_sig, right_blinker_sig = "LEFT_LAMP", "RIGHT_LAMP"
-    if self.CP.carFingerprint in (CAR.HYUNDAI_KONA_EV_2ND_GEN, CAR.HYUNDAI_IONIQ_5_PE):
+    if self.CP.carFingerprint == CAR.HYUNDAI_KONA_EV_2ND_GEN or self.is_canfd_angle_steering:
       left_blinker_sig, right_blinker_sig = "LEFT_LAMP_ALT", "RIGHT_LAMP_ALT"
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"][left_blinker_sig],
                                                                       cp.vl["BLINKERS"][right_blinker_sig])
     if self.CP.enableBsm:
-      left_bsm_sig = "FL_INDICATOR_ALT" if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING else "FL_INDICATOR"
-      right_bsm_sig = "FR_INDICATOR_ALT" if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING else "FR_INDICATOR"
-      ret.leftBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"][left_bsm_sig] != 0
-      ret.rightBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"][right_bsm_sig] != 0
+      suffix = "_ALT" if self.is_canfd_angle_steering else ""
+      ret.leftBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"][f"FL_INDICATOR{suffix}"] != 0
+      ret.rightBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"][f"FR_INDICATOR{suffix}"] != 0
 
     # cruise state
     # CAN FD cars enable on main button press, set available if no TCS faults preventing engagement
@@ -376,7 +371,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
         ("SCC_CONTROL", 50),
       ]
 
-    if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+    if self.is_canfd_angle_steering:
       pt_messages += [
         ("HOD_FD_01_100ms", 10),
       ]
@@ -462,6 +457,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
       if CP.flags & HyundaiFlags.USE_FCA.value:
         cam_messages.append(("FCA11", 50))
+
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
