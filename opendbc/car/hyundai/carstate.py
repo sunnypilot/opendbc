@@ -71,6 +71,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     self.params = CarControllerParams(CP)
     self.is_canfd_angle_steering = CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING
+    self.imu_lateral_acceleration = 0.0  # used for CAN FD cars with angle steering
 
   def recent_button_interaction(self) -> bool:
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
@@ -271,6 +272,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
       hands_on_wheel = cp.vl["HOD_FD_01_100ms"]["HOD_Dir_Status"] >= 2
       torque_overriding = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
       ret.steeringPressed = self.update_steering_pressed(hands_on_wheel or torque_overriding, 5)
+      self.imu_lateral_acceleration = cp.vl["IMU_01_10ms"]["IMU_LatAccelVal"] * 9.81  # m/s^2
     else:
       ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
 
@@ -374,6 +376,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     if self.is_canfd_angle_steering:
       pt_messages += [
         ("HOD_FD_01_100ms", 10),
+        ("IMU_01_10ms", 100),
       ]
 
     cam_messages = []
