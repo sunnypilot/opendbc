@@ -60,6 +60,26 @@ BO_ 298 ADAS_CMD_30_10ms: 16 FR_CMR
  SG_ ELK_SymbDisp : 90|3@1+ (1,0) [0|7] "" ADRV
  SG_ FCA_ESA_CtrlSta : 98|1@0+ (1,0) [0|1] "" XXX
  SG_ ADAS_Damping_Gain : 104|8@1+ (1,0) [0|255] "" CGW
+ 
+BO_ 74 IMU_01_10ms: 8 XXX
+ SG_ IMU_Crc1Val : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ IMU_AlvCnt1Val : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ IMU_YawSigSta : 24|4@1+ (1,0) [0|15] "" XXX
+ SG_ IMU_LatAccelSigSta : 28|4@1+ (1,0) [0|15] "" XXX
+ SG_ IMU_LongAccelSigSta : 32|4@1+ (1,0) [0|15] "" XXX
+ SG_ IMU_VerAccelSigSta : 36|4@1+ (1,0) [0|15] "" XXX
+ SG_ IMU_McuVoltSta : 40|4@1+ (1,0) [0|15] "" XXX
+ SG_ IMU_AcuRstSta : 44|4@1+ (1,0) [0|15] "" XXX
+ SG_ IMU_SnsrTyp : 48|8@1+ (1,0) [0|255] "" XXX
+ SG_ IMU_RollSigSta : 56|8@1+ (1,0) [0|255] "" XXX
+ SG_ IMU_YawRtVal : 64|16@1+ (1,0) [0|65535] "" XXX
+ SG_ IMU_LatAccelVal : 80|16@1+ (1,0) [0|65535] "" XXX
+ SG_ IMU_LongAccelVal : 96|16@1+ (1,0) [0|65535] "" XXX
+ SG_ IMU_SnsrTempVal : 112|16@1+ (1,0) [0|65535] "" XXX
+ SG_ IMU_SeralNumVal : 128|64@1+ (1,0) [0|1.84467440737096e+19] "" XXX
+ SG_ IMU_RollRtVal : 192|16@1+ (1,0) [0|65535] "" XXX
+ SG_ IMU_VerAccelVal : 208|8@1+ (1,0) [0|255] "" XXX
+
 
 CM_ BO_ 203 "[P] Periodic";
 CM_ SG_ 203 ADAS_CMD_Crc35Val "ADAS_CMD_CyclicRedundancyCheck35Value";
