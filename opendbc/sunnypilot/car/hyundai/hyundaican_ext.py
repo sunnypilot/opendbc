@@ -7,6 +7,7 @@ See the LICENSE.md file in the root directory for more details.
 
 from dataclasses import dataclass
 from opendbc.car import structs
+import cereal.messaging as messaging
 
 
 @dataclass
@@ -43,6 +44,7 @@ class HyundaiCanEXT:
     self.lead_visible = False
     self.gap_counter = 0
     self.object_gap = 0
+    self.sm = messaging.SubMaster(['drivingModelData'])
 
   @staticmethod
   def _calculate_safe_distance(vEgo: float, distance_setting: int) -> float:
@@ -136,43 +138,27 @@ class HyundaiCanEXT:
     self.hyundaicanfd_ext.leadRelSpeed = lead_rel_speed
     self.hyundaicanfd_ext.leadVisible = self.lead_visible
     self.hyundaicanfd_ext.targetDistance = safe_distance if lead_distance == 0 else min (safe_distance, lead_distance)
-    self.hyundaicanfd_ext.leftLanePosition, self.hyundaicanfd_ext.rightLanePosition = self._calculate_lane_positions(CS)
+    self.hyundaicanfd_ext.leftLanePosition, self.hyundaicanfd_ext.rightLanePosition = self._calculate_lane_positions()
 
     return self.hyundaicanfd_ext
 
-  def _calculate_lane_positions(self, CS: structs.CarState) -> tuple[float, float]:
-    leftlaneraw, rightlaneraw = CS.leftLanePosition, CS.rightLanePosition
-    leftlanequal, rightlanequal = CS.leftLaneQuality, CS.rightLaneQuality
+  def _calculate_lane_positions(self) -> tuple[float, float]:
 
-    scale_per_m = 15 / 1.7
-    leftlane = abs(int(round(15 + (leftlaneraw - 1.7) * scale_per_m)))
-    rightlane = abs(int(round(15 + (rightlaneraw - 1.7) * scale_per_m)))
+    model_left_lane_position = self.sm['drivingModelData'].laneLineMeta.leftY
+    model_right_lane_position = self.sm['drivingModelData'].laneLineMeta.rightY
+    lane_width = abs(model_right_lane_position) + abs(model_left_lane_position)
 
-    if leftlanequal not in (2, 3):
-      leftlane = 0
-    if rightlanequal not in (2, 3):
-      rightlane = 0
+    left_lane = right_lane = 15.0
 
-    if leftlaneraw == -2.0248375:
-      leftlane = 30 - rightlane
-    if rightlaneraw == 2.0248375:
-      rightlane = 30 - leftlane
+    if lane_width > 0:
+      scaling_factor = 30.0 / lane_width
+      dist_from_left_line = abs(model_left_lane_position)
+      dist_from_right_line = abs(model_right_lane_position)
 
-    if leftlaneraw == rightlaneraw == 0:
-      leftlane = rightlane = 15
-    elif leftlaneraw == 0:
-      leftlane = 30 - rightlane
-    elif rightlaneraw == 0:
-      rightlane = 30 - leftlane
+      left_lane = dist_from_left_line * scaling_factor
+      right_lane = dist_from_right_line * scaling_factor
 
-    total = leftlane + rightlane
-    if total == 0:
-      leftlane = rightlane = 15
-    else:
-      leftlane = round((leftlane / total) * 30)
-      rightlane = 30 - leftlane
-
-    return leftlane, rightlane
+    return left_lane, right_lane
 
   def update(self, CC_SP: structs.CarControlSP, CC: structs.CarControl, CS: structs.CarState) -> None:
     self.hyundaican(CC_SP)
