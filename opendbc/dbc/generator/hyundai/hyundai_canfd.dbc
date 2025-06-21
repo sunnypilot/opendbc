@@ -162,7 +162,8 @@ BO_ 353 CCNC_0x161: 32 CCNC
  SG_ LANELINE_LEFT_POSITION : 84|6@1+ (1,0) [0|15] "" XXX
  SG_ LANELINE_RIGHT : 90|4@1+ (1,0) [0|15] "" XXX
  SG_ LANELINE_RIGHT_POSITION : 94|6@1+ (1,0) [0|3] "" XXX
- SG_ LANELINE_CURVATURE : 100|5@1- (1,15) [0|31] "" XXX
+ SG_ LANELINE_CURVATURE : 100|4@1+ (1,0) [0|31] "" XXX
+ SG_ LANELINE_CURVATURE_DIRECTION : 104|1@0+ (1,0) [0|1] "" XXX
  SG_ LANE_HIGHLIGHT : 105|4@1+ (1,0) [0|15] "" XXX
  SG_ LANE_HIGHLIGHT_DISTANCE : 109|11@1+ (0.1,0) [0|204.7] "m" XXX
  SG_ LANE_LEFT : 120|3@1+ (1,0) [0|7] "" XXX
@@ -453,7 +454,8 @@ BO_ 490 ADRV_0x1ea: 32 ADRV
  SG_ NEW_SIGNAL_17 : 176|2@1+ (1,0) [0|3] "" XXX
  SG_ HDA_RtVehSta : 184|1@0+ (1,0) [0|1] "" XXX
  SG_ HDA_InfoPUDis2 : 204|4@1+ (1,0) [0|15] "" XXX
- SG_ HDA_LaneCvrtLvlVal : 208|5@1- (1,15) [0|31] "" XXX
+ SG_ HDA_LaneCvrtLvlVal : 208|4@1+ (1,15) [0|31] "" XXX
+ SG_ HDA_LaneCvrtDir : 212|1@0+ (1,0) [0|1] "" XXX
  SG_ HDA_LtLineLatPos : 232|5@1+ (1,0) [0|15] "" XXX
  SG_ HDA_RtLineLatPos : 240|5@1+ (1,0) [0|15] "" XXX
  SG_ HDA_LCFuncWrnSnd : 248|8@1+ (1,0) [0|255] "" XXX

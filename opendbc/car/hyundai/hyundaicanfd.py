@@ -147,7 +147,7 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, gas_override, se
     "SCC_AccelLimBandUppVal": tuning.comfort_band_upper,
     "SCC_AccelLimBandLwrVal": tuning.comfort_band_lower,
 
-    "ACC_ObjDist": int(hyundaicanfd_ext.leadDistance),
+    "ACC_ObjDist": hyundaicanfd_ext.leadDistance,
     "ObjValid": int(not hyundaicanfd_ext.leadVisible),
     "SET_ME_3": 0x3,
     "SET_ME_TMP_64": 0x64,
@@ -160,7 +160,9 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, gas_override, se
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
-def create_hda2_cluster(packer, CAN, enabled, left_blinker, right_blinker, hud_control, hyundaicanfd_ext):
+def create_hda2_cluster(packer, CAN, enabled, left_blinker, right_blinker, hud_control, hyundaicanfd_ext, steering_angle_deg):
+  curvature = int(steering_angle_deg / 2)
+
   values = {
     "HDA_LCFuncOptUsmSta": 2,
     "HDA_LCFuncSta": 0 if not enabled else 3 if ((hud_control.leftLaneDepart and left_blinker) or (hud_control.rightLaneDepart and right_blinker)) else 1 if (hud_control.leftLaneDepart or hud_control.rightLaneDepart) else 2,
@@ -170,7 +172,8 @@ def create_hda2_cluster(packer, CAN, enabled, left_blinker, right_blinker, hud_c
     "HDA_RtLCAvailSta": 2 if hud_control.rightLaneDepart else 1 if right_blinker else 0,
     "HDA_LtLineLatPos": hyundaicanfd_ext.leftLanePosition,
     "HDA_RtLineLatPos": hyundaicanfd_ext.rightLanePosition,
-    "HDA_LaneCvrtLvlVal": 0,
+    "HDA_LaneCvrtLvlVal": (min(abs(curvature), 15) + (-1 if curvature < 0 else 0)),
+    "HDA_LaneCvrtDir": 1 if curvature < 0 else 0,
   }
 
   return packer.make_can_msg("ADRV_0x1ea", CAN.ECAN, values)
