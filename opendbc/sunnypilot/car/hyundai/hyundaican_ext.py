@@ -144,19 +144,20 @@ class HyundaiCanEXT:
 
   def _calculate_lane_positions(self) -> tuple[float, float]:
 
-    model_left_lane_position = self.sm['modelV2'].laneLines[1].y[0]
-    model_right_lane_position = self.sm['modelV2'].laneLines[2].y[0]
-    lane_width = abs(model_right_lane_position) + abs(model_left_lane_position)
-
     left_lane = right_lane = 15.0
 
-    if lane_width > 0:
-      scaling_factor = 30.0 / lane_width
-      dist_from_left_line = abs(model_left_lane_position)
-      dist_from_right_line = abs(model_right_lane_position)
+    if len(self.sm['modelV2'].laneLines):
+      model_left_lane_position = self.sm['modelV2'].laneLines[1].y[0]
+      model_right_lane_position = self.sm['modelV2'].laneLines[2].y[0]
+      lane_width = abs(model_right_lane_position) + abs(model_left_lane_position)
 
-      left_lane = dist_from_left_line * scaling_factor
-      right_lane = dist_from_right_line * scaling_factor
+      if lane_width > 0:
+        scaling_factor = 30.0 / lane_width
+        dist_from_left_line = abs(model_left_lane_position)
+        dist_from_right_line = abs(model_right_lane_position)
+
+        left_lane = dist_from_left_line * scaling_factor
+        right_lane = dist_from_right_line * scaling_factor
 
     return left_lane, right_lane
 
