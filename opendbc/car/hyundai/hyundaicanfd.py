@@ -176,7 +176,7 @@ def create_hda2_cluster(packer, CAN, lfa_icon, left_blinker, right_blinker, hud_
     "HDA_LaneCvrtDir": 1 if curvature < 0 else 0,
   }
 
-  logger.debug(f"create_hda2_cluster values: {values}")
+  return packer.make_can_msg("ADRV_0x1ea", CAN.ECAN, values)
 
 def create_spas_messages(packer, CAN, left_blink, right_blink):
   ret = []
