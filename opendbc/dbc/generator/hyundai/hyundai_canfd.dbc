@@ -115,9 +115,9 @@ BO_ 298 LFA: 16 ADRV
  SG_ TORQUE_REQUEST : 41|11@1+ (1,-1024) [0|4095] "" XXX
  SG_ STEER_REQ : 52|2@1+ (1,0) [0|1] "" XXX
  SG_ LFA_BUTTON : 56|1@1+ (1,0) [0|255] "" XXX
- SG_ LKA_SysWrn : 60|4@1+ (1,0) [0|15] ""  CLU,CGW
+ SG_ LKA_ASSIST : 60|4@1+ (1,0) [0|15] ""  CLU,CGW
  SG_ STEER_MODE : 65|3@1+ (1,0) [0|1] "" XXX
- SG_ LKA_UsmMod : 80|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ HAS_LANE_SAFETY : 80|2@1+ (1,0) [0|3] ""  CLU,CGW
  SG_ Info_PedtrnDst : 84|3@1+ (1,0) [0|7] ""  CGW
  SG_ ADAS_Damping_Gain : 104|8@1+ (1,0) [0|255] ""  CGW
 
