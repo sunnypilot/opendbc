@@ -8,7 +8,6 @@ See the LICENSE.md file in the root directory for more details.
 from dataclasses import dataclass
 from opendbc.car import structs
 import cereal.messaging as messaging
-from opendbc.car.carlog import carlog
 
 
 @dataclass
@@ -158,11 +157,6 @@ class HyundaiCanEXT:
 
       left_lane = dist_from_left_line * scaling_factor
       right_lane = dist_from_right_line * scaling_factor
-
-    carlog.warn("hda2 model lane positions: left: %.2f, right: %.2f, lane_width: %.2f" % (model_left_lane_position, model_right_lane_position, lane_width))
-    print("hda2 model lane positions: left: %.2f, right: %.2f, lane_width: %.2f" % (model_left_lane_position, model_right_lane_position, lane_width))
-    carlog.warn("hda2 lane positions: left: %.2f, right: %.2f" % (left_lane, right_lane))
-    print("hda2 lane positions: left: %.2f, right: %.2f" % (left_lane, right_lane))
 
     return left_lane, right_lane
 
