@@ -44,7 +44,7 @@ class HyundaiCanEXT:
     self.lead_visible = False
     self.gap_counter = 0
     self.object_gap = 0
-    self.sm = messaging.SubMaster(['drivingModelData'])
+    self.sm = messaging.SubMaster(['modelV2'])
 
   @staticmethod
   def _calculate_safe_distance(vEgo: float, distance_setting: int) -> float:
@@ -144,8 +144,8 @@ class HyundaiCanEXT:
 
   def _calculate_lane_positions(self) -> tuple[float, float]:
 
-    model_left_lane_position = self.sm['drivingModelData'].laneLineMeta.leftY
-    model_right_lane_position = self.sm['drivingModelData'].laneLineMeta.rightY
+    model_left_lane_position = self.sm['modelV2'].laneLines[1].y[0]
+    model_right_lane_position = self.sm['modelV2'].laneLines[2].y[0]
     lane_width = abs(model_right_lane_position) + abs(model_left_lane_position)
 
     left_lane = right_lane = 15.0
