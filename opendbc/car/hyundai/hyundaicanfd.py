@@ -172,7 +172,7 @@ def create_hda2_cluster(packer, CAN, lfa_icon, left_blinker, right_blinker, hud_
     "HDA_RtLCAvailSta": 2 if hud_control.rightLaneDepart else 1 if right_blinker else 0,
     "HDA_LtLineLatPos": hyundaicanfd_ext.leftLanePosition,
     "HDA_RtLineLatPos": hyundaicanfd_ext.rightLanePosition,
-    "HDA_LaneCvrtLvlVal": max((min(abs(curvature), 15) + (-1 if curvature < 0 else 0)), 45),
+    "HDA_LaneCvrtLvlVal": min((min(abs(curvature), 15) + (-1 if curvature < 0 else 0)), 45),
     "HDA_LaneCvrtDir": 1 if curvature < 0 else 0,
   }
 
