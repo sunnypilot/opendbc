@@ -627,6 +627,13 @@ class CAR(Platforms):
     CarSpecs(mass=2260, wheelbase=2.87, steerRatio=17.1),
     flags=HyundaiFlags.EV,
   )
+  GENESIS_GV70_ELECTRIFIED_2ND_GEN = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Genesis GV70 Electrified 2026", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
+    ],
+    GENESIS_GV70_ELECTRIFIED_1ST_GEN.specs,
+    flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
+  )
   GENESIS_G80 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Genesis G80 2018-19", "All", car_parts=CarParts.common([CarHarness.hyundai_h]))],
     CarSpecs(mass=2060, wheelbase=3.01, steerRatio=16.5),

@@ -1156,6 +1156,14 @@ FW_VERSIONS = {
       b'\xf1\x00JKev SCC -----      1.00 1.01 99110-DS000         ',
     ],
   },
+  CAR.GENESIS_GV70_ELECTRIFIED_2ND_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00JK  MFC  AT USA LHD 1.00 1.03 99211-DS600 241125',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00JK__ RDR -----      1.00 1.01 99110-DS500         ',
+    ],
+  },
   CAR.GENESIS_GV60_EV_1ST_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JW1 MFC  AT AUS RHD 1.00 1.03 99211-CU100 221118',

@@ -761,6 +761,16 @@
     ],
     "package": "All"
   },
+  "Genesis GV70 Electrified 2026": {
+    "platform": "GENESIS_GV70_ELECTRIFIED_2ND_GEN",
+    "make": "Genesis",
+    "brand": "hyundai",
+    "model": "GV70 Electrified",
+    "year": [
+      "2026"
+    ],
+    "package": "All"
+  },
   "Genesis GV70 Electrified (Australia Only) 2022": {
     "platform": "GENESIS_GV70_ELECTRIFIED_1ST_GEN",
     "make": "Genesis",
@@ -1281,12 +1291,14 @@
     ],
     "package": "Highway Driving Assist"
   },
-  "Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025+": {
+  "Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025": {
     "platform": "HYUNDAI_IONIQ_5_PE",
     "make": "Hyundai",
     "brand": "hyundai",
-    "model": "Ioniq 5 PE (with HDA II & LFA2) 2025+",
-    "year": [],
+    "model": "Ioniq 5 PE (with HDA II & LFA2)",
+    "year": [
+      "2025"
+    ],
     "package": "Highway Driving Assist II & Lane Follow Assist 2"
   },
   "Hyundai Ioniq 6 (with HDA II) 2023-24": {
