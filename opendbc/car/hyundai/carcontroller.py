@@ -97,7 +97,7 @@ def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float
   max_angle = get_max_angle(max(v_ego_raw, 1), VM)
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
 
-  if real_a_lat is not None:
+  if abs(real_a_lat) > MAX_LATERAL_ACCEL:
     scale = min(1.0, MAX_LATERAL_ACCEL / abs(real_a_lat))
     new_apply_angle *= scale
 
