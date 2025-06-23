@@ -48,7 +48,7 @@ class LkasTorqueManager:
     active_min_torque = max(0.30 * self.max_allowed_torque, self.min_active_torque)
     return int(np.interp(abs(actuator_torque), [0., 1.], [active_min_torque, self.max_allowed_torque]))
 
-  def calculate_override_torque(self):
+  def calculate_override_torque_reduction_gain(self):
     """Calculate torque during driver override"""
     target_torque = self.min_torque
     torque_delta = self.max_torque - target_torque
@@ -56,7 +56,7 @@ class LkasTorqueManager:
     self.max_torque = max(self.max_torque - adaptive_ramp_rate, self.min_torque)
     self.override_counter += 1
 
-  def calculate_normal_torque(self, actuator_torque):
+  def calculate_torque_reduction_gain(self, actuator_torque):
     """Calculate torque during normal operation (no override)"""
     target_torque = self.calculate_target_torque(actuator_torque)
 
@@ -79,18 +79,19 @@ class LkasTorqueManager:
       max_torque: The calculated maximum torque
     """
     # Extract the specific values we need from the objects
-    actuator_torque = actuators.torque
+    expected_torque = actuators.torque
     is_steering_pressed = CS.out.steeringPressed
-
-    if not is_steering_pressed:
-      self.calculate_normal_torque(actuator_torque)
-      self.override_counter = 0  # Reset override counter when not overriding
-    else:
-      self.calculate_override_torque()
 
     if not lat_active:
       self.max_torque = 0
       self.override_counter = 0
+      return self.max_torque
+
+    if not is_steering_pressed:
+      self.calculate_torque_reduction_gain(expected_torque)
+      self.override_counter = 0  # Reset override counter when not overriding
+    else:
+      self.calculate_override_torque_reduction_gain()
 
     # Apply safety limits and determine steering request
     self.max_torque = float(np.clip(self.max_torque, self.min_torque, self.max_allowed_torque))
