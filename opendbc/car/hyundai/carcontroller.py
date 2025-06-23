@@ -48,6 +48,24 @@ class LkasTorqueManager:
     active_min_torque = max(0.30 * self.max_allowed_torque, self.min_active_torque)
     return int(np.interp(abs(actuator_torque), [0., 1.], [active_min_torque, self.max_allowed_torque]))
 
+  def calculate_override_torque(self):
+    """Calculate torque during driver override"""
+    target_torque = self.min_torque
+    torque_delta = self.max_torque - target_torque
+    adaptive_ramp_rate = max(torque_delta / self.override_cycles, 1)  # Ensure at least 1 unit per cycle
+    self.max_torque = max(self.max_torque - adaptive_ramp_rate, self.min_torque)
+    self.override_counter += 1
+
+  def calculate_normal_torque(self, actuator_torque):
+    """Calculate torque during normal operation (no override)"""
+    target_torque = self.calculate_target_torque(actuator_torque)
+
+    # Ramp up or down toward target torque smoothly
+    if self.max_torque > target_torque:
+      self.max_torque = max(self.max_torque - self.params.ANGLE_RAMP_DOWN_RATE, target_torque)
+    else:
+      self.max_torque = min(self.max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
+
   def update(self, actuators, CS, lat_active):
     """
     Update LKAS max torque based on current conditions
@@ -59,54 +77,24 @@ class LkasTorqueManager:
 
     Returns:
       max_torque: The calculated maximum torque
-      apply_steer_req: Boolean indicating whether steering should be applied
     """
     # Extract the specific values we need from the objects
     actuator_torque = actuators.torque
     is_steering_pressed = CS.out.steeringPressed
 
-    # Handle lat_active transitions - reset state when lateral control is deactivated
+    if not is_steering_pressed:
+      self.calculate_normal_torque(actuator_torque)
+      self.override_counter = 0  # Reset override counter when not overriding
+    else:
+      self.calculate_override_torque()
+
     if not lat_active:
       self.max_torque = 0
       self.override_counter = 0
-      return 0, False
 
-    # Handle override state changes
-    if is_steering_pressed != self.last_override_state:
-      self.last_override_state = is_steering_pressed
-      if not is_steering_pressed:
-        self.override_counter = 0
-
-    if is_steering_pressed:
-      # User is overriding
-      target_torque = self.min_torque
-      torque_delta = self.max_torque - target_torque
-      adaptive_ramp_rate = max(torque_delta / self.override_cycles, 1)  # Ensure at least 1 unit per cycle
-      self.max_torque = max(self.max_torque - adaptive_ramp_rate, self.min_torque)
-      self.override_counter += 1
-    else:
-      # Normal operation
-      target_torque = self.calculate_target_torque(actuator_torque)
-
-      # Ramp up or down toward target torque smoothly
-      if self.max_torque > target_torque:
-        self.max_torque = max(self.max_torque - self.params.ANGLE_RAMP_DOWN_RATE, target_torque)
-      else:
-        self.max_torque = min(self.max_torque + self.params.ANGLE_RAMP_UP_RATE, target_torque)
-
-    # Safety clamp
+    # Apply safety limits and determine steering request
     self.max_torque = float(np.clip(self.max_torque, self.min_torque, self.max_allowed_torque))
-
-    # Determine if steering request should be applied
-    apply_steer_req = self.max_torque != 0
-
-    return self.max_torque, apply_steer_req
-
-  def get_override_percentage(self):
-    """Return percentage of override completion (0-100%)"""
-    if self.override_counter == 0:
-      return 0
-    return min(100, int((self.override_counter / self.override_cycles) * 100))
+    return self.max_torque
 
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
@@ -235,6 +223,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.apply_angle_last = 0
     self.last_button_frame = 0
     self.angle_limit_counter = 0
+    self.lkas_max_torque = 0
 
     # Initialize default values
     self.angle_min_active_torque = self.params.ANGLE_MIN_TORQUE
@@ -284,13 +273,13 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
                                                                CS.out.steeringAngleDeg, CC.latActive,
                                                                CarControllerParams.ANGLE_LIMITS, self.VM)
 
-      # Use the torque manager to calculate LKAS max torque and steering request
-      # Handle all states within the torque manager by passing lat_active
-      self.lkas_max_torque, apply_steer_req = self.torque_manager.update(actuators, CS, CC.latActive)
+      self.lkas_max_torque = self.torque_manager.update(actuators, CS, CC.latActive)
+      apply_steer_req = self.lkas_max_torque != 0
 
     if not CC.latActive:
       apply_torque = 0
       self.lkas_max_torque = 0
+      apply_steer_req = False
 
     # Hold torque with induced temporary fault when cutting the actuation bit
     # FIXME: we don't use this with CAN FD?
