@@ -88,6 +88,9 @@ def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float
 
   # *** max lateral jerk limit ***
   max_angle_delta = get_max_angle_delta(max(v_ego_raw, 1), VM)
+  if abs(real_a_lat) > MAX_LATERAL_ACCEL:
+    scale = min(1.0, MAX_LATERAL_ACCEL / abs(real_a_lat))
+    max_angle_delta *= scale
 
   # prevent fault
   max_angle_delta = min(max_angle_delta, MAX_ANGLE_RATE)
@@ -96,10 +99,6 @@ def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float
   # *** max lateral accel limit ***
   max_angle = get_max_angle(max(v_ego_raw, 1), VM)
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
-
-  if abs(real_a_lat) > MAX_LATERAL_ACCEL:
-    scale = min(1.0, MAX_LATERAL_ACCEL / abs(real_a_lat))
-    new_apply_angle *= scale
 
   # angle is current angle when inactive
   if not lat_active:
