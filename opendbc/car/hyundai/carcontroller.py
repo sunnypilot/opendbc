@@ -79,7 +79,7 @@ def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: floa
 
 
 def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
-                                     lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel, real_a_lat: float = None) -> float:
+                                     lat_active: bool, limits: AngleSteeringLimits, VM: VehicleModel) -> float:
   apply_angle = np.clip(apply_angle, -819.2, 819.1)
 
   # If the vehicle speed is above the maximum speed in the smoothing matrix, apply smoothing
@@ -88,9 +88,6 @@ def apply_hyundai_steer_angle_limits(apply_angle: float, apply_angle_last: float
 
   # *** max lateral jerk limit ***
   max_angle_delta = get_max_angle_delta(max(v_ego_raw, 1), VM)
-  if abs(real_a_lat) > MAX_LATERAL_ACCEL:
-    scale = min(1.0, MAX_LATERAL_ACCEL / abs(real_a_lat))
-    max_angle_delta *= scale
 
   # prevent fault
   max_angle_delta = min(max_angle_delta, MAX_ANGLE_RATE)
@@ -190,10 +187,10 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # angle control
     else:
-      lat_accel = CS.imu_lateral_acceleration * -9.8
+      # lat_accel = CS.imu_lateral_acceleration * -9.8
       self.apply_angle_last = apply_hyundai_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
                                                                CS.out.steeringAngleDeg, CC.latActive,
-                                                               CarControllerParams.ANGLE_LIMITS, self.VM, lat_accel)
+                                                               CarControllerParams.ANGLE_LIMITS, self.VM)
       if CS.out.steeringPressed:  # User is overriding
         # Let's try to consider that the override is not a true or false but a progressive depending on how much torque is being applied to the col
         target_torque = self.params.ANGLE_MIN_TORQUE
