@@ -43,10 +43,10 @@ class LkasTorqueManager:
     self.min_active_torque = min_active_torque
     self.override_cycles = override_cycles if override_cycles > 0 else 100
 
-  def calculate_target_torque(self, actuator_torque):
+  def calculate_target_torque(self, required_torque):
     """Calculate target torque based on the actuator's requested torque"""
     active_min_torque = max(0.30 * self.max_allowed_torque, self.min_active_torque)
-    return int(np.interp(abs(actuator_torque), [0., 1.], [active_min_torque, self.max_allowed_torque]))
+    return int(np.interp(abs(required_torque), [0., 1.], [active_min_torque, self.max_allowed_torque]))
 
   def calculate_override_torque_reduction_gain(self):
     """Calculate torque during driver override"""
