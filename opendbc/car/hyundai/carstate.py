@@ -372,7 +372,6 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
       cam_messages += [
         ("SCC_CONTROL", 50),
-        ("CCNC_0x1B5", 20),
       ]
 
     # test speed limit

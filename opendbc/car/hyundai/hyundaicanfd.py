@@ -167,11 +167,13 @@ def create_hda2_cluster(packer, CAN, lfa_icon, left_blinker, right_blinker, hud_
     "HDA_LCFuncOptUsmSta": 2,
     "HDA_LCFuncSta": 0 if not lfa_icon else 3 if left_blinker or right_blinker else 1 if hud_control.leftLaneDepart or hud_control.rightLaneDepart else 2,
     "HDA_LCTurnSigReq": 1 if left_blinker else 2 if right_blinker else 0,
-    "HDA_PathSta": 4 if (right_blinker and not out.rightBlindspot) else 3 if (left_blinker and not out.leftBlindspot) else 2 if right_blinker else 1 if left_blinker else 0,
+    "HDA_PathSta": 4 if (right_blinker and not out.rightBlindspot) \
+                    else 3 if (left_blinker and not out.leftBlindspot) \
+                    else 2 if right_blinker else 1 if left_blinker else 0,
     "HDA_LtLCAvailSta": 0 if not left_blinker else 2 if hud_control.leftLaneDepart else 1,
     "HDA_RtLCAvailSta": 0 if not right_blinker else 2 if hud_control.rightLaneDepart else 1,
-    "HDA_LtLineLatPos": hyundaicanfd_ext.leftLanePosition,
-    "HDA_RtLineLatPos": hyundaicanfd_ext.rightLanePosition,
+    "HDA_LtLineLatPos": hyundaicanfd_ext.lanelineLeft,
+    "HDA_RtLineLatPos": hyundaicanfd_ext.lanelineRight,
     "HDA_LaneCvrtLvlVal": min(abs(curvature), 14) + (-1 if curvature < 0 else 0),
     "HDA_LaneCvrtDir": 1 if curvature < 0 else 0,
   }

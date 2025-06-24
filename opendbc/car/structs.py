@@ -101,6 +101,8 @@ class CarControlSP:
   leadRelSpeed: float = auto_field()
   leadVisible: bool = auto_field()
   params: list['CarControlSP.Param'] = auto_field()
+  lanelineLeftY: float = auto_field()
+  lanelineRightY: float = auto_field()
 
   @auto_dataclass
   class Param:

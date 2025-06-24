@@ -7,7 +7,6 @@ See the LICENSE.md file in the root directory for more details.
 
 from dataclasses import dataclass
 from opendbc.car import structs
-import cereal.messaging as messaging
 
 
 @dataclass
@@ -26,8 +25,8 @@ class HyundaiCanFDEXTParams:
   leadRelSpeed: float = 0.0
   leadVisible: bool = False
   targetDistance: float = 0.0
-  leftLanePosition: float = 0.0
-  rightLanePosition: float = 0.0
+  lanelineLeft: float = 0.0
+  lanelineRight: float = 0.0
 
 
 class HyundaiCanEXT:
@@ -44,7 +43,6 @@ class HyundaiCanEXT:
     self.lead_visible = False
     self.gap_counter = 0
     self.object_gap = 0
-    self.sm = messaging.SubMaster(['modelV2'])
 
   @staticmethod
   def _calculate_safe_distance(vEgo: float, distance_setting: int) -> float:
@@ -138,26 +136,24 @@ class HyundaiCanEXT:
     self.hyundaicanfd_ext.leadRelSpeed = lead_rel_speed
     self.hyundaicanfd_ext.leadVisible = self.lead_visible
     self.hyundaicanfd_ext.targetDistance = safe_distance if lead_distance == 0 else min (safe_distance, lead_distance)
-    self.hyundaicanfd_ext.leftLanePosition, self.hyundaicanfd_ext.rightLanePosition = self._calculate_lane_positions()
+    self.hyundaicanfd_ext.lanelineLeft, self.hyundaicanfd_ext.lanelineRight = self._calculate_lane_positions(CC_SP)
 
     return self.hyundaicanfd_ext
 
-  def _calculate_lane_positions(self) -> tuple[float, float]:
+  def _calculate_lane_positions(self, CC_SP: structs.CarControlSP) -> tuple[float, float]:
 
     left_lane = right_lane = 15.0
+    model_left_lane_position = CC_SP.lanelineLeftY
+    model_right_lane_position = CC_SP.lanelineRightY
+    lane_width = abs(model_right_lane_position) + abs(model_left_lane_position)
 
-    if len(self.sm['modelV2'].laneLines):
-      model_left_lane_position = self.sm['modelV2'].laneLines[1].y[0]
-      model_right_lane_position = self.sm['modelV2'].laneLines[2].y[0]
-      lane_width = abs(model_right_lane_position) + abs(model_left_lane_position)
+    if lane_width > 0:
+      scaling_factor = 30.0 / lane_width
+      dist_from_left_line = abs(model_left_lane_position)
+      dist_from_right_line = abs(model_right_lane_position)
 
-      if lane_width > 0:
-        scaling_factor = 30.0 / lane_width
-        dist_from_left_line = abs(model_left_lane_position)
-        dist_from_right_line = abs(model_right_lane_position)
-
-        left_lane = dist_from_left_line * scaling_factor
-        right_lane = dist_from_right_line * scaling_factor
+      left_lane = dist_from_left_line * scaling_factor
+      right_lane = dist_from_right_line * scaling_factor
 
     return left_lane, right_lane
 
