@@ -1457,6 +1457,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Hyundai Santa Cruz 2025": {
+    "platform": "HYUNDAI_SANTA_CRUZ_2025",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Santa Cruz",
+    "year": [
+      "2025"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Hyundai Santa Fe 2019-20": {
     "platform": "HYUNDAI_SANTA_FE",
     "make": "Hyundai",
