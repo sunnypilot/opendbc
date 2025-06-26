@@ -403,6 +403,7 @@ class CAR(Platforms):
   HYUNDAI_SANTA_CRUZ_2025 = HyundaiCanFDPlatformConfig(
     [HyundaiCarDocs("Hyundai Santa Cruz 2025", car_parts=CarParts.common([CarHarness.hyundai_n]))],
     CarSpecs(mass=1920, wheelbase=3, steerRatio=14.2),
+    flags=HyundaiFlags.CCNC,
   )
   HYUNDAI_CUSTIN_1ST_GEN = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Custin 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_k]))],
