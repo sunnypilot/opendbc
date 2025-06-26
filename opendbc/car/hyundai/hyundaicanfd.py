@@ -51,7 +51,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   lkas_values["LKA_AVAILABLE"] = 0
 
   lfa_values = copy.copy(common_values)
-  lfa_values["NEW_SIGNAL_1"] = 3 if lat_active else 0
+  lfa_values["NEW_SIGNAL_1"] = 0
 
   ret = []
   if CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
@@ -97,6 +97,7 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
       "ACCMode",
       "ZEROS_9",
       "CRUISE_STANDSTILL",
+      "ZEROS_5",
       "DISTANCE_SETTING",
       "VSetDis",
     ]}
@@ -117,8 +118,7 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
 
 def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
   values = {
-    "HDA_OptUsmSta": 2 if enabled else 0,
-    "HDA_CntrlModSta": 2 if enabled else 1,
+    "HDA_ICON": 1 if enabled else 0,
     "LFA_ICON": lfa_icon,
   }
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
@@ -137,8 +137,6 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
   values = {
     "ACCMode": 0 if not enabled else (2 if gas_override else 1),
     "MainMode_ACC": 1 if main_cruise_enabled else 0,
-    "SCC_NSCCOnOffSta": 2 if main_cruise_enabled else 0,
-    "SCC_NSCCOpSta": 0 if not enabled  else (1 if gas_override else 2),
     "StopReq": 1 if tuning.stopping else 0,
     "aReqValue": tuning.actual_accel,
     "aReqRaw": tuning.actual_accel,
@@ -153,7 +151,6 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "SET_ME_3": 0x3,
     "SET_ME_TMP_64": 0x64,
     "DISTANCE_SETTING": hud_control.leadDistanceBars,
-    "NEW_SIGNAL_15": min(int(hyundaicanfd_ext.stoppingDistance), int(hyundaicanfd_ext.leadDistance)),
   }
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
