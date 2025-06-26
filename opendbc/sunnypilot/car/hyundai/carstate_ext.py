@@ -9,6 +9,7 @@ from enum import StrEnum
 
 from opendbc.car import Bus, structs
 from opendbc.can.parser import CANParser
+from opendbc.car.hyundai.values import HyundaiFlags
 
 
 class CarStateExt:
@@ -16,6 +17,10 @@ class CarStateExt:
     super().__init__()
 
     self.aBasis = 0.0
+    self.leftLanePosition = 0.0
+    self.rightLanePosition = 0.0
+    self.leftLaneQuality = 0.0
+    self.rightLaneQuality = 0.0
 
   def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp = can_parsers[Bus.pt]
@@ -24,5 +29,12 @@ class CarStateExt:
 
   def update_canfd_ext(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp = can_parsers[Bus.pt]
+    cp_cam = can_parsers[Bus.cam]
 
     self.aBasis = cp.vl["TCS"]["aBasis"]
+
+    if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
+      self.leftLanePosition = cp_cam.vl["CCNC_0x1B5"]["LEFT_POSITION"]
+      self.rightLanePosition = cp_cam.vl["CCNC_0x1B5"]["RIGHT_POSITION"]
+      self.leftLaneQuality = cp_cam.vl["CCNC_0x1B5"]["LEFT_QUAL"]
+      self.rightLaneQuality = cp_cam.vl["CCNC_0x1B5"]["RIGHT_QUAL"]

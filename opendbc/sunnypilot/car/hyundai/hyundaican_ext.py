@@ -142,49 +142,87 @@ class HyundaiCanEXT:
     self.hyundaicanfd_ext.leadRelSpeed = lead_rel_speed
     self.hyundaicanfd_ext.leadVisible = self.lead_visible
     self.hyundaicanfd_ext.targetDistance = safe_distance if lead_distance == 0 else min (safe_distance, lead_distance)
-    self.hyundaicanfd_ext.lanelineLeft, self.hyundaicanfd_ext.lanelineRight = self._calculate_lane_positions(CC_SP)
+    self.hyundaicanfd_ext.lanelineLeft, self.hyundaicanfd_ext.lanelineRight = self._calculate_lane_positions(CC_SP, CS)
 
     return self.hyundaicanfd_ext
 
-  def _calculate_lane_positions(self, CC_SP: structs.CarControlSP) -> tuple[float, float]:
+  def _calculate_1b5_lane_positions(self, CS: structs.CarState) -> tuple[float, float]:
+    leftlaneraw, rightlaneraw = CS.leftLanePosition, CS.rightLanePosition
+    leftlanequal, rightlanequal = CS.leftLaneQuality, CS.rightLaneQuality
 
+    scale_per_m = 15 / 1.7
+    leftlane = abs(int(round(15 + (leftlaneraw - 1.7) * scale_per_m)))
+    rightlane = abs(int(round(15 + (rightlaneraw - 1.7) * scale_per_m)))
+
+    if leftlanequal not in (2, 3):
+      leftlane = 0
+    if rightlanequal not in (2, 3):
+      rightlane = 0
+
+    if leftlaneraw == -2.0248375:
+      leftlane = 30 - rightlane
+    if rightlaneraw == 2.0248375:
+      rightlane = 30 - leftlane
+
+    if leftlaneraw == rightlaneraw == 0:
+      leftlane = rightlane = 15
+    elif leftlaneraw == 0:
+      leftlane = 30 - rightlane
+    elif rightlaneraw == 0:
+      rightlane = 30 - leftlane
+
+    total = leftlane + rightlane
+    if total == 0:
+      leftlane = rightlane = 15
+    else:
+      leftlane = round((leftlane / total) * 30)
+      rightlane = 30 - leftlane
+
+    return leftlane, rightlane
+
+  def _calculate_lane_positions(self, CC_SP: structs.CarControlSP, CS: structs.CarState) -> tuple[float, float]:
     left_lane = right_lane = 15.0
-    lane_width = abs(CC_SP.lanelineRightY) + abs(CC_SP.lanelineLeftY)
+    model_lane_width = abs(CC_SP.lanelineRightY) + abs(CC_SP.lanelineLeftY)
+    raw_left_lane, raw_right_lane = self._calculate_1b5_lane_positions(CS)
 
-    if lane_width > 0:
-      scaling_factor = 30.0 / lane_width
+    if model_lane_width > 0:
+      scaling_factor = 30.0 / model_lane_width
       dist_from_left_line = abs(CC_SP.lanelineLeftY)
       dist_from_right_line = abs(CC_SP.lanelineRightY)
 
-      raw_left_lane = dist_from_left_line * scaling_factor
-      raw_right_lane = dist_from_right_line * scaling_factor
+      raw_model_left_lane = dist_from_left_line * scaling_factor
+      raw_model_right_lane = dist_from_right_line * scaling_factor
 
-      # Apply hysteresis to left lane
-      if abs(raw_left_lane - self.prev_left_lane) > self.LANE_POSITION_HYSTERESIS_THRESHOLD:
-        self.left_lane_counter += 1
-        if self.left_lane_counter >= self.LANE_POSITION_HYSTERESIS_FRAMES:
-          left_lane = raw_left_lane
-          self.left_lane_counter = 0
-        else:
-          left_lane = self.prev_left_lane
-      else:
+      raw_left_lane = raw_model_left_lane if raw_left_lane == 15 else (raw_left_lane + raw_model_left_lane) / 2
+      raw_right_lane = raw_model_right_lane if raw_right_lane == 15 else (raw_right_lane + raw_model_right_lane) / 2
+
+
+    # Apply hysteresis to left lane
+    if abs(raw_left_lane - self.prev_left_lane) > self.LANE_POSITION_HYSTERESIS_THRESHOLD:
+      self.left_lane_counter += 1
+      if self.left_lane_counter >= self.LANE_POSITION_HYSTERESIS_FRAMES:
         left_lane = raw_left_lane
         self.left_lane_counter = 0
-
-      # Apply hysteresis to right lane
-      if abs(raw_right_lane - self.prev_right_lane) > self.LANE_POSITION_HYSTERESIS_THRESHOLD:
-        self.right_lane_counter += 1
-        if self.right_lane_counter >= self.LANE_POSITION_HYSTERESIS_FRAMES:
-          right_lane = raw_right_lane
-          self.right_lane_counter = 0
-        else:
-          right_lane = self.prev_right_lane
       else:
+        left_lane = self.prev_left_lane
+    else:
+      left_lane = raw_left_lane
+      self.left_lane_counter = 0
+
+    # Apply hysteresis to right lane
+    if abs(raw_right_lane - self.prev_right_lane) > self.LANE_POSITION_HYSTERESIS_THRESHOLD:
+      self.right_lane_counter += 1
+      if self.right_lane_counter >= self.LANE_POSITION_HYSTERESIS_FRAMES:
         right_lane = raw_right_lane
         self.right_lane_counter = 0
+      else:
+        right_lane = self.prev_right_lane
+    else:
+      right_lane = raw_right_lane
+      self.right_lane_counter = 0
 
-      self.prev_left_lane = left_lane
-      self.prev_right_lane = right_lane
+    self.prev_left_lane = left_lane
+    self.prev_right_lane = right_lane
 
     return left_lane, right_lane
 
