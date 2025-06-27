@@ -44,7 +44,7 @@ BS_:
 BU_: XXX
 
 BO_ 1537 RADAR_LEAD: 8 XXX
- SG_ DISTANCE : 0|10@1+ (1,0) [0|1023] "" XXX
+ SG_ DISTANCE : 0|10@1+ (0.25,0) [0|255.75] "" XXX
  SG_ LATERAL : 10|11@1+ (1,-1024) [-1024|1023] "" XXX
  SG_ ACCEL : 21|10@1+ (1,-512) [-512|511] "" XXX
  SG_ ID : 31|9@1+ (1,0) [0|511] "" XXX
@@ -57,10 +57,10 @@ BO_ 1537 RADAR_LEAD: 8 XXX
     for a in range(0x602, 0x602 + 16):
         f.write(f"""
 BO_ {a} RADAR_TRACK_{a:x}: 8 RADAR
- SG_ 1_DISTANCE : 0|10@1+ (1,0) [0|1023] "" XXX
+ SG_ 1_DISTANCE : 0|10@1+ (0.25,0) [0|255.75] "" XXX
  SG_ 1_LATERAL : 10|11@1+ (1,-1024) [-1024|1023] "" XXX
  SG_ 1_ACCEL : 21|10@1+ (1,-512) [-512|511] "" XXX
- SG_ 2_DISTANCE : 31|10@1+ (1,0) [0|1023] "" XXX
+ SG_ 2_DISTANCE : 31|10@1+ (0.25,0) [0|255.75] "" XXX
  SG_ 2_LATERAL : 41|11@1+ (1,-1024) [-1024|1023] "" XXX
  SG_ 2_ACCEL : 52|10@1+ (1,-512) [-512|511] "" XXX
  SG_ COUNTER : 62|2@1+ (1,0) [0|3] "" XXX
