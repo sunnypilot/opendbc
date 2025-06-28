@@ -154,7 +154,7 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, gas_override, se
     "ACC_ObjRelSpd": hyundaicanfd_ext.leadRelSpeed,
     "SCC_ObjDstLvlVal": hyundaicanfd_ext.objectGap,
     "SCC_HeadwayDstSetVal": hud_control.leadDistanceBars,
-    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible) else 1 if (gas_override or hyundaicanfd_ext.objectGap == 5) else 2,
+    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible) else 1 if gas_override else 2,
     "SCC_TrgtDstVal": hyundaicanfd_ext.targetDistance,
   }
 
