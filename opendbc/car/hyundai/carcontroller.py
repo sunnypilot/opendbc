@@ -34,8 +34,6 @@ class LkasTorqueManager:
     self.max_allowed_torque = 0
     self.min_active_torque = 0
     self.override_cycles = 100  # Default value
-    self.override_counter = 0
-    self.last_override_state = False
 
   def update_params(self, max_torque, min_active_torque, override_cycles):
     """Update parameters from user configuration"""
@@ -54,7 +52,6 @@ class LkasTorqueManager:
     torque_delta = self.max_torque - target_torque
     adaptive_ramp_rate = max(torque_delta / self.override_cycles, 1)  # Ensure at least 1 unit per cycle
     self.max_torque = max(self.max_torque - adaptive_ramp_rate, self.min_torque)
-    self.override_counter += 1
 
   def calculate_torque_reduction_gain(self, actuator_torque):
     """Calculate torque during normal operation (no override)"""
@@ -84,12 +81,10 @@ class LkasTorqueManager:
 
     if not lat_active:
       self.max_torque = 0
-      self.override_counter = 0
       return self.max_torque
 
     if not is_steering_pressed:
       self.calculate_torque_reduction_gain(expected_torque)
-      self.override_counter = 0  # Reset override counter when not overriding
     else:
       self.calculate_override_torque_reduction_gain()
 
