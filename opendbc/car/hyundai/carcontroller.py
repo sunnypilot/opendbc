@@ -133,12 +133,14 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.min_torque_reduction_gain = self.params.ANGLE_MIN_TORQUE_REDUCTION_GAIN
     self.max_torque_reduction_gain = self.params.ANGLE_MAX_TORQUE_REDUCTION_GAIN
     self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
+    self.angle_enable_smoothing_factor = True
 
     self._params = Params() if PARAMS_AVAILABLE else None
     if PARAMS_AVAILABLE:
-      self.min_torque_reduction_gain = int(self._params.get("HkgTuningAngleMinTorque")) if self._params.get("HkgTuningAngleMinTorque") else 0
-      self.max_torque_reduction_gain = int(self._params.get("HkgTuningAngleMaxTorque")) if self._params.get("HkgTuningAngleMaxTorque") else 0
-      self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles")) if self._params.get("HkgTuningOverridingCycles") else 0
+      self.min_torque_reduction_gain = float(self._params.get("HkgTuningAngleMinTorqueReductionGain") or 0)
+      self.max_torque_reduction_gain = float(self._params.get("HkgTuningAngleMaxTorqueReductionGain") or 0)
+      self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles") or 0)
+      self.angle_enable_smoothing_factor = self._params.get_bool("HkgTuningAngleSmoothingFactor")
 
 
   def update(self, CC, CC_SP, CS, now_nanos):
@@ -326,7 +328,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     apply_angle = np.clip(apply_angle, -819.2, 819.1)
 
     # If the vehicle speed is above the maximum speed in the smoothing matrix, apply smoothing
-    if abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
+    if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
       apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last,)
 
     # *** max lateral jerk limit ***
