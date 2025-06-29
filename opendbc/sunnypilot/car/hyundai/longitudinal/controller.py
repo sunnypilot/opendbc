@@ -60,6 +60,10 @@ class LongitudinalController:
     self.comfort_band_lower = 0.0
     self.stopping = False
 
+  def _update_car_config(self, params_dict: dict[str, str]) -> None:
+    """Update car configuration with current parameter values."""
+    self.car_config = get_car_config(self.CP, params_dict)
+
   @property
   def enabled(self) -> bool:
     return self.long_tuning_param != LongitudinalTuningType.OFF
@@ -286,7 +290,10 @@ class LongitudinalController:
         CS: Car state information
     """
 
+    # Convert params list to dict and update car config with current param values
+    params_dict = {param.key: param.value for param in CC_SP.params}
     self.long_tuning_param = int(get_param(CC_SP.params, "HyundaiLongitudinalTuning", str(LongitudinalTuningType.OFF)))
+    self._update_car_config(params_dict)
 
     actuators = CC.actuators
     long_control_state = actuators.longControlState
