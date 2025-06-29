@@ -3,20 +3,22 @@ import math
 from opendbc.can.parser import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.interfaces import RadarInterfaceBase
-from opendbc.car.hyundai.values import DBC
+from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.radar_interface_ext import RadarInterfaceExt
 
-RADAR_START_ADDR = 0x500
-RADAR_MSG_COUNT = 32
+MANDO_START_ADDR = 0x500
+MANDO_MSG_COUNT = 32
 
+MRREVO14F_START_ADDR = 0x602
+MRREVO14F_MSG_COUNT = 16
 # POC for parsing corner radars: https://github.com/commaai/openpilot/pull/24221/
 
-def get_radar_can_parser(CP):
+def get_radar_can_parser(CP, radar_start_addr, radar_msg_count):
   if Bus.radar not in DBC[CP.carFingerprint]:
     return None
 
-  messages = [(f"RADAR_TRACK_{addr:x}", 50) for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT)]
+  messages = [(f"RADAR_TRACK_{addr:x}", 50) for addr in range(radar_start_addr, radar_start_addr + radar_msg_count)]
   return CANParser(DBC[CP.carFingerprint][Bus.radar], messages, 1)
 
 
@@ -24,15 +26,22 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
   def __init__(self, CP, CP_SP):
     RadarInterfaceBase.__init__(self, CP, CP_SP)
     RadarInterfaceExt.__init__(self, CP, CP_SP)
+    self.CP_flags = CP.flags
+    if self.CP_flags & HyundaiFlags.MRREVO14F:
+      self.radar_start_addr = MRREVO14F_START_ADDR
+      self.radar_msg_count = MRREVO14F_MSG_COUNT
+    else:
+      self.radar_start_addr = MANDO_START_ADDR
+      self.radar_msg_count = MANDO_MSG_COUNT
     self.updated_messages = set()
-    self.trigger_msg = RADAR_START_ADDR + RADAR_MSG_COUNT - 1
+    self.trigger_msg = self.radar_start_addr + self.radar_msg_count - 1
     self.track_id = 0
 
     self.radar_off_can = CP.radarUnavailable
-    self.rcp = get_radar_can_parser(CP)
+    self.rcp = get_radar_can_parser(CP, self.radar_start_addr, self.radar_msg_count)
 
-    if self.rcp is None:
-      self.initialize_radar_ext(self.trigger_msg)
+    # if self.rcp is None:
+    #   self.initialize_radar_ext(self.trigger_msg)
 
   def update(self, can_strings):
     if self.radar_off_can or (self.rcp is None):
@@ -57,10 +66,10 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     if not self.rcp.can_valid:
       ret.errors.canError = True
 
-    if self.use_radar_interface_ext:
-      return self.update_ext(ret)
+    # if self.use_radar_interface_ext:
+    #   return self.update_ext(ret)
 
-    for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
+    for addr in range(self.radar_start_addr, self.radar_start_addr + self.radar_msg_count):
       msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
 
       if addr not in self.pts:
