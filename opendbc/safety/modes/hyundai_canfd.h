@@ -180,12 +180,20 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
   // KIA_EV6_2025: -0.000889804937754786
   // KIA_EV9: -0.0005410588125765342
   // GENESIS_GV80_2025: -0.0005685702046115589
+  //CarSpecs(mass=2258, wheelbase=2.95, steerRatio=14.14), 
 
   // IONIQ 5 PE values.
+  // const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
+  //   .slip_factor = -0.0008688329819908074,  // calc_slip_factor(VM)
+  //   .steer_ratio = 14.26,
+  //   .wheelbase = 2.97,
+  // };
+
+  // GENESIS_GV80_2025 values. (most conservative for now) (values can be found on values.py)
   const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
-    .slip_factor = -0.0008688329819908074,  // calc_slip_factor(VM)
-    .steer_ratio = 14.26,
-    .wheelbase = 2.97,
+    .slip_factor = -0.0005685702046115589,  // calc_slip_factor(VM)
+    .steer_ratio = 14.14,
+    .wheelbase = 2.95,
   };
 
   bool tx = true;
