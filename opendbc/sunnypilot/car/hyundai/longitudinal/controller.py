@@ -13,11 +13,12 @@ from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car import get_param
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update, \
-                                                                JERK_THRESHOLD, LongitudinalTuningType
+                                                                LongitudinalTuningType
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 MIN_JERK = 0.5
+COMFORT_BAND_VAL = 0.01
 
 DYNAMIC_LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
 DYNAMIC_LOWER_JERK_V  = [ 3.3,  2.5,  2.0,   1.9,  1.8,   1.65,  1.15,    0.5]
@@ -108,7 +109,7 @@ class LongitudinalController:
       upper_limit = 0.5  # Default for non-PID states
 
     # Lower jerk limit varies based on speed
-    lower_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 5.0, 2.5]))
+    lower_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 4.0, 2.5]))
 
     return upper_limit, lower_limit
 
@@ -254,8 +255,8 @@ class LongitudinalController:
       self.comfort_band_lower = 0.0
       return
 
-    self.comfort_band_upper = JERK_THRESHOLD
-    self.comfort_band_lower = JERK_THRESHOLD
+    self.comfort_band_upper = COMFORT_BAND_VAL
+    self.comfort_band_lower = COMFORT_BAND_VAL
 
   def get_tuning_state(self) -> None:
     """Update the tuning state object with current control values.
