@@ -139,7 +139,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.ramp_up_reduction_gain_rate = self.params.ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE
     self.min_torque_reduction_gain = self.params.ANGLE_MIN_TORQUE_REDUCTION_GAIN
     self.max_torque_reduction_gain = self.params.ANGLE_MAX_TORQUE_REDUCTION_GAIN
-    self.idle_torque_reduction_gain = self.params.ANGLE_IDLE_TORQUE_REDUCTION_GAIN
+    self.active_torque_reduction_gain = self.params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN
     self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
     self.angle_enable_smoothing_factor = True
 
@@ -147,7 +147,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     if PARAMS_AVAILABLE:
       self.min_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleMinTorqueReductionGain")) or self.min_torque_reduction_gain
       self.max_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleMaxTorqueReductionGain")) or self.max_torque_reduction_gain
-      self.idle_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleIdleTorqueReductionGain")) or self.idle_torque_reduction_gain
+      self.active_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleActiveTorqueReductionGain")) or self.active_torque_reduction_gain
       self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles") or self.angle_torque_override_cycles)
       self.angle_enable_smoothing_factor = self._params.get_bool("EnableHkgTuningAngleSmoothingFactor")
 
@@ -371,7 +371,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       return max(self.apply_torque_last - adaptive_ramp_rate, self.min_torque_reduction_gain)
     else:
       # EU vehicles have been seen to "idle" at 0.384, while US vehicles have been seen idling at "0.92" for LFA.
-      target_torque = np.clip(target_torque_reduction_gain, self.idle_torque_reduction_gain, self.max_torque_reduction_gain)
+      target_torque = np.clip(target_torque_reduction_gain, self.active_torque_reduction_gain, self.max_torque_reduction_gain)
 
       if self.apply_torque_last > target_torque:
         return max(self.apply_torque_last - self.ramp_down_reduction_gain_rate, target_torque)
