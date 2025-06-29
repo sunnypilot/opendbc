@@ -34,7 +34,7 @@ class CarStateExt:
     self.aBasis = cp.vl["TCS"]["aBasis"]
 
     if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
-      self.leftLanePosition = cp_cam.vl["CCNC_0x1B5"]["LEFT_POSITION"]
-      self.rightLanePosition = cp_cam.vl["CCNC_0x1B5"]["RIGHT_POSITION"]
-      self.leftLaneQuality = cp_cam.vl["CCNC_0x1B5"]["LEFT_QUAL"]
-      self.rightLaneQuality = cp_cam.vl["CCNC_0x1B5"]["RIGHT_QUAL"]
+      self.leftLanePosition = cp_cam.vl["FR_CMR_03_50ms"]["Info_LftLnPosVal"]
+      self.rightLanePosition = cp_cam.vl["FR_CMR_03_50ms"]["Info_RtLnPosVal"]
+      self.leftLaneQuality = cp_cam.vl["FR_CMR_03_50ms"]["Info_LftLnQualSta"]
+      self.rightLaneQuality = cp_cam.vl["FR_CMR_03_50ms"]["Info_RtLnQualSta"]
