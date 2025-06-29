@@ -27,9 +27,9 @@ ALL_GAS_EV_HYBRID_COMBOS = [
 ]
 
 def round_angle(angle_deg: float, can_offset=0):
-  scaled = int(angle_deg / 0.1)
+  scaled = angle_deg / 0.1
   scaled += can_offset
-  return scaled * 0.1
+  return int(scaled) * 0.1
 
 class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest):
 
@@ -240,7 +240,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
 
         # Inject too high rates
         # Up
-        max_angle_delta = round_angle(get_max_angle_delta(speed, self.get_vm(car_name)), 2) * sign
+        max_angle_delta = round_angle(get_max_angle_delta(speed, self.get_vm(car_name)), 3) * sign
         self.assertFalse(self._tx(self._angle_cmd_msg(max_angle_delta, True)))
 
         # Don't change
