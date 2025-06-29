@@ -43,6 +43,7 @@ class CarControllerParams:
 
   ANGLE_MAX_TORQUE_REDUCTION_GAIN = 1.  # Maximum torque command applied to the steering actuator.
   ANGLE_MIN_TORQUE_REDUCTION_GAIN = 0.1  # Minimum torque command allowed when the driver is overriding, to maintain steering feedback.
+  ANGLE_IDLE_TORQUE_REDUCTION_GAIN = 0.6  # Torque command when the car is stopped, to prevent steering wheel from being too loose.
 
   # Rate limits for changing steering torque commands:
   ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE = 0.008  # Maximum rate at which torque can increase per control cycle.

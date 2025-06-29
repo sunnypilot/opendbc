@@ -104,6 +104,13 @@ def get_safety_CP():
   from opendbc.car.hyundai.interface import CarInterface
   return CarInterface.get_non_essential_params("HYUNDAI_IONIQ_5_PE")
 
+def parse_tq_rdc_gain(val):
+  """
+  Returns the float value divided by 100 if val is not None, else returns None.
+  """
+  if val is not None:
+    return float(val) / 100
+  return None
 
 class CarController(CarControllerBase, EsccCarController, LongitudinalController, MadsCarController):
   def __init__(self, dbc_names, CP, CP_SP):
@@ -132,15 +139,17 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.ramp_up_reduction_gain_rate = self.params.ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE
     self.min_torque_reduction_gain = self.params.ANGLE_MIN_TORQUE_REDUCTION_GAIN
     self.max_torque_reduction_gain = self.params.ANGLE_MAX_TORQUE_REDUCTION_GAIN
+    self.idle_torque_reduction_gain = self.params.ANGLE_IDLE_TORQUE_REDUCTION_GAIN
     self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
     self.angle_enable_smoothing_factor = True
 
     self._params = Params() if PARAMS_AVAILABLE else None
     if PARAMS_AVAILABLE:
-      self.min_torque_reduction_gain = float(self._params.get("HkgTuningAngleMinTorqueReductionGain") or 0)
-      self.max_torque_reduction_gain = float(self._params.get("HkgTuningAngleMaxTorqueReductionGain") or 0)
-      self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles") or 0)
-      self.angle_enable_smoothing_factor = self._params.get_bool("HkgTuningAngleSmoothingFactor")
+      self.min_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleMinTorqueReductionGain")) or self.min_torque_reduction_gain
+      self.max_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleMaxTorqueReductionGain")) or self.max_torque_reduction_gain
+      self.idle_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleIdleTorqueReductionGain")) or self.idle_torque_reduction_gain
+      self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles") or self.angle_torque_override_cycles)
+      self.angle_enable_smoothing_factor = self._params.get_bool("EnableHkgTuningAngleSmoothingFactor")
 
 
   def update(self, CC, CC_SP, CS, now_nanos):
@@ -327,9 +336,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     limits = CarControllerParams.ANGLE_LIMITS
     apply_angle = np.clip(apply_angle, -819.2, 819.1)
 
-    # If the vehicle speed is above the maximum speed in the smoothing matrix, apply smoothing
     if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
-      apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last,)
+      apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last)
 
     # *** max lateral jerk limit ***
     max_angle_delta = get_max_angle_delta(max(v_ego_raw, 1), self.VM)
@@ -363,8 +371,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       return max(self.apply_torque_last - adaptive_ramp_rate, self.min_torque_reduction_gain)
     else:
       # EU vehicles have been seen to "idle" at 0.384, while US vehicles have been seen idling at "0.92" for LFA.
-      target_torque = max(target_torque_reduction_gain, 0.5) # at 0.5 under normal conditions
-      target_torque = max(target_torque, self.min_torque_reduction_gain)
+      target_torque = np.clip(target_torque_reduction_gain, self.idle_torque_reduction_gain, self.max_torque_reduction_gain)
 
       if self.apply_torque_last > target_torque:
         return max(self.apply_torque_last - self.ramp_down_reduction_gain_rate, target_torque)
