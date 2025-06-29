@@ -380,5 +380,5 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
   def update_angle_steering_control(self, CS, CC, actuators):
     new_angle = self.apply_hyundai_steer_angle_limits(CS, CC, actuators.steeringAngleDeg)
-    torque_reduction_gain = self.calculate_angle_torque_reduction_gain(CS, actuators.torque)
+    torque_reduction_gain = self.calculate_angle_torque_reduction_gain(CS, abs(actuators.torque))
     return new_angle, torque_reduction_gain
