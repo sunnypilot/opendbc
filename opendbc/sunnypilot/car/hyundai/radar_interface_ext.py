@@ -1,3 +1,5 @@
+import math
+
 from opendbc.can.parser import CANParser
 from opendbc.car import structs, Bus
 from opendbc.car.hyundai.hyundaicanfd import CanBus
