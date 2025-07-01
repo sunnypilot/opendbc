@@ -32,10 +32,8 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.radar_off_can = CP.radarUnavailable
     self.rcp = get_radar_can_parser(CP)
 
-
-    if not (self.CP_SP.flags & (HyundaiFlagsSP.RADAR_FULL_RADAR | HyundaiFlagsSP.RADAR_LEAD_ONLY)):
-      if self.rcp is None:
-        self.initialize_radar_ext(self.trigger_msg)
+    if self.rcp is None:
+      self.initialize_radar_ext(self.trigger_msg)
 
   def update(self, can_strings):
     if self.radar_off_can or (self.rcp is None):
@@ -60,9 +58,8 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     if not self.rcp.can_valid:
       ret.errors.canError = True
 
-    if not (self.CP_SP.flags & (HyundaiFlagsSP.RADAR_FULL_RADAR | HyundaiFlagsSP.RADAR_LEAD_ONLY)):
-      if self.use_radar_interface_ext:
-        return self.update_ext(ret)
+    if self.use_radar_interface_ext:
+      return self.update_ext(ret)
 
     # for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
     #   msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
