@@ -7,11 +7,11 @@ from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.radar_interface_ext import RadarInterfaceExt
 
-MANDO_START_ADDR = 0x500
-MANDO_MSG_COUNT = 32
+MANDO_RADAR_START_ADDR = 0x500
+MANDO_RADAR_MSG_COUNT = 32
 
-MRREVO14F_START_ADDR = 0x602
-MRREVO14F_MSG_COUNT = 16
+MRREVO14F_RADAR_START_ADDR = 0x602
+MRREVO14F_RADAR_MSG_COUNT = 16
 # POC for parsing corner radars: https://github.com/commaai/openpilot/pull/24221/
 
 def get_radar_can_parser(CP, radar_start_addr, radar_msg_count):
@@ -27,12 +27,12 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     RadarInterfaceBase.__init__(self, CP, CP_SP)
     RadarInterfaceExt.__init__(self, CP, CP_SP)
     self.CP_flags = CP.flags
-    if self.CP_flags & HyundaiFlags.MRREVO14F:
-      self.radar_start_addr = MRREVO14F_START_ADDR
-      self.radar_msg_count = MRREVO14F_MSG_COUNT
+    if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
+      self.radar_start_addr = MRREVO14F_RADAR_START_ADDR
+      self.radar_msg_count = MRREVO14F_RADAR_MSG_COUNT
     else:
-      self.radar_start_addr = MANDO_START_ADDR
-      self.radar_msg_count = MANDO_MSG_COUNT
+      self.radar_start_addr = MANDO_RADAR_START_ADDR
+      self.radar_msg_count = MANDO_RADAR_MSG_COUNT
     self.updated_messages = set()
     self.trigger_msg = self.radar_start_addr + self.radar_msg_count - 1
     self.track_id = 0
@@ -71,7 +71,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
 
     for addr in range(self.radar_start_addr, self.radar_start_addr + self.radar_msg_count):
 
-      if self.CP_flags & HyundaiFlags.MRREVO14F:
+      if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
         msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
         addr1 = f"{addr}_1"
         addr2 = f"{addr}_2"
