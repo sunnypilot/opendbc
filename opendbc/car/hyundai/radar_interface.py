@@ -40,8 +40,8 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.radar_off_can = CP.radarUnavailable
     self.rcp = get_radar_can_parser(CP, self.radar_start_addr, self.radar_msg_count)
 
-    # if self.rcp is None:
-    #   self.initialize_radar_ext(self.trigger_msg)
+    if self.rcp is None:
+      self.initialize_radar_ext(self.trigger_msg)
 
   def update(self, can_strings):
     if self.radar_off_can or (self.rcp is None):
@@ -66,8 +66,8 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     if not self.rcp.can_valid:
       ret.errors.canError = True
 
-    # if self.use_radar_interface_ext:
-    #   return self.update_ext(ret)
+    if self.use_radar_interface_ext:
+      return self.update_ext(ret)
 
     for addr in range(self.radar_start_addr, self.radar_start_addr + self.radar_msg_count):
 
