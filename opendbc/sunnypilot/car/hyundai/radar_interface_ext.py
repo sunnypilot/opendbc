@@ -92,34 +92,23 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
 
         if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
           msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
-          addr1 = f"{addr}_1"
-          addr2 = f"{addr}_2"
-          if addr1 not in self.pts:
-            self.pts[addr1] = structs.RadarData.RadarPoint()
-            self.pts[addr1].trackId = self.track_id
-            self.track_id += 1
-          if msg['1_DISTANCE'] != 255.75:
-            self.pts[addr1].measured = True
-            self.pts[addr1].dRel = msg['1_DISTANCE']
-            self.pts[addr1].yRel = msg['1_LATERAL']
-            self.pts[addr1].vRel = float('nan')
-            self.pts[addr1].aRel = float('nan')
-            self.pts[addr1].yvRel = float('nan')
-          else:
-            del self.pts[addr1]
-          if addr2 not in self.pts:
-            self.pts[addr2] = structs.RadarData.RadarPoint()
-            self.pts[addr2].trackId = self.track_id
-            self.track_id += 1
-          if msg['2_DISTANCE'] != 255.75:
-            self.pts[addr2].measured = True
-            self.pts[addr2].dRel = msg['2_DISTANCE']
-            self.pts[addr2].yRel = msg['2_LATERAL']
-            self.pts[addr2].vRel = float('nan')
-            self.pts[addr2].aRel = float('nan')
-            self.pts[addr2].yvRel = float('nan')
-          else:
-            del self.pts[addr2]
+          for i in ("1", "2"):
+            track_key = f"{addr}_{i}"
+            dist = msg[f"{i}_DISTANCE"]
+            if track_key not in self.pts:
+              self.pts[track_key] = structs.RadarData.RadarPoint()
+              self.pts[track_key].trackId = self.track_id
+              self.track_id += 1
+            if dist != 255.75:
+              pt = self.pts[track_key]
+              pt.measured = True
+              pt.dRel = dist
+              pt.yRel = msg[f"{i}_LATERAL"]
+              pt.vRel = float('nan')
+              pt.aRel = float('nan')
+              pt.yvRel = float('nan')
+            else:
+              del self.pts[track_key]
 
         else:
           msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
