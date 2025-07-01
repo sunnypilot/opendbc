@@ -4,6 +4,7 @@ from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 
 class RadarInterfaceExt(EsccRadarInterfaceBase):
@@ -60,26 +61,95 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
       ret.errors.canError = True
       return ret
 
-    for ii in range(1):
-      msg_src = self.get_msg_src()
-      msg = self.rcp.vl[msg_src]
+    if self.CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY:
+      print("RADAR_LEAD_ONLY")
+      for ii in range(1):
+        msg_src = self.get_msg_src()
+        msg = self.rcp.vl[msg_src]
 
-      if ii not in self.pts:
-        self.pts[ii] = structs.RadarData.RadarPoint()
-        self.pts[ii].trackId = self.track_id
-        self.track_id += 1
+        if ii not in self.pts:
+          self.pts[ii] = structs.RadarData.RadarPoint()
+          self.pts[ii].trackId = self.track_id
+          self.track_id += 1
 
-      valid = msg['ACC_ObjDist'] < 204.6 if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else msg['ACC_ObjStatus']
-      if valid:
-        self.pts[ii].measured = True
-        self.pts[ii].dRel = msg['ACC_ObjDist']
-        self.pts[ii].yRel = float('nan')  # FIXME-SP: Only some cars have lateral position from SCC
-        self.pts[ii].vRel = msg['ACC_ObjRelSpd']
-        self.pts[ii].aRel = float('nan')  # TODO-SP: calculate from ACC_ObjRelSpd and with timestep 50Hz (needs to modify in interfaces.py)
-        self.pts[ii].yvRel = float('nan')
+        valid = msg['ACC_ObjDist'] < 204.6 if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else msg['ACC_ObjStatus']
+        if valid:
+          self.pts[ii].measured = True
+          self.pts[ii].dRel = msg['ACC_ObjDist']
+          self.pts[ii].yRel = float('nan')  # FIXME-SP: Only some cars have lateral position from SCC
+          self.pts[ii].vRel = msg['ACC_ObjRelSpd']
+          self.pts[ii].aRel = float('nan')  # TODO-SP: calculate from ACC_ObjRelSpd and with timestep 50Hz (needs to modify in interfaces.py)
+          self.pts[ii].yvRel = float('nan')
 
-      else:
-        del self.pts[ii]
+        else:
+          del self.pts[ii]
+
+    elif self.CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR:
+      print("RADAR_FULL_RADAR")
+      for addr in range(self.radar_start_addr, self.radar_start_addr + self.radar_msg_count):
+
+        if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
+          msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
+          addr1 = f"{addr}_1"
+          addr2 = f"{addr}_2"
+
+          if addr1 not in self.pts:
+            self.pts[addr1] = structs.RadarData.RadarPoint()
+            self.pts[addr1].trackId = self.track_id
+            self.track_id += 1
+
+          valid = msg['1_DISTANCE'] != 255.75
+          if valid:
+            self.pts[addr1].measured = True
+            self.pts[addr1].dRel = msg['1_DISTANCE']
+            self.pts[addr1].yRel = msg['1_LATERAL']
+            self.pts[addr1].vRel = float('nan')
+            self.pts[addr1].aRel = float('nan')
+            self.pts[addr1].yvRel = float('nan')
+          else:
+            del self.pts[addr1]
+
+          if addr2 not in self.pts:
+            self.pts[addr2] = structs.RadarData.RadarPoint()
+            self.pts[addr2].trackId = self.track_id
+            self.track_id += 1
+
+          valid = msg['2_DISTANCE'] != 255.75
+          if valid:
+            self.pts[addr2].measured = True
+            self.pts[addr2].dRel = msg['2_DISTANCE']
+            self.pts[addr2].yRel = msg['2_LATERAL']
+            self.pts[addr2].vRel = float('nan')
+            self.pts[addr2].aRel = float('nan')
+            self.pts[addr2].yvRel = float('nan')
+          else:
+            del self.pts[addr2]
+
+        else:
+          msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
+
+          if addr not in self.pts:
+            self.pts[addr] = structs.RadarData.RadarPoint()
+            self.pts[addr].trackId = self.track_id
+            self.track_id += 1
+
+          valid = msg['STATE'] in (3, 4)
+          if valid:
+            azimuth = math.radians(msg['AZIMUTH'])
+            self.pts[addr].measured = True
+            self.pts[addr].dRel = math.cos(azimuth) * msg['LONG_DIST']
+            self.pts[addr].yRel = 0.5 * -math.sin(azimuth) * msg['LONG_DIST']
+            self.pts[addr].vRel = msg['REL_SPEED']
+            self.pts[addr].aRel = msg['REL_ACCEL']
+            self.pts[addr].yvRel = float('nan')
+          else:
+            del self.pts[addr]
+
+    elif self.CP_SP.flags & HyundaiFlagsSP.RADAR_OFF:
+      print("RADAR_OFF")
+
+    else:
+      print("RADAR_ERROR")
 
     ret.points = list(self.pts.values())
     return ret
