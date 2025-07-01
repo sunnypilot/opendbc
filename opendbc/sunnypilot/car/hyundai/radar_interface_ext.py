@@ -87,8 +87,11 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     elif self.CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR:
       print("RADAR_FULL_RADAR")
 
-    else:
+    elif self.CP_SP.flags & HyundaiFlagsSP.RADAR_OFF:
       print("RADAR_OFF")
+
+    else:
+      print("RADAR_ERROR")
 
     ret.points = list(self.pts.values())
     return ret
