@@ -390,12 +390,16 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
       cam_messages += [
         ("SCC_CONTROL", 50),
       ]
-    if self.CP.flags & HyundaiFlags.CCNC and (not self.CP.flags & HyundaiFlags.CANFD_LKA_STEERING or self.is_canfd_angle_steering):
-      cam_messages += [
+    if self.CP.flags & HyundaiFlags.CCNC:
+      ccnc_messages = [
         ("CCNC_0x161", 20),
         ("CCNC_0x162", 20),
         ("FR_CMR_03_50ms", 20),
       ]
+      if self.is_canfd_angle_steering:
+        pt_messages += ccnc_messages
+      else:
+        cam_messages += ccnc_messages
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, CanBus(CP).ECAN),
