@@ -1,12 +1,6 @@
 #include "opendbc/safety/sunnypilot/safety_mads.h"
 #include "opendbc/safety/safety_declarations.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <time.h>
-
 // ISO 11270
 static const float ISO_LATERAL_ACCEL = 3.0;  // m/s^2
 
@@ -15,32 +9,6 @@ static const float AVERAGE_ROAD_ROLL = 0.06;  // ~3.4 degrees, 6% superelevation
 
 bool is_lat_active(void) {
   return controls_allowed || mads_is_lateral_control_allowed_by_mads();
-}
-
-static void log_lateral_violation(const char* reason, int desired_angle, float fudged_speed,
-                                  float max_angle_delta, int max_angle_delta_can,
-                                  int highest_desired_angle, int lowest_desired_angle,
-                                  int max_angle_can) {
-  FILE *fp = fopen("/tmp/log_lateral", "a");
-  if (fp) {
-    time_t now = time(NULL);
-    char* ts = ctime(&now);
-    if (ts) ts[strlen(ts) - 1] = '\0'; // remove newline
-
-    fprintf(fp, "[%s] Lateral violation: %s\n", ts, reason);
-    fprintf(fp, "  last_desired_angle = %d\n", desired_angle_last);
-    fprintf(fp, "  desired_angle = %d\n", desired_angle);
-    fprintf(fp, "  fudged_speed = %.2f\n", fudged_speed);
-    fprintf(fp, "  max_angle_delta = %.3f deg/frame\n", max_angle_delta);
-    fprintf(fp, "  max_angle_delta_can = %d (CAN units)\n", max_angle_delta_can);
-    fprintf(fp, "  allowed_angle_range = [%d, %d] (CAN units)\n", lowest_desired_angle, highest_desired_angle);
-    fprintf(fp, "  max_angle_can = %d (from lateral accel)\n", max_angle_can);
-    fprintf(fp, "\n");
-    fclose(fp);
-  } else {
-    // Optional: stderr fallback
-    fprintf(stderr, "Failed to log to /tmp/log_lateral: %s\n", strerror(errno));
-  }
 }
 
 // check that commanded torque value isn't too far from measured
@@ -355,51 +323,30 @@ bool steer_angle_cmd_checks_vm(int desired_angle, bool steer_control_enabled, co
     const int highest_desired_angle = desired_angle_last + max_angle_delta_can;
     const int lowest_desired_angle = desired_angle_last - max_angle_delta_can;
 
-    if (max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle)) {
-      violation = true;
-      log_lateral_violation("Angle rate (jerk) limit exceeded", desired_angle, fudged_speed,
-                            max_angle_delta, max_angle_delta_can,
-                            highest_desired_angle, lowest_desired_angle, -1);
-    }
+    violation |= max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle);
 
     // *** ISO lateral accel limit ***
     const float max_curvature = MAX_LATERAL_ACCEL / (fudged_speed * fudged_speed);
     const float max_angle = get_angle_from_curvature(max_curvature, curvature_factor, params);
     const int max_angle_can = (max_angle * limits.angle_deg_to_can) + 1.;
 
-    if (max_limit_check(desired_angle, max_angle_can, -max_angle_can)) {
-      violation = true;
-      log_lateral_violation("Lateral acceleration limit exceeded", desired_angle, fudged_speed,
-                            -1, -1, -1, -1, max_angle_can);
-    }
+    violation |= max_limit_check(desired_angle, max_angle_can, -max_angle_can);
 
-    if (rt_angle_rate_limit_check(limits)) {
-      violation = true;
-      log_lateral_violation("Real-time angle rate limit check failed", desired_angle, fudged_speed,
-                            -1, -1, -1, -1, -1);
-    }
+    // *** angle real time rate limit check ***
+    violation |= rt_angle_rate_limit_check(limits);
   }
-
   desired_angle_last = desired_angle;
 
   // Angle should either be 0 or same as current angle while not steering
   if (!steer_control_enabled) {
     const int max_inactive_angle = CLAMP(angle_meas.max, -limits.max_angle, limits.max_angle) + 1;
     const int min_inactive_angle = CLAMP(angle_meas.min, -limits.max_angle, limits.max_angle) - 1;
-    if (max_limit_check(desired_angle, max_inactive_angle, min_inactive_angle)) {
-      violation = true;
-      log_lateral_violation("Steering not enabled but angle out of range", desired_angle, fudged_speed,
-                            -1, -1, min_inactive_angle, max_inactive_angle, -1);
-    }
+    violation |= max_limit_check(desired_angle, max_inactive_angle, min_inactive_angle);
   }
 
   // No angle control allowed when controls are not allowed
   if (!is_lat_active()) {
-    if (steer_control_enabled) {
-      violation = true;
-      log_lateral_violation("Lateral control not allowed but steering enabled", desired_angle, fudged_speed,
-                            -1, -1, -1, -1, -1);
-    }
+    violation |= steer_control_enabled;
   }
 
   // reset to current angle if either controls is not allowed or there's a violation
