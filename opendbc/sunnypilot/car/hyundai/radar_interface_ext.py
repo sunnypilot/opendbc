@@ -94,14 +94,11 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
           msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
           addr1 = f"{addr}_1"
           addr2 = f"{addr}_2"
-
           if addr1 not in self.pts:
             self.pts[addr1] = structs.RadarData.RadarPoint()
             self.pts[addr1].trackId = self.track_id
             self.track_id += 1
-
-          valid = msg['1_DISTANCE'] != 255.75
-          if valid:
+          if msg['1_DISTANCE'] != 255.75:
             self.pts[addr1].measured = True
             self.pts[addr1].dRel = msg['1_DISTANCE']
             self.pts[addr1].yRel = msg['1_LATERAL']
@@ -110,14 +107,11 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
             self.pts[addr1].yvRel = float('nan')
           else:
             del self.pts[addr1]
-
           if addr2 not in self.pts:
             self.pts[addr2] = structs.RadarData.RadarPoint()
             self.pts[addr2].trackId = self.track_id
             self.track_id += 1
-
-          valid = msg['2_DISTANCE'] != 255.75
-          if valid:
+          if msg['2_DISTANCE'] != 255.75:
             self.pts[addr2].measured = True
             self.pts[addr2].dRel = msg['2_DISTANCE']
             self.pts[addr2].yRel = msg['2_LATERAL']
@@ -129,14 +123,11 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
 
         else:
           msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
-
           if addr not in self.pts:
             self.pts[addr] = structs.RadarData.RadarPoint()
             self.pts[addr].trackId = self.track_id
             self.track_id += 1
-
-          valid = msg['STATE'] in (3, 4)
-          if valid:
+          if msg['STATE'] in (3, 4):
             azimuth = math.radians(msg['AZIMUTH'])
             self.pts[addr].measured = True
             self.pts[addr].dRel = math.cos(azimuth) * msg['LONG_DIST']
@@ -149,7 +140,6 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
 
     elif self.CP_SP.flags & HyundaiFlagsSP.RADAR_OFF:
       print("RADAR_OFF")
-
     else:
       print("RADAR_ERROR")
 
