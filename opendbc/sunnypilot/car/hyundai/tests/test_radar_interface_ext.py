@@ -10,7 +10,7 @@ ESCC_CARS = [
 ]
 
 CAMERA_SCC_CARS = [
-  # (CAR.HYUNDAI_KONA_EV_2022, 0, 0x420, "SCC11"),
+  (CAR.HYUNDAI_KONA_EV_2022, 0, 0x611, "SCC11"),
   (CAR.HYUNDAI_IONIQ_5, HyundaiFlags.CANFD_CAMERA_SCC.value, 0x1A0, "SCC_CONTROL"),
 ]
 
@@ -80,8 +80,8 @@ class TestRadarInterfaceExt:
       assert RD.use_radar_interface_ext, "Camera SCC car should use radar interface ext"
 
     # Verify trigger message
-    # if hasattr(RD, 'trigger_msg'):
-    #   assert RD.trigger_msg == expected_trigger, f"Expected trigger_msg {expected_trigger}, got {RD.trigger_msg}"
+    if hasattr(RD, 'trigger_msg'):
+      assert RD.trigger_msg == expected_trigger, f"Expected trigger_msg {expected_trigger}, got {RD.trigger_msg}"
 
     # Run radar interface once
     RD.update([])
