@@ -126,7 +126,8 @@ def create_lfahda_mfc(packer, enabled, lfa_icon):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca, CP,
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hyundaican_ext,
+                        hud_control, set_speed, stopping, long_override, use_fca, CP,
                         main_cruise_enabled, tuning, ESCC: EnhancedSmartCruiseControl = None):
   commands = []
 
@@ -136,11 +137,11 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
       "TauGapSet": hud_control.leadDistanceBars,
       "VSetDis": set_speed if enabled else 0,
       "AliveCounterACC": idx % 0x10,
-      "ObjValid": 1, # close lead makes controls tighter
-      "ACC_ObjStatus": 1, # close lead makes controls tighter
+      "ObjValid": int(hyundaican_ext.leadVisible), # close lead makes controls tighter
+      "ACC_ObjStatus": int(hyundaican_ext.leadVisible), # close lead makes controls tighter
       "ACC_ObjLatPos": 0,
-      "ACC_ObjRelSpd": 0,
-      "ACC_ObjDist": 1, # close lead makes controls tighter
+      "ACC_ObjRelSpd": hyundaican_ext.leadRelSpeed,
+      "ACC_ObjDist": int(hyundaican_ext.leadDistance), # close lead makes controls tighter
     }
 
   def get_scc12_values():
@@ -176,7 +177,8 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
       "JerkUpperLimit": tuning.jerk_upper, # stock usually is 1.0 but sometimes uses higher values
       "JerkLowerLimit": tuning.jerk_lower, # stock usually is 0.5 but sometimes uses higher values
       "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
-      "ObjGap": 2 if hud_control.leadVisible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
+      "ObjGap": hyundaican_ext.objectGap, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
+      "ObjDistStat": hyundaican_ext.objectRelGap,
     }
 
   def get_fca11_values():
