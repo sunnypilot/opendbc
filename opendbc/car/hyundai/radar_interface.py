@@ -7,7 +7,6 @@ from opendbc.sunnypilot.car.hyundai.radar_interface_ext import RadarInterfaceExt
 
 MANDO_RADAR_START_ADDR = 0x500
 MANDO_RADAR_MSG_COUNT = 32
-
 MRREVO14F_RADAR_START_ADDR = 0x602
 MRREVO14F_RADAR_MSG_COUNT = 16
 # POC for parsing corner radars: https://github.com/commaai/openpilot/pull/24221/
@@ -26,11 +25,9 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     RadarInterfaceExt.__init__(self, CP, CP_SP)
     self.CP_flags = CP.flags
     if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
-      self.radar_start_addr = MRREVO14F_RADAR_START_ADDR
-      self.radar_msg_count = MRREVO14F_RADAR_MSG_COUNT
+      self.radar_start_addr, self.radar_msg_count = MRREVO14F_RADAR_START_ADDR, MRREVO14F_RADAR_MSG_COUNT
     else:
-      self.radar_start_addr = MANDO_RADAR_START_ADDR
-      self.radar_msg_count = MANDO_RADAR_MSG_COUNT
+      self.radar_start_addr, self.radar_msg_count = MANDO_RADAR_START_ADDR, MANDO_RADAR_MSG_COUNT
     self.updated_messages = set()
     self.trigger_msg = self.radar_start_addr + self.radar_msg_count - 1
     self.track_id = 0
