@@ -13,7 +13,8 @@ from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car import get_param
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update, \
-  LongitudinalTuningType
+                                                                LongitudinalTuningType
+
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
@@ -61,9 +62,16 @@ class LongitudinalController:
     self.comfort_band_lower = 0.0
     self.stopping = False
 
-  def _update_car_config(self, params_dict: dict[str, str]) -> None:
-    """Update car configuration with current parameter values."""
-    self.car_config = get_car_config(self.CP, params_dict)
+    self._last_tuning_params: tuple = ()
+
+  def _get_tuning_params_dict(self, params_list) -> None:
+    """Update car config when tuning parameters change."""
+    tuning_values = tuple(getattr(p, 'value', '') for p in params_list if getattr(p, 'key', '').startswith('LongTuning'))
+
+    if tuning_values != self._last_tuning_params:
+      self._last_tuning_params = tuning_values
+      params_dict = {p.key: p.value for p in params_list if p.key.startswith('LongTuning')}
+      self.car_config = get_car_config(self.CP, params_dict)
 
   @property
   def enabled(self) -> bool:
@@ -285,11 +293,9 @@ class LongitudinalController:
         CC_SP: sunnypilot car control signals including longitudinal tuning parameters and flags
         CS: Car state information
     """
-
-    # Convert params list to dict and update car config with current param values
-    params_dict = {param.key: param.value for param in CC_SP.params}
     self.long_tuning_param = int(get_param(CC_SP.params, "HyundaiLongitudinalTuning", str(LongitudinalTuningType.OFF)))
-    self._update_car_config(params_dict)
+    if self.long_tuning_param != LongitudinalTuningType.OFF:
+      self._get_tuning_params_dict(CC_SP.params)
 
     actuators = CC.actuators
     long_control_state = actuators.longControlState
