@@ -88,7 +88,7 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
 
     elif self.CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR:
       print("RADAR_FULL_RADAR")
-      for addr in range(self.radar_start_addr, self.radar_start_addr + self.radar_msg_count):
+      for addr in range(self.radar_addr, self.radar_addr + self.radar_count):
 
         if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
           msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
