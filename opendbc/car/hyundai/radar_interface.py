@@ -1,9 +1,12 @@
+import math
+
 from opendbc.can.parser import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.interfaces import RadarInterfaceBase
 from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.radar_interface_ext import RadarInterfaceExt
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 MANDO_RADAR_ADDR = 0x500
 MANDO_RADAR_COUNT = 32
@@ -36,7 +39,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.radar_off_can = CP.radarUnavailable
     self.rcp = get_radar_can_parser(CP, self.radar_addr, self.radar_count)
 
-    if self.rcp is None:
+    if self.CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY:
       self.initialize_radar_ext(self.trigger_msg)
 
   def update(self, can_strings):
@@ -62,7 +65,51 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     if not self.rcp.can_valid:
       ret.errors.canError = True
 
-    if self.use_radar_interface_ext:
-      return self.update_ext(ret)
+    if self.CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY:
+      if self.use_radar_interface_ext:
+        return self.update_ext(ret)
 
+    for addr in range(self.radar_addr, self.radar_addr + self.radar_count):
+      msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
+
+      if self.CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR:
+
+        if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
+          msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
+          for i in ("1", "2"):
+            track_key = f"{addr}_{i}"
+            dist = msg[f"{i}_DISTANCE"]
+            if track_key not in self.pts:
+              self.pts[track_key] = structs.RadarData.RadarPoint()
+              self.pts[track_key].trackId = self.track_id
+              self.track_id += 1
+            if dist != 255.75:
+              pt = self.pts[track_key]
+              pt.measured = True
+              pt.dRel = dist
+              pt.yRel = msg[f"{i}_LATERAL"]
+              pt.vRel = float('nan')
+              pt.aRel = float('nan')
+              pt.yvRel = float('nan')
+            else:
+              del self.pts[track_key]
+
+        else:
+          msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
+          if addr not in self.pts:
+            self.pts[addr] = structs.RadarData.RadarPoint()
+            self.pts[addr].trackId = self.track_id
+            self.track_id += 1
+          if msg['STATE'] in (3, 4):
+            azimuth = math.radians(msg['AZIMUTH'])
+            self.pts[addr].measured = True
+            self.pts[addr].dRel = math.cos(azimuth) * msg['LONG_DIST']
+            self.pts[addr].yRel = 0.5 * -math.sin(azimuth) * msg['LONG_DIST']
+            self.pts[addr].vRel = msg['REL_SPEED']
+            self.pts[addr].aRel = msg['REL_ACCEL']
+            self.pts[addr].yvRel = float('nan')
+          else:
+            del self.pts[addr]
+
+    ret.points = list(self.pts.values())
     return ret
