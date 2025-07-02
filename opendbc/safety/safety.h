@@ -28,7 +28,7 @@
 // CAN-FD only safety modes
 #ifdef CANFD
 #include "opendbc/safety/modes/hyundai_canfd.h"
-#include "opendbc/safety/modes/hyundai_canfd_adas_interceptor.h"
+#include "opendbc/safety/modes/hyundai_canfd_adas_drv_interceptor.h"
 #endif
 
 uint32_t GET_BYTES(const CANPacket_t *msg, int start, int len) {
@@ -242,8 +242,10 @@ bool safety_tx_hook(CANPacket_t *to_send) {
   }
 
   bool safety_allowed = false;
-  if (whitelisted) {
+  if (whitelisted && (current_hooks->tx != NULL)) {
     safety_allowed = current_hooks->tx(to_send);
+  } else if (current_hooks->tx == NULL && current_hooks->tamper != NULL) {
+    safety_allowed = current_hooks->tamper(to_send);
   }
 
   return !relay_malfunction && whitelisted && safety_allowed;
@@ -417,7 +419,7 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
     {SAFETY_TESLA, &tesla_hooks},
 #ifdef CANFD
     {SAFETY_HYUNDAI_CANFD, &hyundai_canfd_hooks},
-    {SAFETY_HYUNDAI_CANFD_ADAS_INTERCEPTOR, &hyundai_canfd_adas_interceptor_hooks},
+    {SAFETY_HYUNDAI_CANFD_ADAS_DRV_INTERCEPTOR, &hyundai_canfd_adas_drv_interceptor_hooks},
 #endif
 #ifdef ALLOW_DEBUG
     {SAFETY_SUBARU_PREGLOBAL, &subaru_preglobal_hooks},

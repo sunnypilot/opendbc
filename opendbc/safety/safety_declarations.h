@@ -32,7 +32,7 @@
 #define SAFETY_HYUNDAI_CANFD 28U
 #define SAFETY_RIVIAN 33U
 #define SAFETY_VOLKSWAGEN_MEB 34U
-#define SAFETY_HYUNDAI_CANFD_ADAS_INTERCEPTOR 65534U
+#define SAFETY_HYUNDAI_CANFD_ADAS_DRV_INTERCEPTOR 65534U
 
 #define GET_BIT(msg, b) ((bool)!!(((msg)->data[((b) / 8U)] >> ((b) % 8U)) & 0x1U))
 #define GET_BYTE(msg, b) ((msg)->data[(b)])
@@ -211,12 +211,14 @@ typedef bool (*get_quality_flag_valid_t)(const CANPacket_t *to_push);
 typedef safety_config (*safety_hook_init)(uint16_t param);
 typedef void (*rx_hook)(const CANPacket_t *to_push);
 typedef bool (*tx_hook)(const CANPacket_t *to_send);  // returns true if the message is allowed
+typedef bool (*tamper_hook)(CANPacket_t *to_send);  // returns true if the message is allowed to be sent, and tampering is allowed
 typedef bool (*fwd_hook)(int bus_num, int addr);      // returns true if the message should be blocked from forwarding
 
 typedef struct {
   safety_hook_init init;
   rx_hook rx;
   tx_hook tx;
+  tamper_hook tamper;  // optional hook for tampering checks, e.g. for AEB pass-through
   fwd_hook fwd;
   get_checksum_t get_checksum;
   compute_checksum_t compute_checksum;
@@ -226,6 +228,7 @@ typedef struct {
 
 bool safety_rx_hook(const CANPacket_t *to_push);
 bool safety_tx_hook(CANPacket_t *to_send);
+bool tamper_tx_hook(CANPacket_t *to_send);
 int to_signed(int d, int bits);
 void update_sample(struct sample_t *sample, int sample_new);
 bool get_longitudinal_allowed(void);
