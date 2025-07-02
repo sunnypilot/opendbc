@@ -68,7 +68,7 @@ class CarController(CarControllerBase, EsccCarController, HyundaiCanEXT, Longitu
     HyundaiCanEXT.update(self, CC_SP)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
     if self.frame % 2 == 0:
-      LongitudinalController.update(self, CC, CS)
+      LongitudinalController.update(self, CC, CC_SP, CS)
 
     actuators = CC.actuators
     hud_control = CC.hudControl
