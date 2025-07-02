@@ -9,6 +9,7 @@ MANDO_RADAR_ADDR = 0x500
 MANDO_RADAR_COUNT = 32
 MRREVO14F_RADAR_ADDR = 0x602
 MRREVO14F_RADAR_COUNT = 16
+
 # POC for parsing corner radars: https://github.com/commaai/openpilot/pull/24221/
 
 def get_radar_can_parser(CP, radar_addr, radar_count):
