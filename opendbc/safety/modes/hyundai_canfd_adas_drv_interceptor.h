@@ -17,9 +17,9 @@ static const CanMsg HYUNDAI_CANFD_ADAS_DRV_TX_MSGS[] = {
   HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, false)
 };
 
-static void hyundai_canfd_adas_drv_interceptor_rx_hook(const CANPacket_t *to_push) {
- 
-}
+// static void hyundai_canfd_adas_drv_interceptor_rx_hook(const CANPacket_t *to_push) {
+//  
+// }
 
 static bool hyundai_canfd_adas_drv_interceptor_tamper_hook(CANPacket_t * to_send) {
   int bus = GET_BUS(to_send);
@@ -66,7 +66,7 @@ static bool hyundai_canfd_adas_drv_interceptor_fwd_hook(int bus_num, int addr) {
 
 const safety_hooks hyundai_canfd_adas_drv_interceptor_hooks = {
   // .init = hyundai_canfd_init,
-  .rx = hyundai_canfd_adas_drv_interceptor_rx_hook,
+  // .rx = hyundai_canfd_adas_drv_interceptor_rx_hook,
   .tamper = hyundai_canfd_adas_drv_interceptor_tamper_hook,
   .fwd = hyundai_canfd_adas_drv_interceptor_fwd_hook,
   .get_counter = hyundai_canfd_get_counter,
