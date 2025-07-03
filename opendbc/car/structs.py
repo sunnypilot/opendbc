@@ -118,6 +118,9 @@ class LeadData:
 @auto_dataclass
 class CarControlSP:
   mads: 'ModularAssistiveDrivingSystem' = field(default_factory=lambda: ModularAssistiveDrivingSystem())
+  leadDistance: float = auto_field()
+  leadRelSpeed: float = auto_field()
+  leadVisible: bool = auto_field()
   params: list['CarControlSP.Param'] = auto_field()
   leadOne: 'LeadData' = field(default_factory=lambda: LeadData())
   leadTwo: 'LeadData' = field(default_factory=lambda: LeadData())

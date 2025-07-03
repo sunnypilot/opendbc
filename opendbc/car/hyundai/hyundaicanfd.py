@@ -125,7 +125,7 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
 
 
 def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed, hud_control,
-                       main_cruise_enabled, tuning):
+                       hyundaicanfd_ext, main_cruise_enabled, tuning):
   jerk = 5
   jn = jerk / 50
   if not enabled or gas_override:
@@ -144,9 +144,10 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "JerkLowerLimit": tuning.jerk_lower,
     "JerkUpperLimit": tuning.jerk_upper,
 
-    "ACC_ObjDist": 1,
-    "ObjValid": 0,
-    "OBJ_STATUS": 2,
+    "ACC_ObjDist": int(hyundaicanfd_ext.leadDistance),
+    "ACC_ObjRelSpd": hyundaicanfd_ext.leadRelSpeed,
+    "ObjValid": int(not hyundaicanfd_ext.leadVisible),
+    "SCC_ObjSta": 0 if not (enabled and hyundaicanfd_ext.leadVisible)  else (1 if gas_override else 2),
     "SET_ME_2": 0x4,
     "SET_ME_3": 0x3,
     "SET_ME_TMP_64": 0x64,
