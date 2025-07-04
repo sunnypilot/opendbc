@@ -14,6 +14,7 @@ from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, T
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 
+from opendbc.sunnypilot.car import get_param
 from opendbc.sunnypilot.car.toyota.secoc_long import SecOCLongCarController
 
 Ecu = structs.CarParams.Ecu
@@ -84,6 +85,9 @@ class CarController(CarControllerBase, SecOCLongCarController):
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
     lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
+
+    # Flip ACC Increments
+    flip_acc_increments = bool(get_param(CC_SP.params, "FlipAccIncrements", "0"))
 
     if len(CC.orientationNED) == 3:
       self.pitch.update(CC.orientationNED[1])
@@ -243,7 +247,7 @@ class CarController(CarControllerBase, SecOCLongCarController):
         pcm_accel_cmd = float(np.clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX))
 
         can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.permit_braking, self.standstill_req, lead,
-                                                        CS.acc_type, fcw_alert, self.distance_button, self.SECOC_LONG))
+                                                        CS.acc_type, fcw_alert, self.distance_button, self.SECOC_LONG, flip_acc_increments))
         self.accel = pcm_accel_cmd
 
     else:
