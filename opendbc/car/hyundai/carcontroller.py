@@ -194,6 +194,9 @@ class CarController(CarControllerBase, EsccCarController, HyundaiCanEXT, Longitu
     # LFA and HDA icons
     if self.frame % 5 == 0 and (not lka_steering or lka_steering_long):
       can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
+      can_sends.append(hyundaicanfd.create_hda2_cluster(self.packer, self.CAN, self.lfa_icon,
+                                                        CC.leftBlinker, CC.rightBlinker, CC.hudControl,
+                                                        self.hyundaicanfd_ext, CS.out))
 
     # blinkers
     if lka_steering and self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
@@ -205,7 +208,7 @@ class CarController(CarControllerBase, EsccCarController, HyundaiCanEXT, Longitu
       else:
         can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))
       if self.frame % 2 == 0:
-        can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
+        can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, CC.cruiseControl.override,
                                                          set_speed_in_units, hud_control, self.hyundaicanfd_ext, CS.main_cruise_enabled, self.tuning))
         self.accel_last = accel
     else:

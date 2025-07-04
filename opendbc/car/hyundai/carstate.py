@@ -324,6 +324,8 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.blockPcmEnable = not self.recent_button_interaction()
 
+    ret_sp.speedLimit = cp_cam.vl["FR_CMR_02_100ms"]["ISLW_SpdCluMainDis"] * speed_factor
+
     return ret, ret_sp
 
   def get_can_parsers_canfd(self, CP):
@@ -370,7 +372,11 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
       cam_messages += [
         ("SCC_CONTROL", 50),
+        ("FR_CMR_03_50ms", 20),
       ]
+
+    # parse speed limit from car
+    cam_messages.append(("FR_CMR_02_100ms", 10))
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, CanBus(CP).ECAN),
