@@ -18,12 +18,9 @@ class HyundaiCanEXTParams:
   leadVisible: bool = False
 
 @dataclass
-class HyundaiCanFDEXTParams:
-  objectGap: int = 0
-  objectRelGap: int = 0
-  leadDistance: float = 0.0
-  leadRelSpeed: float = 0.0
-  leadVisible: bool = False
+class HyundaiCanFDEXTParams(HyundaiCanEXTParams):
+  # Future CanFD specific params
+  pass
 
 
 class HyundaiCanEXT:
@@ -73,7 +70,7 @@ class HyundaiCanEXT:
       if self.lead_off_counter >= self.LEAD_VISIBLE_HYSTERESIS_OFF_FRAMES:
         self.lead_visible = False
 
-  def hyundaican(self, CC_SP: structs.CarControlSP) -> HyundaiCanEXTParams:
+  def hyundaican(self, CC_SP: structs.CarControlSP, hyundaiCanParams: HyundaiCanEXTParams) -> HyundaiCanEXTParams:
     lead_distance = CC_SP.leadDistance
     lead_rel_speed = CC_SP.leadRelSpeed
     objectRelGap = 0 if lead_distance == 0 else 2 if lead_rel_speed < -0.2 else 1
@@ -84,33 +81,23 @@ class HyundaiCanEXT:
                                        HyundaiCanEXT._calculate_object_gap(lead_distance),
                                        self.gap_counter, self.OBJECT_GAP_HYSTERESIS_FRAMES))
 
-    self.hyundaican_ext.objectGap = self.object_gap
-    self.hyundaican_ext.objectRelGap = objectRelGap
-    self.hyundaican_ext.leadDistance = lead_distance
-    self.hyundaican_ext.leadRelSpeed = lead_rel_speed
-    self.hyundaican_ext.leadVisible = self.lead_visible
+    hyundaiCanParams.objectGap = self.object_gap
+    hyundaiCanParams.objectRelGap = objectRelGap
+    hyundaiCanParams.leadDistance = lead_distance
+    hyundaiCanParams.leadRelSpeed = lead_rel_speed
+    hyundaiCanParams.leadVisible = self.lead_visible
 
-    return self.hyundaican_ext
+    return hyundaiCanParams
 
   def hyundaicanfd (self, CC_SP: structs.CarControlSP, CC: structs.CarControl, CS: structs.CarState) -> HyundaiCanFDEXTParams:
-    lead_distance = CC_SP.leadDistance
+
     lead_rel_speed = CC_SP.leadRelSpeed
     objectRelGap = 0 if not self.lead_visible else 2 if lead_rel_speed < 0 else 1
-
-    self._update_lead_visible_hysteresis(CC_SP.leadVisible)
-    self.object_gap, self.gap_counter = (
-      HyundaiCanEXT._hysteresis_update(self.object_gap,
-                                       HyundaiCanEXT._calculate_object_gap(lead_distance),
-                                       self.gap_counter, self.OBJECT_GAP_HYSTERESIS_FRAMES))
-
-    self.hyundaicanfd_ext.objectGap = self.object_gap
+    self.hyundaican(CC_SP, self.hyundaicanfd_ext)
     self.hyundaicanfd_ext.objectRelGap = objectRelGap
-    self.hyundaicanfd_ext.leadDistance = lead_distance
-    self.hyundaicanfd_ext.leadRelSpeed = lead_rel_speed
-    self.hyundaicanfd_ext.leadVisible = self.lead_visible
 
     return self.hyundaicanfd_ext
 
   def update(self, CC_SP: structs.CarControlSP, CC: structs.CarControl, CS: structs.CarState) -> None:
-    self.hyundaican(CC_SP)
+    self.hyundaican(CC_SP, self.hyundaican_ext)
     self.hyundaicanfd(CC_SP, CC, CS)
