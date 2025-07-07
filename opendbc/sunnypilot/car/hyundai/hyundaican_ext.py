@@ -20,9 +20,9 @@ class HyundaiCanEXTParams:
 
 class HyundaiCanEXT:
   # Hysteresis parameters
-  LEAD_VISIBLE_HYSTERESIS_ON_FRAMES: int = 1
-  LEAD_VISIBLE_HYSTERESIS_OFF_FRAMES: int = 10
-  OBJECT_GAP_HYSTERESIS_FRAMES: int = 10
+  LEAD_VISIBLE_HYSTERESIS_ON_FRAMES: int = 50
+  LEAD_VISIBLE_HYSTERESIS_OFF_FRAMES: int = 50
+  OBJECT_GAP_HYSTERESIS_FRAMES: int = 50
 
   def __init__(self):
     self.hyundaican_ext = HyundaiCanEXTParams()
