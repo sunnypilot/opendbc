@@ -25,9 +25,7 @@ class HyundaiCanFDEXTParams(HyundaiCanEXTParams):
 
 class HyundaiCanEXT:
   # Hysteresis parameters
-  LEAD_VISIBLE_HYSTERESIS_ON_FRAMES: int = 50
-  LEAD_VISIBLE_HYSTERESIS_OFF_FRAMES: int = 50
-  OBJECT_GAP_HYSTERESIS_FRAMES: int = 50
+  LEAD_HYSTERESIS_FRAMES: int = 50
 
   def __init__(self):
     self.hyundaican_ext = HyundaiCanEXTParams()
@@ -62,12 +60,12 @@ class HyundaiCanEXT:
     if raw_lead_visible:
       self.lead_on_counter += 1
       self.lead_off_counter = 0
-      if self.lead_on_counter >= self.LEAD_VISIBLE_HYSTERESIS_ON_FRAMES:
+      if self.lead_on_counter >= self.LEAD_HYSTERESIS_FRAMES:
         self.lead_visible = True
     else:
       self.lead_off_counter += 1
       self.lead_on_counter = 0
-      if self.lead_off_counter >= self.LEAD_VISIBLE_HYSTERESIS_OFF_FRAMES:
+      if self.lead_off_counter >= self.LEAD_HYSTERESIS_FRAMES:
         self.lead_visible = False
 
   def hyundaican(self, CC_SP: structs.CarControlSP, hyundaiCanParams: HyundaiCanEXTParams) -> HyundaiCanEXTParams:
@@ -79,7 +77,7 @@ class HyundaiCanEXT:
     self.object_gap, self.gap_counter = (
       HyundaiCanEXT._hysteresis_update(self.object_gap,
                                        HyundaiCanEXT._calculate_object_gap(lead_distance),
-                                       self.gap_counter, self.OBJECT_GAP_HYSTERESIS_FRAMES))
+                                       self.gap_counter, self.LEAD_HYSTERESIS_FRAMES))
 
     hyundaiCanParams.objectGap = self.object_gap
     hyundaiCanParams.objectRelGap = objectRelGap
