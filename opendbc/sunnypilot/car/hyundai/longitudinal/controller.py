@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from opendbc.car import structs, DT_CTRL
 from opendbc.car.interfaces import CarStateBase
-from opendbc.car.hyundai.values import CarControllerParams
+from opendbc.car.hyundai.values import CarControllerParams, CAR
 from opendbc.sunnypilot.car import get_param
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update, \
                                                                 LongitudinalTuningType
@@ -98,8 +98,12 @@ class LongitudinalController:
       return
 
     # Keep track of time in stopping state (in control cycles)
-    if self.stopping_count > 1 / (DT_CTRL * 2):
-      self.stopping = True
+    if self.CP.carFingerprint in CAR.KIA_NIRO_EV:
+      if self.stopping_count > 2.5 / DT_CTRL:
+        self.stopping = True
+    else:
+      if self.stopping_count > 1 / (DT_CTRL * 2):
+        self.stopping = True
 
     self.stopping_count += 1
 
