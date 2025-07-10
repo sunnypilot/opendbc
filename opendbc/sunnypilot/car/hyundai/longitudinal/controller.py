@@ -98,7 +98,7 @@ class LongitudinalController:
       return
 
     # Keep track of time in stopping state (in control cycles)
-    if self.CP.carFingerprint in CAR.KIA_NIRO_EV:
+    if self.CP.carFingerprint == CAR.KIA_NIRO_EV:
       if self.stopping_count > 3.0 / DT_CTRL:
         self.stopping = True
     else:
@@ -216,14 +216,20 @@ class LongitudinalController:
     dynamic_desired_lower_jerk = min(dynamic_lower_jerk, lower_speed_factor)
 
     # Apply jerk limits based on tuning approach
-    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+    if self.CP.carFingerprint == CAR.KIA_NIRO_EV:
+      self.jerk_upper = desired_jerk_upper
+    else:
+      self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
 
     # Predictive tuning uses calculated desired jerk directly
     # Dynamic tuning applies a ramped approach for smoother transitions
     if self.long_tuning_param == LongitudinalTuningType.PREDICTIVE:
       self.jerk_lower = desired_jerk_lower
     elif self.long_tuning_param == LongitudinalTuningType.DYNAMIC:
-      self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk)
+      if self.CP.carFingerprint == CAR.KIA_NIRO_EV:
+        self.jerk_lower = dynamic_desired_lower_jerk
+      else:
+        self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk)
 
     # Disable jerk when longitudinal control is inactive
     if not CC.longActive:
