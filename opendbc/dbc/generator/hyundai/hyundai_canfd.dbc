@@ -1,5 +1,6 @@
 CM_ "IMPORT _hyundai_common.dbc";
 CM_ "IMPORT _hyundai_canfd_ccnc.dbc";
+CM_ "IMPORT _hyundai_canfd_sunnypilot.dbc";
 
 BO_ 53 ACCELERATOR: 32 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -57,17 +58,42 @@ BO_ 203 ADAS_CMD_35_10ms: 24 CGW_CCU
  SG_ FCA_ESA_ActvSta : 56|2@1+ (1,0) [0|0] "" GW_RGW,MDPS,SFA
  SG_ FCA_ESA_TqBstGainVal : 64|8@1+ (0.004,0) [0|0] "" GW_RGW,MDPS,SFA
 
-BO_ 234 MDPS: 24 XXX
- SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
- SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ LKA_ACTIVE : 48|1@0+ (1,0) [0|16777215] "" XXX
- SG_ LKA_FAULT : 54|1@0+ (1,0) [0|1] "" XXX
- SG_ STEERING_OUT_TORQUE : 64|12@1+ (0.1,-204.8) [0|65535] "" XXX
- SG_ STEERING_COL_TORQUE : 80|13@1+ (1,-4095) [0|4095] "" XXX
- SG_ STEERING_ANGLE : 96|16@1- (0.1,0) [0|255] "deg" XXX
- SG_ STEERING_ANGLE_2 : 128|16@1- (0.1,0) [0|65535] "deg" XXX
- SG_ LKA_ANGLE_ACTIVE : 145|2@0+ (1,0) [0|3] "" XXX
- SG_ LKA_ANGLE_FAULT : 149|1@0+ (1,0) [0|1] "" XXX
+BO_ 234 MDPS_01_10ms: 24 SFA
+ SG_ MDPS_Crc1Val : 0|16@1+ (1,0) [0|0] "" CGW_CCU,ESC,ICSC,RCU,RWA,RWS,VPC_C
+ SG_ MDPS_AlvCnt1Val : 16|8@1+ (1,0) [0|0] "" CGW_CCU,ESC,ICSC,RCU,RWA,RWS,VPC_C
+ SG_ MDPS_WrngLmpSta : 24|3@1+ (1,0) [0|0] "" CGW_CCU,ESC,ICSC,RCU,RWA,RWS
+ SG_ MDPS_Typ : 27|3@1+ (1,0) [0|0] "" CGW_CCU,ICSC,RWA
+ SG_ MDPS_EngIdleRpmReq : 30|2@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_VsmPlgInSta : 32|2@1+ (1,0) [0|0] "flag" ESC,ICSC,RCU,RWA
+ SG_ MDPS_VsmDfctvSta : 34|2@1+ (1,0) [0|0] "" ESC,ICSC,RCU,RWA
+ SG_ MDPS_VsmSigErrSta : 36|2@1+ (1,0) [0|0] "" ESC,RCU,RWA
+ SG_ MDPS_PaPlugInSta : 38|2@1+ (1,0) [0|0] "" CGW_CCU,ESC,RCU,RWA
+ SG_ MDPS_PaModeSta : 40|4@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_PaCanfltSta : 44|2@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_LkaPlgInSta : 46|2@1+ (1,0) [0|0] "" CGW_CCU,ICSC,RWA
+ SG_ MDPS_LkaToiActvSta : 48|2@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_LkaToiUnblSta : 50|2@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_LkaToiFltSta : 52|2@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_LkaFailSta : 54|2@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_ResetOpSta : 59|2@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ MDPS_CurrModVal : 61|3@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_OutTqVal : 64|12@1+ (0.1,-204.8) [0|0] "Nm" CGW_CCU,ESC,ICSC,RCU,RWA
+ SG_ MDPS_VsmActResp : 76|2@1+ (1,0) [0|0] "" ESC,RCU,RWA
+ SG_ Reprogram_State_MDPS : 78|2@1+ (1,0) [0|0] "" CGW_CCU
+ SG_ MDPS_StrTqSnsrVal : 80|13@1+ (0.005,-20.48) [0|0] "Nm" CGW_CCU,ESC,ICSC,RCU,RWA,VPC_C
+ SG_ MDPS_PaStrAnglVal : 96|16@1- (0.1,0) [0|0] "Deg" CGW_CCU,RWA
+ SG_ MDPS_LoamModSta : 112|2@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_HDPSpprtSWVer : 114|5@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_ADASAciActvSta : 120|4@1+ (1,0) [0|0] "" CGW_CCU,ESC,RWA,RWS
+ SG_ MDPS_ADASAciPluginSta : 124|2@1+ (1,0) [0|0] "" RWA
+ SG_ MDPS_ADAS_AciFltSig : 126|2@1+ (1,0) [0|0] "" CGW_CCU,ESC,RWA
+ SG_ MDPS_EstStrAnglVal : 128|16@1- (0.1,0) [0|0] "Deg" CGW_CCU,RWA,RWS
+ SG_ MDPS_ADASAciActvSta_Lv2 : 144|4@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_ADAS_AciFltSig_Lv2 : 148|3@1+ (1,0) [0|0] "" CGW_CCU,RWA
+ SG_ MDPS_TpaPlugInSta : 152|2@1+ (1,0) [0|0] "" RWA,VPC_C
+ SG_ MDPS_TpaCanfltSta : 154|2@1+ (1,0) [0|0] "" RWA,VPC_C
+ SG_ MDPS_TpaModeSta : 156|4@1+ (1,0) [0|0] "" RWA,VPC_C
+ SG_ MDPS_TpaStrAnglVal : 160|16@1- (0.1,0) [0|0] "Deg" RWA,VPC_C
 
 BO_ 256 ACCELERATOR_BRAKE_ALT: 32 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -723,7 +749,7 @@ VAL_ 203 ADAS_StrAnglReqVal 0 "0x0x000~0x3FFF:Real Values" 16383 "0x0x000~0x3FFF
 VAL_ 203 ADAS_ACIAnglTqRedcGainVal 0 "0x0x00~0xFA:Real Values" 250 "0x0x00~0xFA:Real Values" 251 "RESERVED" 252 "RESERVED" 253 "RESERVED" 254 "RESERVED" 255 "RESERVED";
 VAL_ 203 FCA_ESA_ActvSta 0 "Inactive" 1 "Active" 2 "RESERVED" 3 "RESERVED";
 VAL_ 203 FCA_ESA_TqBstGainVal 0 "0x0x00~0xFA:Real Values" 250 "0x0x00~0xFA:Real Values" 251 "RESERVED" 252 "RESERVED" 253 "RESERVED" 254 "RESERVED" 255 "RESERVED";
-VAL_ 234 LKA_FAULT 0 "ok" 1 "lka fault";
+
 VAL_ 272 LKA_MODE 1 "warning only" 2 "assist" 6 "off";
 VAL_ 272 LKA_ICON 0 "hidden" 1 "grey" 2 "green" 3 "flashing green";
 VAL_ 272 LKAS_ANGLE_ACTIVE 0 "off" 1 "not active" 2 "active";

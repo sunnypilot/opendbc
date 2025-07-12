@@ -206,6 +206,8 @@ def create_fca_warning_light(packer, CAN, frame):
     ret.append(packer.make_can_msg("ADRV_0x160", CAN.ECAN, values))
   return ret
 
+def create_adas_drv_intercept_msg(packer, CAN):
+  return [packer.make_can_msg("ADAS_DRV_INTERCEPT", CAN.ECAN, {})]
 
 def create_adrv_messages(packer, CAN, frame):
   # messages needed to car happy after disabling

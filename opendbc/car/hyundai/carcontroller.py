@@ -285,6 +285,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     lka_steering = self.CP.flags & HyundaiFlags.CANFD_LKA_STEERING
     lka_steering_long = lka_steering and self.CP.openpilotLongitudinalControl
 
+    can_sends.extend(hyundaicanfd.create_adas_drv_intercept_msg(self.packer, self.CAN))
+
     # steering control
     can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.apply_angle_last
                                                            , self.lkas_icon))
