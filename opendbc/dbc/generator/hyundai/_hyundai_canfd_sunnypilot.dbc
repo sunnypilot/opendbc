@@ -1,6 +1,6 @@
 BO_ 600 ADAS_DRV_INTERCEPT: 8 SP
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|0] "0" xxx
  SG_ COUNTER : 16|8@1+ (1,0) [0|0] "0" xxx
- SG_ Status : 24|2@1+ (1,0) [0|0] "" xxx
+ SG_ status : 24|2@1+ (1,0) [0|0] "" xxx
 
 VAL_ 600 Enabled 0 "Disabled" 1 "Enabled";
