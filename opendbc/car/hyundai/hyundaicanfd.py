@@ -211,7 +211,7 @@ def create_adas_drv_intercept_msg(packer, CAN, enabled):
   values = {
     "status": enabled
   }
-  return [packer.make_can_msg("ADAS_DRV_INTERCEPT", CAN.ECAN, values)]
+  return [packer.make_can_msg("ADAS_DRV_INTERCEPT", CAN.ACAN, values)]
 
 
 def create_adrv_messages(packer, CAN, frame):
