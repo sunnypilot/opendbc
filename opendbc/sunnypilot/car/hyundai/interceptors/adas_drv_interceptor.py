@@ -21,6 +21,9 @@ class AdasDrvEcuInterceptorCarState(EcuInterceptorCarStateBase):
 
 
 class AdasDrvEcuInterceptorCarController(EcuInterceptorCarControllerBase):
+  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
+    super().__init__(CP, CP_SP)
+
   def initialize(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> AdasDrvEcuInterceptor:
     """
       This method is invoked to initialize the ESCC object.
@@ -30,6 +33,9 @@ class AdasDrvEcuInterceptorCarController(EcuInterceptorCarControllerBase):
 
 
 class AdasDrvEcuInterceptorRadarInterface(EcuInterceptorRadarInterfaceBase):
+  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
+    super().__init__(CP, CP_SP)
+
   def initialize(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> AdasDrvEcuInterceptor:
     """
       This method is invoked to initialize the ESCC object.
