@@ -166,7 +166,7 @@ class CarInterface(CarInterfaceBase):
       if ESCC_MSG in fingerprint[0]:
         ret.flags |= HyundaiFlagsSP.ENHANCED_SCC.value
     else:
-      IS_ADAS_DRV_ECU_INTERCEPTOR_ENABLED = True #Faking it like this for now, I havent built a way to detect it yet.
+      IS_ADAS_DRV_ECU_INTERCEPTOR_ENABLED = True  # Faking it like this for now, I haven't built a way to detect it yet.
       if IS_ADAS_DRV_ECU_INTERCEPTOR_ENABLED:
         ret.flags |= HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR.value
 
