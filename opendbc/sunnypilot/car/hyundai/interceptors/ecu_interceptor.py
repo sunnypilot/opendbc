@@ -62,4 +62,3 @@ class EcuInterceptorRadarInterfaceBase(ABC):
       This method is invoked to initialize the ESCC object.
       It should be called before any other methods are invoked.
     """
-    pass
