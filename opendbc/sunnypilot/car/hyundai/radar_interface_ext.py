@@ -4,9 +4,10 @@ from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
+from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import AdasDrvEcuInterceptorRadarInterface
 
 
-class RadarInterfaceExt(EsccRadarInterfaceBase):
+class RadarInterfaceExt(EsccRadarInterfaceBase, AdasDrvEcuInterceptorRadarInterface):
   msg_src: str
   trigger_msg: int
   rcp: CANParser
@@ -14,6 +15,7 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     EsccRadarInterfaceBase.__init__(self, CP, CP_SP)
+    AdasDrvEcuInterceptorRadarInterface.__init__(self, CP, CP_SP)
     self.CP = CP
     self.CP_SP = CP_SP
 
@@ -21,17 +23,25 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
 
   @property
   def use_radar_interface_ext(self) -> bool:
-    return self.use_escc or self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC)
+    return self.use_escc or self.use_interceptor or self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC)
 
   def get_msg_src(self) -> str | None:
     if self.use_escc:
       return "ESCC"
+
+    if self.use_interceptor:
+      return "SCC_CONTROL"  # Maybe I should check if hda to choose a diff msg? not sure yet.
+
     if self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
       return "SCC_CONTROL" if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else "SCC11"
+
+    return None
 
   def get_radar_ext_can_parser(self) -> CANParser:
     if self.ESCC.enabled:
       lead_src, bus = "ESCC", 0
+    elif self.interceptor.enabled:
+      lead_src, bus = "SCC_CONTROL", 0  # Bus 0 because the interceptor would be forwarding to A1 can
     elif self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
       lead_src = "SCC_CONTROL" if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else "SCC11"
       bus = CanBus(self.CP).CAM if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else 2
@@ -44,6 +54,10 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
   def get_trigger_msg(self, default_trigger_msg) -> int:
     if self.ESCC.enabled:
       return self.ESCC.trigger_msg
+
+    if self.interceptor.enabled:
+      return self.interceptor.trigger_msg
+
     if self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
       return 0x1A0 if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else 0x420
     return default_trigger_msg
@@ -51,6 +65,9 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
   def initialize_radar_ext(self, default_trigger_msg) -> None:
     if self.ESCC.enabled:
       self.use_escc = True
+
+    if self.interceptor.enabled:
+      self.use_interceptor = True
 
     self.rcp = self.get_radar_ext_can_parser()
     self.trigger_msg = self.get_trigger_msg(default_trigger_msg)
