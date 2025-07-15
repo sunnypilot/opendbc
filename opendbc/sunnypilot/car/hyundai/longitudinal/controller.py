@@ -17,6 +17,7 @@ from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, 
 
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
+VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
 COMFORT_BAND_VAL = 0.01
 
@@ -76,6 +77,9 @@ class LongitudinalController:
   @property
   def enabled(self) -> bool:
     return self.long_tuning_param != LongitudinalTuningType.OFF
+
+  def fcw(self, CC: structs.CarControl) -> bool:
+    return bool(CC.hudControl.visualAlert == VisualAlert.fcw)
 
   def get_stopping_state(self, actuators: structs.CarControl.Actuators) -> None:
     stopping = actuators.longControlState == LongCtrlState.stopping
@@ -293,6 +297,17 @@ class LongitudinalController:
       stopping=self.stopping,
     )
 
+  def emergency_control(self):
+    """Handle FCW situations with emergency braking jerk allowed."""
+    self.comfort_band_upper = 0.0
+    self.comfort_band_lower = 0.0
+    accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    self.desired_accel = accel
+    self.actual_accel = accel
+    self.accel_last = self.actual_accel
+    self.jerk_upper = 0.5
+    self.jerk_lower = 8.0
+
   def update(self, CC: structs.CarControl, CC_SP: structs.CarControlSP, CS: CarStateBase) -> None:
     """Update longitudinal control calculations.
 
@@ -312,9 +327,13 @@ class LongitudinalController:
     self.accel_cmd = CC.actuators.accel
 
     self.get_stopping_state(actuators)
-    self.calculate_jerk(CC, CS, long_control_state)
-    self.calculate_accel(CC)
-    self.calculate_comfort_band(CC)
-    self.get_tuning_state()
 
+    if self.fcw(CC):
+      self.emergency_control()
+    else:
+      self.calculate_jerk(CC, CS, long_control_state)
+      self.calculate_accel(CC)
+      self.calculate_comfort_band(CC)
+
+    self.get_tuning_state()
     self.long_control_state_last = long_control_state

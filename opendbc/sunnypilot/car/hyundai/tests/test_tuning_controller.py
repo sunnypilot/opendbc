@@ -21,7 +21,7 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 class TestLongitudinalTuningController(unittest.TestCase):
   def setUp(self):
     self.mock_CP = Mock(carFingerprint="KIA_NIRO_EV", flags=0)
-    self.mock_CP.radarUnavailable = False            # ensure tuning branch
+    self.mock_CP.radarUnavailable = False
     self.mock_CP_SP = Mock(flags=0)
     self.controller = LongitudinalController(self.mock_CP, self.mock_CP_SP)
 
@@ -144,6 +144,13 @@ class TestLongitudinalTuningController(unittest.TestCase):
         print(f"[realistic][LONG_TUNING_PREDICTIVE] v={v:.2f}, a={a:.2f}, " +
               f"jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
         self.assertGreater(self.controller.jerk_upper, 0.0)
+
+  def test_emergency_control_negative_accel_limit(self):
+    """Test that emergency_control method does not allow accel to exceed -3.5 m/s^2 when jerk_lower is 8.0"""
+    self.controller.accel_cmd = -5.0
+    self.controller.accel_last = 0.0
+    self.controller.emergency_control()
+    self.assertGreaterEqual(self.controller.actual_accel, -3.5)
 
 
 if __name__ == "__main__":
