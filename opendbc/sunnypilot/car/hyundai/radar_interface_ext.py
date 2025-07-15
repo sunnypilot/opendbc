@@ -86,7 +86,7 @@ class RadarInterfaceExt(EsccRadarInterfaceBase, AdasDrvEcuInterceptorRadarInterf
         self.pts[ii].trackId = self.track_id
         self.track_id += 1
 
-      valid = msg['ACC_ObjDist'] < 204.6 if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else msg['ACC_ObjStatus']
+      valid = msg['ACC_ObjDist'] < 204.6 if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC or self.interceptor.enabled else msg['ACC_ObjStatus']
       if valid:
         self.pts[ii].measured = True
         self.pts[ii].dRel = msg['ACC_ObjDist']
