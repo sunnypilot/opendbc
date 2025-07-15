@@ -11,7 +11,7 @@ class EcuInterceptorBase(ABC):
 
   @property
   def enabled(self):
-    return self.CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC
+    return self.CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR
 
   @property
   @abstractmethod
@@ -29,7 +29,7 @@ class EcuInterceptorBase(ABC):
 
   def create_adas_drv_intercept_msg(self, packer, CAN):
     values = {
-      "status": self.enabled
+      "status": 1 if self.enabled else 0
     }
     return [packer.make_can_msg("ADAS_DRV_INTERCEPT", CAN.ACAN, values)]
 
