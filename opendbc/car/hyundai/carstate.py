@@ -13,6 +13,7 @@ from opendbc.car.interfaces import CarStateBase
 from opendbc.sunnypilot.car.hyundai.carstate_ext import CarStateExt
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarStateBase
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarState
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
@@ -336,7 +337,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     return ret, ret_sp
 
-  def get_can_parsers_canfd(self, CP):
+  def get_can_parsers_canfd(self, CP, CP_SP):
     pt_messages = [
       ("WHEEL_SPEEDS", 100),
       ("STEERING_SENSORS", 100),
@@ -383,7 +384,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     if CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
       block_lfa_msg = "CAM_0x362" if CP.flags & HyundaiFlags.CANFD_LKA_STEERING_ALT else "CAM_0x2a4"
       cam_messages += [(block_lfa_msg, 20)]
-    elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
+    elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC or CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
       cam_messages += [
         ("SCC_CONTROL", 50),
       ]
@@ -395,7 +396,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
   def get_can_parsers(self, CP, CP_SP):
     if CP.flags & HyundaiFlags.CANFD:
-      return self.get_can_parsers_canfd(CP)
+      return self.get_can_parsers_canfd(CP, CP_SP)
 
     pt_messages = [
       # address, frequency

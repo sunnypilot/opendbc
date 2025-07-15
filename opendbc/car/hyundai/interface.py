@@ -172,9 +172,18 @@ class CarInterface(CarInterfaceBase):
       # TODO-SP: add route with ESCC message for process replay
       if ESCC_MSG in fingerprint[0]:
         ret.flags |= HyundaiFlagsSP.ENHANCED_SCC.value
+    else:
+      IS_ADAS_DRV_ECU_INTERCEPTOR_ENABLED = True  # Faking it like this for now, I haven't built a way to detect it yet.
+      if IS_ADAS_DRV_ECU_INTERCEPTOR_ENABLED:
+        ret.flags |= HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR.value
+        stock_cp.alphaLongitudinalAvailable = True
 
     if ret.flags & HyundaiFlagsSP.ENHANCED_SCC:
       ret.safetyParam |= HyundaiSafetyFlagsSP.ESCC
+      stock_cp.radarUnavailable = False
+
+    if ret.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
+      ret.safetyParam |= HyundaiSafetyFlagsSP.ADAS_ECU_INTERCEPTOR
       stock_cp.radarUnavailable = False
 
     if stock_cp.flags & HyundaiFlags.HAS_LDA_BUTTON:
