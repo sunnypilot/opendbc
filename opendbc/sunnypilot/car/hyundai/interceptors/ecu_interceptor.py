@@ -1,7 +1,6 @@
 from opendbc.car import structs
 from abc import ABC, abstractmethod
-from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
-
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
 class EcuInterceptorBase(ABC):
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
@@ -26,13 +25,6 @@ class EcuInterceptorBase(ABC):
       :return:
     """
     self.car_state = car_state
-
-  def create_adas_drv_intercept_msg(self, packer, CAN):
-    values = {
-      "status": 1 if self.enabled else 0
-    }
-    return [packer.make_can_msg("ADAS_DRV_INTERCEPT", CAN.ACAN, values)]
-
 
 class EcuInterceptorCarStateBase(ABC):
   def __init__(self):

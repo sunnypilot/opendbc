@@ -11,6 +11,7 @@ from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.radar_interface import RadarInterface
 
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
+from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import ADAS_INTERCEPTOR_HEARTBEAT_MSG
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
@@ -166,8 +167,7 @@ class CarInterface(CarInterfaceBase):
       if ESCC_MSG in fingerprint[0]:
         ret.flags |= HyundaiFlagsSP.ENHANCED_SCC.value
     else:
-      IS_ADAS_DRV_ECU_INTERCEPTOR_ENABLED = True  # Faking it like this for now, I haven't built a way to detect it yet.
-      if IS_ADAS_DRV_ECU_INTERCEPTOR_ENABLED:
+      if ADAS_INTERCEPTOR_HEARTBEAT_MSG in fingerprint[1]:
         ret.flags |= HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR.value
         stock_cp.alphaLongitudinalAvailable = True
 
@@ -175,8 +175,8 @@ class CarInterface(CarInterfaceBase):
       ret.safetyParam |= HyundaiSafetyFlagsSP.ESCC
       stock_cp.radarUnavailable = False
 
-    if ret.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
-      ret.safetyParam |= HyundaiSafetyFlagsSP.ADAS_ECU_INTERCEPTOR
+    if alpha_long and ret.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
+      ret.safetyParam |= HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR
       stock_cp.radarUnavailable = False
 
     if stock_cp.flags & HyundaiFlags.HAS_LDA_BUTTON:
