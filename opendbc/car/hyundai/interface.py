@@ -167,7 +167,7 @@ class CarInterface(CarInterfaceBase):
       if ESCC_MSG in fingerprint[0]:
         ret.flags |= HyundaiFlagsSP.ENHANCED_SCC.value
     else:
-      if ADAS_INTERCEPTOR_HEARTBEAT_MSG in fingerprint[1]:
+      if ADAS_INTERCEPTOR_HEARTBEAT_MSG in fingerprint[0]:
         ret.flags |= HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR.value
         stock_cp.alphaLongitudinalAvailable = True
 
