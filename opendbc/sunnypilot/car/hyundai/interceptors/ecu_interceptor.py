@@ -27,13 +27,6 @@ class EcuInterceptorBase(ABC):
     """
     self.car_state = car_state
 
-  def create_adas_drv_intercept_msg(self, packer, CAN):
-    values = {
-      "status": 1 if self.enabled else 0
-    }
-    return [packer.make_can_msg("ADAS_DRV_INTERCEPT", CAN.ACAN, values)]
-
-
 class EcuInterceptorCarStateBase(ABC):
   def __init__(self):
     pass

@@ -1,6 +1,16 @@
-BO_ 600 ADAS_DRV_INTERCEPT: 8 SP
- SG_ CHECKSUM : 0|16@1+ (1,0) [0|0] "0" xxx
- SG_ COUNTER : 16|8@1+ (1,0) [0|0] "0" xxx
- SG_ status : 24|2@1+ (1,0) [0|0] "" xxx
+BO_ 598 ADAS_DRV_INTERCEPT_OPT: 8 SP
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|0] "0" interceptor
+ SG_ COUNTER : 16|8@1+ (1,0) [0|0] "0" interceptor
+ SG_ REQUESTED_SAFETY_MODE : 31|16@0+ (1,0) [0|65535] "" interceptor
+ SG_ REQUESTED_SAFETY_PARAM : 47|16@0+ (1,0) [0|65535] "" interceptor
 
-VAL_ 600 Enabled 0 "Disabled" 1 "Enabled";
+
+BO_ 600 INTERCEPTOR_HEARTBEAT: 8 interceptor
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|0] "0" SP
+ SG_ COUNTER : 16|8@1+ (1,0) [0|0] "0" SP
+ SG_ CURRENT_SAFETY_MODE : 31|16@0+ (1,0) [0|65535] "" SP
+ SG_ CURRENT_SAFETY_PARAM : 47|16@0+ (1,0) [0|65535] "" SP
+ SG_ SP_SEEN_RECENTLY : 57|2@0+ (1,0) [0|3] "" SP
+
+CM_ BO_ 598 "Message sent by SP to the interceptor";
+CM_ BO_ 600 "Message sent from the interceptor to SP";

@@ -13,7 +13,7 @@ class HyundaiSafetyFlagsSP:
   ESCC = 1
   LONG_MAIN_CRUISE_TOGGLEABLE = 2
   HAS_LDA_BUTTON = 4
-  ADAS_ECU_INTERCEPTOR = 8
+  ADAS_DRV_ECU_LONG_INTERCEPTOR = 8
 
 
 class HyundaiFlagsSP(IntFlag):
@@ -26,4 +26,4 @@ class HyundaiFlagsSP(IntFlag):
   ENABLE_RADAR_TRACKS_DEPRECATED = 2 ** 3
   LONG_TUNING_DYNAMIC = 2 ** 4
   LONG_TUNING_PREDICTIVE = 2 ** 5
-  ADAS_ECU_INTERCEPTOR = 2 ** 6
+  ADAS_ECU_INTERCEPTOR = 2 ** 6 # whether we have the ADAS ECU interceptor available/present
