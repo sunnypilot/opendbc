@@ -4,7 +4,7 @@ from opendbc.sunnypilot.car.hyundai.interceptors.ecu_interceptor import EcuInter
   EcuInterceptorCarStateBase, EcuInterceptorCarControllerBase, EcuInterceptorRadarInterfaceBase
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
-SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR = 5
+SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR = 5 # This value is the safety mode and it's embedded on the panda interceptor.
 ADAS_INTERCEPTOR_HEARTBEAT_MSG = 0x258
 
 class AdasDrvEcuInterceptor(EcuInterceptorBase):
