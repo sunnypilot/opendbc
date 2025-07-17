@@ -9,7 +9,7 @@ class EcuInterceptorBase(ABC):
     self.car_state = None
 
   @property
-  def enabled(self):
+  def available(self):
     return self.CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR
 
   @property
