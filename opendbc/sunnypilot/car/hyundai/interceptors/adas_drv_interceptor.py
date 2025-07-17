@@ -19,7 +19,7 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
   def create_adas_drv_intercept_msg(self, packer, CAN):
     values = {
       "REQUESTED_SAFETY_MODE": SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR,
-      "REQUESTED_SAFETY_PARAM": HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR if self.enabled else 0,
+      "REQUESTED_SAFETY_PARAM": HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR | HyundaiSafetyFlagsSP.INTERCEPTOR_DISABLE_TAMPERING if self.enabled else 0,
     }
     return [packer.make_can_msg("ADAS_DRV_INTERCEPT_OPT", CAN.ACAN, values)]
 
