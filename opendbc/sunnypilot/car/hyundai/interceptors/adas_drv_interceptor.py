@@ -10,7 +10,7 @@ ADAS_INTERCEPTOR_HEARTBEAT_MSG = 0x258
 class AdasDrvEcuInterceptor(EcuInterceptorBase):
   @property
   def enabled(self):
-    return self.CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and self.CP_SP.safetyParam & HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR
+    return self.CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR
 
   @property
   def trigger_msg(self):
