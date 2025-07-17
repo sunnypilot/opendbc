@@ -9,17 +9,17 @@ ADAS_INTERCEPTOR_HEARTBEAT_MSG = 0x258
 
 class AdasDrvEcuInterceptor(EcuInterceptorBase):
   @property
-  def enabled(self):
+  def available(self):
     return self.CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR
 
   @property
   def trigger_msg(self):
     return 0x1A0
 
-  def create_adas_drv_intercept_msg(self, packer, CAN):
+  def create_adas_drv_intercept_msg(self, packer, CAN, long_enabled):
     values = {
       "REQUESTED_SAFETY_MODE": SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR,
-      "REQUESTED_SAFETY_PARAM": HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR if self.enabled else 0,
+      "REQUESTED_SAFETY_PARAM": HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR if long_enabled else 0,
     }
     return [packer.make_can_msg("ADAS_DRV_INTERCEPT_OPT", CAN.ACAN, values)]
 

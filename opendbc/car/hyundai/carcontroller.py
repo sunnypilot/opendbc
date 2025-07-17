@@ -101,7 +101,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     # *** common hyundai stuff ***
 
     # tester present - w/ no response (keeps relevant ECU disabled)
-    if self.frame % 100 == 0 and not ((self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC) or self.ESCC.enabled or self.interceptor.enabled) and \
+    if self.frame % 100 == 0 and not ((self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC) or self.ESCC.enabled or self.interceptor.available) and \
             self.CP.openpilotLongitudinalControl:
       # for longitudinal control, either radar or ADAS driving ECU
       addr, bus = 0x7d0, self.CAN.ECAN if self.CP.flags & HyundaiFlags.CANFD else 0
@@ -183,8 +183,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     lka_steering = self.CP.flags & HyundaiFlags.CANFD_LKA_STEERING
     lka_steering_long = lka_steering and self.CP.openpilotLongitudinalControl
 
-    if self.interceptor.enabled:  # ADAS_DRV_INTERCEPT
-      can_sends.extend(self.interceptor.create_adas_drv_intercept_msg(self.packer, self.CAN))
+    if self.interceptor.available:  # ADAS_DRV_INTERCEPT
+      can_sends.extend(self.interceptor.create_adas_drv_intercept_msg(self.packer, self.CAN, self.CP.openpilotLongitudinalControl))
 
     # steering control
     can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon))
