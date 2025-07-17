@@ -13,7 +13,7 @@ from opendbc.car.interfaces import CarStateBase
 from opendbc.sunnypilot.car.hyundai.carstate_ext import CarStateExt
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarStateBase
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarState
-from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
@@ -368,7 +368,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     if CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
       block_lfa_msg = "CAM_0x362" if CP.flags & HyundaiFlags.CANFD_LKA_STEERING_ALT else "CAM_0x2a4"
       cam_messages += [(block_lfa_msg, 20)]
-    elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC or CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
+    elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC or (CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and CP_SP.safetyParam & HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR):
       cam_messages += [
         ("SCC_CONTROL", 50),
       ]
