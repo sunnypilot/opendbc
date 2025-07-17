@@ -40,7 +40,7 @@ class RadarInterfaceExt(EsccRadarInterfaceBase, AdasDrvEcuInterceptorRadarInterf
   def get_radar_ext_can_parser(self) -> CANParser:
     if self.ESCC.enabled:
       lead_src, bus = "ESCC", 0
-    elif self.interceptor.enabled:
+    elif self.interceptor.available:
       lead_src, bus = "SCC_CONTROL", 0  # Bus 0 because the interceptor would be forwarding to A1 can
     elif self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
       lead_src = "SCC_CONTROL" if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else "SCC11"
@@ -55,7 +55,7 @@ class RadarInterfaceExt(EsccRadarInterfaceBase, AdasDrvEcuInterceptorRadarInterf
     if self.ESCC.enabled:
       return self.ESCC.trigger_msg
 
-    if self.interceptor.enabled:
+    if self.interceptor.available:
       return self.interceptor.trigger_msg
 
     if self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
@@ -66,7 +66,7 @@ class RadarInterfaceExt(EsccRadarInterfaceBase, AdasDrvEcuInterceptorRadarInterf
     if self.ESCC.enabled:
       self.use_escc = True
 
-    if self.interceptor.enabled:
+    if self.interceptor.available:
       self.use_interceptor = True
 
     self.rcp = self.get_radar_ext_can_parser()
@@ -86,7 +86,7 @@ class RadarInterfaceExt(EsccRadarInterfaceBase, AdasDrvEcuInterceptorRadarInterf
         self.pts[ii].trackId = self.track_id
         self.track_id += 1
 
-      valid = msg['ACC_ObjDist'] < 204.6 if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC or self.interceptor.enabled else msg['ACC_ObjStatus']
+      valid = msg['ACC_ObjDist'] < 204.6 if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC or self.interceptor.available else msg['ACC_ObjStatus']
       if valid:
         self.pts[ii].measured = True
         self.pts[ii].dRel = msg['ACC_ObjDist']
