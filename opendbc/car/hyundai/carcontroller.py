@@ -310,7 +310,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     if self.CP.openpilotLongitudinalControl:
       if lka_steering:
-        can_sends.extend(hyundaicanfd.create_adrv_messages(self.packer, self.CAN, self.frame))
+        if not self.interceptor.available: # This should probably be more of "if available AND enabled", but at this time, we dont have the "enabled" properly configured (we assume if present, its enabled)
+          can_sends.extend(hyundaicanfd.create_adrv_messages(self.packer, self.CAN, self.frame))
       else:
         can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))
       if self.frame % 2 == 0:
