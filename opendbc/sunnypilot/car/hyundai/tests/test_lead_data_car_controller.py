@@ -1,6 +1,5 @@
 from enum import IntFlag
 
-import pytest
 from opendbc.sunnypilot.car.hyundai.lead_data_ext import LeadDataCarController, CanLeadData, CanFdLeadData
 from opendbc.car import structs
 from opendbc.car.hyundai.values import HyundaiFlags
@@ -15,9 +14,9 @@ def make_carparams(flags: IntFlag = HyundaiFlags.LEGACY):
 
 def make_carcontrolsp(leadDistance=10.0, leadRelSpeed=0.0, leadVisible=True):
   c = structs.CarControlSP()
-  c.leadDistance = leadDistance
-  c.leadRelSpeed = leadRelSpeed
-  c.leadVisible = leadVisible
+  c.leadData.distance = leadDistance
+  c.leadData.relSpeed = leadRelSpeed
+  c.leadData.visible = leadVisible
   return c
 
 
