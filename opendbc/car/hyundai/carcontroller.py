@@ -46,7 +46,7 @@ def process_hud_alert(enabled, fingerprint, hud_control):
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-class DataCarController(CarControllerBase, EsccCarController, LeadDataCarController, LongitudinalController, MadsCarController):
+class CarController(CarControllerBase, EsccCarController, LeadDataCarController, LongitudinalController, MadsCarController):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     EsccCarController.__init__(self, CP, CP_SP)

@@ -97,9 +97,9 @@ class LeadDataCarController:
       self._lead_on_counter = 0  # reset opposite counter
 
   def update(self, CC_SP: structs.CarControlSP) -> None:
-    self.lead_distance = CC_SP.leadDistance
-    self.lead_rel_speed = CC_SP.leadRelSpeed
-    self._update_lead_visible_hysteresis(CC_SP.leadVisible)
+    self.lead_distance = CC_SP.leadData.distance
+    self.lead_rel_speed = CC_SP.leadData.relSpeed
+    self._update_lead_visible_hysteresis(CC_SP.leadData.visible)
     self._update_object_gap(self.lead_distance)
 
   @property
