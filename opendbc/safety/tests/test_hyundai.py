@@ -64,7 +64,7 @@ class TestHyundaiSafety(HyundaiButtonBase, common.PandaCarSafetyTest, common.Dri
   MAX_RATE_UP = 4
   MAX_RATE_DOWN = 7
   MAX_TORQUE_LOOKUP = [0], [404]
-  MAX_RT_DELTA = 112
+  MAX_RT_DELTA = 300
   DRIVER_TORQUE_ALLOWANCE = 50
   DRIVER_TORQUE_FACTOR = 2
 
@@ -197,6 +197,7 @@ class TestHyundaiSafetyAltLimits(TestHyundaiSafety):
   MAX_RATE_UP = 2
   MAX_RATE_DOWN = 3
   MAX_TORQUE_LOOKUP = [0], [270]
+  MAX_RT_DELTA = 250
 
   @classmethod
   def setUpClass(cls):
@@ -217,6 +218,7 @@ class TestHyundaiSafetyAltLimits2(TestHyundaiSafety):
   MAX_RATE_UP = 2
   MAX_RATE_DOWN = 3
   MAX_TORQUE_LOOKUP = [0], [170]
+  MAX_RT_DELTA = 150
 
   @classmethod
   def setUpClass(cls):
