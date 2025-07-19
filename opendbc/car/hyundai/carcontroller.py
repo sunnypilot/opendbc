@@ -42,7 +42,8 @@ MAX_LATERAL_JERK = 3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)  # ~3
 
 # Until we can do a better fingerprinting from Panda, we need to use a baseline model for safety
 #  to ensure we have common safety limits for all the angle steering. Even if the limits are not optimal for all models.
-ANGLE_SAFETY_BASELINE_MODEL = "GENESIS_GV80_2025"
+# ANGLE_SAFETY_BASELINE_MODEL = "GENESIS_GV80_2025" # This is the most conservative but it's too bad for ioniq 5 PE
+ANGLE_SAFETY_BASELINE_MODEL = "HYUNDAI_IONIQ_5_PE"
 
 
 def get_safety_CP():
