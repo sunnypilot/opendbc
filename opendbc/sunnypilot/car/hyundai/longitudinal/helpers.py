@@ -14,32 +14,60 @@ from opendbc.sunnypilot.car.hyundai.longitudinal.config import CarTuningConfig, 
 JERK_THRESHOLD = 0.1
 JERK_STEP = 0.1
 
-
 class LongitudinalTuningType:
   OFF = 0
   DYNAMIC = 1
   PREDICTIVE = 2
 
 
-def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
-  # Get car type flags from specific configs or determine from car flags
-  car_config = CAR_SPECIFIC_CONFIGS.get(CP.carFingerprint)
-  # If car is not in specific configs, determine from flags
-  if car_config is None:
+
+def create_config_from_params(params_dict: dict[str, str], base_config: CarTuningConfig) -> CarTuningConfig:
+  """Create a CarTuningConfig from parameter values."""
+  def get_float_list(key: str, default_list: list[float]) -> list[float]:
+    val = params_dict.get(f"LongTuning{key}")
+    return [float(x.strip()) for x in val.split(',')] if val else default_list
+
+  return CarTuningConfig(
+    v_ego_stopping=float(params_dict.get("LongTuningVEgoStopping", str(base_config.v_ego_stopping))),
+    v_ego_starting=float(params_dict.get("LongTuningVEgoStarting", str(base_config.v_ego_starting))),
+    stopping_decel_rate=float(params_dict.get("LongTuningStoppingDecelRate", str(base_config.stopping_decel_rate))),
+    lookahead_jerk_bp=get_float_list("LookaheadJerkBp", base_config.lookahead_jerk_bp),
+    lookahead_jerk_upper_v=get_float_list("LookaheadJerkUpperV", base_config.lookahead_jerk_upper_v),
+    lookahead_jerk_lower_v=get_float_list("LookaheadJerkLowerV", base_config.lookahead_jerk_lower_v),
+    longitudinal_actuator_delay=float(params_dict.get("LongTuningLongitudinalActuatorDelay", str(base_config.longitudinal_actuator_delay))),
+    jerk_limits=float(params_dict.get("LongTuningJerkLimits", str(base_config.jerk_limits))),
+    upper_jerk_v=get_float_list("UpperJerkV", base_config.upper_jerk_v),
+    lower_jerk_v=get_float_list("LowerJerkV", base_config.lower_jerk_v),
+    min_upper_jerk=float(params_dict.get("LongTuningMinUpperJerk", str(base_config.min_upper_jerk))),
+    min_lower_jerk=float(params_dict.get("LongTuningMinLowerJerk", str(base_config.min_lower_jerk))),
+  )
+
+def get_car_config(CP: structs.CarParams, params_dict: dict[str, str] = None) -> CarTuningConfig:
+  base_config = _get_base_config(CP)
+
+  if params_dict and int(params_dict.get("LongTuningCustomToggle", "0")) == 1:
+    return create_config_from_params(params_dict, base_config)
+
+  return base_config
+
+
+def _get_base_config(CP: structs.CarParams) -> CarTuningConfig:
+  """Extract base config selection logic for reuse."""
+  base_config = CAR_SPECIFIC_CONFIGS.get(CP.carFingerprint)
+  if base_config is None:
     if CP.flags & HyundaiFlags.CANFD:
-      car_config = TUNING_CONFIGS["CANFD"]
+      base_config = TUNING_CONFIGS["CANFD"]
     elif CP.flags & HyundaiFlags.EV:
-      car_config = TUNING_CONFIGS["EV"]
+      base_config = TUNING_CONFIGS["EV"]
     elif CP.flags & HyundaiFlags.HYBRID:
-      car_config = TUNING_CONFIGS["HYBRID"]
+      base_config = TUNING_CONFIGS["HYBRID"]
     else:
-      car_config = TUNING_CONFIGS["DEFAULT"]
+      base_config = TUNING_CONFIGS["DEFAULT"]
+  return base_config
 
-  return car_config
 
-
-def get_longitudinal_tune(CP: structs.CarParams) -> None:
-  config = get_car_config(CP)
+def get_longitudinal_tune(CP: structs.CarParams, params_dict: dict[str, str] = None) -> None:
+  config = get_car_config(CP, params_dict)
   CP.vEgoStopping = config.v_ego_stopping
   CP.vEgoStarting = config.v_ego_starting
   CP.stoppingDecelRate = config.stopping_decel_rate
