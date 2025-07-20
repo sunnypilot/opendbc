@@ -113,6 +113,8 @@ class CarState(CarStateBase):
       can_gear = int(cp.vl["GEAR_PACKET"]["GEAR"])
       if not self.CP.enableDsu and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
         ret.stockAeb = bool(cp_acc.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_acc.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
+      if self.CP.carFingerprint != CAR.TOYOTA_MIRAI:
+        ret.engineRpm = cp.vl["ENGINE_RPM"]["RPM"]
 
     if self.toyota_drive_mode:
       # Determine sport signal based on car model
@@ -150,17 +152,12 @@ class CarState(CarStateBase):
       else:
         self.accel_profile = AccelPersonality.normal
 
-      print(f"Accel profile set to: {self.accel_profile}")
-
       # If not initialized, sync profile with the current mode on the car
       if not self.accel_profile_init or self.accel_profile != self.prev_accel_profile:
         Params().put_nonblocking('AccelPersonality', str(self.accel_profile))
         self.accel_profile_init = True
         # Update the previous profile to prevent unnecessary re-syncing
         self.prev_accel_profile = self.accel_profile
-
-      if self.CP.carFingerprint != CAR.TOYOTA_MIRAI:
-        ret.engineRpm = cp.vl["ENGINE_RPM"]["RPM"]
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
