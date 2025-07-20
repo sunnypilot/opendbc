@@ -94,7 +94,14 @@ class CarState(CarStateBase):
     ret.vEgoRaw = float(np.mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr]))
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
-    ret.yawRate = float(cp.vl["KINEMATICS"]["YAW_RATE"] * CV.DEG_TO_RAD)
+    # ret.yawRate = float(cp.vl["KINEMATICS"]["YAW_RATE"] * CV.DEG_TO_RAD)
+    # 检查两层嵌套键存在性
+    if "KINEMATICS" in cp.vl and isinstance(cp.vl["KINEMATICS"], dict):
+      if "YAW_RATE" in cp.vl["KINEMATICS"]:
+        yaw_value = cp.vl["KINEMATICS"]["YAW_RATE"]
+        # 确保值有效（非None且可转浮点）
+        if yaw_value is not None:
+            ret.yawRate = float(yaw_value * CV.DEG_TO_RAD)
 
     ret.standstill = abs(ret.vEgoRaw) < 1e-3
 
@@ -211,7 +218,7 @@ class CarState(CarStateBase):
       ("PCM_CRUISE", 33),
       ("PCM_CRUISE_SM", 1),
       ("STEER_TORQUE_SENSOR", 50),
-      ("KINEMATICS", 80),
+      # ("KINEMATICS", 80),
     ]
 
     if CP.flags & ToyotaFlags.SECOC.value:
