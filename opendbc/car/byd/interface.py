@@ -20,6 +20,9 @@ NON_LINEAR_TORQUE_PARAMS = {
   CAR.BYD_HAN_EV_20: [1.807, 1.674, 0.04]
 }
 
+import os
+BYD_RADAR = os.getenv("BYD_RADAR") is not None
+
 class CarInterface(CarInterfaceBase):
     CarState = CarState
     CarController = CarController
@@ -53,13 +56,16 @@ class CarInterface(CarInterfaceBase):
             return self.torque_from_lateral_accel_linear
 
     @staticmethod
-    def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs) -> structs.CarParams: # type: ignore
+    def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, is_release, docs) -> structs.CarParams: # type: ignore
         ret.brand = "byd"
         ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.byd)]
 
         ret.dashcamOnly = False
         #disable simple pt radar due to mpc solver issue in official OP. It works with carrot/sunny/forg.
-        ret.radarUnavailable = True #candidate not in PT_RADAR_CAR
+        if BYD_RADAR:
+            ret.radarUnavailable = False
+        else:
+            ret.radarUnavailable = True #candidate not in PT_RADAR_CAR
 
 
         ret.minEnableSpeed = -1.
@@ -98,15 +104,15 @@ class CarInterface(CarInterfaceBase):
 
         use_experimental_long = candidate in EXP_LONG_CAR
 
-        ret.experimentalLongitudinalAvailable = use_experimental_long
-        ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
+        ret.alphaLongitudinalAvailable = use_experimental_long
+        ret.openpilotLongitudinalControl = experimental_long and ret.alphaLongitudinalAvailable
 
         ret.longitudinalTuning.kpBP, ret.longitudinalTuning.kiBP = [[0.],  [0.]]
         ret.longitudinalTuning.kpV,  ret.longitudinalTuning.kiV  = [[1.5], [0.3]]
 
         # model specific parameters
         # Todo: Developers please fill or add more models.
-        if candidate in (CAR.BYD_HAN_DM_20, CAR.BYD_HAN_EV_20, CAR.BYD_TANG_DM):
+        if candidate in (CAR.BYD_HAN_DM_20, CAR.BYD_HAN_EV_20, CAR.BYD_TANG_DM, CAR.BYD_SONG_PLUS_DMI_21):
             ret.minSteerSpeed = 0
             ret.autoResumeSng = True
             ret.startingState = True

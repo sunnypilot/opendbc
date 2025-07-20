@@ -16,11 +16,14 @@ from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.byd.values import DBC, CanBus, LKASConfig, CarControllerParams
 
+import os
+BYD_RADAR = os.getenv("BYD_RADAR") is not None
+
 ButtonType = structs.CarState.ButtonEvent.Type
 
 class CarState(CarStateBase):
-    def __init__(self, CP):
-        super().__init__(CP)
+    def __init__(self, CP, CP_SP):
+        super().__init__(CP, CP_SP)
 
         can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
 
@@ -69,11 +72,12 @@ class CarState(CarStateBase):
 
 
 
-    def update(self, can_parsers) -> structs.CarState: # type: ignore
+    def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
         cp = can_parsers[Bus.pt]
         cp_cam = can_parsers[Bus.cam]
 
         ret = structs.CarState()
+        ret_sp = structs.CarStateSP()
 
         self.lkas_prepared = cp.vl["ACC_EPS_STATE"]["LKAS_Prepared"]
 
@@ -113,6 +117,8 @@ class CarState(CarStateBase):
         ret.vEgoRaw = float(self.speed_kph * CV.KPH_TO_MS) # KPH to m/s
         ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
+        ret.yawRate = cp.vl["YAW_RATE"]["YawRate"] - cp.vl["YAW_RATE"]["YawRateOffset"]
+
         ret.standstill = (speed_raw == 0)
 
         if self.CP.minSteerSpeed > 0:
@@ -150,15 +156,15 @@ class CarState(CarStateBase):
         ret.parkingBrake = (cp.vl["EPB"]["EPB_ActiveFlag"] == 1)
 
         ret.brake =  int(cp.vl["PEDAL"]["BrakePedal"])
-        ret.brakePressed = (ret.brake != 0)
+        ret.brakePressed = (ret.brake > 0)
 
-        ret.seatbeltUnlatched = (cp.vl["BCM"]["DriverSeatBeltFasten"] != 1)
+        ret.seatbeltUnlatched = (cp.vl["BELT"]["SeatBeat"] != 2) # 1:unfasten, 2:fasten
 
         ret.doorOpen = any([cp.vl["BCM"]["FrontLeftDoor"], cp.vl["BCM"]["FrontRightDoor"],
                             cp.vl["BCM"]["RearLeftDoor"],  cp.vl["BCM"]["RearRightDoor"]])
 
         ret.gas = int(cp.vl["PEDAL"]["AcceleratorPedal"])
-        ret.gasPressed = (ret.gas != 0)
+        ret.gasPressed = (ret.gas > 0)
 
         ret.cruiseState.available = lkas_isMainSwOn and lkas_config_isAccOn and lkas_hud_AccOn1
         ret.cruiseState.enabled = self.acc_state in (3, 5)
@@ -183,13 +189,14 @@ class CarState(CarStateBase):
         self.cam_acc = copy.copy(cp_cam.vl["ACC_CMD"])
         self.esc_eps = copy.copy(cp.vl["ACC_EPS_STATE"])
 
-        mrr_id = int(cp_cam.vl["RADAR_MRR"]["TargetID"])
+        if BYD_RADAR:
+            mrr_id = int(cp_cam.vl["RADAR_MRR"]["TargetID"])
 
-        if mrr_id == 2: #1:left, 2:front, 3:right
-            if bool(cp_cam.vl["RADAR_MRR"]["IsValid"]):
-                self.mrr_leading_dist = int(cp_cam.vl["RADAR_MRR"]["LongDist"])
-            else:
-                self.mrr_leading_dist = 199
+            if mrr_id == 2: #1:left, 2:front, 3:right
+                if bool(cp_cam.vl["RADAR_MRR"]["IsValid"]):
+                    self.mrr_leading_dist = int(cp_cam.vl["RADAR_MRR"]["LongDist"])
+                else:
+                    self.mrr_leading_dist = 199
 
         ret.steerFaultPermanent = bool(cp.vl["ACC_EPS_STATE"]["TorqueFailed"]) #EPS give up all inputs until restart
 
@@ -219,11 +226,11 @@ class CarState(CarStateBase):
             *create_button_events(self.btn_acc_dist_dec, prev_btn_acc_dist_dec, {1: ButtonType.gapAdjustCruise}),
         ]
 
-        return ret
+        return ret, ret_sp
 
 
     @staticmethod
-    def get_can_parsers(CP):
+    def get_can_parsers(CP, CP_SP):
         pt_messages = [
             # sig_address, frequency
             ("EPS", 100),
@@ -236,6 +243,8 @@ class CarState(CarStateBase):
             ("BCM", 1),
             ("PCM_BUTTONS", 20),
             ("DATETIME", 2),
+            ("YAW_RATE", 50),
+            ("BELT", 20),
         ]
 
         if CP.enableBsm:
@@ -245,8 +254,9 @@ class CarState(CarStateBase):
             ("ACC_HUD_ADAS", 50),
             ("ACC_CMD", 50),
             ("ACC_MPC_STATE", 50),
-            ("RADAR_MRR", 60),
         ]
+        if BYD_RADAR:
+            cam_messages.append(("RADAR_MRR", 60))
 
         return {
             Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, CanBus.ESC),

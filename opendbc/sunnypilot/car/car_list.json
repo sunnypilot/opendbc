@@ -130,6 +130,104 @@
     ],
     "package": "Driver Confidence Package 2"
   },
+  "BYD Han DM 2020": {
+    "platform": "BYD_HAN_DM_20",
+    "make": "BYD",
+    "brand": "byd",
+    "model": "Han DM",
+    "year": [
+      "2020"
+    ],
+    "package": "All"
+  },
+  "BYD Han EV 2020": {
+    "platform": "BYD_HAN_EV_20",
+    "make": "BYD",
+    "brand": "byd",
+    "model": "Han EV",
+    "year": [
+      "2020"
+    ],
+    "package": "All"
+  },
+  "BYD Tang DM": {
+    "platform": "BYD_TANG_DM",
+    "make": "BYD",
+    "brand": "byd",
+    "model": "Tang DM",
+    "year": [],
+    "package": "All"
+  },
+  "BYD Tang DMI 2021": {
+    "platform": "BYD_TANG_DMI_21",
+    "make": "BYD",
+    "brand": "byd",
+    "model": "Tang DMI",
+    "year": [
+      "2021"
+    ],
+    "package": "All"
+  },
+  "BYD Song Plus DMI 2021": {
+    "platform": "BYD_SONG_PLUS_DMI_21",
+    "make": "BYD",
+    "brand": "byd",
+    "model": "Song Plus DMI",
+    "year": [
+      "2021"
+    ],
+    "package": "All"
+  },
+  "BYD Song Plus DMI 2022": {
+    "platform": "BYD_SONG_PLUS_DMI_22",
+    "make": "BYD",
+    "brand": "byd",
+    "model": "Song Plus DMI",
+    "year": [
+      "2022"
+    ],
+    "package": "All"
+  },
+  "BYD Song Plus DMI 2023": {
+    "platform": "BYD_SONG_PLUS_DMI_23",
+    "make": "BYD",
+    "brand": "byd",
+    "model": "Song Plus DMI",
+    "year": [
+      "2023"
+    ],
+    "package": "All"
+  },
+  "BYD Song Pro DMI 2022": {
+    "platform": "BYD_SONG_PRO_DMI_22",
+    "make": "BYD",
+    "brand": "byd",
+    "model": "Song Pro DMI",
+    "year": [
+      "2022"
+    ],
+    "package": "All"
+  },
+  "BYD Qin Plus DMI 2023": {
+    "platform": "BYD_QIN_PLUS_DMI_23",
+    "make": "BYD",
+    "brand": "byd",
+    "model": "Qin Plus DMI",
+    "year": [
+      "2023"
+    ],
+    "package": "All"
+  },
+  "BYD Yuan Plus DMI 2022": {
+    "platform": "BYD_YUAN_PLUS_DMI_22",
+    "make": "BYD",
+    "brand": "byd",
+    "model": "Yuan Plus DMI",
+    "year": [
+      "2022"
+    ],
+    "package": "All"
+  },
   "Cadillac Escalade 2017": {
     "platform": "CADILLAC_ESCALADE",
     "make": "Cadillac",

@@ -10,8 +10,8 @@ ButtonType = structs.CarState.ButtonEvent.Type
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_names, CP):
-    super().__init__(dbc_names, CP)
+  def __init__(self, dbc_names, CP, CP_SP):
+    super().__init__(dbc_names, CP, CP_SP)
 
     self.packer = CANPacker(dbc_names[Bus.pt])
 
@@ -40,7 +40,7 @@ class CarController(CarControllerBase):
     self.apply_accel_last = 0
 
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, CC_SP, CS, now_nanos):
     can_sends = []
 
     if (self.frame - self.last_steer_frame) >= CarControllerParams.STEER_STEP:
@@ -106,11 +106,11 @@ class CarController(CarControllerBase):
           else:
             self.lkas_req_prepare = 1
 
-      elif self.lat_safeoff:
-        if self.apply_torque_last == 0:
-          self.lat_safeoff = 0
-        apply_torque = apply_driver_steer_torque_limits(0, self.apply_torque_last,
-                                                          CS.out.steeringTorque, CarControllerParams)
+      # elif self.lat_safeoff:
+      #   if self.apply_torque_last == 0:
+      #     self.lat_safeoff = 0
+      #   apply_torque = apply_driver_steer_torque_limits(0, self.apply_torque_last,
+      #                                                     CS.out.steeringTorque, CarControllerParams)
 
       else:
         self.lkas_req_prepare = 0
@@ -149,7 +149,7 @@ class CarController(CarControllerBase):
             self.sss = CS.out.standstill
 
         #re-starting
-        elif starting and accel > 0.1 and CS.mrr_leading_dist > 3:
+        elif starting and accel > 0.1 and CS.out.vEgo < 0.8:
           self.rfss = CS.out.standstill
           self.sss = 0
 

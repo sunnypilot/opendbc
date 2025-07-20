@@ -168,8 +168,8 @@ BO_ 815 ACC_AEB: 8 XXX
  SG_ CheckSum : 56|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 834 PEDAL: 8 XXX
- SG_ AcceleratorPedal : 0|8@1+ (0.01,0) [0|2.55] "" XXX
- SG_ BrakePedal : 8|8@1+ (0.01,0) [0|2.55] "" XXX
+ SG_ AcceleratorPedal : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ BrakePedal : 8|8@1+ (1,0) [0|255] "" XXX
  SG_ ForceGeneratorMode : 19|1@1+ (1,0) [0|1] "" XXX
  SG_ DriveMode : 20|2@1+ (1,0) [0|255] "" XXX
  SG_ PowerMode : 28|2@1+ (1,0) [0|1] "" XXX
@@ -199,6 +199,19 @@ BO_ 1048 BSD_RADAR: 8 XXX
  SG_ LEFT_APPROACH : 9|2@0+ (1,0) [0|1] "" XXX
  SG_ RIGHT_APPROACH : 11|2@0+ (1,0) [0|1] "" XXX
  SG_ APPROACH : 17|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 546 YAW_RATE: 8 XXX
+	SG_ YawRate : 0|12@1+ (0.002133,-2.094) [-2.0|2.0] "rad/s" XXX
+	SG_ YawRateOffset : 12|12@1+ (0.002133,-0.13) [-0.1|0.1] "rad/s" XXX
+	SG_ Counter : 48|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 547 AXAY: 8 XXX
+	SG_ Ax : 0|12@1+ (0.027167,-21.593) [-10.0|10.0] "m/s^2" XXX
+	SG_ AxOffset : 12|12@1+ (0.027127,-21.593) [-1.0|1.0] "m/s^2" XXX
+	SG_ Counter : 48|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 660 BELT: 8 XXX
+	SG_ SeatBeat : 16|2@1+ (1,0) [0|3] "" XXX
 
 VAL_ 578 Gear 4 "D" 2 "R" 3 "N" 1 "P" ;
 VAL_ 790 AutoFullBeamState 11 "AutoFullBeamActive" 2 "AutoFullBeamInactive" ;
