@@ -274,7 +274,10 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       # distance button is wired to the ACC module (camera or radar)
       prev_distance_button = self.distance_button
-      self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
+      if self.CP.carFingerprint in (SECOC_CAR) and "PCM_CRUISE_4" in cp.vl and isinstance(cp.vl["PCM_CRUISE_4"], dict) and "DISTANCE" in cp.vl["PCM_CRUISE_4"]:
+        self.distance_button = cp.vl["PCM_CRUISE_4"]["DISTANCE"]
+      else:
+        self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
 
       ret.buttonEvents = create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
@@ -440,6 +443,10 @@ class CarState(CarStateBase):
         ("SECOC_SYNCHRONIZATION", 10),
         ("GAS_PEDAL", 42),
       ]
+      if CP.carFingerprint not in [CAR.TOYOTA_WILDLANDER]:
+        pt_messages += [
+          ("PCM_CRUISE_4", 1),
+        ]
     else:
       pt_messages.append(("VSC1S07", 20))
       if CP.carFingerprint not in [CAR.TOYOTA_MIRAI]:
