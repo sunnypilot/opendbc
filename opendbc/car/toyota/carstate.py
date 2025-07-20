@@ -218,7 +218,6 @@ class CarState(CarStateBase):
       ("PCM_CRUISE", 33),
       ("PCM_CRUISE_SM", 1),
       ("STEER_TORQUE_SENSOR", 50),
-      # ("KINEMATICS", 80),
     ]
 
     if CP.flags & ToyotaFlags.SECOC.value:
@@ -234,6 +233,7 @@ class CarState(CarStateBase):
 
       pt_messages += [
         ("GEAR_PACKET", 1),
+        ("KINEMATICS", 80),
       ]
 
     if CP.carFingerprint in UNSUPPORTED_DSU_CAR:
