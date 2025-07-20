@@ -36,23 +36,21 @@ MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 
 MAX_ANGLE_RATE = 5
 # Add extra tolerance for average banked road since safety doesn't have the roll
-AVERAGE_ROAD_ROLL = 0.06
-PANDA_MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)  # ~3.6 m/s^2
-PANDA_MAX_LATERAL_JERK = 3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)  # ~3.6 m/s^3
-MAX_LATERAL_ACCEL = PANDA_MAX_LATERAL_ACCEL * 0.80 # Aim for ~75% of ISO lateral acceleration limit to give buffer for different models.
-MAX_LATERAL_JERK = PANDA_MAX_LATERAL_JERK * 0.80 # Aim for ~75% of ISO lateral jerk limit to give buffer for different models.
+AVERAGE_ROAD_ROLL = 0.06  # ~3.4 degrees, 6% superelevation. higher actual roll lowers lateral acceleration
+MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)  # ~3.6 m/s^2
+MAX_LATERAL_JERK = 3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)  # ~3.6 m/s^3
 
-# # Until we can do a better fingerprinting from Panda, we need to use a baseline model for safety
-# #  to ensure we have common safety limits for all the angle steering. Even if the limits are not optimal for all models.
-# # ANGLE_SAFETY_BASELINE_MODEL = "GENESIS_GV80_2025" # This is the most conservative but it's too bad for ioniq 5 PE
-# ANGLE_SAFETY_BASELINE_MODEL = "HYUNDAI_IONIQ_5_PE"
+# Until we can do a better fingerprinting from Panda, we need to use a baseline model for safety
+#  to ensure we have common safety limits for all the angle steering. Even if the limits are not optimal for all models.
+# ANGLE_SAFETY_BASELINE_MODEL = "GENESIS_GV80_2025" # This is the most conservative but it's too bad for ioniq 5 PE
+ANGLE_SAFETY_BASELINE_MODEL = "HYUNDAI_IONIQ_5_PE"
 
 
-# def get_safety_CP():
-#   # We use the ANGLE_SAFETY_BASELINE_MODEL platform for lateral limiting to match safety
-#   # The goal is to pick the least-permissive model for angle steering, to have a common denominator for safety.
-#   from opendbc.car.tesla.interface import CarInterface
-#   return CarInterface.get_non_essential_params(ANGLE_SAFETY_BASELINE_MODEL)
+def get_safety_CP():
+  # We use the ANGLE_SAFETY_BASELINE_MODEL platform for lateral limiting to match safety
+  # The goal is to pick the least-permissive model for angle steering, to have a common denominator for safety.
+  from opendbc.car.tesla.interface import CarInterface
+  return CarInterface.get_non_essential_params(ANGLE_SAFETY_BASELINE_MODEL)
 
 def get_max_angle_delta(v_ego_raw: float, VM: VehicleModel, freq=100.):
   max_curvature_rate_sec = MAX_LATERAL_JERK / (v_ego_raw ** 2)  # (1/m)/s
@@ -133,8 +131,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.angle_limit_counter = 0
 
     # Vehicle model used for lateral limiting
-    # self.safety_cp = get_safety_CP()
-    self.VM = VehicleModel(CP)
+    self.safety_cp = get_safety_CP()
+    self.VM = VehicleModel(self.safety_cp)
 
     self.accel_last = 0
     self.apply_torque_last = 0
