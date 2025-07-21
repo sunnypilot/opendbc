@@ -4,8 +4,8 @@ from opendbc.car.toyota.carstate import CarState
 from opendbc.car.toyota.carcontroller import CarController
 from opendbc.car.toyota.radar_interface import RadarInterface
 from opendbc.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
-                                                  MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR, \
-                                                  ToyotaSafetyFlags, SECOC_CAR
+  MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR, \
+  ToyotaSafetyFlags, SECOC_CAR
 from opendbc.car.disable_ecu import disable_ecu
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.sunnypilot.car.toyota.values import ToyotaSafetyFlagsSP, ToyotaFlagsSP
@@ -52,18 +52,25 @@ class CarInterface(CarInterfaceBase):
 
     stop_and_go = candidate in TSS2_CAR
 
-    # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
-    # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
-    if 0x2FF in fingerprint[0] or (0x2AA in fingerprint[0] and candidate in NO_DSU_CAR):
-      ret.flags |= ToyotaFlags.SMART_DSU.value
-
     # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
-    ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) \
-                    and not (ret.flags & ToyotaFlags.SMART_DSU)
+    ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR)
 
     if Ecu.hybrid in found_ecus:
       ret.flags |= ToyotaFlags.HYBRID.value
+
+    # sdsu dp
+    sdsu_active = False
+
+    if not (candidate in (RADAR_ACC_CAR | NO_DSU_CAR)) and 0x2FF in fingerprint[0]:
+      print("----------------------------------------------")
+      print("SDSU detected!")
+      print("----------------------------------------------")
+      ret.enableDsu = False
+      sdsu_active = True
+      stop_and_go = True
+      ret.flags |= ToyotaFlags.SMART_DSU.value
+      ret.alphaLongitudinalAvailable = False
 
     if candidate == CAR.TOYOTA_PRIUS:
       stop_and_go = True
@@ -106,7 +113,7 @@ class CarInterface(CarInterfaceBase):
     # TODO: these models can do stop and go, but unclear if it requires sDSU or unplugging DSU.
     #  For now, don't list stop and go functionality in the docs
     if ret.flags & ToyotaFlags.SNG_WITHOUT_DSU:
-      stop_and_go = stop_and_go or bool(ret.flags & ToyotaFlags.SMART_DSU.value) or (ret.enableDsu and not docs)
+      stop_and_go = stop_and_go or (ret.enableDsu and not docs)
 
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -120,29 +127,24 @@ class CarInterface(CarInterfaceBase):
 
     # if the smartDSU is detected, openpilot can send ACC_CONTROL and the smartDSU will block it from the DSU or radar.
     # since we don't yet parse radar on TSS2/TSS-P radar-based ACC cars, gate longitudinal behind experimental toggle
-    use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
     if candidate in (RADAR_ACC_CAR | NO_DSU_CAR):
-      ret.alphaLongitudinalAvailable = use_sdsu or candidate in RADAR_ACC_CAR
+      ret.alphaLongitudinalAvailable = candidate in RADAR_ACC_CAR
 
-      if not use_sdsu:
-        # Disabling radar is only supported on TSS2 radar-ACC cars
-        if alpha_long and candidate in RADAR_ACC_CAR:
-          ret.flags |= ToyotaFlags.DISABLE_RADAR.value
-      else:
-        use_sdsu = use_sdsu and alpha_long
+      # Disabling radar is only supported on TSS2 radar-ACC cars
+      if alpha_long and candidate in RADAR_ACC_CAR:
+        ret.flags |= ToyotaFlags.DISABLE_RADAR.value
 
     # openpilot longitudinal enabled by default:
-    #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
     #  - cars w/ DSU disconnected
     #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
+    #  - SDSU equipped cars
     # openpilot longitudinal behind experimental long toggle:
-    #  - TSS2 radar ACC cars w/ smartDSU installed
-    #  - TSS2 radar ACC cars w/o smartDSU installed (disables radar)
-    #  - TSS-P DSU-less cars w/ CAN filter installed (no radar parser yet)
+    #  - TSS2 radar ACC cars (disables radar)
 
-    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or \
+    ret.openpilotLongitudinalControl = ret.enableDsu or \
       candidate in (TSS2_CAR - RADAR_ACC_CAR) or \
-      bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
+      bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value) or \
+      sdsu_active
 
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
