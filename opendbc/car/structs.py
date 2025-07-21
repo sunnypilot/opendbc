@@ -107,4 +107,4 @@ class CarControlSP:
 
 @auto_dataclass
 class CarStateSP:
-  pass
+  vEgoCluster: float = auto_field()
