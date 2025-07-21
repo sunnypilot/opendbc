@@ -20,6 +20,11 @@ class LongitudinalTuningType:
   DYNAMIC = 1
   PREDICTIVE = 2
 
+class RadarType:
+  OFF = 0
+  LEAD_ONLY = 1
+  FULL_RADAR = 2
+
 
 def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
   # Get car type flags from specific configs or determine from car flags
