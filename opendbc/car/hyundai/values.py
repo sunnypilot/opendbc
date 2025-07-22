@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 
-from opendbc.car import AngleSteeringLimits, Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
+from opendbc.car import AngleSteeringLimits, Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds, MAX_LATERAL_ACCEL, MAX_LATERAL_JERK
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column
@@ -25,6 +25,9 @@ class CarControllerParams:
     # HKG uses a vehicle model instead, check carcontroller.py for details
     ([], []),
     ([], []),
+    100,  # hz
+    MAX_LATERAL_ACCEL * 0.80,  # ~2.88 m/s^2 for some safety padding.
+    MAX_LATERAL_JERK * 0.80,  # ~2.88 m/s^3 for some safety padding.
   )
 
   # Torque control parameters:

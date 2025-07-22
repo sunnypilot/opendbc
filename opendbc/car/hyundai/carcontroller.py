@@ -13,13 +13,13 @@ except ImportError:
   PARAMS_AVAILABLE = False
 
 from opendbc.can.packer import CANPacker
-from opendbc.car import ACCELERATION_DUE_TO_GRAVITY, Bus, DT_CTRL, apply_driver_steer_torque_limits, common_fault_avoidance, \
-  make_tester_present_msg, structs, rate_limit
+from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, common_fault_avoidance, \
+  make_tester_present_msg, structs, apply_common_steer_angle_limits
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CAR
-from opendbc.car.interfaces import CarControllerBase, ISO_LATERAL_ACCEL
+from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
 from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController
@@ -35,25 +35,12 @@ MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 
 MAX_ANGLE_RATE = 5
-# Add extra tolerance for average banked road since safety doesn't have the roll
-AVERAGE_ROAD_ROLL = 0.06  # ~3.4 degrees, 6% superelevation. higher actual roll lowers lateral acceleration
-MAX_LATERAL_ACCEL = (ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)) * 0.80  # ~2.88 m/s^2
-MAX_LATERAL_JERK = (3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)) * 0.80   # ~2.88 m/s^3
 
 # Until we can do a better fingerprinting from Panda, we need to use a baseline model for safety
 #  to ensure we have common safety limits for all the angle steering. Even if the limits are not optimal for all models.
 ANGLE_SAFETY_BASELINE_MODEL = "GENESIS_GV80_2025" # This is the most conservative but it's too bad for ioniq 5 PE
 # ANGLE_SAFETY_BASELINE_MODEL = "HYUNDAI_IONIQ_5_PE"
 
-
-def get_max_angle_delta(v_ego_raw: float, VM: VehicleModel, freq=100.):
-  max_curvature_rate_sec = MAX_LATERAL_JERK / (v_ego_raw ** 2)  # (1/m)/s
-  max_angle_rate_sec = math.degrees(VM.get_steer_from_curvature(max_curvature_rate_sec, v_ego_raw, 0))  # deg/s
-  return max_angle_rate_sec / float(freq) # hz
-
-def get_max_angle(v_ego_raw: float, VM: VehicleModel):
-  max_curvature = MAX_LATERAL_ACCEL / (v_ego_raw ** 2)  # 1/m
-  return math.degrees(VM.get_steer_from_curvature(max_curvature, v_ego_raw, 0))  # deg
 
 def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: float) -> float:
   """
@@ -331,38 +318,14 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     return can_sends
 
   def apply_hyundai_steer_angle_limits(self, CS, CC, apply_angle: float) -> float:
-    lat_active = CC.latActive
     v_ego_raw = CS.out.vEgoRaw
-    steering_angle = CS.out.steeringAngleDeg
-    limits = CarControllerParams.ANGLE_LIMITS
     apply_angle = np.clip(apply_angle, -819.2, 819.1)
 
     if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
       apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last)
 
-    # *** max lateral jerk limit ***
-    max_angle_delta = get_max_angle_delta(max(v_ego_raw, 1), self.VM)
-
-    # prevent fault
-    max_angle_delta = min(max_angle_delta, MAX_ANGLE_RATE)
-    new_apply_angle = rate_limit(apply_angle, self.apply_angle_last, -max_angle_delta, max_angle_delta)
-
-    # *** max lateral accel limit ***
-    max_angle = get_max_angle(max(v_ego_raw, 1), self.VM)
-    new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
-
-    # *** torque reduction gain based on angle ***
-    # error = abs(steering_angle - new_apply_angle)
-    # normalized_error = np.clip(error / max_angle_delta, 0.0, 1.0)
-    # target_torque_reduction_gain = normalized_error
-
-    # angle is current angle when inactive
-    if not lat_active:
-      new_apply_angle = steering_angle
-      # target_torque_reduction_gain = 0
-
-    # prevent fault
-    return float(np.clip(new_apply_angle, -limits.STEER_ANGLE_MAX, limits.STEER_ANGLE_MAX))
+    limits = CarControllerParams.ANGLE_LIMITS
+    return apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, limits, self.VM)
 
   def calculate_angle_torque_reduction_gain(self, CS, target_torque_reduction_gain):
     """ Calculate the angle torque reduction gain based on the current steering state. """
