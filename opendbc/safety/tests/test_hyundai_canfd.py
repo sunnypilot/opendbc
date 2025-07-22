@@ -191,8 +191,8 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     # We properly test lateral acceleration and jerk below
     pass
 
-  @parameterized.expand([(car,) for car in sorted(PLATFORMS)])
-  def test_lateral_accel_limit(self, car_name):
+  def test_lateral_accel_limit(self):
+    car_name = self.ANGLE_SAFETY_BASELINE_MODEL
     for speed in np.linspace(0, 40, 100):
       speed = max(speed, 1)
       # match DI_vehicleSpeed rounding on CAN
@@ -216,69 +216,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
 
         # at low speeds max angle is above 360, so adding 1 has no effect
         should_tx = abs(max_angle_raw) >= self.STEER_ANGLE_MAX
-        self.assertEqual(should_tx, self._tx(self._angle_cmd_msg(max_angle, True)))
-
-  @parameterized.expand([(car,) for car in sorted(PLATFORMS)])
-  def test_max_steering_angle_safety(self, car_name):
-    """
-    Test that ensures the current car's max steering angles are never more than 2%
-    lower than the baseline car across all test speeds.
-    """
-    baseline_car = self.ANGLE_SAFETY_BASELINE_MODEL
-    baseline_vm = self.get_vm(baseline_car)
-    current_vm = self.get_vm(car_name)
-
-    for speed in np.linspace(1, 40, 10):
-      baseline_max_angle = get_max_angle(speed, baseline_vm)
-      current_max_angle = get_max_angle(speed, current_vm)
-
-      # Skip if both exceed STEER_ANGLE_MAX (only_relevant_angles logic)
-      if current_max_angle > self.STEER_ANGLE_MAX and baseline_max_angle > self.STEER_ANGLE_MAX:
-        continue
-
-      # Calculate percentage difference
-      if baseline_max_angle != 0:
-        angle_diff_pct = ((current_max_angle - baseline_max_angle) / baseline_max_angle) * 100
-      else:
-        angle_diff_pct = 0
-
-      # Assert that difference is not dangerously low
-      self.assertTrue(
-        angle_diff_pct >= self.ANGLE_SAFETY_THRESHOLD_PCT,
-        f"{car_name} max steering angle at {speed:.1f} m/s [{current_max_angle:.2f}°] is {angle_diff_pct:.2f}% " +
-        f"lower than baseline {baseline_car} ({current_max_angle:.2f}° vs {baseline_max_angle:.2f}°). " +
-        f"Must be >= {self.ANGLE_SAFETY_THRESHOLD_PCT}% to ensure safety." +
-        f"Consider updating the baseline model to be {car_name} (which will lower the threshold for ALL models)."
-      )
-
-  @parameterized.expand([(car,) for car in sorted(PLATFORMS)])
-  def test_max_steering_angle_delta_safety(self, car_name):
-    """
-    Test that ensures the current car's max steering angle deltas are never more than 2%
-    lower than the baseline car across all test speeds.
-    """
-    baseline_car = self.ANGLE_SAFETY_BASELINE_MODEL
-    baseline_vm = self.get_vm(baseline_car)
-    current_vm = self.get_vm(car_name)
-
-    for speed in np.linspace(1, 40, 10):
-      baseline_max_delta = get_max_angle_delta(speed, self.ANGLE_LIMITS.CONTROL_FREQUENCY, baseline_vm)
-      current_max_delta = get_max_angle_delta(speed, self.ANGLE_LIMITS.CONTROL_FREQUENCY, current_vm)
-
-      # Calculate percentage difference
-      if baseline_max_delta != 0:
-        delta_diff_pct = ((current_max_delta - baseline_max_delta) / baseline_max_delta) * 100
-      else:
-        delta_diff_pct = 0
-
-      # Assert that difference is not dangerously low
-      self.assertTrue(
-        delta_diff_pct >= self.ANGLE_SAFETY_THRESHOLD_PCT,
-        f"{car_name} max steering angle delta at {speed:.1f} m/s is {delta_diff_pct:.2f}% " +
-        f"lower than {baseline_car} ({current_max_delta:.4f} vs {baseline_max_delta:.4f} deg/frame). " +
-        f"Must be >= {self.ANGLE_SAFETY_THRESHOLD_PCT}% to ensure safety." +
-        f"Consider updating the baseline model to be {car_name} (which will lower the threshold for ALL models)."
-      )
+        self.assertEqual(should_tx, self._tx(self._angle_cmd_msg(max_angle, True)), f"should_tx: {should_tx}, max_angle: {max_angle}, speed: {speed}")
 
   def test_lateral_jerk_limit(self):
     car_name = self.ANGLE_SAFETY_BASELINE_MODEL
@@ -355,6 +293,68 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
       for _ in range(20):
         self.assertFalse(self._tx(self._angle_cmd_msg(get_max_angle(max(speed, 1), self.get_vm(car_name)), True)))
       self.assertTrue(self._tx(self._angle_cmd_msg(0, True)))
+
+  @parameterized.expand([(car,) for car in sorted(PLATFORMS)])
+  def test_max_steering_angle_safety(self, car_name):
+    """
+    Test that ensures the current car's max steering angles are never more than 2%
+    lower than the baseline car across all test speeds.
+    """
+    baseline_car = self.ANGLE_SAFETY_BASELINE_MODEL
+    baseline_vm = self.get_vm(baseline_car)
+    current_vm = self.get_vm(car_name)
+
+    for speed in np.linspace(1, 40, 10):
+      baseline_max_angle = get_max_angle(speed, baseline_vm)
+      current_max_angle = get_max_angle(speed, current_vm)
+
+      # Skip if both exceed STEER_ANGLE_MAX (only_relevant_angles logic)
+      if current_max_angle > self.STEER_ANGLE_MAX and baseline_max_angle > self.STEER_ANGLE_MAX:
+        continue
+
+      # Calculate percentage difference
+      if baseline_max_angle != 0:
+        angle_diff_pct = ((current_max_angle - baseline_max_angle) / baseline_max_angle) * 100
+      else:
+        angle_diff_pct = 0
+
+      # Assert that difference is not dangerously low
+      self.assertTrue(
+        angle_diff_pct >= self.ANGLE_SAFETY_THRESHOLD_PCT,
+        f"{car_name} max steering angle at {speed:.1f} m/s [{current_max_angle:.2f}°] is {angle_diff_pct:.2f}% " +
+        f"lower than baseline {baseline_car} ({current_max_angle:.2f}° vs {baseline_max_angle:.2f}°). " +
+        f"Must be >= {self.ANGLE_SAFETY_THRESHOLD_PCT}% to ensure safety." +
+        f"Consider updating the baseline model to be {car_name} (which will lower the threshold for ALL models)."
+      )
+
+  @parameterized.expand([(car,) for car in sorted(PLATFORMS)])
+  def test_max_steering_angle_delta_safety(self, car_name):
+    """
+    Test that ensures the current car's max steering angle deltas are never more than 2%
+    lower than the baseline car across all test speeds.
+    """
+    baseline_car = self.ANGLE_SAFETY_BASELINE_MODEL
+    baseline_vm = self.get_vm(baseline_car)
+    current_vm = self.get_vm(car_name)
+
+    for speed in np.linspace(1, 40, 10):
+      baseline_max_delta = get_max_angle_delta(speed, self.ANGLE_LIMITS.CONTROL_FREQUENCY, baseline_vm)
+      current_max_delta = get_max_angle_delta(speed, self.ANGLE_LIMITS.CONTROL_FREQUENCY, current_vm)
+
+      # Calculate percentage difference
+      if baseline_max_delta != 0:
+        delta_diff_pct = ((current_max_delta - baseline_max_delta) / baseline_max_delta) * 100
+      else:
+        delta_diff_pct = 0
+
+      # Assert that difference is not dangerously low
+      self.assertTrue(
+        delta_diff_pct >= self.ANGLE_SAFETY_THRESHOLD_PCT,
+        f"{car_name} max steering angle delta at {speed:.1f} m/s is {delta_diff_pct:.2f}% " +
+        f"lower than {baseline_car} ({current_max_delta:.4f} vs {baseline_max_delta:.4f} deg/frame). " +
+        f"Must be >= {self.ANGLE_SAFETY_THRESHOLD_PCT}% to ensure safety." +
+        f"Consider updating the baseline model to be {car_name} (which will lower the threshold for ALL models)."
+      )
 
 class TestHyundaiCanfdLFASteeringBase(TestHyundaiCanfdTorqueSteering):
 

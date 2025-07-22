@@ -1,4 +1,3 @@
-import math
 import numpy as np
 from opendbc.car.carlog import carlog
 from opendbc.car.vehicle_model import VehicleModel
