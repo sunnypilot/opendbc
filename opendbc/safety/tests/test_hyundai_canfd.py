@@ -194,8 +194,8 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
   def test_lateral_accel_limit(self):
     car_name = self.ANGLE_SAFETY_BASELINE_MODEL
     for speed in np.linspace(0, 40, 100):
+      speed = round_speed(away_round(speed / 0.03125 * 3.6) * 0.03125 / 3.6)
       speed = max(speed, 1)
-      speed = round_speed(away_round(speed * 3.6) / 3.6)
       for sign in (-1, 1):
         self.safety.set_controls_allowed(True)
         self._reset_speed_measurement(speed + 1)  # safety fudges the speed
@@ -220,8 +220,8 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
   def test_lateral_jerk_limit(self):
     car_name = self.ANGLE_SAFETY_BASELINE_MODEL
     for speed in np.linspace(0, 40, 100):
+      speed = round_speed(away_round(speed / 0.03125 * 3.6) * 0.03125 / 3.6)
       speed = max(speed, 1)
-      speed = round_speed(away_round(speed * 3.6) / 3.6)
       for sign in (-1, 1):  # (-1, 1):
         self.safety.set_controls_allowed(True)
         self._reset_speed_measurement(speed + 1)  # safety fudges the speed
