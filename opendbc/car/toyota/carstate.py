@@ -437,16 +437,17 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_SENSOR", 50),
     ]
 
+    if CP.carFingerprint not in [CAR.TOYOTA_WILDLANDER]:
+      pt_messages += [
+        ("PCM_CRUISE_4", 1),
+      ]
+
     if CP.flags & ToyotaFlags.SECOC.value:
       pt_messages += [
         ("GEAR_PACKET_HYBRID", 60),
         ("SECOC_SYNCHRONIZATION", 10),
         ("GAS_PEDAL", 42),
       ]
-      if CP.carFingerprint not in [CAR.TOYOTA_WILDLANDER]:
-        pt_messages += [
-          ("PCM_CRUISE_4", 1),
-        ]
     else:
       pt_messages.append(("VSC1S07", 20))
       if CP.carFingerprint not in [CAR.TOYOTA_MIRAI]:
