@@ -20,5 +20,11 @@ FW_VERSIONS_EXT = {
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301400\x00\x00\x00\x00'
     ],
+    (Ecu.srs, 0x780, None): [
+      b'\x018917F0R18000\x00\x00\x00\x00'
+    ],
+    (Ecu.hybrid, 0x7d2, None): [
+      b'\x02899830R24000\x00\x00\x00\x00899850R05000\x00\x00\x00\x00'
+    ],
   },
 }
