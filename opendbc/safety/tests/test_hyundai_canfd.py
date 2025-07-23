@@ -195,8 +195,8 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     car_name = self.ANGLE_SAFETY_BASELINE_MODEL
     for speed in np.linspace(0, 40, 100):
       speed = max(speed, 1)
-      # match DI_vehicleSpeed rounding on CAN
-      speed = round_speed(away_round(speed / 0.08 * 3.6) * 0.08 / 3.6)
+      # # match DI_vehicleSpeed rounding on CAN
+      # speed = round_speed(away_round(speed / 0.08 * 3.6) * 0.08 / 3.6)
       for sign in (-1, 1):
         self.safety.set_controls_allowed(True)
         self._reset_speed_measurement(speed + 1)  # safety fudges the speed
@@ -222,8 +222,8 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     car_name = self.ANGLE_SAFETY_BASELINE_MODEL
     for speed in np.linspace(0, 40, 100):
       speed = max(speed, 1)
-      # match DI_vehicleSpeed rounding on CAN
-      speed = round_speed(away_round(speed / 0.08 * 3.6) * 0.08 / 3.6)
+      # # match DI_vehicleSpeed rounding on CAN
+      # speed = round_speed(away_round(speed / 0.08 * 3.6) * 0.08 / 3.6)
       for sign in (-1, 1):  # (-1, 1):
         self.safety.set_controls_allowed(True)
         self._reset_speed_measurement(speed + 1)  # safety fudges the speed
