@@ -35,11 +35,6 @@ MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 
 MAX_ANGLE_RATE = 5
 
-# Until we can do a better fingerprinting from Panda, we need to use a baseline model for safety
-#  to ensure we have common safety limits for all the angle steering. Even if the limits are not optimal for all models.
-ANGLE_SAFETY_BASELINE_MODEL = "GENESIS_GV80_2025" # This is the most conservative but it's too bad for ioniq 5 PE
-# ANGLE_SAFETY_BASELINE_MODEL = "HYUNDAI_IONIQ_5_PE"
-
 
 def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: float) -> float:
   """
@@ -99,6 +94,11 @@ def parse_tq_rdc_gain(val):
     return float(val) / 100
   return None
 
+def parse_scaled_value(val, scale=10):
+  if val is not None:
+    return float(val) / scale
+  return None
+
 class CarController(CarControllerBase, EsccCarController, LongitudinalController, MadsCarController):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
@@ -129,6 +129,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.active_torque_reduction_gain = self.params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN
     self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
     self.angle_enable_smoothing_factor = True
+    self.angle_limits = CarControllerParams.ANGLE_LIMITS
 
     self._params = Params() if PARAMS_AVAILABLE else None
     if PARAMS_AVAILABLE:
@@ -137,6 +138,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       self.active_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleActiveTorqueReductionGain")) or self.active_torque_reduction_gain
       self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles") or self.angle_torque_override_cycles)
       self.angle_enable_smoothing_factor = self._params.get_bool("EnableHkgTuningAngleSmoothingFactor")
+      self.angle_limits.MAX_LATERAL_ACCEL = parse_scaled_value(self._params.get("HkgMaxLateralAccel")) or self.angle_limits.MAX_LATERAL_ACCEL
+      self.angle_limits.MAX_LATERAL_JERK = parse_scaled_value(self._params.get("HkgMaxLateralJerk")) or self.angle_limits.MAX_LATERAL_JERK
 
 
   def update(self, CC, CC_SP, CS, now_nanos):
@@ -323,8 +326,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
       apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last)
 
-    limits = CarControllerParams.ANGLE_LIMITS
-    return apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, limits, self.VM)
+    return apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.VM)
 
   def calculate_angle_torque_reduction_gain(self, CS, target_torque_reduction_gain):
     """ Calculate the angle torque reduction gain based on the current steering state. """
