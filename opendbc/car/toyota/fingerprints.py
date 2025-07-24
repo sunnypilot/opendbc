@@ -1854,3 +1854,5 @@ FW_VERSIONS = {
     ],
   },
 }
+
+FW_VERSIONS = merge_fw_versions(FW_VERSIONS, FW_VERSIONS_EXT)
