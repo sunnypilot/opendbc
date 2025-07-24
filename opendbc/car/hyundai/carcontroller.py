@@ -143,8 +143,6 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       self.active_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleActiveTorqueReductionGain")) or self.active_torque_reduction_gain
       self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles") or self.angle_torque_override_cycles)
       self.angle_enable_smoothing_factor = self._params.get_bool("EnableHkgTuningAngleSmoothingFactor")
-      # self.angle_limits.MAX_LATERAL_ACCEL = parse_scaled_value(self._params.get("HkgMaxLateralAccel")) or self.angle_limits.MAX_LATERAL_ACCEL
-      # self.angle_limits.MAX_LATERAL_JERK = parse_scaled_value(self._params.get("HkgMaxLateralJerk")) or self.angle_limits.MAX_LATERAL_JERK
 
 
   def update(self, CC, CC_SP, CS, now_nanos):
@@ -327,15 +325,22 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
   def apply_hyundai_steer_angle_limits(self, CS, CC, apply_angle: float) -> float:
     v_ego_raw = CS.out.vEgoRaw
     apply_angle = np.clip(apply_angle, -819.2, 819.1)
-
+  
     if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
       apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last)
-      
-    baseline_limits = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.BASELINE_VM)
-    current_limits = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.VM)
-
-    min_limit = min(abs(baseline_limits), abs(current_limits))
-    return float(np.clip(apply_angle, -min_limit, min_limit))
+  
+    # These functions return clipped angle proposals (not limits!)
+    baseline_angle = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw,
+                                                     CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.BASELINE_VM)
+    current_angle = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw,
+                                                    CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.VM)
+  
+    # Select the angle with the smallest deviation from the previous command
+    delta_baseline = abs(baseline_angle - self.apply_angle_last)
+    delta_current = abs(current_angle - self.apply_angle_last)
+  
+    final_angle = baseline_angle if delta_baseline < delta_current else current_angle
+    return float(final_angle)
 
   def calculate_angle_torque_reduction_gain(self, CS, target_torque_reduction_gain):
     """ Calculate the angle torque reduction gain based on the current steering state. """
