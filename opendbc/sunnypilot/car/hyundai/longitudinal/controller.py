@@ -103,7 +103,7 @@ class LongitudinalController:
 
     # Keep track of time in stopping state (in control cycles)
     if self.CP.carFingerprint == CAR.KIA_NIRO_EV:
-      if self.stopping_count > 3.0 / DT_CTRL:
+      if self.stopping_count > 1.0 / DT_CTRL:
         self.stopping = True
     else:
       if self.stopping_count > 1 / (DT_CTRL * 2):
@@ -220,20 +220,14 @@ class LongitudinalController:
     dynamic_desired_lower_jerk = min(dynamic_lower_jerk, lower_speed_factor)
 
     # Apply jerk limits based on tuning approach
-    if self.CP.carFingerprint == CAR.KIA_NIRO_EV:
-      self.jerk_upper = desired_jerk_upper
-    else:
-      self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
 
     # Predictive tuning uses calculated desired jerk directly
     # Dynamic tuning applies a ramped approach for smoother transitions
     if self.long_tuning_param == LongitudinalTuningType.PREDICTIVE:
       self.jerk_lower = desired_jerk_lower
     elif self.long_tuning_param == LongitudinalTuningType.DYNAMIC:
-      if self.CP.carFingerprint == CAR.KIA_NIRO_EV:
-        self.jerk_lower = dynamic_desired_lower_jerk
-      else:
-        self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk)
+      self.jerk_lower = dynamic_desired_lower_jerk
 
     # Disable jerk when longitudinal control is inactive
     if not CC.longActive:
@@ -301,7 +295,7 @@ class LongitudinalController:
     """Handle FCW situations with emergency braking jerk allowed."""
     self.comfort_band_upper = 0.0
     self.comfort_band_lower = 0.0
-    accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    accel = float(max(max(self.accel_cmd, -2.0), CarControllerParams.ACCEL_MIN))
     self.desired_accel = accel
     self.actual_accel = accel
     self.accel_last = self.actual_accel
