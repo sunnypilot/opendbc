@@ -51,9 +51,9 @@ def enable_radar_tracks(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, retry=2
             query = IsoTpParallelQuery(sendcan, logcan, bus, [addr], [request], [WRITE_DATA_RESPONSE])
             query.get_data(0)
 
-            carlog.error("radar_tracks: successfully enabled")
-
-          return True
+            if current_config == TRACKS_ENABLED_CONFIG_BYTES:
+              carlog.error("radar_tracks: successfully enabled")
+              return True
 
     except Exception as e:
       carlog.exception(f"radar_tracks exception: {e}")
