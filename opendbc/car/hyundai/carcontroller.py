@@ -143,8 +143,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       self.active_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleActiveTorqueReductionGain")) or self.active_torque_reduction_gain
       self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles") or self.angle_torque_override_cycles)
       self.angle_enable_smoothing_factor = self._params.get_bool("EnableHkgTuningAngleSmoothingFactor")
-      self.angle_limits.MAX_LATERAL_ACCEL = parse_scaled_value(self._params.get("HkgMaxLateralAccel")) or self.angle_limits.MAX_LATERAL_ACCEL
-      self.angle_limits.MAX_LATERAL_JERK = parse_scaled_value(self._params.get("HkgMaxLateralJerk")) or self.angle_limits.MAX_LATERAL_JERK
+      # self.angle_limits.MAX_LATERAL_ACCEL = parse_scaled_value(self._params.get("HkgMaxLateralAccel")) or self.angle_limits.MAX_LATERAL_ACCEL
+      # self.angle_limits.MAX_LATERAL_JERK = parse_scaled_value(self._params.get("HkgMaxLateralJerk")) or self.angle_limits.MAX_LATERAL_JERK
 
 
   def update(self, CC, CC_SP, CS, now_nanos):
@@ -335,7 +335,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     current_limits = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.VM)
 
     min_limit = min(abs(baseline_limits), abs(current_limits))
-    return np.clip(apply_angle, -min_limit, min_limit)
+    return float(np.clip(apply_angle, -min_limit, min_limit))
 
   def calculate_angle_torque_reduction_gain(self, CS, target_torque_reduction_gain):
     """ Calculate the angle torque reduction gain based on the current steering state. """
