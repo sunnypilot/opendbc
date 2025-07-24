@@ -34,7 +34,11 @@ MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 
 MAX_ANGLE_RATE = 5
+ANGLE_SAFETY_BASELINE_MODEL = "GENESIS_GV80_2025"
 
+def get_baseline_safety_cp():
+  from opendbc.car.tesla.interface import CarInterface
+  return CarInterface.get_non_essential_params(ANGLE_SAFETY_BASELINE_MODEL)
 
 def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: float) -> float:
   """
@@ -112,6 +116,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # Vehicle model used for lateral limiting
     self.VM = VehicleModel(CP)
+    self.BASELINE_VM = VehicleModel(get_baseline_safety_cp())
 
     self.accel_last = 0
     self.apply_torque_last = 0
@@ -325,8 +330,12 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
       apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last)
+      
+    baseline_limits = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.BASELINE_VM)
+    current_limits = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.VM)
 
-    return apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.VM)
+    min_limit = min(abs(baseline_limits), abs(current_limits))
+    return np.clip(apply_angle, -min_limit, min_limit)
 
   def calculate_angle_torque_reduction_gain(self, CS, target_torque_reduction_gain):
     """ Calculate the angle torque reduction gain based on the current steering state. """
