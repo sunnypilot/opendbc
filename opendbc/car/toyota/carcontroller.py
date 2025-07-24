@@ -98,7 +98,8 @@ class CarController(CarControllerBase, SecOCLongCarController):
 
     self.left_blindspot_debug_enabled = False
     self.right_blindspot_debug_enabled = False
-    self.last_blindspot_frame = 0
+    self.left_last_blindspot_frame = 0
+    self.right_last_blindspot_frame = 0
 
     self._auto_lock_speed = 0.0
 
@@ -337,7 +338,6 @@ class CarController(CarControllerBase, SecOCLongCarController):
 
   # Enhanced BSM (@arne182, @rav4kumar)
   def create_enhanced_bsm_messages(self, CS: structs.CarState, e_bsm_rate: int = 20, always_on: bool = True):
-    # let's keep all the commented out code for easy debug purpose for future.
     can_sends = []
 
     # left bsm
@@ -345,35 +345,26 @@ class CarController(CarControllerBase, SecOCLongCarController):
       if always_on or CS.out.vEgo > 6:  # eagle eye camera will stop working if left bsm is switched on under 6m/s
         can_sends.append(toyotacan.create_set_bsm_debug_mode(LEFT_BLINDSPOT, True))
         self.left_blindspot_debug_enabled = True
-        # print("bsm debug left, on")
     else:
-      if not always_on and self.frame - self.last_blindspot_frame > 50:
+      if not always_on and self.frame - self.left_last_blindspot_frame > 50:
         can_sends.append(toyotacan.create_set_bsm_debug_mode(LEFT_BLINDSPOT, False))
         self.left_blindspot_debug_enabled = False
-        # print("bsm debug left, off")
       if self.frame % e_bsm_rate == 0:
         can_sends.append(toyotacan.create_bsm_polling_status(LEFT_BLINDSPOT))
-        # if CS.out.leftBlinker:
-        self.last_blindspot_frame = self.frame
-        # print(self.last_blindspot_frame)
-        # print("bsm poll left")
+        self.left_last_blindspot_frame = self.frame
+
     # right bsm
     if not self.right_blindspot_debug_enabled:
       if always_on or CS.out.vEgo > 6:  # eagle eye camera will stop working if right bsm is switched on under 6m/s
         can_sends.append(toyotacan.create_set_bsm_debug_mode(RIGHT_BLINDSPOT, True))
         self.right_blindspot_debug_enabled = True
-        # print("bsm debug right, on")
     else:
-      if not always_on and self.frame - self.last_blindspot_frame > 50:
+      if not always_on and self.frame - self.right_last_blindspot_frame > 50:
         can_sends.append(toyotacan.create_set_bsm_debug_mode(RIGHT_BLINDSPOT, False))
         self.right_blindspot_debug_enabled = False
-        # print("bsm debug right, off")
-      if self.frame % e_bsm_rate == e_bsm_rate / 2:
+      if self.frame % e_bsm_rate == e_bsm_rate // 2:
         can_sends.append(toyotacan.create_bsm_polling_status(RIGHT_BLINDSPOT))
-        # if CS.out.rightBlinker:
-        self.last_blindspot_frame = self.frame
-        # print(self.last_blindspot_frame)
-        # print("bsm poll right")
+        self.right_last_blindspot_frame = self.frame
 
     return can_sends
 
