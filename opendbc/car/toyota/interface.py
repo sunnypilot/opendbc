@@ -59,6 +59,20 @@ class CarInterface(CarInterfaceBase):
     if Ecu.hybrid in found_ecus:
       ret.flags |= ToyotaFlags.HYBRID.value
 
+    # sdsu dp
+    sdsu_active = False
+
+    if not (candidate in (RADAR_ACC_CAR | NO_DSU_CAR)) and 0x2FF in fingerprint[0]:
+      print("----------------------------------------------")
+      print("SDSU detected!")
+      print("----------------------------------------------")
+      ret.enableDsu = False
+      sdsu_active = True
+      stop_and_go = True
+      ret.flags |= ToyotaFlags.SMART_DSU.value
+      ret.alphaLongitudinalAvailable = False
+      ret.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.SDSU.value
+
     if candidate == CAR.TOYOTA_PRIUS:
       stop_and_go = True
       # Only give steer angle deadzone to for bad angle sensor prius
@@ -123,12 +137,14 @@ class CarInterface(CarInterfaceBase):
     # openpilot longitudinal enabled by default:
     #  - cars w/ DSU disconnected
     #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
+    #  - SDSU equipped cars
     # openpilot longitudinal behind experimental long toggle:
     #  - TSS2 radar ACC cars (disables radar)
 
     ret.openpilotLongitudinalControl = ret.enableDsu or \
       candidate in (TSS2_CAR - RADAR_ACC_CAR) or \
-      bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
+      bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value) or \
+      sdsu_active
 
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
