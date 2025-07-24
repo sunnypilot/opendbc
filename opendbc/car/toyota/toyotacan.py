@@ -1,6 +1,6 @@
 from opendbc.car.structs import CarParams
 from opendbc.sunnypilot.car.toyota.secoc_long import SecOCLong
-from opendbc.car import make_can_msg
+from opendbc.car.can_definitions import CanData
 
 SteerControlType = CarParams.SteerControlType
 
@@ -156,11 +156,11 @@ def create_set_bsm_debug_mode(lr_blindspot, enabled):
   dat = b"\x02\x10\x60\x00\x00\x00\x00" if enabled else b"\x02\x10\x01\x00\x00\x00\x00"
   dat = lr_blindspot + dat
 
-  return make_can_msg(0x750, dat, 0)
+  return CanData(0x750, dat, 0)
 
 
 def create_bsm_polling_status(lr_blindspot):
-  return make_can_msg(0x750, lr_blindspot + b"\x02\x21\x69\x00\x00\x00\x00", 0)
+  return CanData(0x750, lr_blindspot + b"\x02\x21\x69\x00\x00\x00\x00", 0)
 
 
 # auto brake hold

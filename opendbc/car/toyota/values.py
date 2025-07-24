@@ -55,7 +55,7 @@ class ToyotaSafetyFlags(IntFlag):
   STOCK_LONGITUDINAL = (2 << 8)
   LTA = (4 << 8)
   SECOC = (8 << 8)
-
+  SDSU = (32 << 8)
 
 class ToyotaFlags(IntFlag):
   # Detected flags
