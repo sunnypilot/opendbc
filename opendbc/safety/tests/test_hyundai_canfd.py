@@ -3,6 +3,7 @@ from parameterized import parameterized_class
 import unittest
 import numpy as np
 
+from opendbc.car.hyundai.carcontroller import ANGLE_SAFETY_BASELINE_MODEL
 from opendbc.car.hyundai.values import HyundaiSafetyFlags, CAR, HyundaiFlags, CarControllerParams
 from opendbc.car.structs import CarParams
 from opendbc.car.vehicle_model import VehicleModel, calc_slip_factor
@@ -143,7 +144,6 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
   STEER_ANGLE_MAX = 180  # deg
   DEG_TO_CAN = 10
   ANGLE_SAFETY_THRESHOLD_PCT = -2.0  # Fail if difference is less than -2%
-  ANGLE_SAFETY_BASELINE_MODEL = "GENESIS_GV80_2025"  # Baseline model for angle panda safety tests
 
   # Hyundai uses get_max_angle_delta and get_max_angle for real lateral accel and jerk limits
   # TODO: integrate this into AngleSteeringSafetyTest
@@ -192,7 +192,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     pass
 
   def test_lateral_accel_limit(self):
-    car_name = self.ANGLE_SAFETY_BASELINE_MODEL
+    car_name = ANGLE_SAFETY_BASELINE_MODEL
     for speed in np.linspace(0, 40, 100):
       speed = round_speed(away_round(speed / 0.03125 * 3.6) * 0.03125 / 3.6)
       speed = max(speed, 1)
@@ -218,7 +218,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         self.assertEqual(should_tx, self._tx(self._angle_cmd_msg(max_angle, True)), f"should_tx: {should_tx}, max_angle: {max_angle}, speed: {speed}")
 
   def test_lateral_jerk_limit(self):
-    car_name = self.ANGLE_SAFETY_BASELINE_MODEL
+    car_name = ANGLE_SAFETY_BASELINE_MODEL
     for speed in np.linspace(0, 40, 100):
       speed = round_speed(away_round(speed / 0.03125 * 3.6) * 0.03125 / 3.6)
       speed = max(speed, 1)
@@ -280,7 +280,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
       self.assertTrue(self._tx(self._angle_cmd_msg(0, True, increment_timer=False)))
 
   def test_angle_violation(self):
-    car_name = self.ANGLE_SAFETY_BASELINE_MODEL
+    car_name = ANGLE_SAFETY_BASELINE_MODEL
     # If violation occurs, angle cmd is blocked until reset to 0. Matches behavior of torque safety modes
     self.safety.set_controls_allowed(True)
 
@@ -298,7 +298,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     Test that ensures the current car's max steering angles are never more than 2%
     lower than the baseline car across all test speeds.
     """
-    baseline_car = self.ANGLE_SAFETY_BASELINE_MODEL
+    baseline_car = ANGLE_SAFETY_BASELINE_MODEL
     baseline_vm = self.get_vm(baseline_car)
     current_vm = self.get_vm(car_name)
 
@@ -332,7 +332,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     Test that ensures the current car's max steering angle deltas are never more than 2%
     lower than the baseline car across all test speeds.
     """
-    baseline_car = self.ANGLE_SAFETY_BASELINE_MODEL
+    baseline_car = ANGLE_SAFETY_BASELINE_MODEL
     baseline_vm = self.get_vm(baseline_car)
     current_vm = self.get_vm(car_name)
 
