@@ -334,7 +334,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
                                                               CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.VM)
 
     # We then apply the baseline vehicle model limits to the current VM to ensure we don't get blocked by Panda Safety,
-    #  because we must have a baseline model hardcoded on panda safety since we don't have fingerprinting there. 
+    #  because we must have a baseline model hardcoded on panda safety since we don't have fingerprinting there.
     baseline_vm_safety_angle = apply_common_steer_angle_limits(current_vm_angle_desire, self.apply_angle_last, v_ego_raw,
                                                                CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.BASELINE_VM)
 
