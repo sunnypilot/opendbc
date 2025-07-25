@@ -2,7 +2,6 @@ from opendbc.car import structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.chrysler.values import RAM_DT
 from opendbc.sunnypilot.car.chrysler.values import ChryslerFlagsSP
-from opendbc_repo.opendbc.safety.tests.test_subaru import lkas_tx_msgs
 
 GearShifter = structs.CarState.GearShifter
 
