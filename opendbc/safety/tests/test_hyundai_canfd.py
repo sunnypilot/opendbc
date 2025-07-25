@@ -5,7 +5,7 @@ import numpy as np
 
 from opendbc.car.hyundai.values import HyundaiSafetyFlags, CAR, HyundaiFlags, CarControllerParams
 from opendbc.car.structs import CarParams
-from opendbc.car.vehicle_model import VehicleModel
+from opendbc.car.vehicle_model import VehicleModel, calc_slip_factor
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.common import CANPackerPanda, away_round, round_speed
@@ -322,7 +322,8 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         f"{car_name} max steering angle at {speed:.1f} m/s [{current_max_angle:.2f}°] is {angle_diff_pct:.2f}% " +
         f"lower than baseline {baseline_car} ({current_max_angle:.2f}° vs {baseline_max_angle:.2f}°). " +
         f"Must be >= {self.ANGLE_SAFETY_THRESHOLD_PCT}% to ensure safety." +
-        f"Consider updating the baseline model to be {car_name} (which will lower the threshold for ALL models)."
+        f"Consider updating the baseline model to be {car_name} (which will lower the threshold for ALL models). " +
+        f"Slip Factor: {calc_slip_factor(current_vm)}"
       )
 
   @parameterized.expand([(car,) for car in sorted(PLATFORMS)])
