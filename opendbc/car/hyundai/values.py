@@ -354,13 +354,6 @@ class CAR(Platforms):
     HYUNDAI_SANTA_FE.specs,
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.HYBRID,
   )
-  HYUNDAI_SANTA_FE_5TH_GEN = HyundaiCanFDPlatformConfig(
-    [
-      HyundaiCarDocs("Hyundai Santa Fe (without HDA II) 2024-25", "Highway Driving Assist", car_parts=CarParts.common([CarHarness.hyundai_p])),
-    ],
-    CarSpecs(mass=2258, wheelbase=2.95, steerRatio=14.14),
-    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
-  )
   HYUNDAI_SANTA_FE_HEV_5TH_GEN = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Hyundai Santa Fe Hybrid (with HDA II) 2024-25", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p])),
