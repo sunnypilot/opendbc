@@ -1526,17 +1526,6 @@
     ],
     "package": "All"
   },
-  "Hyundai Santa Fe Plug-in Hybrid 2022-23": {
-    "platform": "HYUNDAI_SANTA_FE_PHEV_2022",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Santa Fe Plug-in Hybrid",
-    "year": [
-      "2022",
-      "2023"
-    ],
-    "package": "All"
-  },
   "Hyundai Santa Fe Hybrid (with HDA II & LFA2) 2024-25": {
     "platform": "HYUNDAI_SANTA_FE_HEV_5TH_GEN",
     "make": "Hyundai",
@@ -1547,6 +1536,17 @@
       "2025"
     ],
     "package": "Highway Driving Assist II & Lane Follow Assist 2"
+  },
+  "Hyundai Santa Fe Plug-in Hybrid 2022-23": {
+    "platform": "HYUNDAI_SANTA_FE_PHEV_2022",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Santa Fe Plug-in Hybrid",
+    "year": [
+      "2022",
+      "2023"
+    ],
+    "package": "All"
   },
   "Hyundai Sonata 2018-19": {
     "platform": "HYUNDAI_SONATA_LF",
