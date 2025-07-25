@@ -3,12 +3,12 @@
 #include "opendbc/safety/safety_declarations.h"
 #include "opendbc/safety/modes/hyundai_common.h"
 
-#define HYUNDAI_LIMITS(steer, rate_up, rate_down, rt_delta) { \
+#define HYUNDAI_LIMITS(steer, rate_up, rate_down, rt_delta, driver_allowance) { \
   .max_torque = (steer), \
   .max_rate_up = (rate_up), \
   .max_rate_down = (rate_down), \
   .max_rt_delta = (rt_delta), \
-  .driver_torque_allowance = 50, \
+  .driver_torque_allowance = (driver_allowance), \
   .driver_torque_multiplier = 2, \
   .type = TorqueDriverLimited, \
    /* the EPS faults when the steering angle is above a certain threshold for too long. to prevent this, */ \
@@ -203,9 +203,9 @@ static void hyundai_rx_hook(const CANPacket_t *to_push) {
 }
 
 static bool hyundai_tx_hook(const CANPacket_t *to_send) {
-  const TorqueSteeringLimits HYUNDAI_STEERING_LIMITS = HYUNDAI_LIMITS(404, 4, 7, 300);
-  const TorqueSteeringLimits HYUNDAI_STEERING_LIMITS_ALT = HYUNDAI_LIMITS(270, 2, 3, 250);
-  const TorqueSteeringLimits HYUNDAI_STEERING_LIMITS_ALT_2 = HYUNDAI_LIMITS(170, 2, 3, 150);
+  const TorqueSteeringLimits HYUNDAI_STEERING_LIMITS = HYUNDAI_LIMITS(404, 4, 7, 250, 350);
+  const TorqueSteeringLimits HYUNDAI_STEERING_LIMITS_ALT = HYUNDAI_LIMITS(270, 2, 3, 250, 100);
+  const TorqueSteeringLimits HYUNDAI_STEERING_LIMITS_ALT_2 = HYUNDAI_LIMITS(170, 2, 3, 150, 50);
 
   bool tx = true;
   int addr = GET_ADDR(to_send);
