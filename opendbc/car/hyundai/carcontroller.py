@@ -325,22 +325,20 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
   def apply_hyundai_steer_angle_limits(self, CS, CC, apply_angle: float) -> float:
     v_ego_raw = CS.out.vEgoRaw
     apply_angle = np.clip(apply_angle, -819.2, 819.1)
-  
+
     if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
       apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last)
-  
-    # These functions return clipped angle proposals (not limits!)
-    baseline_angle = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw,
-                                                     CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.BASELINE_VM)
-    current_angle = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw,
-                                                    CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.VM)
-  
-    # Select the angle with the smallest deviation from the previous command
-    delta_baseline = abs(baseline_angle - self.apply_angle_last)
-    delta_current = abs(current_angle - self.apply_angle_last)
-  
-    final_angle = baseline_angle if delta_baseline < delta_current else current_angle
-    return float(final_angle)
+
+    # We use the vehicle model to apply steering limits specific to the current car.
+    current_vm_angle_desire = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw,
+                                                              CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.VM)
+
+    # We then apply the baseline vehicle model limits to the current VM to ensure we don't get blocked by Panda Safety,
+    #  because we must have a baseline model hardcoded on panda safety since we don't have fingerprinting there.
+    baseline_vm_safety_angle = apply_common_steer_angle_limits(current_vm_angle_desire, self.apply_angle_last, v_ego_raw,
+                                                               CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.BASELINE_VM)
+
+    return float(baseline_vm_safety_angle)
 
   def calculate_angle_torque_reduction_gain(self, CS, target_torque_reduction_gain):
     """ Calculate the angle torque reduction gain based on the current steering state. """
