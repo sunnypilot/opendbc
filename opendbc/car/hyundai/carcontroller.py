@@ -12,8 +12,8 @@ except ImportError:
   PARAMS_AVAILABLE = False
 
 from opendbc.can.packer import CANPacker
-from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, common_fault_avoidance, \
-  make_tester_present_msg, structs, apply_common_steer_angle_limits
+from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, common_fault_avoidance, rate_limit, \
+  make_tester_present_msg, structs, apply_common_steer_angle_limits, get_max_angle, get_max_angle_delta
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
 from opendbc.car.hyundai.hyundaicanfd import CanBus
@@ -326,21 +326,31 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     v_ego_raw = CS.out.vEgoRaw
     apply_angle = np.clip(apply_angle, -819.2, 819.1)
   
+    # Optional smoothing for low speeds
     if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
       apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last)
   
-    # These functions return clipped angle proposals (not limits!)
-    baseline_angle = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw,
-                                                     CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.BASELINE_VM)
-    current_angle = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw,
-                                                    CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.VM)
+    # Step 1: Baseline hard safety enforcement
+    baseline_angle = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.angle_limits,
+                                                     self.BASELINE_VM)
   
-    # Select the angle with the smallest deviation from the previous command
-    delta_baseline = abs(baseline_angle - self.apply_angle_last)
-    delta_current = abs(current_angle - self.apply_angle_last)
+    # Step 2: Post-limiting using current model (only if lateral active)
+    if CC.latActive:
+      v_ego_safe = max(v_ego_raw, 1.0)
   
-    final_angle = baseline_angle if delta_baseline < delta_current else current_angle
-    return float(final_angle)
+      # Rate limit delta for current model
+      max_delta_current = get_max_angle_delta(v_ego_safe, self.angle_limits.CONTROL_FREQUENCY, self.VM, self.angle_limits.MAX_LATERAL_JERK)
+      max_delta_current = min(max_delta_current, self.angle_limits.MAX_ANGLE_RATE)
+  
+      # Apply rate limit from last applied to baseline result
+      baseline_rate_limited_to_current = rate_limit(baseline_angle, self.apply_angle_last, -max_delta_current, max_delta_current)
+  
+      # Clip to max allowed angle from current model
+      max_angle_current = get_max_angle(v_ego_safe, self.VM, self.angle_limits.MAX_LATERAL_ACCEL)
+      return float(np.clip(baseline_rate_limited_to_current, -max_angle_current, max_angle_current))
+  
+    return float(baseline_angle)
+
 
   def calculate_angle_torque_reduction_gain(self, CS, target_torque_reduction_gain):
     """ Calculate the angle torque reduction gain based on the current steering state. """
