@@ -198,7 +198,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
 
   // HYUNDAI_SANTA_FE_HEV_5TH_GEN values. (most conservative for now) (values can be found on values.py)
   const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
-    .slip_factor = -0.00059689759884299,  // calc_slip_factor(VM)
+    .slip_factor = -0.0005968976181057176,  // calc_slip_factor(VM)
     .steer_ratio = 13.72,
     .wheelbase = 2.81,
   };

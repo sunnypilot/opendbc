@@ -323,7 +323,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         f"lower than baseline {baseline_car} ({current_max_angle:.2f}° vs {baseline_max_angle:.2f}°). " +
         f"Must be >= {self.ANGLE_SAFETY_THRESHOLD_PCT}% to ensure safety." +
         f"Consider updating the baseline model to be {car_name} (which will lower the threshold for ALL models). " +
-        f"Slip Factor: {calc_slip_factor(current_vm)}"
+        f"Slip Factor: {repr(calc_slip_factor(current_vm))}"
       )
 
   @parameterized.expand([(car,) for car in sorted(PLATFORMS)])
