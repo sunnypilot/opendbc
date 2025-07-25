@@ -34,7 +34,7 @@ MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 
 MAX_ANGLE_RATE = 5
-ANGLE_SAFETY_BASELINE_MODEL = "GENESIS_GV80_2025"
+ANGLE_SAFETY_BASELINE_MODEL = "HYUNDAI_SANTA_FE_HEV_5TH_GEN"
 
 def get_baseline_safety_cp():
   from opendbc.car.tesla.interface import CarInterface

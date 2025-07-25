@@ -354,6 +354,14 @@ class CAR(Platforms):
     HYUNDAI_SANTA_FE.specs,
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.HYBRID,
   )
+  HYUNDAI_SANTA_FE_HEV_5TH_GEN = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Hyundai Santa Fe Hybrid (with HDA II & LFA2) 2024-25", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_p])),
+    ],
+    CarSpecs(mass=2035, wheelbase=2.81, steerRatio=13.72),
+    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+  )
   HYUNDAI_SONATA = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Sonata 2020-23", "All", video="https://www.youtube.com/watch?v=ix63r9kE3Fw",
                    car_parts=CarParts.common([CarHarness.hyundai_a]))],
