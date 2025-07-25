@@ -1537,16 +1537,16 @@
     ],
     "package": "All"
   },
-  "Hyundai Santa Fe Hybrid (with HDA II) 2024-26": {
+  "Hyundai Santa Fe Hybrid (with HDA II & LFA2) 2024-26": {
     "platform": "HYUNDAI_SANTA_FE_HEV_5TH_GEN",
     "make": "Hyundai",
     "brand": "hyundai",
-    "model": "Santa Fe Hybrid (with HDA II)",
+    "model": "Santa Fe Hybrid (with HDA II & LFA2)",
     "year": [
       "2024",
       "2026"
     ],
-    "package": "Highway Driving Assist II"
+    "package": "Highway Driving Assist II & Lane Follow Assist 2"
   },
   "Hyundai Sonata 2018-19": {
     "platform": "HYUNDAI_SONATA_LF",
