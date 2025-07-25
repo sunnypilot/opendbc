@@ -189,11 +189,18 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
   //   .wheelbase = 2.97,
   // };
 
-  // // GENESIS_GV80_2025 values. (most conservative for now) (values can be found on values.py)
+  // // GENESIS_GV80_2025 values. (values can be found on values.py)
+  // const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
+  //   .slip_factor = -0.000568570267369187,  // calc_slip_factor(VM)
+  //   .steer_ratio = 14.14,
+  //   .wheelbase = 2.95,
+  // };
+
+  // HYUNDAI_SANTA_FE_HEV_5TH_GEN values. (most conservative for now) (values can be found on values.py)
   const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
-    .slip_factor = -0.000568570267369187,  // calc_slip_factor(VM)
-    .steer_ratio = 14.14,
-    .wheelbase = 2.95,
+    .slip_factor = -0.00059689759884299,  // calc_slip_factor(VM)
+    .steer_ratio = 13.72,
+    .wheelbase = 2.81,
   };
 
   bool tx = true;
