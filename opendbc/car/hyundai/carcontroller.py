@@ -116,7 +116,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # Vehicle model used for lateral limiting
     self.VM = VehicleModel(CP)
-    self.BASELINE_VM = VehicleModel(get_baseline_safety_cp())
+    BASELINE_CP = get_baseline_safety_cp()
+    self.BASELINE_VM = VehicleModel(BASELINE_CP)
 
     self.accel_last = 0
     self.apply_torque_last = 0
@@ -143,6 +144,11 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       self.active_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleActiveTorqueReductionGain")) or self.active_torque_reduction_gain
       self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles") or self.angle_torque_override_cycles)
       self.angle_enable_smoothing_factor = self._params.get_bool("EnableHkgTuningAngleSmoothingFactor")
+  
+    if self.CP.carFingerprint == BASELINE_CP.carFingerprint:
+      # If the car is the same as the baseline model, we limit it slightly. If we are NOT the baseline model, we are already being limited by that.
+      self.angle_limits.MAX_LATERAL_JERK = self.angle_limits.MAX_LATERAL_JERK * 0.8
+      self.angle_limits.MAX_LATERAL_ACCEL = self.angle_limits.MAX_LATERAL_ACCEL * 0.8
 
 
   def update(self, CC, CC_SP, CS, now_nanos):
@@ -335,6 +341,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # We then apply the baseline vehicle model limits to the current VM to ensure we don't get blocked by Panda Safety,
     #  because we must have a baseline model hardcoded on panda safety since we don't have fingerprinting there.
+    # TODO-SP: I may just to modify the "angle_limits" sent to "baseline_vm_safety_angle" so that it serves as the highest ceiling for the angle limits.
     baseline_vm_safety_angle = apply_common_steer_angle_limits(current_vm_angle_desire, self.apply_angle_last, v_ego_raw,
                                                                CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.BASELINE_VM)
 

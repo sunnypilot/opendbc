@@ -26,8 +26,8 @@ class CarControllerParams:
     ([], []),
     ([], []),
     100,  # hz
-    MAX_LATERAL_ACCEL * 0.80,  # ~2.88 m/s^2 for some safety padding.
-    MAX_LATERAL_JERK * 0.80,  # ~2.88 m/s^3 for some safety padding.
+    MAX_LATERAL_ACCEL,  # We follow the limits unless we ARE the baseline model, then we further limit on carcontroller
+    MAX_LATERAL_JERK  # We follow the limits unless we ARE the baseline model, then we further limit on carcontroller
   )
 
   # Torque control parameters:
