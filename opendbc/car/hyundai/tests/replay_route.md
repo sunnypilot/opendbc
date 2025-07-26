@@ -72,4 +72,3 @@ Example:
 cb6aec3054a67f94/00000273--dae50621b9
 ```
 
-You can find valid routes in your local `comma2k19`, `retropilot`, or similar log archive.
