@@ -47,14 +47,6 @@ This prevents `replay` from publishing messages that `card.py` is responsible fo
 
 ---
 
-## 🧠 Tips
-
-* Use `--debug` with `replay` if you want verbose output.
-* Run both processes in separate terminal windows or use `tmux`/`screen`.
-* To restart cleanly, make sure no lingering `card.py` processes are active.
-* If you need to simulate another car, change the `FINGERPRINT` variable accordingly.
-
----
 
 ## 🔧 Common Issues
 
