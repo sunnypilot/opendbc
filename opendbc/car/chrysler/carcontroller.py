@@ -64,7 +64,7 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt):
         if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
           lkas_control_bit = False
 
-      lkas_control_bit = CarControllerExt.get_lkas_control_bit(self, CS, lkas_active, lkas_control_bit, self.lkas_control_bit_prev)
+      lkas_control_bit = CarControllerExt.get_lkas_control_bit(self, CS, CC, lkas_control_bit, self.lkas_control_bit_prev)
 
       # EPS faults if LKAS re-enables too quickly
       lkas_control_bit = lkas_control_bit and (self.frame - self.last_lkas_falling_edge > 200)
