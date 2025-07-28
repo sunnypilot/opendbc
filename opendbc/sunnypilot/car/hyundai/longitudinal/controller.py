@@ -257,6 +257,8 @@ class LongitudinalController:
     # Force zero acceleration during stopping
     if self.stopping:
       self.desired_accel = 0.0
+    elif self.CP.carFingerprint == CAR.KIA_NIRO_EV:
+      self.desired_accel = float(np.clip(self.accel_cmd, -3.0, 1.5))
     else:
       self.desired_accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
@@ -295,7 +297,7 @@ class LongitudinalController:
     """Handle FCW situations with emergency braking jerk allowed."""
     self.comfort_band_upper = 0.0
     self.comfort_band_lower = 0.0
-    accel = float(max(max(self.accel_cmd, -2.0), CarControllerParams.ACCEL_MIN))
+    accel = CarControllerParams.ACCEL_MIN
     self.desired_accel = accel
     self.actual_accel = accel
     self.accel_last = self.actual_accel
