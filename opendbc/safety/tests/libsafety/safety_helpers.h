@@ -21,7 +21,6 @@ bool safety_config_valid() {
   return true;
 }
 
-
 static MADSState *get_mads_state(void) {
   return &m_mads_state;
 }
@@ -72,6 +71,10 @@ int get_alternative_experience(void){
 
 bool get_relay_malfunction(void){
   return relay_malfunction;
+}
+
+int get_gas_interceptor_prev(void){
+  return gas_interceptor_prev;
 }
 
 bool get_gas_pressed_prev(void){
