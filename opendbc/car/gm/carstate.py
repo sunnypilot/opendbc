@@ -3,11 +3,13 @@ from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarStateBase
-from opendbc.car.gm.values import DBC, AccState, CruiseButtons, STEER_THRESHOLD, SDGM_CAR, ALT_ACCS
+from opendbc.car.gm.values import DBC, AccState, CruiseButtons, STEER_THRESHOLD, SDGM_CAR, ALT_ACCS, CC_ONLY_CAR, \
+  CAMERA_ACC_CAR
 
 ButtonType = structs.CarState.ButtonEvent.Type
 TransmissionType = structs.CarParams.TransmissionType
 NetworkLocation = structs.CarParams.NetworkLocation
+GearShifter = structs.CarState.GearShifter
 
 STANDSTILL_THRESHOLD = 10 * 0.0311
 
@@ -16,8 +18,8 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
 
 
 class CarState(CarStateBase):
-  def __init__(self, CP):
-    super().__init__(CP)
+  def __init__(self, CP, CP_SP):
+    super().__init__(CP, CP_SP)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
@@ -28,6 +30,9 @@ class CarState(CarStateBase):
     self.pt_lka_steering_cmd_counter = 0
     self.cam_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
+
+    self.single_pedal_mode = False
+    self.pedal_steady = 0.
 
     self.distance_button = 0
 
@@ -40,12 +45,13 @@ class CarState(CarStateBase):
           return True
     return False
 
-  def update(self, can_parsers) -> structs.CarState:
+  def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     pt_cp = can_parsers[Bus.pt]
     cam_cp = can_parsers[Bus.cam]
     loopback_cp = can_parsers[Bus.loopback]
 
     ret = structs.CarState()
+    ret_sp = structs.CarStateSP()
 
     prev_cruise_buttons = self.cruise_buttons
     prev_distance_button = self.distance_button
@@ -95,8 +101,16 @@ class CarState(CarStateBase):
     # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
+      self.single_pedal_mode = ret.gearShifter == GearShifter.low or pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1
 
-    ret.gasPressed = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254. > 1e-5
+    if self.CP.enableGasInterceptorDEPRECATED:
+      ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
+      # Panda 515 threshold = 10.88. Set lower to avoid panda blocking messages and GasInterceptor faulting.
+      threshold = 20 if self.CP.carFingerprint in CAMERA_ACC_CAR else 4
+      ret.gasPressed = ret.gas > threshold
+    else:
+      ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
+      ret.gasPressed = ret.gas > 1e-5
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
     ret.steeringRateDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelRate"]
@@ -129,7 +143,7 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      if self.CP.carFingerprint not in ALT_ACCS:
+      if self.CP.carFingerprint not in (ALT_ACCS | CC_ONLY_CAR):
         ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
         # This FCW signal only works for SDGM cars. CAM cars send FCW on GMLAN but this bit is always 0 for them
         ret.stockFcw = cam_cp.vl["ASCMActiveCruiseControlStatus"]["FCWAlert"] != 0
@@ -141,6 +155,11 @@ class CarState(CarStateBase):
 
       if self.CP.carFingerprint not in SDGM_CAR:
         ret.stockAeb = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
+
+    if self.CP.carFingerprint in CC_ONLY_CAR:
+      ret.accFaulted = False
+      ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
+      ret.cruiseState.enabled = pt_cp.vl["ECMCruiseControl"]["CruiseActive"] != 0
 
     if self.CP.enableBsm:
       ret.leftBlindspot = pt_cp.vl["BCMBlindSpotMonitor"]["LeftBSM"] == 1
@@ -158,15 +177,55 @@ class CarState(CarStateBase):
     if ret.vEgo < self.CP.minSteerSpeed:
       ret.lowSpeedAlert = True
 
-    return ret
+    return ret, ret_sp
 
   @staticmethod
-  def get_can_parsers(CP):
-    pt_messages = []
+  def get_can_parsers(CP, CP_SP):
+    pt_messages = [
+      ("BCMTurnSignals", 1),
+      ("ECMPRDNL2", 10),
+      ("PSCMStatus", 10),
+      ("ESPStatus", 10),
+      ("BCMDoorBeltStatus", 10),
+      ("BCMGeneralPlatformStatus", 10),
+      ("EBCMWheelSpdFront", 20),
+      ("EBCMWheelSpdRear", 20),
+      ("EBCMFrictionBrakeStatus", 20),
+      ("AcceleratorPedal2", 33),
+      ("ASCMSteeringButton", 33),
+      ("ECMEngineStatus", 100),
+      ("PSCMSteeringAngle", 100),
+      ("ECMAcceleratorPos", 80),
+    ]
+
+    if CP.transmissionType == TransmissionType.direct:
+      pt_messages.append(("EBCMRegenPaddle", 10))
+      pt_messages.append(("EVDriveMode", 0))
+
+    if CP.enableBsm:
+      pt_messages.append(("BCMBlindSpotMonitor", 10))
+
+    if CP.enableGasInterceptorDEPRECATED:
+      pt_messages.append(("GAS_SENSOR", 50))
+
+    cam_messages = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
       pt_messages += [
-        ("ASCMLKASteeringCmd", float('nan')),
+        ("ASCMLKASteeringCmd", 0),
       ]
+      cam_messages += [
+        ("ASCMLKASteeringCmd", 10),
+      ]
+
+      if CP.carFingerprint in (ALT_ACCS | CC_ONLY_CAR):
+        pt_messages.append(("ECMCruiseControl", 10))
+      else:
+        cam_messages.append(("ASCMActiveCruiseControlStatus", 25))
+
+      if CP.carFingerprint not in SDGM_CAR:
+        cam_messages += [
+          ("AEBCmd", 10),
+        ]
 
     loopback_messages = [
       ("ASCMLKASteeringCmd", float('nan')),
