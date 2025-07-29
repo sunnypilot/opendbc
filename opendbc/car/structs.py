@@ -110,7 +110,7 @@ class LeadData:
   aLeadTau: float = auto_field()
   modelProb: float = auto_field()
   radar: bool = auto_field()
-  radarTracksId: int = auto_field()
+  radarTrackId: int = auto_field()
 
   aLeadDEPRECATED: float = auto_field()
 
