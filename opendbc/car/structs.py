@@ -96,16 +96,31 @@ class ModularAssistiveDrivingSystem:
 
 @auto_dataclass
 class LeadData:
-  distance: float = auto_field()
-  relSpeed: float = auto_field()
-  visible: bool = auto_field()
+  dRel: float = auto_field()
+  yRel: float = auto_field()
+  vRel: float = auto_field()
+  aRel: float = auto_field()
+  vLead: float = auto_field()
+  dPath: float = auto_field()
+  vLat: float = auto_field()
+  vLeadK: float = auto_field()
+  aLeadK: float = auto_field()
+  fcw: bool = auto_field()
+  status: bool = auto_field()
+  aLeadTau: float = auto_field()
+  modelProb: float = auto_field()
+  radar: bool = auto_field()
+  radarTracksId: int = auto_field()
+
+  aLeadDEPRECATED: float = auto_field()
 
 
 @auto_dataclass
 class CarControlSP:
   mads: 'ModularAssistiveDrivingSystem' = field(default_factory=lambda: ModularAssistiveDrivingSystem())
   params: list['CarControlSP.Param'] = auto_field()
-  leadData: 'LeadData' = field(default_factory=lambda: LeadData())
+  leadOne: 'LeadData' = field(default_factory=lambda: LeadData())
+  leadTwo: 'LeadData' = field(default_factory=lambda: LeadData())
 
   @auto_dataclass
   class Param:
