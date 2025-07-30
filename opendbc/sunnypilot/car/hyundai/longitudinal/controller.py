@@ -258,7 +258,7 @@ class LongitudinalController:
     if self.stopping:
       self.desired_accel = 0.0
     elif self.CP.carFingerprint == CAR.KIA_NIRO_EV:
-      self.desired_accel = float(np.clip(self.accel_cmd, -3.0, 1.5))
+      self.desired_accel = float(np.clip(self.accel_cmd, -2.5, 1.5))
     else:
       self.desired_accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
