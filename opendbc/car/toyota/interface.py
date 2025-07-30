@@ -165,9 +165,9 @@ class CarInterface(CarInterfaceBase):
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
       if candidate == CAR.TOYOTA_RAV4_TSS2:
-        ret.stoppingDecelRate = 0.05 if sp_tss2_long_tune else 0.05
+        ret.stoppingDecelRate = 0.05 if sp_tss2_long_tune else 0.3   # reach stopping target smoothly
       else:
-        ret.stoppingDecelRate = 0.006 if sp_tss2_long_tune else 0.006 #0.3  # reach stopping target smoothly
+        ret.stoppingDecelRate = 0.006 if sp_tss2_long_tune else 0.3  # reach stopping target smoothly
 
       # Hybrids have much quicker longitudinal actuator response
       if ret.flags & ToyotaFlags.HYBRID.value:
