@@ -1,5 +1,5 @@
 {
-  "Acura ILX 2016-19": {
+  "Acura ILX 2016-18": {
     "platform": "ACURA_ILX",
     "make": "Acura",
     "brand": "honda",
@@ -7,10 +7,19 @@
     "year": [
       "2016",
       "2017",
-      "2018",
+      "2018"
+    ],
+    "package": "Technology Plus Package or AcuraWatch Plus"
+  },
+  "Acura ILX 2019": {
+    "platform": "ACURA_ILX",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "ILX",
+    "year": [
       "2019"
     ],
-    "package": "AcuraWatch Plus"
+    "package": "All"
   },
   "Acura RDX 2016-18": {
     "platform": "ACURA_RDX",
@@ -22,7 +31,7 @@
       "2017",
       "2018"
     ],
-    "package": "AcuraWatch Plus"
+    "package": "AcuraWatch Plus or Advance Package"
   },
   "Acura RDX 2019-21": {
     "platform": "ACURA_RDX_3G",
@@ -72,7 +81,7 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
-  "Audi Q3 2019-23": {
+  "Audi Q3 2019-24": {
     "platform": "AUDI_Q3_MK2",
     "make": "Audi",
     "brand": "volkswagen",
@@ -82,7 +91,8 @@
       "2020",
       "2021",
       "2022",
-      "2023"
+      "2023",
+      "2024"
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
@@ -368,6 +378,17 @@
     ],
     "package": "Co-Pilot360 Assist+"
   },
+  "Ford Escape 2023-24": {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "brand": "ford",
+    "model": "Escape",
+    "year": [
+      "2023",
+      "2024"
+    ],
+    "package": "Co-Pilot360 Assist+"
+  },
   "Ford Escape Hybrid 2020-22": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
@@ -377,6 +398,17 @@
       "2020",
       "2021",
       "2022"
+    ],
+    "package": "Co-Pilot360 Assist+"
+  },
+  "Ford Escape Hybrid 2023-24": {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "brand": "ford",
+    "model": "Escape Hybrid",
+    "year": [
+      "2023",
+      "2024"
     ],
     "package": "Co-Pilot360 Assist+"
   },
@@ -391,6 +423,29 @@
       "2022"
     ],
     "package": "Co-Pilot360 Assist+"
+  },
+  "Ford Escape Plug-in Hybrid 2023-24": {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "brand": "ford",
+    "model": "Escape Plug-in Hybrid",
+    "year": [
+      "2023",
+      "2024"
+    ],
+    "package": "Co-Pilot360 Assist+"
+  },
+  "Ford Expedition 2022-24": {
+    "platform": "FORD_EXPEDITION_MK4",
+    "make": "Ford",
+    "brand": "ford",
+    "model": "Expedition",
+    "year": [
+      "2022",
+      "2023",
+      "2024"
+    ],
+    "package": "Co-Pilot360 Assist 2.0"
   },
   "Ford Explorer 2020-24": {
     "platform": "FORD_EXPLORER_MK6",
@@ -475,7 +530,7 @@
     ],
     "package": "Adaptive Cruise Control with Lane Centering"
   },
-  "Ford Kuga 2020-22": {
+  "Ford Kuga 2020-23": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
     "brand": "ford",
@@ -483,11 +538,12 @@
     "year": [
       "2020",
       "2021",
-      "2022"
+      "2022",
+      "2023"
     ],
     "package": "Adaptive Cruise Control with Lane Centering"
   },
-  "Ford Kuga Hybrid 2020-22": {
+  "Ford Kuga Hybrid 2020-23": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
     "brand": "ford",
@@ -495,11 +551,22 @@
     "year": [
       "2020",
       "2021",
-      "2022"
+      "2022",
+      "2023"
     ],
     "package": "Adaptive Cruise Control with Lane Centering"
   },
-  "Ford Kuga Plug-in Hybrid 2020-22": {
+  "Ford Kuga Hybrid 2024": {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "brand": "ford",
+    "model": "Kuga Hybrid",
+    "year": [
+      "2024"
+    ],
+    "package": "All"
+  },
+  "Ford Kuga Plug-in Hybrid 2020-23": {
     "platform": "FORD_ESCAPE_MK4",
     "make": "Ford",
     "brand": "ford",
@@ -507,9 +574,20 @@
     "year": [
       "2020",
       "2021",
-      "2022"
+      "2022",
+      "2023"
     ],
     "package": "Adaptive Cruise Control with Lane Centering"
+  },
+  "Ford Kuga Plug-in Hybrid 2024": {
+    "platform": "FORD_ESCAPE_MK4_5",
+    "make": "Ford",
+    "brand": "ford",
+    "model": "Kuga Plug-in Hybrid",
+    "year": [
+      "2024"
+    ],
+    "package": "All"
   },
   "Ford Maverick 2022": {
     "platform": "FORD_MAVERICK_MK1",
@@ -553,7 +631,7 @@
     ],
     "package": "Co-Pilot360 Assist"
   },
-  "Ford Mustang Mach-E 2021-23": {
+  "Ford Mustang Mach-E 2021-24": {
     "platform": "FORD_MUSTANG_MACH_E_MK1",
     "make": "Ford",
     "brand": "ford",
@@ -561,7 +639,8 @@
     "year": [
       "2021",
       "2022",
-      "2023"
+      "2023",
+      "2024"
     ],
     "package": "All"
   },
@@ -838,6 +917,26 @@
     ],
     "package": "All"
   },
+  "Honda Civic Hatchback Hybrid 2025": {
+    "platform": "HONDA_CIVIC_2022",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Civic Hatchback Hybrid",
+    "year": [
+      "2025"
+    ],
+    "package": "All"
+  },
+  "Honda Civic Hatchback Hybrid (Europe only) 2023": {
+    "platform": "HONDA_CIVIC_2022",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Civic Hatchback Hybrid (Europe only)",
+    "year": [
+      "2023"
+    ],
+    "package": "All"
+  },
   "Honda CR-V 2015-16": {
     "platform": "HONDA_CRV",
     "make": "Honda",
@@ -924,13 +1023,15 @@
     ],
     "package": "Honda Sensing"
   },
-  "Honda HR-V 2023": {
+  "Honda HR-V 2023-25": {
     "platform": "HONDA_HRV_3G",
     "make": "Honda",
     "brand": "honda",
     "model": "HR-V",
     "year": [
-      "2023"
+      "2023",
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -1709,14 +1810,25 @@
     ],
     "package": "All"
   },
-  "Kia Niro EV 2023-24": {
+  "Kia Niro EV (with HDA II) 2025": {
     "platform": "KIA_NIRO_EV_2ND_GEN",
     "make": "Kia",
     "brand": "hyundai",
-    "model": "Niro EV",
+    "model": "Niro EV (with HDA II)",
+    "year": [
+      "2025"
+    ],
+    "package": "Highway Driving Assist II"
+  },
+  "Kia Niro EV (without HDA II) 2023-25": {
+    "platform": "KIA_NIRO_EV_2ND_GEN",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Niro EV (without HDA II)",
     "year": [
       "2023",
-      "2024"
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -1975,7 +2087,7 @@
     ],
     "package": "All"
   },
-  "Lexus ES 2019-24": {
+  "Lexus ES 2019-25": {
     "platform": "LEXUS_ES_TSS2",
     "make": "Lexus",
     "brand": "toyota",
@@ -1986,7 +2098,8 @@
       "2021",
       "2022",
       "2023",
-      "2024"
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -2039,24 +2152,26 @@
     ],
     "package": "All"
   },
-  "Lexus IS 2022-23": {
+  "Lexus IS 2022-24": {
     "platform": "LEXUS_IS_TSS2",
     "make": "Lexus",
     "brand": "toyota",
     "model": "IS",
     "year": [
       "2022",
-      "2023"
+      "2023",
+      "2024"
     ],
     "package": "All"
   },
-  "Lexus LC 2024": {
+  "Lexus LC 2024-25": {
     "platform": "LEXUS_LC_TSS2",
     "make": "Lexus",
     "brand": "toyota",
     "model": "LC",
     "year": [
-      "2024"
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -2113,6 +2228,16 @@
       "2018",
       "2019",
       "2020"
+    ],
+    "package": "All"
+  },
+  "Lexus RC 2023": {
+    "platform": "LEXUS_RC_TSS2",
+    "make": "Lexus",
+    "brand": "toyota",
+    "model": "RC",
+    "year": [
+      "2023"
     ],
     "package": "All"
   },
@@ -2346,6 +2471,33 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
+  "Ram 2500 2020-24": {
+    "platform": "RAM_HD_5TH_GEN",
+    "make": "Ram",
+    "brand": "chrysler",
+    "model": "2500",
+    "year": [
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+      "2024"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Ram 3500 2019-22": {
+    "platform": "RAM_HD_5TH_GEN",
+    "make": "Ram",
+    "brand": "chrysler",
+    "model": "3500",
+    "year": [
+      "2019",
+      "2020",
+      "2021",
+      "2022"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
   "Rivian R1S 2022-24": {
     "platform": "RIVIAN_R1_GEN1",
     "make": "Rivian",
@@ -2439,6 +2591,17 @@
     ],
     "package": "EyeSight Driver Assistance"
   },
+  "Subaru Forester 2017-18": {
+    "platform": "SUBARU_FORESTER_PREGLOBAL",
+    "make": "Subaru",
+    "brand": "subaru",
+    "model": "Forester",
+    "year": [
+      "2017",
+      "2018"
+    ],
+    "package": "EyeSight Driver Assistance"
+  },
   "Subaru Forester 2019-21": {
     "platform": "SUBARU_FORESTER",
     "make": "Subaru",
@@ -2475,6 +2638,19 @@
     ],
     "package": "EyeSight Driver Assistance"
   },
+  "Subaru Legacy 2015-18": {
+    "platform": "SUBARU_LEGACY_PREGLOBAL",
+    "make": "Subaru",
+    "brand": "subaru",
+    "model": "Legacy",
+    "year": [
+      "2015",
+      "2016",
+      "2017",
+      "2018"
+    ],
+    "package": "EyeSight Driver Assistance"
+  },
   "Subaru Legacy 2020-22": {
     "platform": "SUBARU_LEGACY",
     "make": "Subaru",
@@ -2486,6 +2662,29 @@
       "2022"
     ],
     "package": "All"
+  },
+  "Subaru Outback 2015-17": {
+    "platform": "SUBARU_OUTBACK_PREGLOBAL",
+    "make": "Subaru",
+    "brand": "subaru",
+    "model": "Outback",
+    "year": [
+      "2015",
+      "2016",
+      "2017"
+    ],
+    "package": "EyeSight Driver Assistance"
+  },
+  "Subaru Outback 2018-19": {
+    "platform": "SUBARU_OUTBACK_PREGLOBAL_2018",
+    "make": "Subaru",
+    "brand": "subaru",
+    "model": "Outback",
+    "year": [
+      "2018",
+      "2019"
+    ],
+    "package": "EyeSight Driver Assistance"
   },
   "Subaru Outback 2020-22": {
     "platform": "SUBARU_OUTBACK",
@@ -2654,13 +2853,14 @@
     ],
     "package": "All"
   },
-  "Tesla Model 3 (with HW4) 2024": {
+  "Tesla Model 3 (with HW4) 2024-25": {
     "platform": "TESLA_MODEL_3",
     "make": "Tesla",
     "brand": "tesla",
     "model": "Model 3 (with HW4)",
     "year": [
-      "2024"
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -3231,12 +3431,14 @@
     ],
     "package": "All"
   },
-  "Toyota Yaris 2023 (Non-US only)": {
+  "Toyota Yaris (Non-US only) 2023": {
     "platform": "TOYOTA_YARIS",
     "make": "Toyota",
     "brand": "toyota",
-    "model": "Yaris 2023 (Non-US only)",
-    "year": [],
+    "model": "Yaris (Non-US only)",
+    "year": [
+      "2023"
+    ],
     "package": "All"
   },
   "Volkswagen Arteon 2018-23": {
@@ -3657,14 +3859,15 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
-  "Volkswagen Taos 2022-23": {
+  "Volkswagen Taos 2022-24": {
     "platform": "VOLKSWAGEN_TAOS_MK1",
     "make": "Volkswagen",
     "brand": "volkswagen",
     "model": "Taos",
     "year": [
       "2022",
-      "2023"
+      "2023",
+      "2024"
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
@@ -3704,7 +3907,7 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
-  "Volkswagen Tiguan 2018-23": {
+  "Volkswagen Tiguan 2018-24": {
     "platform": "VOLKSWAGEN_TIGUAN_MK2",
     "make": "Volkswagen",
     "brand": "volkswagen",
@@ -3715,7 +3918,8 @@
       "2020",
       "2021",
       "2022",
-      "2023"
+      "2023",
+      "2024"
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
