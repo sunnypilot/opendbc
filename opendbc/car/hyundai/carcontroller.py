@@ -11,7 +11,7 @@ except ImportError:
   carlog.warning("Unable to import Params from openpilot.common.params.")
   PARAMS_AVAILABLE = False
 
-from opendbc.can.packer import CANPacker
+from opendbc.can import CANPacker
 from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, common_fault_avoidance, \
   make_tester_present_msg, structs, apply_common_steer_angle_limits
 from opendbc.car.common.conversions import Conversions as CV
