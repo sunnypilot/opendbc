@@ -8,6 +8,7 @@ from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParam
 from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
+from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import AdasDrvEcuInterceptorCarController
 from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarController
 
@@ -45,10 +46,11 @@ def process_hud_alert(enabled, fingerprint, hud_control):
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-class CarController(CarControllerBase, EsccCarController, LongitudinalController, MadsCarController):
+class CarController(CarControllerBase, EsccCarController, LongitudinalController, AdasDrvEcuInterceptorCarController, MadsCarController):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     EsccCarController.__init__(self, CP, CP_SP)
+    AdasDrvEcuInterceptorCarController.__init__(self, CP, CP_SP)
     MadsCarController.__init__(self)
     LongitudinalController.__init__(self, CP, CP_SP)
     self.CAN = CanBus(CP)
@@ -63,6 +65,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
+    AdasDrvEcuInterceptorCarController.update(self, CS)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
     if self.frame % 2 == 0:
       LongitudinalController.update(self, CC, CS)
@@ -98,7 +101,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     # *** common hyundai stuff ***
 
     # tester present - w/ no response (keeps relevant ECU disabled)
-    if self.frame % 100 == 0 and not ((self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC) or self.ESCC.enabled) and \
+    if self.frame % 100 == 0 and not ((self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC) or self.ESCC.enabled or self.interceptor.available) and \
             self.CP.openpilotLongitudinalControl:
       # for longitudinal control, either radar or ADAS driving ECU
       addr, bus = 0x7d0, self.CAN.ECAN if self.CP.flags & HyundaiFlags.CANFD else 0
@@ -180,6 +183,9 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     lka_steering = self.CP.flags & HyundaiFlags.CANFD_LKA_STEERING
     lka_steering_long = lka_steering and self.CP.openpilotLongitudinalControl
 
+    if self.interceptor.available:  # ADAS_DRV_INTERCEPT
+      can_sends.extend(self.interceptor.create_adas_drv_intercept_msg(self.packer, self.CAN, self.CP.openpilotLongitudinalControl))
+
     # steering control
     can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon))
 
@@ -198,7 +204,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     if self.CP.openpilotLongitudinalControl:
       if lka_steering:
-        can_sends.extend(hyundaicanfd.create_adrv_messages(self.packer, self.CAN, self.frame))
+        if not self.interceptor.available: # This should probably be more of "if available AND enabled", but at this time, we dont have the "enabled" properly configured (we assume if present, its enabled)
+          can_sends.extend(hyundaicanfd.create_adrv_messages(self.packer, self.CAN, self.frame))
       else:
         can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))
       if self.frame % 2 == 0:

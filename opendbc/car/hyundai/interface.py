@@ -11,6 +11,7 @@ from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.radar_interface import RadarInterface
 
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
+from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import ADAS_INTERCEPTOR_HEARTBEAT_MSG
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
@@ -165,9 +166,17 @@ class CarInterface(CarInterfaceBase):
       # TODO-SP: add route with ESCC message for process replay
       if ESCC_MSG in fingerprint[0]:
         ret.flags |= HyundaiFlagsSP.ENHANCED_SCC.value
+    else:
+      if ADAS_INTERCEPTOR_HEARTBEAT_MSG in fingerprint[0]:
+        ret.flags |= HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR.value
+        stock_cp.alphaLongitudinalAvailable = True
 
     if ret.flags & HyundaiFlagsSP.ENHANCED_SCC:
       ret.safetyParam |= HyundaiSafetyFlagsSP.ESCC
+      stock_cp.radarUnavailable = False
+
+    if alpha_long and ret.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
+      ret.safetyParam |= HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR
       stock_cp.radarUnavailable = False
 
     if stock_cp.flags & HyundaiFlags.HAS_LDA_BUTTON:
@@ -191,7 +200,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def init(CP, CP_SP, can_recv, can_send):
     if CP.openpilotLongitudinalControl and not ((CP.flags & (HyundaiFlags.CANFD_CAMERA_SCC | HyundaiFlags.CAMERA_SCC)) or
-                                                (CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC)):
+                                                (CP_SP.flags & (HyundaiFlagsSP.ENHANCED_SCC | HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR))):
       addr, bus = 0x7d0, CanBus(CP).ECAN if CP.flags & HyundaiFlags.CANFD else 0
       if CP.flags & HyundaiFlags.CANFD_LKA_STEERING.value:
         addr, bus = 0x730, CanBus(CP).ECAN
