@@ -83,8 +83,8 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *msg) {
     }
 
     // steering angle
-    if (addr == 0x125) {
-      int angle_meas_new = (GET_BYTE(to_push, 4) << 8) | GET_BYTE(to_push, 3);
+    if (msg->addr == 0x125U) {
+      int angle_meas_new = (msg->data[4] << 8) | msg->data[3];
       angle_meas_new = to_signed(angle_meas_new, 16);
       update_sample(&angle_meas, angle_meas_new);
     }
