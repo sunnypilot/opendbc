@@ -126,7 +126,7 @@
 |Hyundai|Ioniq Plug-in Hybrid 2019|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Ioniq Plug-in Hybrid 2020-22|All|[Upstream](#upstream)|
 |Hyundai|Kona 2020|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Hyundai|Kona 2022|Smart Cruise Control (SCC)|[Upstream](#upstream)|
+|Hyundai|Kona 2022|Smart Cruise Control (SCC)|[Dashcam mode](#dashcam)|
 |Hyundai|Kona 2024-25|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Kona Electric 2018-21|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Kona Electric 2022-23|Smart Cruise Control (SCC)|[Upstream](#upstream)|
@@ -240,8 +240,8 @@
 |Nissan|Rogue 2018-20|ProPILOT Assist|[Upstream](#upstream)|
 |Nissan|X-Trail 2017|ProPILOT Assist|[Upstream](#upstream)|
 |Ram|1500 2019-24|Adaptive Cruise Control (ACC)|[Upstream](#upstream)|
-|Ram|2500 2020-24|Adaptive Cruise Control (ACC)|[Upstream](#upstream)|
-|Ram|3500 2019-22|Adaptive Cruise Control (ACC)|[Upstream](#upstream)|
+|Ram|2500 2020-24|Adaptive Cruise Control (ACC)|[Dashcam mode](#dashcam)|
+|Ram|3500 2019-22|Adaptive Cruise Control (ACC)|[Dashcam mode](#dashcam)|
 |Rivian|R1S 2022-24|All|[Upstream](#upstream)|
 |Rivian|R1T 2022-24|All|[Upstream](#upstream)|
 |SEAT|Alhambra 2018-20|Adaptive Cruise Control (ACC) & Lane Assist|[Dashcam mode](#dashcam)|
@@ -252,16 +252,16 @@
 |Subaru|Crosstrek 2018-19|EyeSight Driver Assistance|[Upstream](#upstream)|
 |Subaru|Crosstrek 2020-23|EyeSight Driver Assistance|[Upstream](#upstream)|
 |Subaru|Crosstrek Hybrid 2020|EyeSight Driver Assistance|[Dashcam mode](#dashcam)|
-|Subaru|Forester 2017-18|EyeSight Driver Assistance|[Upstream](#upstream)|
+|Subaru|Forester 2017-18|EyeSight Driver Assistance|[Dashcam mode](#dashcam)|
 |Subaru|Forester 2019-21|All|[Upstream](#upstream)|
 |Subaru|Forester 2022-24|All|[Dashcam mode](#dashcam)|
 |Subaru|Forester Hybrid 2020|EyeSight Driver Assistance|[Dashcam mode](#dashcam)|
 |Subaru|Impreza 2017-19|EyeSight Driver Assistance|[Upstream](#upstream)|
 |Subaru|Impreza 2020-22|EyeSight Driver Assistance|[Upstream](#upstream)|
-|Subaru|Legacy 2015-18|EyeSight Driver Assistance|[Upstream](#upstream)|
+|Subaru|Legacy 2015-18|EyeSight Driver Assistance|[Dashcam mode](#dashcam)|
 |Subaru|Legacy 2020-22|All|[Upstream](#upstream)|
-|Subaru|Outback 2015-17|EyeSight Driver Assistance|[Upstream](#upstream)|
-|Subaru|Outback 2018-19|EyeSight Driver Assistance|[Upstream](#upstream)|
+|Subaru|Outback 2015-17|EyeSight Driver Assistance|[Dashcam mode](#dashcam)|
+|Subaru|Outback 2018-19|EyeSight Driver Assistance|[Dashcam mode](#dashcam)|
 |Subaru|Outback 2020-22|All|[Upstream](#upstream)|
 |Subaru|Outback 2023|All|[Dashcam mode](#dashcam)|
 |Subaru|Solterra 2023-25|Any|[Not compatible](#can-bus-security)|
