@@ -2,6 +2,7 @@ import copy
 import numpy as np
 from opendbc.car import CanBusBase
 from opendbc.car.common.conversions import Conversions as CV
+from opendbc.car.crc import CRC16_XMODEM
 from opendbc.car.hyundai.values import HyundaiFlags
 
 
@@ -46,6 +47,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     "STEER_MODE": 0,
     "HAS_LANE_SAFETY": 0,  # hide LKAS settings
     "NEW_SIGNAL_2": 0,
+    "DAMP_FACTOR": 100,  # can potentially tuned for better perf [3, 200]
   }
 
   lkas_values = copy.copy(common_values)
@@ -238,6 +240,7 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "JerkLowerLimit": tuning.jerk_lower,
     "JerkUpperLimit": tuning.jerk_upper,
 
+    "ACC_ObjDist": 1,
     "ObjValid": 0,
     "OBJ_STATUS": 2,
     "SET_ME_2": 0x4,
@@ -245,8 +248,8 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "SET_ME_TMP_64": 0x64,
     "DISTANCE_SETTING": hud_control.leadDistanceBars,
   }
-
-  values.update({"ACC_ObjDist": 1} if cruise_info is None else {s: cruise_info[s] for s in ["ACC_ObjDist", "ACC_ObjRelSpd"]})
+  if cruise_info:
+    values.update({s: cruise_info[s] for s in ["ACC_ObjDist", "ACC_ObjRelSpd"]})
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
@@ -327,3 +330,20 @@ def create_adrv_messages(packer, CAN, frame):
     ret.append(packer.make_can_msg("ADRV_0x1da", CAN.ECAN, values))
 
   return ret
+
+
+def hkg_can_fd_checksum(address: int, sig, d: bytearray) -> int:
+  crc = 0
+  for i in range(2, len(d)):
+    crc = ((crc << 8) ^ CRC16_XMODEM[(crc >> 8) ^ d[i]]) & 0xFFFF
+  crc = ((crc << 8) ^ CRC16_XMODEM[(crc >> 8) ^ ((address >> 0) & 0xFF)]) & 0xFFFF
+  crc = ((crc << 8) ^ CRC16_XMODEM[(crc >> 8) ^ ((address >> 8) & 0xFF)]) & 0xFFFF
+  if len(d) == 8:
+    crc ^= 0x5F29
+  elif len(d) == 16:
+    crc ^= 0x041D
+  elif len(d) == 24:
+    crc ^= 0x819D
+  elif len(d) == 32:
+    crc ^= 0x9F5B
+  return crc
