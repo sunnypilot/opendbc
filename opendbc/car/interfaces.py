@@ -114,6 +114,7 @@ class CarInterfaceBase(ABC):
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     self.CP = CP
     self.CP_SP = CP_SP
+    self.cached_tuning_params: dict[str, str] | None = None
 
     self.frame = 0
     self.v_ego_cluster_seen = False

@@ -64,15 +64,15 @@ class LongitudinalController:
     self.stopping = False
 
     self._last_tuning_params: tuple = ()
+    self._tuning_params_dict: dict[str, str] = {}
 
   def _get_tuning_params_dict(self, params_list) -> None:
     """Update car config when tuning parameters change."""
     tuning_values = tuple(getattr(p, 'value', '') for p in params_list if getattr(p, 'key', '').startswith('LongTuning'))
-
     if tuning_values != self._last_tuning_params:
       self._last_tuning_params = tuning_values
-      params_dict = {p.key: p.value for p in params_list if p.key.startswith('LongTuning')}
-      self.car_config = get_car_config(self.CP, params_dict)
+      self._tuning_params_dict = {p.key: p.value for p in params_list if p.key.startswith('LongTuning')}
+      self.car_config = get_car_config(self.CP, self._tuning_params_dict)
 
   @property
   def enabled(self) -> bool:
