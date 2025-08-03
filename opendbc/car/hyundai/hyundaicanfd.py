@@ -3,6 +3,7 @@ import numpy as np
 from opendbc.car import CanBusBase
 from opendbc.car.crc import CRC16_XMODEM
 from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.sunnypilot.car.hyundai.lead_data_ext import CanFdLeadData
 
 
 class CanBus(CanBusBase):
@@ -53,7 +54,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   lkas_values["LKA_AVAILABLE"] = 0
 
   lfa_values = copy.copy(common_values)
-  lfa_values["NEW_SIGNAL_1"] = 0
+  lfa_values["LKA_RcgSta"] = 3 if lat_active else 0
 
   ret = []
   if CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
@@ -97,13 +98,12 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
     values = {s: cruise_info_copy[s] for s in [
       "COUNTER",
       "CHECKSUM",
-      "NEW_SIGNAL_1",
+      "SCC_SysFlrSta",
       "MainMode_ACC",
       "ACCMode",
       "ZEROS_9",
       "CRUISE_STANDSTILL",
-      "ZEROS_5",
-      "DISTANCE_SETTING",
+      "SCC_HeadwayDstSetVal",
       "VSetDis",
     ]}
   else:
@@ -124,14 +124,15 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
 
 def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
   values = {
-    "HDA_ICON": 1 if enabled else 0,
-    "LFA_ICON": lfa_icon,
+    "HDA_OptUsmSta": 2 if enabled else 0,
+    "HDA_CntrlModSta": 2 if enabled else 1,
+    "HDA_LFA_SymSta": lfa_icon,
   }
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
 
-def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed, hud_control,
-                       main_cruise_enabled, tuning):
+def create_acc_control(packer, CAN, enabled, accel_last, accel, gas_override, set_speed, hud_control,
+                       lead_data: CanFdLeadData, main_cruise_enabled, tuning):
   jerk = 5
   jn = jerk / 50
   if not enabled or gas_override:
@@ -141,25 +142,52 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     a_val = np.clip(accel, accel_last - jn, accel_last + jn)  # noqa: F841
 
   values = {
-    "ACCMode": 0 if not enabled else (2 if gas_override else 1),
+    "ACCMode": 0 if not main_cruise_enabled else 4 if not enabled else 2 if gas_override else 1,
     "MainMode_ACC": 1 if main_cruise_enabled else 0,
+    "SCC_NSCCOnOffSta": 2 if main_cruise_enabled else 0,
+    "SCC_NSCCOpSta": 0 if not enabled else (1 if gas_override else 2),
     "StopReq": 1 if tuning.stopping else 0,
     "aReqValue": tuning.actual_accel,
     "aReqRaw": tuning.actual_accel,
     "VSetDis": set_speed,
     "JerkLowerLimit": tuning.jerk_lower,
     "JerkUpperLimit": tuning.jerk_upper,
+    "SCC_AccelLimBandUppVal": tuning.comfort_band_upper,
+    "SCC_AccelLimBandLwrVal": tuning.comfort_band_lower,
 
-    "ACC_ObjDist": 1,
-    "ObjValid": 0,
-    "OBJ_STATUS": 2,
-    "SET_ME_2": 0x4,
+    "ACC_ObjDist": lead_data.lead_distance,
+    "ObjValid": int(not lead_data.lead_visible),
     "SET_ME_3": 0x3,
     "SET_ME_TMP_64": 0x64,
-    "DISTANCE_SETTING": hud_control.leadDistanceBars,
+    "ACC_ObjRelSpd": lead_data.lead_rel_speed,
+    "SCC_ObjDstLvlVal": lead_data.object_gap,
+    "SCC_HeadwayDstSetVal": hud_control.leadDistanceBars,
+    "SCC_ObjSta": 0 if not (enabled and lead_data.lead_visible) else 1 if gas_override else 2,
+    "SCC_TrgtDstVal": lead_data.target_distance,
   }
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
+
+
+def create_hda2_cluster(packer, CAN, lfa_icon, left_blinker, right_blinker, hud_control, lead_data: CanFdLeadData, out):
+  curvature = int(out.steeringAngleDeg / 2)
+
+  values = {
+    "HDA_LCFuncOptUsmSta": 2,
+    "HDA_LCFuncSta": 3 if left_blinker or right_blinker else lfa_icon,
+    "HDA_LCTurnSigReq": 1 if (left_blinker and not out.leftBlindspot) else 2 if (right_blinker and not out.rightBlindspot) else 0,
+    "HDA_PathSta": 4 if (right_blinker and not out.rightBlindspot)
+                    else 3 if (left_blinker and not out.leftBlindspot)
+                    else 2 if right_blinker else 1 if left_blinker else 0,
+    "HDA_LtLCAvailSta": 0 if not left_blinker else 2 if hud_control.leftLaneDepart else 1, # TODO: 2 when lane change in progress
+    "HDA_RtLCAvailSta": 0 if not right_blinker else 2 if hud_control.rightLaneDepart else 1, # TODO: 2 when lane change in progress
+    "HDA_LtLineLatPos": lead_data.left_laneline,
+    "HDA_RtLineLatPos": lead_data.right_laneline,
+    "HDA_LaneCvrtLvlVal": min(abs(curvature), 14) + (-1 if curvature < 0 else 0),
+    "HDA_LaneCvrtDir": 1 if curvature < 0 else 0,
+  }
+
+  return packer.make_can_msg("ADRV_0x1ea", CAN.ECAN, values)
 
 
 def create_spas_messages(packer, CAN, left_blink, right_blink):
