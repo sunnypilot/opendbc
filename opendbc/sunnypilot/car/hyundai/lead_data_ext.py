@@ -10,11 +10,15 @@ from opendbc.car.hyundai.values import HyundaiFlags
 
 
 class LeadData(ABC):
-  def __init__(self, object_gap: int, lead_distance: float, lead_rel_speed: float, lead_visible: bool):
+  def __init__(self, object_gap: int, lead_distance: float, lead_rel_speed: float, lead_visible: bool,
+               target_distance: float, left_laneline: float = 0, right_laneline: float = 0):
     self.object_gap = object_gap
     self.lead_distance = lead_distance
     self.lead_rel_speed = lead_rel_speed
     self.lead_visible = lead_visible
+    self.target_distance = target_distance
+    self.left_laneline = left_laneline
+    self.right_laneline = right_laneline
 
   @property
   @abstractmethod
@@ -61,6 +65,7 @@ def _hysteresis_update(current, new_value, counter, threshold):
 class LeadDataCarController:
   # Hysteresis parameters
   LEAD_HYSTERESIS_FRAMES: int = 50
+  LANE_POSITION_HYSTERESIS_FRAMES: int = 5
 
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
@@ -75,6 +80,10 @@ class LeadDataCarController:
     self.object_gap = 0
     self.lead_distance = 0
     self.lead_rel_speed = 0
+    self.target_distance = 0
+    self.lane_frame_counter = 0
+    self.left_laneline = 15.0
+    self.right_laneline = 15.0
 
   def _update_object_gap(self, lead_distance: float | None):
     new_gap = 5  # Default gap value if no lead distance is provided
@@ -100,7 +109,60 @@ class LeadDataCarController:
       self._lead_off_counter = counter
       self._lead_on_counter = 0  # reset opposite counter
 
-  def update(self, CC_SP: structs.CarControlSP) -> None:
+  def _update_target_distance(self, vEgo: float, distance_setting: int):
+
+    distance_setting_ttc_vals = {
+      1: 1.2,
+      2: 1.7,
+      3: 2.0
+    }
+
+    ttc_distance = distance_setting_ttc_vals.get(distance_setting, distance_setting_ttc_vals[1])
+    stopping_distance =  max(10., vEgo * ttc_distance)
+
+    self.target_distance = stopping_distance if self.lead_distance == 0 else min (stopping_distance, self.lead_distance)
+
+  def _update_lane_positioning(self, CS: structs.CarState):
+    # Apply hysteresis
+    # self.lane_frame_counter += 1
+    # if self.lane_frame_counter >= self.LANE_POSITION_HYSTERESIS_FRAMES:
+
+    leftlaneraw, rightlaneraw = CS.leftLanePosition, CS.rightLanePosition
+    leftlanequal, rightlanequal = CS.leftLaneQuality, CS.rightLaneQuality
+
+    scale_per_m = 15 / 1.7
+    leftlane = abs(int(round(15 + (leftlaneraw - 1.7) * scale_per_m)))
+    rightlane = abs(int(round(15 + (rightlaneraw - 1.7) * scale_per_m)))
+
+    if leftlanequal not in (2, 3):
+      leftlane = 0
+    if rightlanequal not in (2, 3):
+      rightlane = 0
+
+    if leftlaneraw == -2.0248375:
+      leftlane = 30 - rightlane
+    if rightlaneraw == 2.0248375:
+      rightlane = 30 - leftlane
+
+    if leftlaneraw == rightlaneraw == 0:
+      leftlane = rightlane = 15
+    elif leftlaneraw == 0:
+      leftlane = 30 - rightlane
+    elif rightlaneraw == 0:
+      rightlane = 30 - leftlane
+
+    total = leftlane + rightlane
+    if total == 0:
+      leftlane = rightlane = 15
+    else:
+      leftlane = round((leftlane / total) * 30)
+      rightlane = 30 - leftlane
+
+    self.left_laneline = leftlane
+    self.right_laneline = rightlane
+    # self.lane_frame_counter = 0
+
+  def update(self, CC_SP: structs.CarControlSP, CC: structs.CarControl, CS: structs.CarState) -> None:
     self.lead_one = CC_SP.leadOne
     self.lead_two = CC_SP.leadTwo
 
@@ -108,10 +170,14 @@ class LeadDataCarController:
     self.lead_rel_speed = self.lead_one.vRel
     self._update_lead_visible_hysteresis(self.lead_one.status)
     self._update_object_gap(self.lead_distance)
+    self._update_target_distance(CS.out.vEgo, CC.hudControl.leadDistanceBars)
+    self._update_lane_positioning(CS)
 
   @property
   def lead_data(self) -> CanLeadData | CanFdLeadData:
     if self.CP.flags & HyundaiFlags.CANFD:
-      return CanFdLeadData(self.object_gap, self.lead_distance, self.lead_rel_speed, self.lead_visible)
+      return CanFdLeadData(self.object_gap, self.lead_distance, self.lead_rel_speed, self.lead_visible,
+                           self.target_distance, self.left_laneline, self.right_laneline)
 
-    return CanLeadData(self.object_gap, self.lead_distance, self.lead_rel_speed, self.lead_visible)
+    return CanLeadData(self.object_gap, self.lead_distance, self.lead_rel_speed, self.lead_visible,
+                       self.target_distance)

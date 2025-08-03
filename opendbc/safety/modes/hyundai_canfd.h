@@ -252,6 +252,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(2)
     HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0)
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, false)
+    {0x1EA, 0, 32, .check_relay = false},  // ADRV_0x1ea
   };
 
   // ADRV_0x160 is checked for radar liveness
@@ -261,6 +262,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, true)
     {0x160, 0, 16, .check_relay = true}, // ADRV_0x160
     {0x7D0, 0, 8, .check_relay = false},  // tester present for radar ECU disable
+    {0x1EA, 0, 32, .check_relay = false},  // ADRV_0x1ea
   };
 
   // ADRV_0x160 is checked for relay malfunction
@@ -269,6 +271,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0) \
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
     {0x160, 0, 16, .check_relay = (longitudinal)}, /* ADRV_0x160 */ \
+    {0x1EA, 0, 32, .check_relay = false},  // ADRV_0x1ea
 
   hyundai_common_init(param);
 
