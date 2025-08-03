@@ -19,6 +19,10 @@ class CarStateExt:
     self.CP_SP = CP_SP
 
     self.aBasis = 0.0
+    self.leftLanePosition = 0.0
+    self.rightLanePosition = 0.0
+    self.leftLaneQuality = 0.0
+    self.rightLaneQuality = 0.0
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -84,3 +88,9 @@ class CarStateExt:
     self.aBasis = cp.vl["TCS"]["aBasis"]
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
+
+    if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
+      self.leftLanePosition = cp_cam.vl["FR_CMR_03_50ms"]["Info_LftLnPosVal"]
+      self.rightLanePosition = cp_cam.vl["FR_CMR_03_50ms"]["Info_RtLnPosVal"]
+      self.leftLaneQuality = cp_cam.vl["FR_CMR_03_50ms"]["Info_LftLnQualSta"]
+      self.rightLaneQuality = cp_cam.vl["FR_CMR_03_50ms"]["Info_RtLnQualSta"]

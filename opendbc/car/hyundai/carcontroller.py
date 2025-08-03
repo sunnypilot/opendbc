@@ -69,7 +69,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
-    LeadDataCarController.update(self, CC_SP)
+    LeadDataCarController.update(self, CC_SP, CC, CS)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
     if self.frame % 2 == 0:
       LongitudinalController.update(self, CC, CS)
@@ -201,6 +201,9 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     # LFA and HDA icons
     if self.frame % 5 == 0 and (not lka_steering or lka_steering_long):
       can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
+      can_sends.append(hyundaicanfd.create_hda2_cluster(self.packer, self.CAN, self.lfa_icon,
+                                                        CC.leftBlinker, CC.rightBlinker, CC.hudControl,
+                                                        self.lead_data, CS.out))
 
     # blinkers
     if lka_steering and self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
@@ -212,7 +215,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       else:
         can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))
       if self.frame % 2 == 0:
-        can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
+        can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, CC.cruiseControl.override,
                                                          set_speed_in_units, hud_control, self.lead_data, CS.main_cruise_enabled, self.tuning))
         self.accel_last = accel
     else:
