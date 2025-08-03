@@ -280,6 +280,7 @@ struct CarState {
       setCruise @9;
       resumeCruise @10;
       gapAdjustCruise @11;
+      custom @12;
     }
   }
 

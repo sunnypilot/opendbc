@@ -111,6 +111,9 @@ class CarInterface(CarInterfaceBase):
       if 0x391 in fingerprint[0]:
         ret.flags |= HyundaiFlags.HAS_LDA_BUTTON.value
 
+      if 0x448 in fingerprint[0]:
+        ret.flags |= HyundaiFlags.HAS_CUSTOM_BUTTON.value
+
     # Common lateral control setup
 
     ret.centerToFront = ret.wheelbase * 0.4
