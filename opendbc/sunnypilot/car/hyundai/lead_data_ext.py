@@ -64,6 +64,10 @@ class LeadDataCarController:
 
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
+
+    self.lead_one = {}
+    self.lead_two = {}
+
     self._lead_on_counter = 0
     self._lead_off_counter = 0
     self.lead_visible = False
@@ -97,9 +101,12 @@ class LeadDataCarController:
       self._lead_on_counter = 0  # reset opposite counter
 
   def update(self, CC_SP: structs.CarControlSP) -> None:
-    self.lead_distance = CC_SP.leadData.distance
-    self.lead_rel_speed = CC_SP.leadData.relSpeed
-    self._update_lead_visible_hysteresis(CC_SP.leadData.visible)
+    self.lead_one = CC_SP.leadOne
+    self.lead_two = CC_SP.leadTwo
+
+    self.lead_distance = self.lead_one.dRel
+    self.lead_rel_speed = self.lead_one.vRel
+    self._update_lead_visible_hysteresis(self.lead_one.status)
     self._update_object_gap(self.lead_distance)
 
   @property
