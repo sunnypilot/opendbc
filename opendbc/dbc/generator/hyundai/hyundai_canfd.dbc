@@ -134,18 +134,23 @@ BO_ 298 LFA: 16 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
  SG_ LKA_MODE : 24|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_1 : 27|2@1+ (1,0) [0|255] "" XXX
- SG_ LKA_WARNING : 32|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKA_RcgSta : 27|3@1+ (1,0) [0|7] ""  CLU,CGW
+ SG_ LKA_LHLnWrnSta : 30|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ LKA_RHLnWrnSta : 32|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ LKA_HndsoffSnd : 34|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ LKA_StrSnd : 36|2@1+ (1,0) [0|3] ""  CLU,CGW
  SG_ LKA_ICON : 38|2@1+ (1,0) [0|255] "" XXX
  SG_ TORQUE_REQUEST : 41|11@1+ (1,-1024) [0|4095] "" XXX
- SG_ STEER_REQ : 52|1@1+ (1,0) [0|1] "" XXX
+ SG_ STEER_REQ : 52|2@1+ (1,0) [0|1] "" XXX
  SG_ LFA_BUTTON : 56|1@1+ (1,0) [0|255] "" XXX
- SG_ LKA_ASSIST : 62|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKA_ASSIST : 60|4@1+ (1,0) [0|15] ""  CLU,CGW
  SG_ STEER_MODE : 65|3@1+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_2 : 70|2@0+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_4 : 72|4@1+ (1,0) [0|15] "" XXX
- SG_ HAS_LANE_SAFETY : 80|1@0+ (1,0) [0|1] "" XXX
- SG_ DAMP_FACTOR : 104|8@1+ (1,0) [0|255] "" XXX
+ SG_ HAS_LANE_SAFETY : 80|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ Info_PedtrnDst : 84|3@1+ (1,0) [0|7] ""  CGW
+ SG_ DAMP_FACTOR : 104|8@1+ (1,0) [0|255] ""  CGW
+
 
 BO_ 304 GEAR_SHIFTER: 16 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -315,32 +320,28 @@ BO_ 416 SCC_CONTROL: 32 ADRV
  SG_ SET_ME_3 : 45|2@0+ (1,0) [0|3] "" XXX
  SG_ ObjValid : 46|1@0+ (1,0) [0|3] "" XXX
  SG_ SET_ME_TMP_64 : 55|8@0+ (1,0) [0|63] "" XXX
- SG_ ZEROS_7 : 63|8@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_1 : 64|2@1+ (1,0) [0|3] "" XXX
+ SG_ SCC_SysFlrSta : 64|2@1+ (1,0) [0|3] ""  CLU,CGW
  SG_ MainMode_ACC : 66|1@1+ (1,0) [0|1] "" XXX
  SG_ ACCMode : 68|3@1+ (1,0) [0|7] "" XXX
  SG_ ZEROS_9 : 71|5@1+ (1,0) [0|15] "" XXX
  SG_ CRUISE_STANDSTILL : 76|1@1+ (1,0) [0|1] "" XXX
- SG_ ZEROS_5 : 77|11@1+ (1,0) [0|2047] "" XXX
- SG_ DISTANCE_SETTING : 88|3@1+ (1,0) [0|3] "" XXX
- SG_ ZEROS_8 : 95|5@0+ (1,0) [0|31] "" XXX
- SG_ VSetDis : 103|8@0+ (1,0) [0|255] "km/h or mph" XXX
- SG_ NEW_SIGNAL_6 : 104|1@0+ (1,0) [0|1] "" XXX
- SG_ SET_ME_2 : 105|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_3 : 109|2@0+ (1,0) [0|1] "" XXX
- SG_ ZEROS_10 : 111|2@0+ (1,0) [0|3] "" XXX
- SG_ ZEROS_6 : 119|16@0+ (1,0) [0|65535] "" XXX
+ SG_ SCC_ObjDstLvlVal : 80|8@1+ (1,0) [0|255] ""  CLU,CGW
+ SG_ SCC_HeadwayDstSetVal : 88|8@1+ (1,0) [0|255] "" XXX
+ SG_ VSetDis : 96|8@1+ (1,0) [0|255] "km/h or mph" XXX
+ SG_ SCC_NSCCOpSta : 104|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ SCC_NSCCOnOffSta : 106|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ SCC_ObjSta : 108|3@1+ (1,0) [0|7] ""  CLU,CGW
+ SG_ SCC_SnstvtyModRetVal : 112|3@1+ (1,0) [0|7] ""  CLU,CGW
+ SG_ SCC_NSCCAutoSetSpdUpdtSta : 115|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ SCC_NSCCInfoPUDis : 117|3@1+ (1,0) [0|7] ""  CLU,CGW
  SG_ aReqValue : 128|11@1+ (0.01,-10.23) [-10.23|10.24] "m/s^2" XXX
  SG_ aReqRaw : 140|11@1+ (0.01,-10.23) [-10.23|10.24] "m/s^2" XXX
- SG_ JerkUpperLimit : 158|7@0+ (0.1,0) [0|0] "" XXX
- SG_ JerkLowerLimit : 166|7@0+ (0.1,0) [0|12.7] "m/s^3" XXX
- SG_ NEW_SIGNAL_2 : 168|2@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_8 : 170|4@1+ (1,0) [0|15] "" XXX
- SG_ OBJ_STATUS : 176|3@1+ (1,0) [0|7] "" XXX
- SG_ ZEROS_4 : 183|4@0+ (1,0) [0|63] "" XXX
- SG_ StopReq : 184|1@0+ (1,0) [0|1] "" XXX
- SG_ ZEROS_3 : 191|7@0+ (1,0) [0|127] "" XXX
- SG_ NEW_SIGNAL_15 : 192|11@1+ (0.1,0) [0|204.7] "m" XXX
+ SG_ JerkUpperLimit : 152|7@1+ (0.1,0) [0|12.7] "m/s^3" XXX
+ SG_ JerkLowerLimit : 160|7@1+ (0.1,0) [0|12.7] "m/s^3" XXX
+ SG_ SCC_AccelLimBandUppVal : 168|6@1+ (0.02,0) [0|1.26] "m/s^2"  CGW
+ SG_ SCC_AccelLimBandLwrVal : 176|6@1+ (0.02,0) [0|1.26] "m/s^2"  CGW
+ SG_ StopReq : 184|2@1+ (1,0) [0|1] "" XXX
+ SG_ SCC_TrgtDstVal : 192|11@1+ (0.1,0) [0|204.7] "m"  CLU,CGW
  SG_ ZEROS_2 : 207|5@0+ (1,0) [0|63] "" XXX
  SG_ ZEROS : 215|48@0+ (1,0) [0|281474976710655] "" XXX
 
@@ -424,13 +425,13 @@ BO_ 474 ADRV_0x1da: 32 ADRV
 BO_ 480 LFAHDA_CLUSTER: 16 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_4 : 24|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_5 : 25|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_2 : 30|1@0+ (1,0) [0|1] "" XXX
- SG_ HDA_ICON : 31|1@1+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_1 : 32|3@1+ (1,0) [0|7] "" XXX
- SG_ LFA_ICON : 47|2@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_3 : 49|1@0+ (1,0) [0|1] "" XXX
+ SG_ HDA_OptUsmSta : 24|3@1+ (1,0) [0|7] ""  CLU,CGW
+ SG_ HDA_CntrlModSta : 30|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ HDA_InfoPUDis : 32|3@1+ (1,0) [0|7] ""  CLU,CGW
+ SG_ HDA_LFA_SymSta : 47|2@1+ (1,0) [0|3] ""  CLU,CGW
+ SG_ HDA_LFA_WrnSnd : 49|2@1+ (1,0) [0|3] ""  CLU
+ SG_ HDA_InfoPUDis1 : 51|3@1+ (1,0) [0|7] ""  CLU,CGW
+ SG_ HDA_TDMRMDclReq : 54|2@1+ (1,0) [0|3] ""  Dummy
 
 BO_ 485 BLINDSPOTS_FRONT_CORNER_1: 16 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -446,32 +447,47 @@ BO_ 485 BLINDSPOTS_FRONT_CORNER_1: 16 XXX
  SG_ NEW_SIGNAL_1 : 108|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 490 ADRV_0x1ea: 32 ADRV
- SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
- SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ SET_ME_1C : 31|8@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_1 : 32|2@1+ (1,0) [0|3] "" XXX
+ SG_ ADAS_CMD_Crc32Val : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ ADAS_CMD_AlvCnt32Val : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ HDA_LCFuncOptUsmSta : 26|3@1+ (1,0) [0|7] "" XXX
+ SG_ HDA_LCTurnSigReq : 29|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_LCFuncSta : 32|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_LtLCAvailSta : 35|5@1+ (1,0) [0|31] "" XXX
+ SG_ HDA_RtLCAvailSta : 40|3@1+ (1,0) [0|7] "" XXX
+ SG_ HDA_PathSta : 43|3@1+ (1,0) [0|7] "" XXX
+ SG_ HDA_FrntLtVehLongPos : 46|1@1+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_2 : 47|2@0+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_3 : 55|8@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_4 : 64|6@1+ (1,0) [0|31] "" XXX
- SG_ NEW_SIGNAL_5 : 72|2@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_6 : 75|5@1+ (1,0) [0|31] "" XXX
+ SG_ HDA_FrntLtVehLatPos : 64|6@1+ (1,0) [0|31] "" XXX
+ SG_ HDA_FrntLtVehSta : 72|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_FrntRtVehLongPos : 75|5@1+ (1,0) [0|31] "" XXX
  SG_ NEW_SIGNAL_7 : 80|5@1+ (1,0) [0|31] "" XXX
- SG_ NEW_SIGNAL_8 : 88|7@1+ (1,0) [0|127] "" XXX
- SG_ NEW_SIGNAL_9 : 96|1@0+ (1,0) [0|1] "" XXX
- SG_ SET_ME_FF : 120|8@1+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_10 : 143|5@0+ (1,0) [0|31] "" XXX
+ SG_ HDA_FrntRtVehLatPos : 88|7@1+ (1,0) [0|127] "" XXX
+ SG_ HDA_FrntRtVehSta : 96|1@0+ (1,0) [0|1] "" XXX
+ SG_ HDP_HzrdLmpReq : 104|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDP_HeadLmpReq : 106|3@1+ (1,0) [0|7] "" XXX
+ SG_ HDP_WiperReq : 109|5@1+ (1,0) [0|31] "" XXX
+ SG_ HDP_DfgReqSta : 114|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDP_DrUnlckReqSta : 116|4@1+ (1,0) [0|15] "" XXX
+ SG_ HDA_TtlLnNumVal : 120|4@1+ (1,0) [0|15] "" XXX
+ SG_ HDA_DrvLnNumVal : 124|15@1+ (1,0) [0|32767] "" XXX
+ SG_ HDA_LtVehLongPos : 139|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_10 : 143|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_11 : 144|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_12 : 152|6@1+ (1,0) [0|63] "" XXX
- SG_ NEW_SIGNAL_13 : 160|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_14 : 163|5@1+ (1,0) [0|31] "" XXX
+ SG_ HDA_LtVehLatPos : 152|6@1+ (1,0) [0|63] "" XXX
+ SG_ HDA_LtVehSta : 160|1@0+ (1,0) [0|1] "" XXX
+ SG_ HDA_RtVehLongPos : 163|5@1+ (1,0) [0|31] "" XXX
  SG_ NEW_SIGNAL_16 : 168|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_15 : 175|4@0+ (1,0) [0|63] "" XXX
+ SG_ HDA_RtVehLatPos : 172|3@1+ (1,0) [0|7] "" XXX
+ SG_ NEW_SIGNAL_15 : 175|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_17 : 176|2@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_18 : 184|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_19 : 208|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_20 : 212|1@0+ (1,0) [0|1] "" XXX
- SG_ SET_ME_TMP_F : 232|5@1+ (1,0) [0|31] "" XXX
- SG_ SET_ME_TMP_F_2 : 240|5@1+ (1,0) [0|31] "" XXX
+ SG_ HDA_RtVehSta : 184|1@0+ (1,0) [0|1] "" XXX
+ SG_ HDA_InfoPUDis2 : 204|4@1+ (1,0) [0|15] "" XXX
+ SG_ HDA_LaneCvrtLvlVal : 208|4@1+ (1,15) [0|31] "" XXX
+ SG_ HDA_LaneCvrtDir : 212|1@0+ (1,0) [0|1] "" XXX
+ SG_ HDA_LtLineLatPos : 232|5@1+ (1,0) [0|15] "" XXX
+ SG_ HDA_RtLineLatPos : 240|5@1+ (1,0) [0|15] "" XXX
+ SG_ HDA_LCFuncWrnSnd : 248|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 506 FR_CMR_02_100ms: 32 FR_CMR
  SG_ FR_CMR_Crc2Val : 0|16@1+ (1,0) [0|65535] "" CGW
@@ -712,6 +728,7 @@ CM_ SG_ 373 DriverBraking "Likely derived from BRAKE->BRAKE_POSITION";
 CM_ SG_ 373 DriverBrakingLowSens "Higher threshold version of DriverBraking";
 CM_ SG_ 373 PROBABLY_EQUIP "aeb equip?";
 CM_ SG_ 416 VSetDis "set speed in display units";
+CM_ SG_ 416 SCC_ObjSta "state of in-path object and information of controllable state.";
 CM_ BO_ 437 "Sent by the camera containing lane and lead information.";
 CM_ SG_ 437 FR_CMR_Crc3Val "The data area for CRC calculation is based on the data length (DLC) of the message DB. The CRC shall be calculated over the entire data block (excluding the CRC bytes) including the user data, alive counter and Data ID - CRC Polynomial (0x1021) , In";
 CM_ SG_ 437 FR_CMR_AlvCnt3Val "For the first transmission request for a data element the counter shall be initialized with 0 and shall be incremented by 1 for every subsequent send request. When the counter reaches the maximum value(0xFF), then it shall restart with 0 for the next s";
@@ -904,6 +921,7 @@ VAL_ 354 FAULT_ESS 0 "HIDDEN" 1 "CHECK_EMERGENCY_STOPPING_FUNCTION" 2 "EMERGENCY
 VAL_ 362 BLINKER_CONTROL 1 "hazards" 2 "hazards button backlight" 3 "left blinkers" 4 "right blinkers";
 VAL_ 373 ACCEnable 0 "SCC ready" 1 "SCC temp fault" 2 "SCC permanent fault" 3 "SCC permanent fault, communication issue";
 VAL_ 416 ACCMode 0 "off" 1 "enabled" 2 "driver_override" 3 "off_maybe_fault" 4 "cancelled";
+VAL_ 416 SCC_ObjSta 0 "No in-path object detected" 1 "In-path object detected (uncontrollable)" 2 "In-path object detected (controllable:longitudinal)" 3 "Reserved" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Reserved";
 VAL_ 426 CRUISE_BUTTONS 0 "none" 1 "res_accel" 2 "set_decel" 3 "gap_distance" 4 "pause_resume";
 VAL_ 437 Info_LftLnQualSta 0 "Very Low Quality" 1 "Low Quality" 2 "High Quality" 3 "Very High Quality" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Error indicator";
 VAL_ 437 Info_LftLnDptSta 0 "No Left Line Departure" 1 "Left Line Departure" 2 "Reserved" 3 "Error Indicator";

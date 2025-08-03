@@ -323,9 +323,16 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
       msgs += [
         ("CRUISE_BUTTONS", 50)
       ]
+
+    cam_messages = []
+    if CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
+      cam_messages += [
+        ("FR_CMR_03_50ms", 20),
+      ]
+
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], msgs, CanBus(CP).ECAN),
-      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], CanBus(CP).CAM),
+      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, CanBus(CP).CAM),
     }
 
   def get_can_parsers(self, CP, CP_SP):
