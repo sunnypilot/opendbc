@@ -14,9 +14,9 @@ def make_carparams(flags: IntFlag = HyundaiFlags.LEGACY):
 
 def make_carcontrolsp(leadDistance=10.0, leadRelSpeed=0.0, leadVisible=True):
   c = structs.CarControlSP()
-  c.leadData.distance = leadDistance
-  c.leadData.relSpeed = leadRelSpeed
-  c.leadData.visible = leadVisible
+  c.leadOne.dRel = leadDistance
+  c.leadOne.vRel = leadRelSpeed
+  c.leadOne.status = leadVisible
   return c
 
 
