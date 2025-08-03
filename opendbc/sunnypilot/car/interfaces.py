@@ -38,6 +38,6 @@ def _initialize_custom_longitudinal_tuning(CI: CarInterfaceBase, CP: structs.Car
     if hyundai_longitudinal_tuning == LongitudinalTuningType.PREDICTIVE:
       CP_SP.flags |= HyundaiFlagsSP.LONG_TUNING_PREDICTIVE.value
 
-    if CI.cached_tuning_params != params_dict:
+    if not hasattr(CI, "cached_tuning_params") or CI.cached_tuning_params != params_dict:
       CI.cached_tuning_params = params_dict
       CP_SP = CI.get_longitudinal_tuning_sp(CP, CP_SP, params_dict)
