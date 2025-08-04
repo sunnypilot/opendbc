@@ -197,7 +197,7 @@ class LongitudinalController:
     lower_jerk = max(-j_ego_lower, self.car_config.min_jerk_lower)
 
     # Final jerk limits with thresholds
-    desired_jerk_upper = min(max(j_ego_upper, self.car_config.min_jerk_upper), upper_speed_factor)
+    desired_jerk_upper = max(j_ego_upper, self.car_config.min_jerk_upper, upper_speed_factor)
     desired_jerk_lower = min(lower_jerk, lower_speed_factor)
 
     # Calculate dynamic lower jerk for non-predictive tuning
