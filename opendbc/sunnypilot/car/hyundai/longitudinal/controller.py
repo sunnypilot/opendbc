@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from opendbc.car import structs, DT_CTRL
 from opendbc.car.interfaces import CarStateBase
-from opendbc.car.hyundai.values import CarControllerParams, CAR
+from opendbc.car.hyundai.values import CarControllerParams, CAR, HyundaiFlags
 from opendbc.sunnypilot.car import get_param
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update, \
                                                                 LongitudinalTuningType
@@ -192,9 +192,12 @@ class LongitudinalController:
 
     # If custom tuning is disabled, use upstream fixed values
     if not self.enabled:
-      jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
-      self.jerk_upper = jerk_limit
-      self.jerk_lower = 5.0
+      if self.CP.flags & HyundaiFlags.CANFD:
+        self.jerk_lower = 5.0 if CC.enabled else 1.0
+        self.jerk_upper = 3.0
+      else:
+        self.jerk_upper = 3.0 if long_control_state == LongCtrlState.pid else 1.0
+        self.jerk_lower = 5.0
       return
 
     velocity = CS.out.vEgo
@@ -220,14 +223,14 @@ class LongitudinalController:
     dynamic_desired_lower_jerk = max(self.car_config.min_lower_jerk, min(dynamic_lower_jerk, lower_speed_factor))
 
     # Apply jerk limits based on tuning approach
-    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper, self.car_config.min_upper_jerk)
 
     # Predictive tuning uses calculated desired jerk directly
     # Dynamic tuning applies a ramped approach for smoother transitions
     if self.long_tuning_param == LongitudinalTuningType.PREDICTIVE:
       self.jerk_lower = desired_jerk_lower
     elif self.long_tuning_param == LongitudinalTuningType.DYNAMIC:
-      self.jerk_lower = dynamic_desired_lower_jerk
+      self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk, self.car_config.min_lower_jerk)
 
     # Disable jerk when longitudinal control is inactive
     if not CC.longActive:
@@ -258,7 +261,7 @@ class LongitudinalController:
     if self.stopping:
       self.desired_accel = 0.0
     elif self.CP.carFingerprint == CAR.KIA_NIRO_EV:
-      self.desired_accel = float(np.clip(self.accel_cmd, -2.5, 1.5))
+      self.desired_accel = float(np.clip(self.accel_cmd, -2.0, 1.15))
     else:
       self.desired_accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 

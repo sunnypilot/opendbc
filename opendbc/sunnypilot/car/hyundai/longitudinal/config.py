@@ -4,7 +4,6 @@ Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
 This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
-
 from dataclasses import dataclass, field
 
 from opendbc.car.hyundai.values import CAR
@@ -58,7 +57,7 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.3,
     lookahead_jerk_upper_v=[0.3, 1.0],
     lookahead_jerk_lower_v=[0.2, 0.4],
-    jerk_limits=2.5,
+    jerk_limits=3.0,
   ),
   CAR.KIA_NIRO_PHEV_2022: CarTuningConfig(
     v_ego_stopping=0.3,
