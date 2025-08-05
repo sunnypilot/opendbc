@@ -204,14 +204,14 @@ class LongitudinalController:
     dynamic_desired_lower_jerk = max(self.car_config.min_jerk_lower, min(dynamic_lower_jerk, lower_speed_factor))
 
     # Apply jerk limits based on tuning approach
-    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper, self.car_config.min_jerk_upper)
 
     # Predictive tuning uses calculated desired jerk directly
     # Dynamic tuning applies a ramped approach for smoother transitions
     if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_PREDICTIVE:
       self.jerk_lower = desired_jerk_lower
     else:
-      self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk)
+      self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk, self.car_config.min_jerk_lower)
 
     # Disable jerk when longitudinal control is inactive
     if not CC.longActive:
