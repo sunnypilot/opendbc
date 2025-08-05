@@ -9,7 +9,8 @@ import unittest
 import numpy as np
 from unittest.mock import Mock
 
-from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController, LongitudinalState
+from opendbc.sunnypilot.car.hyundai.longitudinal import config
+from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController, LongitudinalState, SPEED_BP
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import CarStateBase
@@ -20,10 +21,70 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 class TestLongitudinalTuningController(unittest.TestCase):
   def setUp(self):
-    self.mock_CP = Mock(carFingerprint="KIA_NIRO_EV", flags=0)
-    self.mock_CP.radarUnavailable = False
-    self.mock_CP_SP = Mock(flags=0)
-    self.controller = LongitudinalController(self.mock_CP, self.mock_CP_SP)
+    self.CP = Mock(carFingerprint="KIA_NIRO_EV", flags=0)
+    self.CP.radarUnavailable = False
+    self.CP_SP = Mock(flags=0)
+    self.controller = LongitudinalController(self.CP, self.CP_SP)
+
+  def test_config_array_length(self):
+    """Test that all jerk config arrays are the correct length."""
+    all_configs = list(config.TUNING_CONFIGS.items()) + list(config.CAR_SPECIFIC_CONFIGS.items())
+    for name, cfg in all_configs:
+      # lookahead jerk arrays must match each other
+      bp_len = len(cfg.lookahead_jerk_bp)
+      self.assertEqual(bp_len, len(cfg.lookahead_jerk_upper_v), f"{name}: lookahead_jerk_bp and lookahead_jerk_upper_v length mismatch")
+      self.assertEqual(bp_len, len(cfg.lookahead_jerk_lower_v), f"{name}: lookahead_jerk_bp and lookahead_jerk_lower_v length mismatch")
+
+      # jerk arrays must match SPEED_BP
+      self.assertEqual(len(cfg.upper_jerk_v), len(SPEED_BP), f"{name}: upper_jerk_v and SPEED_BP length mismatch")
+      self.assertEqual(len(cfg.lower_jerk_v), len(SPEED_BP), f"{name}: lower_jerk_v and SPEED_BP length mismatch")
+
+  def test_config_array_division(self):
+    """Test that jerk config calculations do not divide by zero."""
+    all_configs = list(config.TUNING_CONFIGS.items()) + list(config.CAR_SPECIFIC_CONFIGS.items())
+    jerk_arrays = [
+      'upper_jerk_v', 'lower_jerk_v',
+      'lookahead_jerk_upper_v', 'lookahead_jerk_lower_v',
+    ]
+
+    CS = Mock()
+    CS.out = Mock(vEgo=5.0, aEgo=1.0)
+    CS.aBasis = 1.0
+    CC = Mock()
+    CC.actuators = Mock(accel=1.0)
+    CC.longActive = True
+    CC.hudControl = Mock(visualAlert=None)
+    CC.actuators.longControlState = LongCtrlState.pid
+
+    for name, cfg in all_configs:
+      # Check for zeros in jerk arrays
+      for array_name in jerk_arrays:
+        arr = getattr(cfg, array_name, None)
+        if arr is not None:
+          for i, val in enumerate(arr):
+            self.assertNotEqual(val, 0.0, f"{name}: {array_name}[{i}] cannot be zero")
+
+      self.assertNotEqual(cfg.jerk_limits, 0.0, f"{name}: jerk_limits cannot be zero")
+
+      # Check that lookahead_jerk_bp values are valid
+      bp = getattr(cfg, 'lookahead_jerk_bp', None)
+      if bp is not None and len(bp) > 1:
+        for i in range(1, len(bp)):
+          self.assertGreater(bp[i], bp[i-1], f"{name}: lookahead_jerk_bp not valid at index {i}: {bp}")
+
+      # Run config through controller and calculate
+      controller = LongitudinalController(self.CP, self.CP_SP)
+      controller.car_config = cfg
+      controller.accel_cmd = 1.0
+      controller.accel_last = 0.5
+
+      try:
+        controller.calculate_jerk(CC, CS, LongCtrlState.pid)
+        controller._calculate_dynamic_lower_jerk(-1.0, 5.0)
+        controller._calculate_lookahead_jerk(0.5, 5.0)
+        controller._calculate_speed_based_jerk_limits(5.0, LongCtrlState.pid)
+      except (ZeroDivisionError, ValueError, AssertionError) as e:
+        self.fail(f"{name}: {type(e).__name__} in controller calculations: {e}")
 
   def test_init(self):
     """Test controller initialization"""
@@ -36,38 +97,40 @@ class TestLongitudinalTuningController(unittest.TestCase):
     self.assertEqual(self.controller.comfort_band_lower, 0.0)
 
   def test_make_jerk_flag_off(self):
-    """Test when LONG_TUNING_DYNAMIC flag is off"""
-    mock_CC, mock_CS = Mock(spec=structs.CarControl), Mock(spec=CarStateBase)
-    mock_CS.out = Mock()
-    mock_CS.out.vEgo = 0.0
-    mock_CS.out.aEgo = 0.0
-    mock_CS.aBasis = 0.0
+    """Test jerk with LONG_TUNING_DYNAMIC flag off"""
+    CC, CS = Mock(spec=structs.CarControl), Mock(spec=CarStateBase)
+    CS.out = Mock(vEgo=5.0, aEgo=-2.0)
+    CS.aBasis = 0.0
 
-    # Test with PID state
-    self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
-    print(f"[PID state] jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
-    self.assertEqual(self.controller.jerk_upper, 3.0)
-    self.assertEqual(self.controller.jerk_lower, 5.0)
+    cases = [
+      # (flags, enabled, state, expected_upper, expected_lower)
+      (0, None, LongCtrlState.pid,      3.0, 5.0),
+      (0, None, LongCtrlState.stopping, 1.0, 5.0),
+      (HyundaiFlags.CANFD, True,  LongCtrlState.pid, 3.0, 5.0),
+      (HyundaiFlags.CANFD, False, LongCtrlState.pid, 3.0, 1.0),
+    ]
 
-    # Test with non-PID state
-    self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.stopping)
-    print(f"[Non-PID state] jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
-    self.assertEqual(self.controller.jerk_upper, 1.0)
-    self.assertEqual(self.controller.jerk_lower, 5.0)
+    for flags, enabled, state, upper, lower in cases:
+      self.controller.CP.flags = flags
+      if enabled is not None:
+        CC.enabled = enabled
+      self.controller.calculate_jerk(CC, CS, state)
+      self.assertEqual(self.controller.jerk_upper, upper)
+      self.assertEqual(self.controller.jerk_lower, lower)
 
   def test_make_jerk_flag_on(self):
     """Only verify that limits update when flags are on."""
     self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
     self.controller.CP.flags = HyundaiFlags.CANFD
-    mock_CC = Mock()
-    mock_CC.actuators = Mock(accel=1.0)
-    mock_CC.longActive = True
+    CC = Mock()
+    CC.actuators = Mock(accel=1.0)
+    CC.longActive = True
     self.controller.stopping = False
-    mock_CS = Mock()
-    mock_CS.out = Mock(aEgo=0.8, vEgo=3.0)
-    mock_CS.aBasis = 0.8
+    CS = Mock()
+    CS.out = Mock(aEgo=0.8, vEgo=3.0)
+    CS.aBasis = 0.8
 
-    self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+    self.controller.calculate_jerk(CC, CS, LongCtrlState.pid)
     print(f"[FlagOn] jerk_upper={self.controller.jerk_upper:.3f}, jerk_lower={self.controller.jerk_lower:.3f}")
     self.assertGreater(self.controller.jerk_upper, 0.0)
     self.assertGreater(self.controller.jerk_lower, 0.0)
@@ -76,22 +139,22 @@ class TestLongitudinalTuningController(unittest.TestCase):
     """Test a_value jerk scaling under tuning branch."""
     self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
     self.controller.CP.radarUnavailable = False
-    mock_CC = Mock()
-    mock_CC.actuators = Mock(accel=1.0)
-    mock_CC.longActive = True
+    CC = Mock()
+    CC.actuators = Mock(accel=1.0)
+    CC.longActive = True
     print("[a_value] starting accel_last:", self.controller.tuning.accel_last)
     # first pass: limit to jerk_upper * DT_CTRL * 2 = 0.1
     self.controller.jerk_upper = 0.1 / (DT_CTRL * 2)
     self.controller.accel_cmd = 1.0  # ensure accel_cmd is set
-    self.controller.calculate_accel(mock_CC)
+    self.controller.calculate_accel(CC)
     print(f"[a_value] pass1 actual_accel={self.controller.actual_accel:.5f}")
     self.assertAlmostEqual(self.controller.actual_accel, 0.1, places=5)
 
     # second pass: limit increment by new jerk_upper
-    mock_CC.actuators.accel = 0.7
+    CC.actuators.accel = 0.7
     self.controller.jerk_upper = 0.2 / (DT_CTRL * 2)
     self.controller.accel_cmd = 0.7  # update accel_cmd
-    self.controller.calculate_accel(mock_CC)
+    self.controller.calculate_accel(CC)
     print(f"[a_value] pass2 actual_accel={self.controller.actual_accel:.5f}")
     self.assertAlmostEqual(self.controller.actual_accel, 0.3, places=5)
 
@@ -111,19 +174,19 @@ class TestLongitudinalTuningController(unittest.TestCase):
     vels[0] = 5.0
     for i in range(1, len(accels)):
       vels[i] = max(0.0, min(30.0, vels[i-1] + accels[i-1] * (DT_CTRL*2)))
-    mock_CC, mock_CS = Mock(), Mock()
-    mock_CC.actuators, mock_CS.out = Mock(), Mock()
-    mock_CC.longActive = True
+    CC, CS = Mock(), Mock()
+    CC.actuators, CS.out = Mock(), Mock()
+    CC.longActive = True
     self.controller.stopping = False
 
     # Test with LONG_TUNING_DYNAMIC only
     self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
     for v, a in zip(vels, accels, strict=True):
-      mock_CS.out.vEgo = float(v)
-      mock_CS.out.aEgo = float(a)
-      mock_CS.aBasis = float(a)
-      mock_CC.actuators.accel = float(a)
-      self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+      CS.out.vEgo = float(v)
+      CS.out.aEgo = float(a)
+      CS.aBasis = float(a)
+      CC.actuators.accel = float(a)
+      self.controller.calculate_jerk(CC, CS, LongCtrlState.pid)
       print(f"[realistic][LONG_TUNING_DYNAMIC] v={v:.2f}, a={a:.2f}, jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
       self.assertGreater(self.controller.jerk_upper, 0.0)
 
@@ -135,11 +198,11 @@ class TestLongitudinalTuningController(unittest.TestCase):
     # Test with LONG_TUNING_DYNAMIC and LONG_TUNING_PREDICTIVE
     self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE
     for v, a in zip(vels, accels, strict=True):
-      mock_CS.out.vEgo = float(v)
-      mock_CS.out.aEgo = float(a)
-      mock_CS.aBasis = float(a)
-      mock_CC.actuators.accel = float(a)
-      self.controller.calculate_jerk(mock_CC, mock_CS, LongCtrlState.pid)
+      CS.out.vEgo = float(v)
+      CS.out.aEgo = float(a)
+      CS.aBasis = float(a)
+      CC.actuators.accel = float(a)
+      self.controller.calculate_jerk(CC, CS, LongCtrlState.pid)
       print(f"[realistic][LONG_TUNING_PREDICTIVE] v={v:.2f}, a={a:.2f}, " +
             f"jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
       self.assertGreater(self.controller.jerk_upper, 0.0)
