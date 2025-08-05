@@ -64,7 +64,8 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
-    LongitudinalController.update(self, CC, CS)
+    if self.frame % 2 == 0:
+      LongitudinalController.update(self, CC, CS)
 
     actuators = CC.actuators
     hud_control = CC.hudControl
