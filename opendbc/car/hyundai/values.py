@@ -126,8 +126,6 @@ class HyundaiFlags(IntFlag):
 
   ALT_LIMITS_2 = 2 ** 26
 
-  HAS_CUSTOM_BUTTON = 2 ** 27
-
 
 class Footnote(Enum):
   CANFD = CarFootnote(

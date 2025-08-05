@@ -111,9 +111,6 @@ class CarInterface(CarInterfaceBase):
       if 0x391 in fingerprint[0]:
         ret.flags |= HyundaiFlags.HAS_LDA_BUTTON.value
 
-      if 0x448 in fingerprint[0]:
-        ret.flags |= HyundaiFlags.HAS_CUSTOM_BUTTON.value
-
     # Common lateral control setup
 
     ret.centerToFront = ret.wheelbase * 0.4
@@ -164,6 +161,9 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+
+    CAN = CanBus(stock_cp, fingerprint)
+
     if not stock_cp.flags & HyundaiFlags.CANFD:
       # TODO-SP: add route with ESCC message for process replay
       if ESCC_MSG in fingerprint[0]:
@@ -181,6 +181,10 @@ class CarInterface(CarInterfaceBase):
 
     if stock_cp.flags & HyundaiFlags.ALT_LIMITS_2:
       stock_cp.dashcamOnly = False
+
+    # These cars have a custom star button on the steering wheel
+    if 0x448 in fingerprint[CAN.ECAN]:
+      ret.flags |= HyundaiFlagsSP.HAS_CUSTOM_BUTTON.value
 
     return ret
 

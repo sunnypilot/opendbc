@@ -3,7 +3,7 @@ import copy
 import math
 
 from opendbc.can import CANDefine, CANParser
-from opendbc.car import Bus, create_button_events, structs
+from opendbc.car import Bus, create_button_events, structs, create_button_events_sp
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, Buttons, CarControllerParams
@@ -12,8 +12,10 @@ from opendbc.car.interfaces import CarStateBase
 from opendbc.sunnypilot.car.hyundai.carstate_ext import CarStateExt
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarStateBase
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarState
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
+ButtonTypeSP = structs.CarStateSP.ButtonEvent.Type
 
 PREV_BUTTON_SAMPLES = 8
 CLUSTER_SAMPLE_RATE = 20  # frames
@@ -198,13 +200,14 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     self.main_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwMain"])
     if self.CP.flags & HyundaiFlags.HAS_LDA_BUTTON:
       self.lda_button = cp.vl["BCM_PO_11"]["LDA_BTN"]
-    if self.CP.flags & HyundaiFlags.HAS_CUSTOM_BUTTON:
+    if self.CP_SP.flags & HyundaiFlagsSP.HAS_CUSTOM_BUTTON:
       self.custom_button = cp.vl["STEERING_WHEEL_MEDIA_BUTTONS"]["CUSTOM_BUTTON"]
 
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
-                        *create_button_events(self.lda_button, prev_lda_button, {1: ButtonType.lkas}),
-                        *create_button_events(self.custom_button, prev_custom_button, {1: ButtonType.altButton2})]
+                        *create_button_events(self.lda_button, prev_lda_button, {1: ButtonType.lkas})]
+
+    ret_sp.buttonEvents = [*create_button_events_sp(self.custom_button, prev_custom_button, {1: ButtonTypeSP.customButton})]
 
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
@@ -300,7 +303,8 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     self.cruise_buttons.extend(cp.vl_all[self.cruise_btns_msg_canfd]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all[self.cruise_btns_msg_canfd]["ADAPTIVE_CRUISE_MAIN_BTN"])
     self.lda_button = cp.vl[self.cruise_btns_msg_canfd]["LDA_BTN"]
-    self.custom_button = cp.vl["STEERING_WHEEL_MEDIA_BUTTONS"]["CUSTOM_BUTTON"]
+    if self.CP_SP.flags & HyundaiFlagsSP.HAS_CUSTOM_BUTTON:
+      self.custom_button = cp.vl["STEERING_WHEEL_MEDIA_BUTTONS"]["CUSTOM_BUTTON"]
     self.buttons_counter = cp.vl[self.cruise_btns_msg_canfd]["COUNTER"]
     ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
@@ -312,8 +316,9 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
-                        *create_button_events(self.lda_button, prev_lda_button, {1: ButtonType.lkas}),
-                        *create_button_events(self.custom_button, prev_custom_button, {1: ButtonType.altButton2})]
+                        *create_button_events(self.lda_button, prev_lda_button, {1: ButtonType.lkas})]
+
+    ret_sp.buttonEvents = [*create_button_events_sp(self.custom_button, prev_custom_button, {1: ButtonTypeSP.customButton})]
 
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
