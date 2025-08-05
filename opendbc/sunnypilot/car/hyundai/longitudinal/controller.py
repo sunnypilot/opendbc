@@ -198,7 +198,7 @@ class LongitudinalController:
     a_ego_blended = float(np.interp(velocity, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
     dynamic_accel_error = a_ego_blended - self.accel_last
     dynamic_lower_jerk = self._calculate_dynamic_lower_jerk(dynamic_accel_error, velocity)
-    dynamic_desired_lower_jerk = min(dynamic_lower_jerk, lower_speed_factor)
+    dynamic_desired_lower_jerk = max(self.car_config.min_jerk_lower, min(dynamic_lower_jerk, lower_speed_factor))
 
     # Apply jerk limits based on tuning approach
     self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
