@@ -151,7 +151,10 @@ class LongitudinalController:
 
     if accel_error < 0:
       # Scale the brake jerk values based on car config
-      lower_max = self.car_config.jerk_limits
+      if self.CP.radarUnavailable:
+        lower_max = 5.0
+      else:
+        lower_max = self.car_config.jerk_limits
       original_values = np.array(DYNAMIC_LOWER_JERK_V)
       scaled_values = original_values * (lower_max / original_values[0])
 
