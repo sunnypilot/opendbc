@@ -275,8 +275,18 @@ class LongitudinalController:
       stopping=self.stopping,
     )
 
-  def emergency_control(self):
+  def emergency_control(self, CC: structs.CarControl) -> None:
     """Handle FCW situations with emergency braking jerk allowed."""
+    if not CC.longActive:
+      self.actual_accel = 0.0
+      self.accel_last = 0.0
+      self.comfort_band_upper = 0.0
+      self.comfort_band_lower = 0.0
+      self.desired_accel = 0.0
+      self.jerk_upper = 0.0
+      self.jerk_lower = 0.0
+      return
+
     self.comfort_band_upper = 0.0
     self.comfort_band_lower = 0.0
     accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
@@ -303,7 +313,7 @@ class LongitudinalController:
     self.get_stopping_state(actuators)
 
     if self.fcw(CC):
-      self.emergency_control()
+      self.emergency_control(CC)
     else:
       self.calculate_jerk(CC, CS, long_control_state)
       self.calculate_accel(CC)

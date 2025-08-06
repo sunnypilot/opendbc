@@ -210,9 +210,11 @@ class TestLongitudinalTuningController(unittest.TestCase):
   def test_emergency_control_negative_accel_limit(self):
     """Test that emergency_control method does not allow accel to exceed -3.5 m/s^2 when jerk_lower is 8.0"""
     def check_emergency(controller, CP, CP_SP, name, cfg):
+      CC = Mock(spec=structs.CarControl)
+      CC.longActive = True
       controller.accel_cmd = -5.0
       controller.accel_last = 0.0
-      controller.emergency_control()
+      controller.emergency_control(CC)
       self.assertGreaterEqual(controller.actual_accel, -3.5)
     self.for_all_configs(check_emergency)
 
