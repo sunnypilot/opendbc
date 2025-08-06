@@ -65,14 +65,24 @@ class LongitudinalController:
 
     self._last_tuning_params: tuple = ()
     self._tuning_params_dict: dict[str, str] = {}
+    self._param_update_counter = 0
 
-  def _get_tuning_params_dict(self, params_list) -> None:
+  def _get_tuning_params_dict(self, CC_SP) -> None:
     """Update car config when tuning parameters change."""
-    tuning_values = tuple(getattr(p, 'value', '') for p in params_list if getattr(p, 'key', '').startswith('LongTuning'))
-    if tuning_values != self._last_tuning_params:
-      self._last_tuning_params = tuning_values
-      self._tuning_params_dict = {p.key: p.value for p in params_list if p.key.startswith('LongTuning')}
-      self.car_config = get_car_config(self.CP, self._tuning_params_dict)
+    params_list = CC_SP.params
+    self.long_tuning_param = int(get_param(params_list, "HyundaiLongitudinalTuning", str(LongitudinalTuningType.OFF)))
+    if self.long_tuning_param != LongitudinalTuningType.OFF:
+      tuning_values = tuple(getattr(p, 'value', '') for p in params_list if getattr(p, 'key', '').startswith('LongTuning'))
+      if tuning_values != self._last_tuning_params:
+        self._last_tuning_params = tuning_values
+        self._tuning_params_dict = {p.key: p.value for p in params_list if p.key.startswith('LongTuning')}
+        self.car_config = get_car_config(self.CP, self._tuning_params_dict)
+
+  def _update_tuning_params(self, CC_SP) -> None:
+    """Update tuning parameters every 3 seconds."""
+    if self._param_update_counter % int(3.0 / (DT_CTRL * 2)) == 0:
+      self._get_tuning_params_dict(CC_SP)
+    self._param_update_counter = (self._param_update_counter + 1) % 1000000
 
   @property
   def enabled(self) -> bool:
@@ -170,7 +180,10 @@ class LongitudinalController:
 
     if accel_error < 0:
       # Scale the brake jerk values based on car config
-      lower_max = self.car_config.jerk_limits
+      if self.CP.radarUnavailable:
+        lower_max = 5.0
+      else:
+        lower_max = self.car_config.jerk_limits
       original_values = np.array(DYNAMIC_LOWER_JERK_V)
       scaled_values = original_values * (lower_max / original_values[0])
 
@@ -261,7 +274,7 @@ class LongitudinalController:
     if self.stopping:
       self.desired_accel = 0.0
     elif self.CP.carFingerprint == CAR.KIA_NIRO_EV:
-      self.desired_accel = float(np.clip(self.accel_cmd, -2.0, 1.15))
+      self.desired_accel = float(np.clip(self.accel_cmd, -2.0, 1.05))
     else:
       self.desired_accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
@@ -296,8 +309,18 @@ class LongitudinalController:
       stopping=self.stopping,
     )
 
-  def emergency_control(self):
+  def emergency_control(self, CC: structs.CarControl) -> None:
     """Handle FCW situations with emergency braking jerk allowed."""
+    if not CC.longActive:
+      self.actual_accel = 0.0
+      self.accel_last = 0.0
+      self.comfort_band_upper = 0.0
+      self.comfort_band_lower = 0.0
+      self.desired_accel = 0.0
+      self.jerk_upper = 0.0
+      self.jerk_lower = 0.0
+      return
+
     self.comfort_band_upper = 0.0
     self.comfort_band_lower = 0.0
     accel = CarControllerParams.ACCEL_MIN
@@ -317,18 +340,15 @@ class LongitudinalController:
         CC_SP: sunnypilot car control signals including longitudinal tuning parameters and flags
         CS: Car state information
     """
-    self.long_tuning_param = int(get_param(CC_SP.params, "HyundaiLongitudinalTuning", str(LongitudinalTuningType.OFF)))
-    if self.long_tuning_param != LongitudinalTuningType.OFF:
-      self._get_tuning_params_dict(CC_SP.params)
-
     actuators = CC.actuators
     long_control_state = actuators.longControlState
     self.accel_cmd = CC.actuators.accel
 
+    self._update_tuning_params(CC_SP)
     self.get_stopping_state(actuators)
 
     if self.fcw(CC):
-      self.emergency_control()
+      self.emergency_control(CC)
     else:
       self.calculate_jerk(CC, CS, long_control_state)
       self.calculate_accel(CC)
