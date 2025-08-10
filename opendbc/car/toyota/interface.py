@@ -4,10 +4,10 @@ from opendbc.car.toyota.carcontroller import CarController
 from opendbc.car.toyota.radar_interface import RadarInterface
 from opendbc.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                                   MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR, \
-                                                  ToyotaSafetyFlags
+                                                  ToyotaSafetyFlags, SECOC_CAR
 from opendbc.car.disable_ecu import disable_ecu
 from opendbc.car.interfaces import CarInterfaceBase
-from opendbc.sunnypilot.car.toyota.values import ToyotaSafetyFlagsSP
+from opendbc.sunnypilot.car.toyota.values import ToyotaSafetyFlagsSP, ToyotaFlagsSP
 
 SteerControlType = structs.CarParams.SteerControlType
 
@@ -156,6 +156,14 @@ class CarInterface(CarInterfaceBase):
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
     if candidate in UNSUPPORTED_DSU_CAR:
       ret.safetyParam |= ToyotaSafetyFlagsSP.UNSUPPORTED_DSU
+
+    if candidate in (TSS2_CAR - SECOC_CAR):
+      ret.flags |= ToyotaFlagsSP.SP_ENHANCED_BSM.value
+    if candidate == CAR.TOYOTA_PRIUS_TSS2:
+      ret.flags |= ToyotaFlagsSP.SP_NEED_DEBUG_BSM.value
+    if candidate in (TSS2_CAR - RADAR_ACC_CAR - SECOC_CAR):
+      ret.flags |= ToyotaFlagsSP.SP_AUTO_BRAKE_HOLD.value
+
 
     return ret
 
