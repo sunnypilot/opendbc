@@ -46,6 +46,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
       'upper_jerk_v', 'lower_jerk_v',
       'lookahead_jerk_upper_v', 'lookahead_jerk_lower_v',
     ]
+
     def check_division(controller, CP, CP_SP, name, cfg):
       CS = Mock()
       CS.out = Mock(vEgo=5.0, aEgo=1.0)
