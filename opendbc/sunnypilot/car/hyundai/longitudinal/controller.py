@@ -10,17 +10,19 @@ from dataclasses import dataclass
 
 from opendbc.car import structs, DT_CTRL
 from opendbc.car.interfaces import CarStateBase
-from opendbc.car.hyundai.values import CarControllerParams
+from opendbc.car.hyundai.values import CarControllerParams, HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
+VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
-MIN_JERK = 0.5
 COMFORT_BAND_VAL = 0.01
 
 DYNAMIC_LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
 DYNAMIC_LOWER_JERK_V  = [3.3,  2.5,  2.0,   1.9,  1.8,   1.65,  1.15,    0.5]
+
+SPEED_BP = [0.0, 5.0, 20.0]
 
 
 @dataclass
@@ -61,6 +63,9 @@ class LongitudinalController:
   def enabled(self) -> bool:
     return bool(self.CP_SP.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE))
 
+  def fcw(self, CC: structs.CarControl) -> bool:
+    return bool(CC.hudControl.visualAlert == VisualAlert.fcw)
+
   def get_stopping_state(self, actuators: structs.CarControl.Actuators) -> None:
     stopping = actuators.longControlState == LongCtrlState.stopping
 
@@ -87,8 +92,7 @@ class LongitudinalController:
 
     self.stopping_count += 1
 
-  @staticmethod
-  def _calculate_speed_based_jerk_limits(velocity: float, long_control_state: LongCtrlState) -> tuple[float, float]:
+  def _calculate_speed_based_jerk_limits(self, velocity: float, long_control_state: LongCtrlState) -> tuple[float, float]:
     """Calculate jerk limits based on vehicle speed according to ISO 15622:2018.
 
     Args:
@@ -101,12 +105,12 @@ class LongitudinalController:
 
     # Upper jerk limit varies based on speed and control state
     if long_control_state == LongCtrlState.pid:
-      upper_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 3.0, 1.6]))
+      upper_limit = float(np.interp(velocity, SPEED_BP, self.car_config.upper_jerk_v))
     else:
       upper_limit = 0.5  # Default for non-PID states
 
     # Lower jerk limit varies based on speed
-    lower_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 4.0, 2.5]))
+    lower_limit = float(np.interp(velocity, SPEED_BP, self.car_config.lower_jerk_v))
 
     return upper_limit, lower_limit
 
@@ -144,12 +148,13 @@ class LongitudinalController:
         Dynamic lower jerk limit (m/s³)
     """
 
-    if self.CP.radarUnavailable:
-      return 5.0
 
     if accel_error < 0:
       # Scale the brake jerk values based on car config
-      lower_max = self.car_config.jerk_limits
+      if self.CP.radarUnavailable:
+        lower_max = 5.0
+      else:
+        lower_max = self.car_config.jerk_limits
       original_values = np.array(DYNAMIC_LOWER_JERK_V)
       scaled_values = original_values * (lower_max / original_values[0])
 
@@ -171,9 +176,12 @@ class LongitudinalController:
 
     # If custom tuning is disabled, use upstream fixed values
     if not self.enabled:
-      jerk_limit = 3.0 if long_control_state == LongCtrlState.pid else 1.0
-      self.jerk_upper = jerk_limit
-      self.jerk_lower = 5.0
+      if self.CP.flags & HyundaiFlags.CANFD:
+        self.jerk_lower = 5.0 if CC.enabled else 1.0
+        self.jerk_upper = 3.0
+      else:
+        self.jerk_upper = 3.0 if long_control_state == LongCtrlState.pid else 1.0
+        self.jerk_lower = 5.0
       return
 
     velocity = CS.out.vEgo
@@ -186,29 +194,27 @@ class LongitudinalController:
     j_ego_upper, j_ego_lower = self._calculate_lookahead_jerk(accel_error, velocity)
 
     # Calculate lower jerk limit
-    lower_jerk = max(-j_ego_lower, MIN_JERK)
-    if self.CP.radarUnavailable:
-      lower_jerk = 5.0
+    lower_jerk = max(-j_ego_lower, self.car_config.min_jerk_lower)
 
     # Final jerk limits with thresholds
-    desired_jerk_upper = min(max(j_ego_upper, MIN_JERK), upper_speed_factor)
+    desired_jerk_upper = min(max(j_ego_upper, self.car_config.min_jerk_upper), upper_speed_factor)
     desired_jerk_lower = min(lower_jerk, lower_speed_factor)
 
     # Calculate dynamic lower jerk for non-predictive tuning
     a_ego_blended = float(np.interp(velocity, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
     dynamic_accel_error = a_ego_blended - self.accel_last
     dynamic_lower_jerk = self._calculate_dynamic_lower_jerk(dynamic_accel_error, velocity)
-    dynamic_desired_lower_jerk = min(dynamic_lower_jerk, lower_speed_factor)
+    dynamic_desired_lower_jerk = max(self.car_config.min_jerk_lower, min(dynamic_lower_jerk, lower_speed_factor))
 
     # Apply jerk limits based on tuning approach
-    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper, self.car_config.min_jerk_upper)
 
     # Predictive tuning uses calculated desired jerk directly
     # Dynamic tuning applies a ramped approach for smoother transitions
     if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_PREDICTIVE:
       self.jerk_lower = desired_jerk_lower
     else:
-      self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk)
+      self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk, self.car_config.min_jerk_lower)
 
     # Disable jerk when longitudinal control is inactive
     if not CC.longActive:
@@ -272,6 +278,27 @@ class LongitudinalController:
       stopping=self.stopping,
     )
 
+  def emergency_control(self, CC: structs.CarControl) -> None:
+    """Handle FCW situations with emergency braking jerk allowed."""
+    if not CC.longActive:
+      self.actual_accel = 0.0
+      self.accel_last = 0.0
+      self.comfort_band_upper = 0.0
+      self.comfort_band_lower = 0.0
+      self.desired_accel = 0.0
+      self.jerk_upper = 0.0
+      self.jerk_lower = 0.0
+      return
+
+    self.comfort_band_upper = 0.0
+    self.comfort_band_lower = 0.0
+    accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    self.desired_accel = accel
+    self.actual_accel = accel
+    self.accel_last = self.actual_accel
+    self.jerk_upper = 0.5
+    self.jerk_lower = 8.0
+
   def update(self, CC: structs.CarControl, CS: CarStateBase) -> None:
     """Update longitudinal control calculations.
 
@@ -287,9 +314,13 @@ class LongitudinalController:
     self.accel_cmd = CC.actuators.accel
 
     self.get_stopping_state(actuators)
-    self.calculate_jerk(CC, CS, long_control_state)
-    self.calculate_accel(CC)
-    self.calculate_comfort_band(CC)
-    self.get_tuning_state()
 
+    if self.fcw(CC):
+      self.emergency_control(CC)
+    else:
+      self.calculate_jerk(CC, CS, long_control_state)
+      self.calculate_accel(CC)
+      self.calculate_comfort_band(CC)
+
+    self.get_tuning_state()
     self.long_control_state_last = long_control_state
