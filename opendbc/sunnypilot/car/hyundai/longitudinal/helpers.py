@@ -28,6 +28,8 @@ def create_config_from_params(params_dict: dict[str, str], base_config: CarTunin
     return [float(x.strip()) for x in val.split(',')] if val else default_list
 
   return CarTuningConfig(
+    accel_min=float(params_dict.get("LongTuningAccelMin", str(base_config.accel_min))),
+    accel_max=float(params_dict.get("LongTuningAccelMax", str(base_config.accel_max))),
     v_ego_stopping=float(params_dict.get("LongTuningVEgoStopping", str(base_config.v_ego_stopping))),
     v_ego_starting=float(params_dict.get("LongTuningVEgoStarting", str(base_config.v_ego_starting))),
     stopping_decel_rate=float(params_dict.get("LongTuningStoppingDecelRate", str(base_config.stopping_decel_rate))),

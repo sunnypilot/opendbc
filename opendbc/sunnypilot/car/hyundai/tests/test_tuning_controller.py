@@ -93,6 +93,16 @@ class TestLongitudinalTuningController(unittest.TestCase):
       self.assertEqual(controller.comfort_band_lower, 0.0)
     self.for_all_configs(check_init)
 
+  def test_accel_min_max_config(self):
+    """Test that all configs have valid accel min and accel max values."""
+    def check_accel_limits(controller, CP, CP_SP, name, cfg):
+      self.assertGreaterEqual(cfg.accel_min, -3.5,  f"{name}: accel min must not exceed -3.5 m/s^2")
+      self.assertLessEqual(cfg.accel_max, 2.0,  f"{name}: accel max must not exceed 2.0 m/s^2")
+      self.assertLess(cfg.accel_min, cfg.accel_max, f"{name}: accel min > accel max")
+      self.assertLess(cfg.accel_min, 0.0, f"{name}: accel min must be negative")
+      self.assertGreater(cfg.accel_max, 0.0, f"{name}: accel max must be positive")
+    self.for_all_configs(check_accel_limits)
+
   def test_make_jerk_flag_off(self):
     """Test jerk with LONG_TUNING_DYNAMIC flag off"""
     def check_flag_off(controller, CP, CP_SP, name, cfg):

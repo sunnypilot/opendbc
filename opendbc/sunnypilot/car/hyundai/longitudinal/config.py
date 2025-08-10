@@ -23,6 +23,8 @@ class CarTuningConfig:
   lower_jerk_v: list[float] = field(default_factory=lambda: [5.0, 5.0, 3.0])
   min_upper_jerk: float = 0.5
   min_lower_jerk: float = 0.5
+  accel_min: float = -3.5
+  accel_max: float = 2.0
 
 
 # Default configurations for different car types
@@ -57,6 +59,8 @@ CAR_SPECIFIC_CONFIGS = {
     stopping_decel_rate=0.3,
     lower_jerk_v=[4.0, 3.0, 3.5],
     jerk_limits=3.0,
+    accel_min=-2.5,
+    accel_max=1.05,
   ),
   CAR.KIA_NIRO_PHEV_2022: CarTuningConfig(
     v_ego_stopping=0.3,
