@@ -556,20 +556,6 @@ FW_VERSIONS = {
       b'54008-THR-A020\x00\x00',
     ],
   },
-  CAR.HONDA_ODYSSEY_CHN: {
-    (Ecu.eps, 0x18da30f1, None): [
-      b'39990-T6D-H220\x00\x00',
-    ],
-    (Ecu.gateway, 0x18daeff1, None): [
-      b'38897-T6A-J010\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x18dab0f1, None): [
-      b'36161-T6A-P040\x00\x00',
-    ],
-    (Ecu.srs, 0x18da53f1, None): [
-      b'77959-T6A-P110\x00\x00',
-    ],
-  },
   CAR.HONDA_PILOT: {
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TG7-A520\x00\x00',
@@ -951,9 +937,31 @@ FW_VERSIONS = {
   CAR.HONDA_PILOT_4G: {
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'8S102-T90-A050\x00\x00',
+      b'8S102-T90-A060\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'8S302-T90-A040\x00\x00',
+    ],
+  },
+  CAR.HONDA_ACCORD_11G: {
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39991-30B-A060\x00\x00',
+    ],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'5J802-30B-AA10\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-30B-A750\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'8S302-30A-A040\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x18dab5f1, None): [
+      b'8S102-30A-A050\x00\x00',
+      b'8S102-30A-A060\x00\x00',
+    ],
+    (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-30B-A030\x00\x00',
     ],
   },
 }
