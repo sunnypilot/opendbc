@@ -41,6 +41,7 @@ def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: dict[int, st
                                                  type=buttons_dict.get(btn, ButtonType.unknown)))
   return events
 
+
 def create_button_events_sp(cur_btn: int, prev_btn: int, buttons_dict: dict[int, structs.CarStateSP.ButtonEvent.Type],
                          unpressed_btn: int = 0) -> list[structs.CarStateSP.ButtonEvent]:
   events: list[structs.CarStateSP.ButtonEvent] = []
