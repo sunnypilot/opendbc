@@ -250,7 +250,7 @@ class LongitudinalController:
     if self.stopping:
       self.desired_accel = 0.0
     else:
-      self.desired_accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+      self.desired_accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, self.car_config.accel_max))
 
     # Apply jerk-limited integration to get smooth acceleration
     self.actual_accel = jerk_limited_integrator(self.desired_accel, self.accel_last, self.jerk_upper, self.jerk_lower)

@@ -24,6 +24,8 @@ class LongitudinalTuningType:
 def create_config_from_params(params_dict: dict[str, str], base_config: CarTuningConfig) -> CarTuningConfig:
   """Create a CarTuningConfig from parameter values."""
   return CarTuningConfig(
+    accel_min=float(params_dict.get("LongTuningAccelMin", str(base_config.accel_min))),
+    accel_max=float(params_dict.get("LongTuningAccelMax", str(base_config.accel_max))),
     v_ego_stopping=float(params_dict.get("LongTuningVEgoStopping", str(base_config.v_ego_stopping))),
     stopping_decel_rate=float(params_dict.get("LongTuningStoppingDecelRate", str(base_config.stopping_decel_rate))),
     jerk_limits=float(params_dict.get("LongTuningJerkLimits", str(base_config.jerk_limits))),
