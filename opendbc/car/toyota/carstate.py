@@ -1,5 +1,6 @@
 import copy
-
+from cereal import custom
+from openpilot.common.params import Params
 from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, DT_CTRL, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
@@ -11,7 +12,7 @@ from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
 SteerControlType = structs.CarParams.SteerControlType
-
+AccelPersonality = custom.LongitudinalPlanSP.AccelerationPersonality
 # These steering fault definitions seem to be common across LKA (torque) and LTA (angle):
 # - high steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
 # - lka/lta msg drop out: goes to 9 then 11 for a combined total of 2 seconds, then 3.
@@ -69,6 +70,14 @@ class CarState(CarStateBase):
     self._right_blindspot_d2 = 0
     self._right_blindspot_counter = 0
 
+    self.signals_checked = False
+    self.sport_signal_seen = False
+    self.eco_signal_seen = False
+    self.accel_profile = None
+    self.prev_accel_profile = None
+    self.accel_profile_init = False
+    self.toyota_drive_mode = Params().get_bool('ToyotaDriveMode')
+
     if CP_SP.flags & ToyotaFlagsSP.SP_AUTO_BRAKE_HOLD:
       self.pre_collision_2 = {}
 
@@ -102,6 +111,52 @@ class CarState(CarStateBase):
       can_gear = int(cp.vl["GEAR_PACKET"]["GEAR"])
       if not self.CP.enableDsu and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
         ret.stockAeb = bool(cp_acc.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_acc.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
+
+    if self.toyota_drive_mode:
+      # Determine sport signal based on car model
+      sport_signal = 'SPORT_ON_2' if self.CP.carFingerprint in (CAR.TOYOTA_RAV4_TSS2, CAR.LEXUS_ES_TSS2, CAR.TOYOTA_HIGHLANDER_TSS2) else 'SPORT_ON'
+
+      # Check signals once
+      if not self.signals_checked:
+        self.signals_checked = True
+
+        # Try to detect sport mode signal, handle missing signal with a fallback
+        try:
+          sport_mode = cp.vl["GEAR_PACKET"][sport_signal]
+          self.sport_signal_seen = True
+        except KeyError:
+          sport_mode = 0
+          self.sport_signal_seen = False
+
+        # Try to detect eco mode signal, handle missing signal with a fallback
+        try:
+          eco_mode = cp.vl["GEAR_PACKET"]['ECON_ON']
+          self.eco_signal_seen = True
+        except KeyError:
+          eco_mode = 0
+          self.eco_signal_seen = False
+      else:
+        # Always re-check the signals to account for mode changes
+        sport_mode = cp.vl["GEAR_PACKET"][sport_signal] if self.sport_signal_seen else 0
+        eco_mode = cp.vl["GEAR_PACKET"]['ECON_ON'] if self.eco_signal_seen else 0
+
+      # Set acceleration profile based on detected modes, with sport mode having higher priority
+      if sport_mode == 1:
+        self.accel_profile = AccelPersonality.sport
+      elif eco_mode == 1:
+        self.accel_profile = AccelPersonality.eco
+      else:
+        self.accel_profile = AccelPersonality.normal
+
+      print(f"Accel profile set to: {self.accel_profile}")
+
+      # If not initialized, sync profile with the current mode on the car
+      if not self.accel_profile_init or self.accel_profile != self.prev_accel_profile:
+        #Params().put_nonblocking('AccelPersonality', str(self.accel_profile))
+        Params().put_nonblocking('AccelPersonality', int(self.accel_profile))
+        self.accel_profile_init = True
+        # Update the previous profile to prevent unnecessary re-syncing
+        self.prev_accel_profile = self.accel_profile
 
     self.parse_wheel_speeds(ret,
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
