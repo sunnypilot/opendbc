@@ -118,9 +118,9 @@ class LeadDataCarController:
     }
 
     ttc_distance = distance_setting_ttc_vals.get(distance_setting, distance_setting_ttc_vals[1])
-    stopping_distance =  max(10., vEgo * ttc_distance)
+    stopping_distance = max(10., vEgo * ttc_distance)
 
-    self.target_distance = stopping_distance if self.lead_distance == 0 else min (stopping_distance, self.lead_distance)
+    self.target_distance = stopping_distance if self.lead_distance == 0 else min(stopping_distance, self.lead_distance)
 
   def _update_lane_positioning(self, CS: structs.CarState):
     # Apply hysteresis
