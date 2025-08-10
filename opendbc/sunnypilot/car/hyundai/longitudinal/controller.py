@@ -148,7 +148,6 @@ class LongitudinalController:
         Dynamic lower jerk limit (m/s³)
     """
 
-
     if accel_error < 0:
       # Scale the brake jerk values based on car config
       if self.CP.radarUnavailable:
