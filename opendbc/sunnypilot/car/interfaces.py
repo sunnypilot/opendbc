@@ -17,13 +17,13 @@ def setup_interfaces(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs
                      params_list: list[dict[str, str]], can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
   params_dict = {k: v for param in params_list for k, v in param.items()}
 
-  _initialize_radar_tracks(CP, can_recv, can_send)
+  _initialize_radar_tracks(CP, CP_SP, can_recv, can_send)
   _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
 
 
-def _initialize_radar_tracks(CP: structs.CarParams, can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
+def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
   if CP.brand == 'hyundai':
-    if CP.flags & HyundaiFlags.MANDO_RADAR and CP.radarUnavailable:
+    if CP.flags & HyundaiFlags.MANDO_RADAR and (CP.radarUnavailable or CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC):
       tracks_enabled = hyundai_enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
       CP.radarUnavailable = not tracks_enabled
 
