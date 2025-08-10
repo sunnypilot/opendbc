@@ -88,6 +88,7 @@ def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: floa
     return (apply_angle * adjusted_alpha_limited) + (apply_angle_last * (1 - adjusted_alpha_limited))
   return apply_angle
 
+
 def process_hud_alert(enabled, fingerprint, hud_control):
   sys_warning = (hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw))
 
@@ -111,6 +112,7 @@ def process_hud_alert(enabled, fingerprint, hud_control):
 
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
+
 def parse_tq_rdc_gain(val):
   """
   Returns the float value divided by 100 if val is not None, else returns None.
@@ -119,10 +121,12 @@ def parse_tq_rdc_gain(val):
     return float(val) / 100
   return None
 
+
 def parse_scaled_value(val, scale=10):
   if val is not None:
     return float(val) / scale
   return None
+
 
 class CarController(CarControllerBase, EsccCarController, LongitudinalController, MadsCarController):
   def __init__(self, dbc_names, CP, CP_SP):
