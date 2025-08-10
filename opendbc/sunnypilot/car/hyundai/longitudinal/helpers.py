@@ -14,11 +14,11 @@ from opendbc.sunnypilot.car.hyundai.longitudinal.config import CarTuningConfig, 
 JERK_THRESHOLD = 0.1
 JERK_STEP = 0.1
 
+
 class LongitudinalTuningType:
   OFF = 0
   DYNAMIC = 1
   PREDICTIVE = 2
-
 
 
 def create_config_from_params(params_dict: dict[str, str], base_config: CarTuningConfig) -> CarTuningConfig:
@@ -41,6 +41,7 @@ def create_config_from_params(params_dict: dict[str, str], base_config: CarTunin
     min_upper_jerk=float(params_dict.get("LongTuningMinUpperJerk", str(base_config.min_upper_jerk))),
     min_lower_jerk=float(params_dict.get("LongTuningMinLowerJerk", str(base_config.min_lower_jerk))),
   )
+
 
 def get_car_config(CP: structs.CarParams, params_dict: dict[str, str] = None) -> CarTuningConfig:
   base_config = _get_base_config(CP)
