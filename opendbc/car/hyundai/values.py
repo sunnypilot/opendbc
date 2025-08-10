@@ -2,13 +2,17 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 
-from opendbc.car import AngleSteeringLimits, Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds, MAX_LATERAL_ACCEL, MAX_LATERAL_JERK
+from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds, ACCELERATION_DUE_TO_GRAVITY
+from opendbc.car.lateral import AngleSteeringLimits, ISO_LATERAL_ACCEL
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, Device
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = CarParams.Ecu
+
+# Add extra tolerance for average banked road since safety doesn't have the roll
+AVERAGE_ROAD_ROLL = 0.00  # ~0 degrees, 0% superelevation. higher actual roll lowers lateral acceleration (it's 0 for HKG to remove margin)
 
 
 class CarControllerParams:
@@ -25,9 +29,9 @@ class CarControllerParams:
     # HKG uses a vehicle model instead, check carcontroller.py for details
     ([], []),
     ([], []),
-    100,  # hz
-    MAX_LATERAL_ACCEL,  # We follow the limits unless we ARE the baseline model, then we further limit on carcontroller
-    MAX_LATERAL_JERK  # We follow the limits unless we ARE the baseline model, then we further limit on carcontroller
+    MAX_LATERAL_ACCEL=(ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)),  # ~3.0 m/s^2
+    MAX_LATERAL_JERK=(3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)),  # ~3.0 m/s^3,
+    MAX_ANGLE_RATE=5  # comfort rate limit for angle commands, in degrees per frame.
   )
 
   # Torque control parameters:
@@ -78,7 +82,7 @@ class CarControllerParams:
       self.STEER_DELTA_DOWN = 3
 
     if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
-      self.STEER_THRESHOLD = 350
+      self.STEER_THRESHOLD = 250
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.

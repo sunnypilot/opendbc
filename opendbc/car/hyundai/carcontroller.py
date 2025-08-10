@@ -13,7 +13,7 @@ except ImportError:
 
 from opendbc.can import CANPacker
 from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs
-from opendbc.car.lateral import apply_driver_steer_torque_limits, common_fault_avoidance, apply_common_steer_angle_limits
+from opendbc.car.lateral import apply_driver_steer_torque_limits, common_fault_avoidance, apply_steer_angle_limits_vm
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
 from opendbc.car.hyundai.hyundaicanfd import CanBus
@@ -36,9 +36,30 @@ MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 MAX_ANGLE_RATE = 5
 ANGLE_SAFETY_BASELINE_MODEL = "HYUNDAI_SANTA_FE_HEV_5TH_GEN"
 
+
 def get_baseline_safety_cp():
-  from opendbc.car.tesla.interface import CarInterface
+  from opendbc.car.hyundai.interface import CarInterface
   return CarInterface.get_non_essential_params(ANGLE_SAFETY_BASELINE_MODEL)
+
+
+def calculate_angle_torque_reduction_gain(params, CS, apply_torque_last, target_torque_reduction_gain):
+  """ Calculate the angle torque reduction gain based on the current steering state. """
+  if CS.out.steeringPressed:  # User is overriding
+    torque_delta = apply_torque_last - params.ANGLE_MIN_TORQUE_REDUCTION_GAIN
+    adaptive_ramp_rate = max(torque_delta / params.ANGLE_TORQUE_OVERRIDE_CYCLES, 0.004) # the minimum rate of change we've seen
+    return max(apply_torque_last - adaptive_ramp_rate, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN)
+  else:
+    # EU vehicles have been seen to "idle" at 0.384, while US vehicles have been seen idling at "0.92" for LFA.
+    target_torque = max(target_torque_reduction_gain, 0.5) # at 0.5 under normal conditions
+    target_torque = max(target_torque, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN)
+
+    if apply_torque_last > target_torque:
+      reduced_torque = max(apply_torque_last - params.ANGLE_RAMP_DOWN_TORQUE_REDUCTION_RATE, target_torque)
+    else:
+      reduced_torque = min(apply_torque_last + params.ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE, target_torque)
+
+  return float(np.clip(reduced_torque, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN, params.ANGLE_MAX_TORQUE_REDUCTION_GAIN))
+
 
 def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: float) -> float:
   """
@@ -116,8 +137,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # Vehicle model used for lateral limiting
     self.VM = VehicleModel(CP)
-    BASELINE_CP = get_baseline_safety_cp()
-    self.BASELINE_VM = VehicleModel(BASELINE_CP)
+    self.BASELINE_VM = VehicleModel(get_baseline_safety_cp())
 
     self.accel_last = 0
     self.apply_torque_last = 0
@@ -135,7 +155,6 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     self.active_torque_reduction_gain = self.params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN
     self.angle_torque_override_cycles = self.params.ANGLE_TORQUE_OVERRIDE_CYCLES
     self.angle_enable_smoothing_factor = True
-    self.angle_limits = CarControllerParams.ANGLE_LIMITS
 
     self._params = Params() if PARAMS_AVAILABLE else None
     if PARAMS_AVAILABLE:
@@ -144,12 +163,6 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       self.active_torque_reduction_gain = parse_tq_rdc_gain(self._params.get("HkgTuningAngleActiveTorqueReductionGain")) or self.active_torque_reduction_gain
       self.angle_torque_override_cycles = int(self._params.get("HkgTuningOverridingCycles") or self.angle_torque_override_cycles)
       self.angle_enable_smoothing_factor = self._params.get_bool("EnableHkgTuningAngleSmoothingFactor")
-
-    if self.CP.carFingerprint == BASELINE_CP.carFingerprint:
-      # If the car is the same as the baseline model, we limit it slightly. If we are NOT the baseline model, we are already being limited by that.
-      self.angle_limits.MAX_LATERAL_JERK = self.angle_limits.MAX_LATERAL_JERK * 0.8
-      self.angle_limits.MAX_LATERAL_ACCEL = self.angle_limits.MAX_LATERAL_ACCEL * 0.8
-
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
@@ -170,10 +183,27 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     # angle control
     else:
-      self.apply_angle_last, apply_torque = self.update_angle_steering_control(CS, CC,actuators)
-      # Safety clamp
-      apply_torque = float(np.clip(apply_torque, self.min_torque_reduction_gain, self.max_torque_reduction_gain))
-      apply_steer_req = CC.latActive and apply_torque != 0
+      v_ego_raw = CS.out.vEgoRaw
+      apply_angle = np.clip(actuators.steeringAngleDeg, -819.2, 819.1)
+
+      if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
+        apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last)
+
+      apply_angle = apply_steer_angle_limits_vm(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params, self.VM)
+
+      # if we are not the baseline model, we use the baseline model for further limits to prevent a panda block since it is hardcoded for baseline model.
+      if self.CP.carFingerprint != ANGLE_SAFETY_BASELINE_MODEL:
+        apply_angle = apply_steer_angle_limits_vm(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params,
+                                                  self.BASELINE_VM)
+
+      self.apply_angle_last = apply_angle
+
+      # upstream has it hardcoded to 1. but we use actuators for the time being
+      # target_torque_reduction_gain = 1. if CC.latActive else 0
+      target_torque_reduction_gain = abs(actuators.torque) if CC.latActive else 0
+
+      apply_torque = calculate_angle_torque_reduction_gain(self.params, CS, self.apply_torque_last, target_torque_reduction_gain)
+      apply_steer_req = CC.latActive and apply_torque != 0  # apply_steer_req is True when we are actively attempting to steer
 
     if not CC.latActive:
       apply_torque = 0
@@ -327,42 +357,3 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
             self.last_button_frame = self.frame
 
     return can_sends
-
-  def apply_hyundai_steer_angle_limits(self, CS, CC, apply_angle: float) -> float:
-    v_ego_raw = CS.out.vEgoRaw
-    apply_angle = np.clip(apply_angle, -819.2, 819.1)
-
-    if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
-      apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last)
-
-    # We use the vehicle model to apply steering limits specific to the current car.
-    current_vm_angle_desire = apply_common_steer_angle_limits(apply_angle, self.apply_angle_last, v_ego_raw,
-                                                              CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.VM)
-
-    # We then apply the baseline vehicle model limits to the current VM to ensure we don't get blocked by Panda Safety,
-    #  because we must have a baseline model hardcoded on panda safety since we don't have fingerprinting there.
-    # TODO-SP: I may just to modify the "angle_limits" sent to "baseline_vm_safety_angle" so that it serves as the highest ceiling for the angle limits.
-    baseline_vm_safety_angle = apply_common_steer_angle_limits(current_vm_angle_desire, self.apply_angle_last, v_ego_raw,
-                                                               CS.out.steeringAngleDeg, CC.latActive, self.angle_limits, self.BASELINE_VM)
-
-    return float(baseline_vm_safety_angle)
-
-  def calculate_angle_torque_reduction_gain(self, CS, target_torque_reduction_gain):
-    """ Calculate the angle torque reduction gain based on the current steering state. """
-    if CS.out.steeringPressed:  # User is overriding
-      torque_delta = self.apply_torque_last - self.min_torque_reduction_gain
-      adaptive_ramp_rate = max(torque_delta / self.angle_torque_override_cycles, 0.004) # the minimum rate of change we've seen
-      return max(self.apply_torque_last - adaptive_ramp_rate, self.min_torque_reduction_gain)
-    else:
-      # EU vehicles have been seen to "idle" at 0.384, while US vehicles have been seen idling at "0.92" for LFA.
-      target_torque = np.clip(target_torque_reduction_gain, self.active_torque_reduction_gain, self.max_torque_reduction_gain)
-
-      if self.apply_torque_last > target_torque:
-        return max(self.apply_torque_last - self.ramp_down_reduction_gain_rate, target_torque)
-      else:
-        return min(self.apply_torque_last + self.ramp_up_reduction_gain_rate, target_torque)
-
-  def update_angle_steering_control(self, CS, CC, actuators):
-    new_angle = self.apply_hyundai_steer_angle_limits(CS, CC, actuators.steeringAngleDeg)
-    torque_reduction_gain = self.calculate_angle_torque_reduction_gain(CS, abs(actuators.torque))
-    return new_angle, torque_reduction_gain

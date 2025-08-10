@@ -1,4 +1,4 @@
-CM_ "IMPORT _hyundai_common.dbc";
+CM_ "IMPORT _hyundai_canfd_common.dbc";
 CM_ "IMPORT _hyundai_canfd_ccnc.dbc";
 CM_ "IMPORT _hyundai_canfd_ccnc_og.dbc";
 
