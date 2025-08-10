@@ -1,5 +1,6 @@
 from opendbc.car.structs import CarParams
 from opendbc.sunnypilot.car.toyota.secoc_long import SecOCLong
+from opendbc.car.can_definitions import CanData
 
 SteerControlType = CarParams.SteerControlType
 
@@ -161,3 +162,47 @@ def toyota_checksum(address: int, sig, d: bytearray) -> int:
   for i in range(len(d) - 1):
     s += d[i]
   return s & 0xFF
+
+def create_set_bsm_debug_mode(lr_blindspot, enabled):
+  dat = b"\x02\x10\x60\x00\x00\x00\x00" if enabled else b"\x02\x10\x01\x00\x00\x00\x00"
+  dat = lr_blindspot + dat
+
+  return CanData(0x750, dat, 0)
+
+
+def create_bsm_polling_status(lr_blindspot):
+  return CanData(0x750, lr_blindspot + b"\x02\x21\x69\x00\x00\x00\x00", 0)
+
+
+# auto brake hold
+def create_brake_hold_command(packer, frame, pre_collision_2, brake_hold_active):
+  # forward PRE_COLLISION_2 when auto brake hold is not active
+  values = {s: pre_collision_2[s] for s in [
+    "DSS1GDRV",
+    "DS1STAT2",
+    "DS1STBK2",
+    "PCSWAR",
+    "PCSALM",
+    "PCSOPR",
+    "PCSABK",
+    "PBATRGR",
+    "PPTRGR",
+    "IBTRGR",
+    "CLEXTRGR",
+    "IRLT_REQ",
+    "BRKHLD",
+    "AVSTRGR",
+    "VGRSTRGR",
+    "PREFILL",
+    "PBRTRGR",
+    "PCSDIS",
+    "PBPREPMP",
+  ]}
+
+  if brake_hold_active:
+    values = {
+      "DSS1GDRV": 0x3FF,
+      "PBRTRGR": frame % 730 < 727,  # cut actuation for 3 frames
+    }
+
+  return packer.make_can_msg("PRE_COLLISION_2", 0, values)
