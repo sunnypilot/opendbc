@@ -1,3 +1,4 @@
+from openpilot.common.params import Params
 from opendbc.car import Bus, structs, get_safety_config, uds
 from opendbc.car.toyota.carstate import CarState
 from opendbc.car.toyota.carcontroller import CarController
@@ -141,13 +142,17 @@ class CarInterface(CarInterfaceBase):
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if stop_and_go else MIN_ACC_SPEED
+    sp_tss2_long_tune = Params().get_bool("ToyotaTSS2Long")
 
     if candidate in TSS2_CAR:
       ret.flags |= ToyotaFlags.RAISED_ACCEL_LIMIT.value
 
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
-      ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
+      if candidate == CAR.TOYOTA_RAV4_TSS2:
+        ret.stoppingDecelRate = 0.03 if sp_tss2_long_tune else 0.3   # reach stopping target smoothly
+      else:
+        ret.stoppingDecelRate = 0.003 if sp_tss2_long_tune else 0.3  # reach stopping target smoothly
 
       # Hybrids have much quicker longitudinal actuator response
       if ret.flags & ToyotaFlags.HYBRID.value:
