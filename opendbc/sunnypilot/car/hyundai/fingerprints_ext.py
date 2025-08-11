@@ -20,16 +20,10 @@ FW_VERSIONS_EXT = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00IK  MFC  MT USA LHD 1.00 1.01 95740-G9000 170920',
     ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x81606G2051\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
   },
   CAR.HYUNDAI_KONA_NON_SCC: {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x816V5RAJ00040.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x8161699051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00OS  MDPS C 1.00 1.05 56310J9030\x00 4OSDC105',
@@ -56,9 +50,6 @@ FW_VERSIONS_EXT = {
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00BD  LKAS AT USA LHD 1.00 1.02 95740-M6000 J31',
     ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x81616B5051\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x816VFRAF00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -73,9 +64,6 @@ FW_VERSIONS_EXT = {
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00BD  LKAS AT USA LHD 1.00 1.04 95740-M6000 J33',
     ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x81616B6051\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x816VFRAL00010.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -87,10 +75,6 @@ FW_VERSIONS_EXT = {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00SP ESC \t 101"\t\x01 58910-Q5510',
       b'\xf1\x00SP ESC \r 100"\x04\x01 58910-Q5510',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x81616K0051\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\xf1\x81616G2051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00SP2 MDPS C 1.00 1.04 56310Q5240  4SPSC104',
@@ -117,9 +101,6 @@ FW_VERSIONS_EXT = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x87CXNQEM4091445JB3g\x98\x98\x89\x99\x87gv\x89wuwgwv\x89hD_\xffx\xff\xff\xff\x86\xeb\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x870\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x82CNDWD0ANF3XCSG8A',
     ],
   },
   CAR.HYUNDAI_BAYON_1ST_GEN_NON_SCC: {
