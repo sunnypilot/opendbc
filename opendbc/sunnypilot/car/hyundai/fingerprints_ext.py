@@ -22,9 +22,9 @@ FW_VERSIONS_EXT = {
     ],
   },
   CAR.HYUNDAI_KONA_NON_SCC: {
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x816V5RAJ00040.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
-    ],
+    # (Ecu.abs, 0x7d1, None): [
+    #   b'\xf1\x816V5RAJ00040.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
+    # ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00OS  MDPS C 1.00 1.05 56310J9030\x00 4OSDC105',
     ],
@@ -50,9 +50,9 @@ FW_VERSIONS_EXT = {
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00BD  LKAS AT USA LHD 1.00 1.02 95740-M6000 J31',
     ],
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x816VFRAF00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
-    ],
+    # (Ecu.abs, 0x7d1, None): [
+    #   b'\xf1\x816VFRAF00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
+    # ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x87CXJQAM4966515JB0x\xa9\x98\x9b\x99fff\x98feg\x88\x88w\x88Ff\x8f\xff{\xff\xff\xff\xa8\xf6\xf1\x816V2C1051\x00\x00\xf1\x006V2B0_C2\x00\x006V2C1051\x00\x00CBD0N20NS8q\xc1&\xd2',
     ],
@@ -64,9 +64,9 @@ FW_VERSIONS_EXT = {
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00BD  LKAS AT USA LHD 1.00 1.04 95740-M6000 J33',
     ],
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x816VFRAL00010.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
-    ],
+    # (Ecu.abs, 0x7d1, None): [
+    #   b'\xf1\x816VFRAL00010.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
+    # ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x87CXLQAM0906975JB0\x89\x88\xa6\x8aVfug\xba\x87\x94yffuxgfo\xff\x8b\xff\xff\xff\x91\x82\xf1\x816V2C1051\x00\x00\xf1\x006V2B0_C2\x00\x006V2C1051\x00\x00CBD0N20NS8q\xc1&\xd2',
     ],
@@ -90,9 +90,9 @@ FW_VERSIONS_EXT = {
     ],
   },
   CAR.HYUNDAI_ELANTRA_2022_NON_SCC: {
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x8756310AA030\x00\xf1\x00CN7 MDPS C 1.00 1.06 56310AA030\x00 4CNDC106',
-    ],
+    # (Ecu.eps, 0x7d4, None): [
+    #   b'\xf1\x8756310AA030\x00\xf1\x00CN7 MDPS C 1.00 1.06 56310AA030\x00 4CNDC106',
+    # ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.01 99210-AB000 210205',
     ],

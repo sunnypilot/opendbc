@@ -853,4 +853,7 @@ LEGACY_SAFETY_MODE_CAR = CAR.with_flags(HyundaiFlags.LEGACY)
 #       HyundaiFlags.CANFD_RADAR_SCC | HyundaiFlags.CANFD_NO_RADAR_DISABLE | )
 UNSUPPORTED_LONGITUDINAL_CAR = CAR.with_flags(HyundaiFlags.LEGACY) | CAR.with_flags(HyundaiFlags.UNSUPPORTED_LONGITUDINAL)
 
+# port extensions
+NON_SCC_CAR = CAR.with_sp_flags(HyundaiFlagsSP.NON_SCC)
+
 DBC = CAR.create_dbc_map()
