@@ -1737,11 +1737,11 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Kia Ceed PHEV Non-SCC 2022": {
+  "Kia Ceed Plug-in Hybrid Non-SCC 2022": {
     "platform": "KIA_CEED_PHEV_2022_NON_SCC",
     "make": "Kia",
     "brand": "hyundai",
-    "model": "Ceed PHEV Non-SCC",
+    "model": "Ceed Plug-in Hybrid Non-SCC",
     "year": [
       "2022"
     ],
@@ -2045,7 +2045,7 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-/  "Kia Seltos Non-SCC 2023-24": {
+  "Kia Seltos Non-SCC 2023-24": {
     "platform": "KIA_SELTOS_2023_NON_SCC",
     "make": "Kia",
     "brand": "hyundai",
