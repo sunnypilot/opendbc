@@ -30,7 +30,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     CarStateBase.__init__(self, CP, CP_SP)
     EsccCarStateBase.__init__(self)
     MadsCarState.__init__(self, CP, CP_SP)
-    CarStateExt.__init__(self)
+    CarStateExt.__init__(self, CP, CP_SP)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
 
     self.cruise_buttons: deque = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
@@ -204,7 +204,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
 
-    CarStateExt.update(self, ret, can_parsers)
+    CarStateExt.update(self, ret, can_parsers, speed_conv)
 
     ret.blockPcmEnable = not self.recent_button_interaction()
 

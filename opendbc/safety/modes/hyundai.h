@@ -58,6 +58,13 @@ const LongitudinalLimits HYUNDAI_LONG_LIMITS = {
 #define HYUNDAI_LDA_BUTTON_ADDR_CHECK \
   {.msg = {{0x391, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 50U}, { 0 }, { 0 }}}, \
 
+#define HYUNDAI_NON_SCC_ADDR_CHECK \
+  {.msg = {{0x260, 0, 8, 100U, .max_counter = 3U, .ignore_quality_flag = true},                                        \
+           {0x371, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
+  {.msg = {{0x367, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},          \
+           {0x595, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
+  {.msg = {{0x386, 0, 8, 100U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},                       \
+
 static const CanMsg HYUNDAI_TX_MSGS[] = {
   HYUNDAI_COMMON_TX_MSGS(0)
 };
@@ -380,12 +387,27 @@ static safety_config hyundai_init(uint16_t param) {
       HYUNDAI_LDA_BUTTON_ADDR_CHECK
     };
 
+    static RxCheck hyundai_non_scc_addr_checks[] = {
+      HYUNDAI_NON_SCC_ADDR_CHECK
+    };
+
+    static RxCheck hyundai_non_scc_lda_button_addr_checks[] = {
+      HYUNDAI_NON_SCC_ADDR_CHECK
+      HYUNDAI_LDA_BUTTON_ADDR_CHECK
+    };
+
     SET_TX_MSGS(HYUNDAI_TX_MSGS, ret);
     if (hyundai_fcev_gas_signal) {
       if (hyundai_has_lda_button) {
         SET_RX_CHECKS(hyundai_fcev_lda_button_rx_checks, ret);
       } else {
         SET_RX_CHECKS(hyundai_fcev_rx_checks, ret);
+      }
+    } else if (hyundai_non_scc) {
+      if (hyundai_has_lda_button) {
+        SET_RX_CHECKS(hyundai_non_scc_lda_button_addr_checks, ret);
+      } else {
+        SET_RX_CHECKS(hyundai_non_scc_addr_checks, ret);
       }
     } else {
       if (hyundai_has_lda_button) {
