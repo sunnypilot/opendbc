@@ -19,8 +19,8 @@ class CarTuningConfig:
   lookahead_jerk_lower_v: list[float] = field(default_factory=lambda: [0.15, 0.3])
   longitudinal_actuator_delay: float = 0.45
   jerk_limits: float = 3.65
-  upper_jerk_v: list[float] = field(default_factory=lambda: [2.0, 2.0, 1.2])
-  lower_jerk_v: list[float] = field(default_factory=lambda: [5.0, 5.0, 3.0])
+  upper_jerk_v: list[float] = field(default_factory=lambda: [3.0, 3.0, 1.5])
+  lower_jerk_v: list[float] = field(default_factory=lambda: [5.0, 8.0, 5.0])
   min_upper_jerk: float = 0.5
   min_lower_jerk: float = 0.5
   accel_min: float = -3.5
@@ -57,18 +57,20 @@ TUNING_CONFIGS = {
 CAR_SPECIFIC_CONFIGS = {
   CAR.KIA_NIRO_EV: CarTuningConfig(
     stopping_decel_rate=0.3,
-    lower_jerk_v=[4.0, 3.0, 3.5],
-    jerk_limits=3.0,
+    lower_jerk_v=[2.0, 3.0, 3.0],
+    lookahead_jerk_bp=[2., 5., 20.],
+    lookahead_jerk_upper_v=[1.0, 1.0, 1.0],
+    lookahead_jerk_lower_v=[0.05, 0.05, 0.05],
+    jerk_limits=2.5,
     accel_min=-2.5,
-    accel_max=1.05,
+    accel_max=1.0,
   ),
   CAR.KIA_NIRO_PHEV_2022: CarTuningConfig(
     v_ego_stopping=0.3,
     lookahead_jerk_upper_v=[0.3, 1.0],
     upper_jerk_v=[2.0, 3.0, 1.6],
-    lower_jerk_v=[3.25, 3.5, 3.0],
-    jerk_limits=3.5,
-    min_lower_jerk=1.0,
+    jerk_limits=5.0,
+    min_lower_jerk=3.0,
   ),
   CAR.HYUNDAI_IONIQ: CarTuningConfig(
     jerk_limits=3.8,
@@ -77,7 +79,6 @@ CAR_SPECIFIC_CONFIGS = {
   CAR.HYUNDAI_IONIQ_PHEV: CarTuningConfig(
     lookahead_jerk_upper_v=[0.3, 1.0],
     upper_jerk_v=[3.0, 3.0, 2.5],
-    lower_jerk_v=[3.25, 4.0, 3.0],
     jerk_limits=3.5,
     min_upper_jerk=2.0,
   ),
@@ -86,7 +87,6 @@ CAR_SPECIFIC_CONFIGS = {
     lookahead_jerk_upper_v=[0.3, 1.0],
     lookahead_jerk_lower_v=[0.2, 0.4],
     upper_jerk_v=[2.0, 3.0, 1.6],
-    lower_jerk_v=[3.0, 3.25, 2.5],
     jerk_limits=3.0,
   )
 }
