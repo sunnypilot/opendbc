@@ -421,7 +421,13 @@ class CarState(CarStateBase):
       ("BLINKERS_STATE", float('nan')),
     ]
 
+    cam_messages = []
+    cam_messages += [
+      ("RSA1", 0),
+      ("RSA2", 0),
+    ]
+
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
-      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 2),
+      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, 2),
     }
