@@ -152,7 +152,7 @@ class CarInterface(CarInterfaceBase):
       if candidate == CAR.TOYOTA_RAV4_TSS2:
         ret.stoppingDecelRate = 0.03 if sp_tss2_long_tune else 0.3   # reach stopping target smoothly
       else:
-        ret.stoppingDecelRate = 0.003 if sp_tss2_long_tune else 0.3  # reach stopping target smoothly
+        ret.stoppingDecelRate = 0.002 if sp_tss2_long_tune else 0.3  # reach stopping target smoothly
 
       # Hybrids have much quicker longitudinal actuator response
       if ret.flags & ToyotaFlags.HYBRID.value:
