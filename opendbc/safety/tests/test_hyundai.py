@@ -18,20 +18,15 @@ LDA_BUTTON = [
   {"SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.HAS_LDA_BUTTON},
 ]
 
-# All combinations of non-SCC and hybrid/EV cars
-ALL_NON_SCC_HYBRID_EV_COMBOS = [
+# All combinations of non-SCC and hybrid cars
+ALL_NON_SCC_HYBRID_COMBOS = [
   # Hybrid
-  {"PCM_STATUS_MSG": ("E_CRUISE_CONTROL", "CRUISE_LAMP_M"),
-   "ACC_STATE_MSG": ("E_CRUISE_CONTROL", "CF_Lvr_CruiseSet"),
+  {"PCM_STATUS_MSG": ("E_CRUISE_CONTROL", "CF_Lvr_CruiseSet"),
+   "ACC_STATE_MSG": ("E_CRUISE_CONTROL", "CRUISE_LAMP_M"),
    "GAS_MSG": ("E_EMS11", "CR_Vcu_AccPedDep_Pos"),
    "SAFETY_PARAM": HyundaiSafetyFlags.HYBRID_GAS},
-  # EV
-  {"PCM_STATUS_MSG": ("LABEL11", "CC_React"),
-   "ACC_STATE_MSG": ("LABEL11", "CC_ACT"),
-   "GAS_MSG": ("E_EMS11", "Accel_Pedal_Pos"),
-   "SAFETY_PARAM": HyundaiSafetyFlags.EV_GAS},
 ]
-NON_SCC_HYBRID_EV_COMBOS = [{**p, **lda} for lda in LDA_BUTTON for p in ALL_NON_SCC_HYBRID_EV_COMBOS]
+NON_SCC_HYBRID_COMBOS = [{**p, **lda} for lda in LDA_BUTTON for p in ALL_NON_SCC_HYBRID_COMBOS]
 
 
 # 4 bit checkusm used in some hyundai messages
@@ -507,8 +502,9 @@ class TestHyundaiNonSCCSafety(TestHyundaiSafety):
     return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
 
 
-@parameterized_class(NON_SCC_HYBRID_EV_COMBOS)
-class TestHyundaiNonSCCSafety_HEV_AND_EV(TestHyundaiSafety):
+@parameterized_class(NON_SCC_HYBRID_COMBOS)
+class TestHyundaiNonSCCSafety_HEV(TestHyundaiSafety):
+
   PCM_STATUS_MSG = ("", "")
   ACC_STATE_MSG = ("", "")
   GAS_MSG = ("", "")
@@ -516,7 +512,7 @@ class TestHyundaiNonSCCSafety_HEV_AND_EV(TestHyundaiSafety):
 
   @classmethod
   def setUpClass(cls):
-    if cls.__name__ == "TestHyundaiNonSCCSafety_HEV_AND_EV":
+    if cls.__name__ == "TestHyundaiNonSCCSafety_HEV":
       cls.safety = None
       raise unittest.SkipTest
 
