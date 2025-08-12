@@ -60,7 +60,7 @@ const LongitudinalLimits HYUNDAI_LONG_LIMITS = {
 
 #define HYUNDAI_NON_SCC_ADDR_CHECK \
   {.msg = {{0x367U, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},          \
-           {0x595U, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
+           {0x595U, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
 
 static const CanMsg HYUNDAI_TX_MSGS[] = {
   HYUNDAI_COMMON_TX_MSGS(0)
