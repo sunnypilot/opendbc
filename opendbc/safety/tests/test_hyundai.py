@@ -465,7 +465,6 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
     pass
 
 
-# TODO-SP: add tests for HEV and EV non-SCC
 @parameterized_class(LDA_BUTTON)
 class TestHyundaiNonSCCSafety(TestHyundaiSafety):
   cnt_acc_state = 0
@@ -491,6 +490,45 @@ class TestHyundaiNonSCCSafety(TestHyundaiSafety):
     values = {"CRUISE_LAMP_M": enable, "AliveCounter": self.cnt_acc_state % 4}
     self.__class__.cnt_acc_state += 1
     return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
+
+
+@parameterized_class([
+  # no LDA button
+  {"GAS_MSG": ("E_EMS11", "CR_Vcu_AccPedDep_Pos"), "SAFETY_MODE_SP": HyundaiSafetyFlags.HYBRID_GAS, "SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.DEFAULT},
+  {"GAS_MSG": ("E_EMS11", "Accel_Pedal_Pos"), "SAFETY_MODE_SP": HyundaiSafetyFlags.EV_GAS, "SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.DEFAULT},
+  # has LDA button
+  {"GAS_MSG": ("E_EMS11", "CR_Vcu_AccPedDep_Pos"), "SAFETY_MODE_SP": HyundaiSafetyFlags.HYBRID_GAS, "SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.HAS_LDA_BUTTON},
+  {"GAS_MSG": ("E_EMS11", "Accel_Pedal_Pos"), "SAFETY_MODE_SP": HyundaiSafetyFlags.EV_GAS, "SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.HAS_LDA_BUTTON},
+])
+class TestHyundaiNonSCCSafetyHEV(TestHyundaiSafety):
+  cnt_acc_state = 0
+  GAS_MSG = ("", "")
+  SAFETY_MODE_SP = 0
+
+  @classmethod
+  def setUpClass(cls):
+    if cls.__name__ == "TestHyundaiNonSCCSafetyHEV":
+      cls.safety = None
+      raise unittest.SkipTest
+
+  def setUp(self):
+    self.packer = CANPackerPanda("hyundai_kia_generic")
+    self.safety = libsafety_py.libsafety
+    self.safety.set_current_safety_param_sp(HyundaiSafetyFlagsSP.NON_SCC | self.SAFETY_PARAM_SP)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, self.SAFETY_MODE_SP)
+    self.safety.init_tests()
+
+  def _pcm_status_msg(self, enable):
+    values = {"CF_Lvr_CruiseSet": enable}
+    return self.packer.make_can_msg_panda("E_CRUISE_CONTROL", 0, values)
+
+  def _acc_state_msg(self, enable):
+    values = {"CRUISE_LAMP_M": enable}
+    return self.packer.make_can_msg_panda("E_CRUISE_CONTROL", 0, values)
+
+  def _user_gas_msg(self, gas):
+    values = {self.GAS_MSG[1]: gas}
+    return self.packer.make_can_msg_panda(self.GAS_MSG[0], 0, values, fix_checksum=checksum)
 
 
 if __name__ == "__main__":
