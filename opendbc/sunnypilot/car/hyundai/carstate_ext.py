@@ -27,12 +27,25 @@ class CarStateExt:
     self.aBasis = cp.vl["TCS13"]["aBasis"]
 
     if self.CP_SP.flags & HyundaiFlagsSP.NON_SCC:
-      cruise_available_msg = "E_CRUISE_CONTROL" if self.CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV) else "EMS16"
-      cruise_enabled_msg = "E_CRUISE_CONTROL" if self.CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV) else "LVR12"
-      cruise_speed_msg = "ELECT_GEAR" if self.CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV) else "LVR12"
-      cruise_speed_sig = "SLC_SET_SPEED" if self.CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV) else "CF_Lvr_CruiseSet"
-      ret.cruiseState.available = cp.vl[cruise_available_msg]["CRUISE_LAMP_M"] != 0
-      ret.cruiseState.enabled = cp.vl[cruise_enabled_msg]["CF_Lvr_CruiseSet"] != 0
+      cruise_available_msg = "LABEL11" if self.CP.flags & HyundaiFlags.EV else \
+                             "E_CRUISE_CONTROL" if self.CP.flags & HyundaiFlags.HYBRID else \
+                             "EMS16"
+      cruise_available_sig = "CC_React" if self.CP.flags & HyundaiFlags.EV else "CRUISE_LAMP_M"
+
+      cruise_enabled_msg = "LABEL11" if self.CP.flags & HyundaiFlags.EV else \
+                           "E_CRUISE_CONTROL" if self.CP.flags & HyundaiFlags.HYBRID else \
+                           "LVR12"
+      cruise_enabled_sig = "CC_ACT" if self.CP.flags & HyundaiFlags.EV else "CF_Lvr_CruiseSet"
+
+      cruise_speed_msg = "E_EMS11" if self.CP.flags & HyundaiFlags.EV else \
+                         "ELECT_GEAR" if self.CP.flags & HyundaiFlags.HYBRID else \
+                         "LVR12"
+      cruise_speed_sig = "Cruise_Limit_Target" if self.CP.flags & HyundaiFlags.EV else \
+                         "SLC_SET_SPEED" if self.CP.flags & HyundaiFlags.HYBRID else \
+                         "CF_Lvr_CruiseSet"
+
+      ret.cruiseState.available = cp.vl[cruise_available_msg][cruise_available_sig] != 0
+      ret.cruiseState.enabled = cp.vl[cruise_enabled_msg][cruise_enabled_sig] != 0
       ret.cruiseState.speed = cp.vl[cruise_speed_msg][cruise_speed_sig] * speed_conv
       ret.cruiseState.standstill = False
       ret.cruiseState.nonAdaptive = False

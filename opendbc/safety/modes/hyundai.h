@@ -59,8 +59,9 @@ const LongitudinalLimits HYUNDAI_LONG_LIMITS = {
   {.msg = {{0x391, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 50U}, { 0 }, { 0 }}}, \
 
 #define HYUNDAI_NON_SCC_ADDR_CHECK \
-  {.msg = {{0x367U, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},          \
-           {0x595U, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
+  {.msg = {{0x367U, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},  \
+           {0x592U, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},   \
+           {0x595U, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}}}, \
 
 static const CanMsg HYUNDAI_TX_MSGS[] = {
   HYUNDAI_COMMON_TX_MSGS(0)
@@ -196,15 +197,16 @@ static void hyundai_rx_hook(const CANPacket_t *msg) {
       brake_pressed = ((msg->data[5] >> 5U) & 0x3U) == 0x2U;
     }
 
-    if (hyundai_non_scc) {
-      if ((hyundai_ev_gas_signal || hyundai_hybrid_gas_signal) && !hyundai_fcev_gas_signal) {
-        if (msg->addr == 0x595U) {
-          acc_main_on = GET_BIT(msg, 50U);
-
-          bool cruise_engaged = GET_BIT(msg, 51U);
-          hyundai_common_cruise_state_check(cruise_engaged);
-        }
-      } else if (!hyundai_ev_gas_signal && !hyundai_hybrid_gas_signal && !hyundai_fcev_gas_signal) {
+    if (hyundai_non_scc && !hyundai_fcev_gas_signal) {
+      if ((msg->addr == 0x592U) && hyundai_ev_gas_signal) {
+        acc_main_on = GET_BIT(msg, 34U);
+        bool cruise_engaged = GET_BIT(msg, 35U);
+        hyundai_common_cruise_state_check(cruise_engaged);
+      } else if ((msg->addr == 0x595U) && hyundai_hybrid_gas_signal) {
+        acc_main_on = GET_BIT(msg, 50U);
+        bool cruise_engaged = GET_BIT(msg, 51U);
+        hyundai_common_cruise_state_check(cruise_engaged);
+      } else if (!hyundai_ev_gas_signal && !hyundai_hybrid_gas_signal) {
         if (msg->addr == 0x260U) {
           acc_main_on = GET_BIT(msg, 25U);
         }

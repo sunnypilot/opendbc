@@ -18,6 +18,21 @@ LDA_BUTTON = [
   {"SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.HAS_LDA_BUTTON},
 ]
 
+# All combinations of non-SCC and hybrid/EV cars
+ALL_NON_SCC_HYBRID_EV_COMBOS = [
+  # Hybrid
+  {"PCM_STATUS_MSG": ("E_CRUISE_CONTROL", "CRUISE_LAMP_M"),
+   "ACC_STATE_MSG": ("E_CRUISE_CONTROL", "CF_Lvr_CruiseSet"),
+   "GAS_MSG": ("E_EMS11", "CR_Vcu_AccPedDep_Pos"),
+   "SAFETY_PARAM": HyundaiSafetyFlags.HYBRID_GAS},
+  # EV
+  {"PCM_STATUS_MSG": ("LABEL11", "CC_React"),
+   "ACC_STATE_MSG": ("LABEL11", "CC_ACT"),
+   "GAS_MSG": ("E_EMS11", "Accel_Pedal_Pos"),
+   "SAFETY_PARAM": HyundaiSafetyFlags.EV_GAS},
+]
+NON_SCC_HYBRID_EV_COMBOS = [{**p, **lda} for lda in LDA_BUTTON for p in ALL_NON_SCC_HYBRID_EV_COMBOS]
+
 
 # 4 bit checkusm used in some hyundai messages
 # lives outside the can packer because we never send this msg
@@ -492,22 +507,16 @@ class TestHyundaiNonSCCSafety(TestHyundaiSafety):
     return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
 
 
-@parameterized_class([
-  # no LDA button
-  {"GAS_MSG": ("E_EMS11", "CR_Vcu_AccPedDep_Pos"), "SAFETY_MODE_SP": HyundaiSafetyFlags.HYBRID_GAS, "SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.DEFAULT},
-  {"GAS_MSG": ("E_EMS11", "Accel_Pedal_Pos"), "SAFETY_MODE_SP": HyundaiSafetyFlags.EV_GAS, "SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.DEFAULT},
-  # has LDA button
-  {"GAS_MSG": ("E_EMS11", "CR_Vcu_AccPedDep_Pos"), "SAFETY_MODE_SP": HyundaiSafetyFlags.HYBRID_GAS, "SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.HAS_LDA_BUTTON},
-  {"GAS_MSG": ("E_EMS11", "Accel_Pedal_Pos"), "SAFETY_MODE_SP": HyundaiSafetyFlags.EV_GAS, "SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.HAS_LDA_BUTTON},
-])
-class TestHyundaiNonSCCSafetyHEV(TestHyundaiSafety):
-  cnt_acc_state = 0
+@parameterized_class(NON_SCC_HYBRID_EV_COMBOS)
+class TestHyundaiNonSCCSafety_HEV_AND_EV(TestHyundaiSafety):
+  PCM_STATUS_MSG = ("", "")
+  ACC_STATE_MSG = ("", "")
   GAS_MSG = ("", "")
-  SAFETY_MODE_SP = 0
+  SAFETY_PARAM = 0
 
   @classmethod
   def setUpClass(cls):
-    if cls.__name__ == "TestHyundaiNonSCCSafetyHEV":
+    if cls.__name__ == "TestHyundaiNonSCCSafety_HEV_AND_EV":
       cls.safety = None
       raise unittest.SkipTest
 
@@ -515,16 +524,16 @@ class TestHyundaiNonSCCSafetyHEV(TestHyundaiSafety):
     self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(HyundaiSafetyFlagsSP.NON_SCC | self.SAFETY_PARAM_SP)
-    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, self.SAFETY_MODE_SP)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, self.SAFETY_PARAM)
     self.safety.init_tests()
 
   def _pcm_status_msg(self, enable):
-    values = {"CF_Lvr_CruiseSet": enable}
-    return self.packer.make_can_msg_panda("E_CRUISE_CONTROL", 0, values)
+    values = {self.PCM_STATUS_MSG[1]: enable}
+    return self.packer.make_can_msg_panda(self.PCM_STATUS_MSG[0], 0, values)
 
   def _acc_state_msg(self, enable):
-    values = {"CRUISE_LAMP_M": enable}
-    return self.packer.make_can_msg_panda("E_CRUISE_CONTROL", 0, values)
+    values = {self.ACC_STATE_MSG[1]: enable}
+    return self.packer.make_can_msg_panda(self.ACC_STATE_MSG[0], 0, values)
 
   def _user_gas_msg(self, gas):
     values = {self.GAS_MSG[1]: gas}
