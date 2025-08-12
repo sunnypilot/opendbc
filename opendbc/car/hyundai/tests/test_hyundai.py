@@ -230,7 +230,6 @@ class TestHyundaiFingerprint:
     excluded_platforms = {
       CAR.GENESIS_G70,            # shared platform code, part number, and date
       CAR.GENESIS_G70_2020,
-      CAR.HYUNDAI_ELANTRA_2021,   # shared platform code with Non-SCC variant
     }
     excluded_platforms |= CANFD_CAR - EV_CAR - CANFD_FUZZY_WHITELIST  # shared platform codes
     excluded_platforms |= NO_DATES_PLATFORMS  # date codes are required to match
