@@ -199,7 +199,26 @@ static void hyundai_rx_hook(const CANPacket_t *msg) {
       brake_pressed = ((msg->data[5] >> 5U) & 0x3U) == 0x2U;
     }
 
+    if (hyundai_non_scc) {
+      if (hyundai_ev_gas_signal || hyundai_hybrid_gas_signal) {
+        if (msg->addr == 0x595U) {
+          acc_main_on = GET_BIT(msg, 50U);
 
+          bool cruise_engaged = GET_BIT(msg, 51U);
+          hyundai_common_cruise_state_check(cruise_engaged);
+        }
+      } else if (!hyundai_ev_gas_signal && !hyundai_hybrid_gas_signal) {
+        if (msg->addr == 0x260U) {
+          acc_main_on = GET_BIT(msg, 25U);
+        }
+
+        if (msg->addr == 0x367U) {
+          bool cruise_engaged = msg->data[0] != 0U;
+          hyundai_common_cruise_state_check(cruise_engaged);
+        }
+      } else {
+      }
+    }
   }
 
   hyundai_common_reset_acc_main_on_mismatches();
