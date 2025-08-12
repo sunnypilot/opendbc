@@ -27,6 +27,7 @@ FW_VERSIONS_EXT = {
     # ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00OS  MDPS C 1.00 1.05 56310J9030\x00 4OSDC105',
+      b'\xf1\x00OS  MDPS C 1.00 1.04 56310J9030\x00 4OSDC104',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00OS9 LKAS AT USA LHD 1.00 1.00 95740-J9200 g30',
