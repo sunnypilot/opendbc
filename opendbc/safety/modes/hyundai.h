@@ -200,13 +200,11 @@ static void hyundai_rx_hook(const CANPacket_t *msg) {
     }
 
     if (hyundai_non_scc) {
-      if (hyundai_ev_gas_signal || hyundai_hybrid_gas_signal) {
-        if (msg->addr == 0x595U) {
-          acc_main_on = GET_BIT(msg, 50U);
+      if (msg->addr == 0x595U && (hyundai_ev_gas_signal || hyundai_hybrid_gas_signal)) {
+        acc_main_on = GET_BIT(msg, 50U);
 
-          bool cruise_engaged = GET_BIT(msg, 51U);
-          hyundai_common_cruise_state_check(cruise_engaged);
-        }
+        bool cruise_engaged = GET_BIT(msg, 51U);
+        hyundai_common_cruise_state_check(cruise_engaged);
       } else if (!hyundai_ev_gas_signal && !hyundai_hybrid_gas_signal) {
         if (msg->addr == 0x260U) {
           acc_main_on = GET_BIT(msg, 25U);
