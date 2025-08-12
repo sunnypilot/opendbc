@@ -465,5 +465,61 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
     pass
 
 
+# TODO-SP: add tests for HEV and EV non-SCC
+@parameterized_class(LDA_BUTTON)
+class TestHyundaiNonSCCSafety(TestHyundaiSafety):
+  @classmethod
+  def setUpClass(cls):
+    if cls.__name__ == "TestHyundaiNonSCCSafety":
+      cls.safety = None
+      raise unittest.SkipTest
+
+  def setUp(self):
+    self.packer = CANPackerPanda("hyundai_kia_generic")
+    self.safety = libsafety_py.libsafety
+    self.safety.set_current_safety_param_sp(HyundaiSafetyFlagsSP.NON_SCC | self.SAFETY_PARAM_SP)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, 0)
+    self.safety.init_tests()
+
+  def _pcm_status_msg(self, enable):
+    values = {"CF_Lvr_CruiseSet": enable}
+    return self.packer.make_can_msg_panda("LVR12", 0, values)
+
+  def _acc_state_msg(self, enable):
+    values = {"CRUISE_LAMP_M": enable}
+    return self.packer.make_can_msg_panda("EMS16", 0, values)
+
+  def test_enable_control_allowed_with_manual_acc_main_on_state(self):
+    default_safety_mode = self.safety.get_current_safety_mode()
+    default_safety_param = self.safety.get_current_safety_param()
+    default_safety_param_sp = self.safety.get_current_safety_param_sp()
+
+    try:
+      self._acc_state_msg(False)
+    except NotImplementedError as err:
+      self._mads_states_cleanup()
+      raise unittest.SkipTest("Skipping test because _acc_state_msg is not implemented for this car") from err
+
+    try:
+      for enable_mads in (True, False):
+        with self.subTest("enable_mads", mads_enabled=enable_mads):
+          for has_lda_button_param in (True, False):
+            with self.subTest("has_lda_button", has_lda_button_param=has_lda_button_param):
+              has_lda_button = HyundaiSafetyFlagsSP.HAS_LDA_BUTTON if has_lda_button_param else 0
+              self.safety.set_current_safety_param_sp(default_safety_param_sp | has_lda_button | HyundaiSafetyFlagsSP.NON_SCC)
+              self.safety.set_safety_hooks(default_safety_mode, default_safety_param)
+
+              self._mads_states_cleanup()
+              self.safety.set_mads_params(enable_mads, False, False)
+              self._rx(self._acc_state_msg(True))
+              self._rx(self._speed_msg(0))
+              self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat(),
+                               f"main: {self.safety.get_acc_main_on()}, params: {self.safety.get_current_safety_param()} , params_sp: {self.safety.get_current_safety_param_sp()},"
+                               f"mads_main: {self.safety.get_mads_acc_main()}")
+    finally:
+      self._mads_states_cleanup()
+      self.safety.set_current_safety_param_sp(default_safety_param_sp)
+
+
 if __name__ == "__main__":
   unittest.main()
