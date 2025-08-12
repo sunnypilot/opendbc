@@ -59,14 +59,8 @@ const LongitudinalLimits HYUNDAI_LONG_LIMITS = {
   {.msg = {{0x391, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 50U}, { 0 }, { 0 }}}, \
 
 #define HYUNDAI_NON_SCC_ADDR_CHECK \
-  {.msg = {{0x260U, 0, 8, 100U, .max_counter = 3U, .ignore_quality_flag = true},                                        \
-           {0x371U, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
   {.msg = {{0x367U, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},          \
            {0x595U, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
-  {.msg = {{0x386U, 0, 8, 100U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},                       \
-  {.msg = {{0x394U, 0, 8, 100U, .max_counter = 7U, .ignore_quality_flag = true}, { 0 }, { 0 }}},                        \
-  {.msg = {{0x251U, 0, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
-  {.msg = {{0x4F1U, 0, 4, 50U, .ignore_checksum = true, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
 
 static const CanMsg HYUNDAI_TX_MSGS[] = {
   HYUNDAI_COMMON_TX_MSGS(0)
@@ -203,11 +197,13 @@ static void hyundai_rx_hook(const CANPacket_t *msg) {
     }
 
     if (hyundai_non_scc) {
-      if (msg->addr == 0x595U && (hyundai_ev_gas_signal || hyundai_hybrid_gas_signal)) {
-        acc_main_on = GET_BIT(msg, 50U);
+      if (hyundai_ev_gas_signal || hyundai_hybrid_gas_signal) {
+        if (msg->addr == 0x595U) {
+          acc_main_on = GET_BIT(msg, 50U);
 
-        bool cruise_engaged = GET_BIT(msg, 51U);
-        hyundai_common_cruise_state_check(cruise_engaged);
+          bool cruise_engaged = GET_BIT(msg, 51U);
+          hyundai_common_cruise_state_check(cruise_engaged);
+        }
       } else if (!hyundai_ev_gas_signal && !hyundai_hybrid_gas_signal) {
         if (msg->addr == 0x260U) {
           acc_main_on = GET_BIT(msg, 25U);
@@ -410,10 +406,12 @@ static safety_config hyundai_init(uint16_t param) {
     };
 
     static RxCheck hyundai_non_scc_addr_checks[] = {
+      HYUNDAI_COMMON_RX_CHECKS(false)
       HYUNDAI_NON_SCC_ADDR_CHECK
     };
 
     static RxCheck hyundai_non_scc_lda_button_addr_checks[] = {
+      HYUNDAI_COMMON_RX_CHECKS(false)
       HYUNDAI_NON_SCC_ADDR_CHECK
       HYUNDAI_LDA_BUTTON_ADDR_CHECK
     };
