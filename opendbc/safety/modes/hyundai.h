@@ -59,11 +59,11 @@ const LongitudinalLimits HYUNDAI_LONG_LIMITS = {
   {.msg = {{0x391, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 50U}, { 0 }, { 0 }}}, \
 
 #define HYUNDAI_NON_SCC_ADDR_CHECK \
-  {.msg = {{0x260, 0, 8, 100U, .max_counter = 3U, .ignore_quality_flag = true},                                        \
-           {0x371, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
-  {.msg = {{0x367, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},          \
-           {0x595, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
-  {.msg = {{0x386, 0, 8, 100U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},                       \
+  {.msg = {{0x260U, 0, 8, 100U, .max_counter = 3U, .ignore_quality_flag = true},                                        \
+           {0x371U, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
+  {.msg = {{0x367U, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},          \
+           {0x595U, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
+  {.msg = {{0x386U, 0, 8, 100U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},                       \
 
 static const CanMsg HYUNDAI_TX_MSGS[] = {
   HYUNDAI_COMMON_TX_MSGS(0)
@@ -198,6 +198,8 @@ static void hyundai_rx_hook(const CANPacket_t *msg) {
     if (msg->addr == 0x394U) {
       brake_pressed = ((msg->data[5] >> 5U) & 0x3U) == 0x2U;
     }
+
+
   }
 
   hyundai_common_reset_acc_main_on_mismatches();
