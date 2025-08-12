@@ -468,6 +468,8 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
 # TODO-SP: add tests for HEV and EV non-SCC
 @parameterized_class(LDA_BUTTON)
 class TestHyundaiNonSCCSafety(TestHyundaiSafety):
+  cnt_acc_state = 0
+
   @classmethod
   def setUpClass(cls):
     if cls.__name__ == "TestHyundaiNonSCCSafety":
@@ -486,8 +488,9 @@ class TestHyundaiNonSCCSafety(TestHyundaiSafety):
     return self.packer.make_can_msg_panda("LVR12", 0, values)
 
   def _acc_state_msg(self, enable):
-    values = {"CRUISE_LAMP_M": enable}
-    return self.packer.make_can_msg_panda("EMS16", 0, values)
+    values = {"CRUISE_LAMP_M": enable, "AliveCounter": self.cnt_acc_state % 4}
+    self.__class__.cnt_acc_state += 1
+    return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
 
   def test_enable_control_allowed_with_manual_acc_main_on_state(self):
     default_safety_mode = self.safety.get_current_safety_mode()
