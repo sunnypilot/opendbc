@@ -197,7 +197,7 @@ static void hyundai_rx_hook(const CANPacket_t *msg) {
     }
 
     if (hyundai_non_scc) {
-      if (hyundai_ev_gas_signal || hyundai_hybrid_gas_signal) {
+      if ((hyundai_ev_gas_signal || hyundai_hybrid_gas_signal) && !hyundai_fcev_gas_signal) {
         if (msg->addr == 0x595U) {
           acc_main_on = GET_BIT(msg, 50U);
 
