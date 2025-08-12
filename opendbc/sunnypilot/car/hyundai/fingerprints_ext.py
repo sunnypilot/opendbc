@@ -53,9 +53,9 @@ FW_VERSIONS_EXT = {
     # (Ecu.abs, 0x7d1, None): [
     #   b'\xf1\x816VFRAF00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
     # ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x87CXJQAM4966515JB0x\xa9\x98\x9b\x99fff\x98feg\x88\x88w\x88Ff\x8f\xff{\xff\xff\xff\xa8\xf6\xf1\x816V2C1051\x00\x00\xf1\x006V2B0_C2\x00\x006V2C1051\x00\x00CBD0N20NS8q\xc1&\xd2',
-    ],
+    # (Ecu.transmission, 0x7e1, None): [
+    #   b'\xf1\x87CXJQAM4966515JB0x\xa9\x98\x9b\x99fff\x98feg\x88\x88w\x88Ff\x8f\xff{\xff\xff\xff\xa8\xf6\xf1\x816V2C1051\x00\x00\xf1\x006V2B0_C2\x00\x006V2C1051\x00\x00CBD0N20NS8q\xc1&\xd2',
+    # ],
   },
   CAR.KIA_FORTE_2021_NON_SCC: {
     (Ecu.eps, 0x7D4, None): [
@@ -67,9 +67,9 @@ FW_VERSIONS_EXT = {
     # (Ecu.abs, 0x7d1, None): [
     #   b'\xf1\x816VFRAL00010.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
     # ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x87CXLQAM0906975JB0\x89\x88\xa6\x8aVfug\xba\x87\x94yffuxgfo\xff\x8b\xff\xff\xff\x91\x82\xf1\x816V2C1051\x00\x00\xf1\x006V2B0_C2\x00\x006V2C1051\x00\x00CBD0N20NS8q\xc1&\xd2',
-    ],
+    # (Ecu.transmission, 0x7e1, None): [
+    #   b'\xf1\x87CXLQAM0906975JB0\x89\x88\xa6\x8aVfug\xba\x87\x94yffuxgfo\xff\x8b\xff\xff\xff\x91\x82\xf1\x816V2C1051\x00\x00\xf1\x006V2B0_C2\x00\x006V2C1051\x00\x00CBD0N20NS8q\xc1&\xd2',
+    # ],
   },
   CAR.KIA_SELTOS_2023_NON_SCC: {
     (Ecu.abs, 0x7d1, None): [
@@ -96,12 +96,12 @@ FW_VERSIONS_EXT = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.01 99210-AB000 210205',
     ],
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x8758910-AB500\xf1\x00CN ESC \t 100 \x06\x01 58910-AB500',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x87CXNQEM4091445JB3g\x98\x98\x89\x99\x87gv\x89wuwgwv\x89hD_\xffx\xff\xff\xff\x86\xeb\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5\x00\x00\x00\x00\x00\x00',
-    ],
+    # (Ecu.abs, 0x7d1, None): [
+    #   b'\xf1\x8758910-AB500\xf1\x00CN ESC \t 100 \x06\x01 58910-AB500',
+    # ],
+    # (Ecu.transmission, 0x7e1, None): [
+    #   b'\xf1\x87CXNQEM4091445JB3g\x98\x98\x89\x99\x87gv\x89wuwgwv\x89hD_\xffx\xff\xff\xff\x86\xeb\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5\x00\x00\x00\x00\x00\x00',
+    # ],
   },
   CAR.HYUNDAI_BAYON_1ST_GEN_NON_SCC: {
     # TODO: Check working route for more FW
