@@ -6,6 +6,8 @@ from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.tesla.teslacan import TeslaCAN
 from opendbc.car.tesla.values import CarControllerParams
 from opendbc.car.vehicle_model import VehicleModel
+
+from opendbc.sunnypilot.car.tesla.virtual_torque_blending import TorqueBlendingCarController
 from opendbc.sunnypilot.car.tesla.mads import MadsCarController
 
 
@@ -16,10 +18,11 @@ def get_safety_CP():
   return CarInterface.get_non_essential_params("TESLA_MODEL_Y")
 
 
-class CarController(CarControllerBase, MadsCarController):
+class CarController(CarControllerBase, MadsCarController, TorqueBlendingCarController):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     MadsCarController.__init__(self)
+    TorqueBlendingCarController.__init__(self)
     self.apply_angle_last = 0
     self.packer = CANPacker(dbc_names[Bus.party])
     self.tesla_can = TeslaCAN(self.packer)
@@ -38,8 +41,11 @@ class CarController(CarControllerBase, MadsCarController):
     lat_active = CC.latActive and CS.hands_on_level < 3
 
     if self.frame % 2 == 0:
+      # Virtual torque blending
+      lat_active, apply_angle = self.update_torque_blending(CS, CC, lat_active, actuators.steeringAngleDeg)
+
       # Angular rate limit based on speed
-      self.apply_angle_last = apply_steer_angle_limits_vm(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw, CS.out.steeringAngleDeg,
+      self.apply_angle_last = apply_steer_angle_limits_vm(apply_angle, self.apply_angle_last, CS.out.vEgoRaw, CS.out.steeringAngleDeg,
                                                           lat_active, CarControllerParams, self.VM)
 
       can_sends.append(self.tesla_can.create_steering_control(self.apply_angle_last, lat_active, self.mads.control_type))
