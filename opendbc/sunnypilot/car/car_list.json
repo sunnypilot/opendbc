@@ -1405,11 +1405,11 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Hyundai Kona 2024-25": {
+  "Hyundai Kona (without HDA II) 2024-25": {
     "platform": "HYUNDAI_KONA_2ND_GEN",
     "make": "Hyundai",
     "brand": "hyundai",
-    "model": "Kona",
+    "model": "Kona (without HDA II)",
     "year": [
       "2024",
       "2025"
@@ -1470,11 +1470,11 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Hyundai Kona Hybrid 2024": {
+  "Hyundai Kona Hybrid (without HDA II) 2024": {
     "platform": "HYUNDAI_KONA_HEV_2ND_GEN",
     "make": "Hyundai",
     "brand": "hyundai",
-    "model": "Kona Hybrid",
+    "model": "Kona Hybrid (without HDA II)",
     "year": [
       "2024"
     ],
@@ -1514,11 +1514,11 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Hyundai Santa Cruz 2025": {
+  "Hyundai Santa Cruz (without HDA II) 2025": {
     "platform": "HYUNDAI_SANTA_CRUZ_2025",
     "make": "Hyundai",
     "brand": "hyundai",
-    "model": "Santa Cruz",
+    "model": "Santa Cruz (without HDA II)",
     "year": [
       "2025"
     ],
@@ -1593,11 +1593,11 @@
     ],
     "package": "All"
   },
-  "Hyundai Sonata 2024-25": {
+  "Hyundai Sonata (without HDA II) 2024-25": {
     "platform": "HYUNDAI_SONATA_2024",
     "make": "Hyundai",
     "brand": "hyundai",
-    "model": "Sonata",
+    "model": "Sonata (without HDA II)",
     "year": [
       "2024",
       "2025"
@@ -1617,11 +1617,11 @@
     ],
     "package": "All"
   },
-  "Hyundai Sonata Hybrid 2024-25": {
+  "Hyundai Sonata Hybrid (without HDA II) 2024-25": {
     "platform": "HYUNDAI_SONATA_HEV_2024",
     "make": "Hyundai",
     "brand": "hyundai",
-    "model": "Sonata Hybrid",
+    "model": "Sonata Hybrid (without HDA II)",
     "year": [
       "2024",
       "2025"
@@ -1691,11 +1691,11 @@
     ],
     "package": "All"
   },
-  "Hyundai Tucson Hybrid 2025": {
+  "Hyundai Tucson Hybrid (without HDA II) 2025": {
     "platform": "HYUNDAI_TUCSON_HEV_2025",
     "make": "Hyundai",
     "brand": "hyundai",
-    "model": "Tucson Hybrid",
+    "model": "Tucson Hybrid (without HDA II)",
     "year": [
       "2025"
     ],
@@ -1839,11 +1839,11 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Kia K4 2025": {
+  "Kia K4 (without HDA II) 2025": {
     "platform": "KIA_K4_2025",
     "make": "Kia",
     "brand": "hyundai",
-    "model": "K4",
+    "model": "K4 (without HDA II)",
     "year": [
       "2025"
     ],
@@ -1862,11 +1862,11 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Kia K5 2025": {
+  "Kia K5 (without HDA II) 2025": {
     "platform": "KIA_K5_2025",
     "make": "Kia",
     "brand": "hyundai",
-    "model": "K5",
+    "model": "K5 (without HDA II)",
     "year": [
       "2025"
     ],
@@ -2110,11 +2110,11 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Kia Sorento 2024-25": {
+  "Kia Sorento (without HDA II) 2024-25": {
     "platform": "KIA_SORENTO_2024",
     "make": "Kia",
     "brand": "hyundai",
-    "model": "Sorento",
+    "model": "Sorento (without HDA II)",
     "year": [
       "2024",
       "2025"
