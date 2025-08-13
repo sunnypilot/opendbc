@@ -66,7 +66,7 @@ class CarStateExt:
           self.set_speed -= CV.MPH_TO_MS
 
       if not ret.cruiseState.enabled:
-        self.set_speed = ret.vEgo
+        self.set_speed = ret.vEgoCluster
 
       self.set_speed = max(MIN_SET_SPEED, min(self.set_speed, MAX_SET_SPEED))
       ret.cruiseState.speed = self.set_speed
@@ -84,11 +84,6 @@ class CarStateExt:
     messages = {}
 
     if CP_SP.flags & RivianFlagsSP.LONGITUDINAL_HARNESS_UPGRADE:
-      alt_messages = [
-        ("WheelButtons", 20),
-        ("BSM_BlindSpotIndicator", 20),
-      ]
-
-      messages[Bus.alt] = CANParser(DBC[CP.carFingerprint][Bus.alt], alt_messages, 5)
+      messages[Bus.alt] = CANParser(DBC[CP.carFingerprint][Bus.alt], [], 5)
 
     return messages
