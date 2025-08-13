@@ -181,7 +181,7 @@ class CarInterface(CarInterfaceBase):
 
     # Detect smartMDPS, which bypasses EPS low-speed lockout, allowing sunnypilot to send steering commands down to 0
     if 0x2AA in fingerprint[0]:
-      stock_cp.minSteerSpeed = 0.
+      stock_cp.minSteerSpeed = 0.0
       stock_cp.flags &= ~HyundaiFlags.MIN_STEER_32_MPH
 
     return ret
