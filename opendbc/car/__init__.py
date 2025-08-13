@@ -16,6 +16,7 @@ STD_CARGO_KG = 136.
 ACCELERATION_DUE_TO_GRAVITY = 9.81  # m/s^2
 
 ButtonType = structs.CarState.ButtonEvent.Type
+ButtonTypeSP = structs.CarStateSP.ButtonEvent.Type
 
 
 def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
@@ -38,6 +39,21 @@ def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: dict[int, st
     if btn != unpressed_btn:
       events.append(structs.CarState.ButtonEvent(pressed=pressed,
                                                  type=buttons_dict.get(btn, ButtonType.unknown)))
+  return events
+
+
+def create_button_events_sp(cur_btn: int, prev_btn: int, buttons_dict: dict[int, structs.CarStateSP.ButtonEvent.Type],
+                         unpressed_btn: int = 0) -> list[structs.CarStateSP.ButtonEvent]:
+  events: list[structs.CarStateSP.ButtonEvent] = []
+
+  if cur_btn == prev_btn:
+    return events
+
+  # Add events for button presses, multiple when a button switches without going to unpressed
+  for pressed, btn in ((False, prev_btn), (True, cur_btn)):
+    if btn != unpressed_btn:
+      events.append(structs.CarStateSP.ButtonEvent(pressed=pressed,
+                                                 type=buttons_dict.get(btn, ButtonTypeSP.unknown)))
   return events
 
 
