@@ -121,9 +121,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
 
-    # Mixing up angle + torque
-    #TODO-SP: find a workaround to not rely on tq controller
-    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+    if not (ret.flags & HyundaiFlags.CANFD_ANGLE_STEERING):
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     if ret.flags & HyundaiFlags.ALT_LIMITS:
       ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.ALT_LIMITS.value
