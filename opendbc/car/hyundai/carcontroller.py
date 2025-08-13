@@ -24,6 +24,8 @@ from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
 from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarController
 
+from opendbc.car.hyundai.torque_reduction_gain import TorqueReductionGainController
+
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
@@ -168,6 +170,15 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       self.params.ANGLE_TORQUE_OVERRIDE_CYCLES = int(self._params.get("HkgTuningOverridingCycles") or self.params.ANGLE_TORQUE_OVERRIDE_CYCLES)
       self.angle_enable_smoothing_factor = self._params.get_bool("EnableHkgTuningAngleSmoothingFactor")
 
+    self.angle_torque_reduction_gain_controller = TorqueReductionGainController(
+      angle_threshold=.8, 
+      debounce_time=0.2,
+      min_gain=self.params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN, 
+      max_gain=self.params.ANGLE_MAX_TORQUE_REDUCTION_GAIN,
+      ramp_up_rate=self.params.ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE, 
+      ramp_down_rate=self.params.ANGLE_RAMP_DOWN_TORQUE_REDUCTION_RATE
+    )
+
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
@@ -200,12 +211,17 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
         apply_angle = apply_steer_angle_limits_vm(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params,
                                                   self.BASELINE_VM)
 
+      # Use saturation-based torque reduction gain
+      target_torque_reduction_gain = self.angle_torque_reduction_gain_controller.update(
+        last_requested_angle=self.apply_angle_last,
+        actual_angle=CS.out.steeringAngleDeg,
+        lat_active=CC.latActive
+      )
+
+      # After we've used the last angle wherever we needed it, we now update it.
       self.apply_angle_last = apply_angle
 
-      # upstream has it hardcoded to 1. but we use actuators for the time being
-      # target_torque_reduction_gain = 1. if CC.latActive else 0
-      target_torque_reduction_gain = abs(actuators.torque) if CC.latActive else 0
-
+      # This method ensures that the torque gives up when overriding and controls the ramp rate to avoid feeling jittery.
       apply_torque = calculate_angle_torque_reduction_gain(self.params, CS, self.apply_torque_last, target_torque_reduction_gain)
       apply_steer_req = CC.latActive and apply_torque != 0  # apply_steer_req is True when we are actively attempting to steer
 
