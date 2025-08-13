@@ -171,11 +171,11 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       self.angle_enable_smoothing_factor = self._params.get_bool("EnableHkgTuningAngleSmoothingFactor")
 
     self.angle_torque_reduction_gain_controller = TorqueReductionGainController(
-      angle_threshold=.8, 
+      angle_threshold=.8,
       debounce_time=0.2,
-      min_gain=self.params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN, 
+      min_gain=self.params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN,
       max_gain=self.params.ANGLE_MAX_TORQUE_REDUCTION_GAIN,
-      ramp_up_rate=self.params.ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE, 
+      ramp_up_rate=self.params.ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE,
       ramp_down_rate=self.params.ANGLE_RAMP_DOWN_TORQUE_REDUCTION_RATE
     )
 

@@ -1,5 +1,6 @@
 import time
 
+
 class TorqueReductionGainController:
     def __init__(self, angle_threshold=3.0, debounce_time=0.5, min_gain=0.0, max_gain=1.0, ramp_up_rate=0.1, ramp_down_rate=0.05):
         """
@@ -47,5 +48,3 @@ class TorqueReductionGainController:
         self.gain = self.min_gain
         self.saturated_since = None
         self.last_update_time = time.monotonic()
-
-
