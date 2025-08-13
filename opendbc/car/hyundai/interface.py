@@ -179,6 +179,10 @@ class CarInterface(CarInterfaceBase):
     if stock_cp.flags & HyundaiFlags.ALT_LIMITS_2:
       stock_cp.dashcamOnly = False
 
+    if 0x2AA in fingerprint[0]:
+      stock_cp.minSteerSpeed = 0.
+      stock_cp.flags &= ~HyundaiFlags.MIN_STEER_32_MPH
+
     return ret
 
   @staticmethod
