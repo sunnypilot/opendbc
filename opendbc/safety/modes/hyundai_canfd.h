@@ -80,7 +80,7 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *msg) {
       torque_driver_new -= 4095;
       update_sample(&torque_driver, torque_driver_new);
 
-      int angle_meas_new = (msg->data[13] << 8) | msg->data[12];
+      int angle_meas_new = (msg->data[17] << 8) | msg->data[16];
       angle_meas_new = to_signed(angle_meas_new, 16);
       update_sample(&angle_meas, angle_meas_new);
     }
