@@ -18,8 +18,8 @@ LDA_BUTTON = [
   {"SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.HAS_LDA_BUTTON},
 ]
 
-# All combinations of non-SCC cars
-_ALL_NON_SCC_COMBOS = [
+# All combinations of non-SCC HEV/PHEV/EV cars
+_ALL_NON_SCC_HEV_EV_COMBOS = [
   # Hybrid
   {"PCM_STATUS_MSG": ("E_CRUISE_CONTROL", "CF_Lvr_CruiseSet"),
    "ACC_STATE_MSG": ("E_CRUISE_CONTROL", "CRUISE_LAMP_M"),
@@ -31,7 +31,7 @@ _ALL_NON_SCC_COMBOS = [
    "GAS_MSG": ("E_EMS11", "Accel_Pedal_Pos"),
    "SAFETY_PARAM": HyundaiSafetyFlags.EV_GAS},
 ]
-ALL_NON_SCC_COMBOS = [{**p, **lda} for lda in LDA_BUTTON for p in _ALL_NON_SCC_COMBOS]
+ALL_NON_SCC_HEV_EV_COMBOS = [{**p, **lda} for lda in LDA_BUTTON for p in _ALL_NON_SCC_HEV_EV_COMBOS]
 
 
 # 4 bit checkusm used in some hyundai messages
@@ -507,8 +507,8 @@ class TestHyundaiNonSCCSafety(TestHyundaiSafety):
     return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
 
 
-@parameterized_class(ALL_NON_SCC_COMBOS)
-class TestHyundaiNonSCCSafety(TestHyundaiSafety):
+@parameterized_class(ALL_NON_SCC_HEV_EV_COMBOS)
+class TestHyundaiNonSCCSafety_HEV_EV(TestHyundaiSafety):
 
   PCM_STATUS_MSG = ("", "")
   ACC_STATE_MSG = ("", "")
@@ -517,7 +517,7 @@ class TestHyundaiNonSCCSafety(TestHyundaiSafety):
 
   @classmethod
   def setUpClass(cls):
-    if cls.__name__ == "TestHyundaiNonSCCSafety":
+    if cls.__name__ == "TestHyundaiNonSCCSafety_HEV_EV":
       cls.safety = None
       raise unittest.SkipTest
 
