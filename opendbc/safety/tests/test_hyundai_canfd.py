@@ -186,7 +186,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
 
   def _angle_meas_msg(self, angle: float):
     values = {"STEERING_ANGLE": angle}
-    return self.packer.make_can_msg_panda("STEERING_SENSORS", self.PT_BUS, values)
+    return self.packer.make_can_msg_panda("MDPS", self.PT_BUS, values)
 
   def _get_steer_cmd_angle_max(self, speed):
     baseline_vm = self.get_vm(ANGLE_SAFETY_BASELINE_MODEL)
