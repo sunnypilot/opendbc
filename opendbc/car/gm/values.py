@@ -64,7 +64,6 @@ class GMSafetyFlags(IntFlag):
   HW_CAM_LONG = 2
   EV = 4
   FLAG_GM_NO_ACC = 8
-  FLAG_GM_CC_LONG = 64
 
 
 class Footnote(Enum):
@@ -266,8 +265,6 @@ class CanBus:
   LOOPBACK = 128
   DROPPED = 192
 
-class GMFlags(IntFlag):
-  CC_LONG = 2
 
 
 # In a Data Module, an identifier is a string used to recognize an object,
