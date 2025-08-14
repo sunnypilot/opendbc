@@ -12,6 +12,8 @@ MANDO_RADAR_ADDR = 0x500
 MANDO_RADAR_COUNT = 32
 MRREVO14F_RADAR_ADDR = 0x602
 MRREVO14F_RADAR_COUNT = 16
+MRR35_RADAR_ADDR = 0x3A5
+MRR35_RADAR_COUNT = 32
 
 # POC for parsing corner radars: https://github.com/commaai/openpilot/pull/24221/
 
@@ -31,6 +33,8 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.CP_flags = CP.flags
     if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
       self.radar_addr, self.radar_count = MRREVO14F_RADAR_ADDR, MRREVO14F_RADAR_COUNT
+    elif self.CP_flags & HyundaiFlags.MRR35_RADAR:
+      self.radar_addr, self.radar_count = MRR35_RADAR_ADDR, MRR35_RADAR_COUNT
     else:
       self.radar_addr, self.radar_count = MANDO_RADAR_ADDR, MANDO_RADAR_COUNT
     self.updated_messages = set()
@@ -94,6 +98,22 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
               pt.yvRel = float('nan')
             else:
               del self.pts[track_key]
+
+        elif self.CP_flags & HyundaiFlags.MRR35_RADAR:
+          msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
+          if addr not in self.pts:
+            self.pts[addr] = structs.RadarData.RadarPoint()
+            self.pts[addr].trackId = self.track_id
+            self.track_id += 1
+          if msg['STATE'] in (3, 4):
+            self.pts[addr].measured = True
+            self.pts[addr].dRel = msg['LONG_DIST']
+            self.pts[addr].yRel = msg['LAT_DIST']
+            self.pts[addr].vRel = msg['REL_SPEED']
+            self.pts[addr].aRel = msg['REL_ACCEL']
+            self.pts[addr].yvRel = float('nan')
+          else:
+            del self.pts[addr]
 
         else:
           msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]

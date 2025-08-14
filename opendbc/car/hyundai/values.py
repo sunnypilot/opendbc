@@ -127,6 +127,7 @@ class HyundaiFlags(IntFlag):
   ALT_LIMITS_2 = 2 ** 26
 
   MRREVO14F_RADAR = 2 ** 27
+  MRR35_RADAR = 2 ** 28
 
 
 class Footnote(Enum):
@@ -166,6 +167,9 @@ class HyundaiCanFDPlatformConfig(PlatformConfig):
 
   def init(self):
     self.flags |= HyundaiFlags.CANFD
+
+    if self.flags & HyundaiFlags.MRR35_RADAR:
+      self.dbc_dict = {Bus.pt: "hyundai_canfd_generated", Bus.radar: 'hyundai_mrr35_radar_generated'}
 
 
 class CAR(Platforms):
