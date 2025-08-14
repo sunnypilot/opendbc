@@ -13,6 +13,7 @@ class HyundaiSafetyFlagsSP:
   ESCC = 1
   LONG_MAIN_CRUISE_TOGGLEABLE = 2
   HAS_LDA_BUTTON = 4
+  NON_SCC = 8
 
 
 class HyundaiFlagsSP(IntFlag):
@@ -25,6 +26,9 @@ class HyundaiFlagsSP(IntFlag):
   ENABLE_RADAR_TRACKS_DEPRECATED = 2 ** 3
   LONG_TUNING_DYNAMIC = 2 ** 4
   LONG_TUNING_PREDICTIVE = 2 ** 5
-  RADAR_OFF = 2 ** 6
-  RADAR_LEAD_ONLY = 2 ** 7
-  RADAR_FULL_RADAR = 2 ** 8
+  NON_SCC = 2 ** 6
+  NON_SCC_RADAR_FCA = 2 ** 7  # most with FCA come from the camera
+  NON_SCC_NO_FCA = 2 ** 8  # not all have FCA
+  RADAR_OFF = 2 ** 9
+  RADAR_LEAD_ONLY = 2 ** 10
+  RADAR_FULL_RADAR = 2 ** 11
