@@ -688,16 +688,6 @@
     ],
     "package": "All"
   },
-  "Genesis G70 Non-SCC 2021": {
-    "platform": "GENESIS_G70_2021_NON_SCC",
-    "make": "Genesis",
-    "brand": "hyundai",
-    "model": "G70 Non-SCC",
-    "year": [
-      "2021"
-    ],
-    "package": "No Smart Cruise Control (Non-SCC)"
-  },
   "Genesis G80 2017": {
     "platform": "HYUNDAI_GENESIS",
     "make": "Genesis",
@@ -1181,16 +1171,6 @@
     ],
     "package": "All"
   },
-  "Hyundai Bayon Non-SCC 2021": {
-    "platform": "HYUNDAI_BAYON_1ST_GEN_NON_SCC",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Bayon Non-SCC",
-    "year": [
-      "2021"
-    ],
-    "package": "No Smart Cruise Control (Non-SCC)"
-  },
   "Hyundai Custin 2023": {
     "platform": "HYUNDAI_CUSTIN_1ST_GEN",
     "make": "Hyundai",
@@ -1258,16 +1238,6 @@
       "2023"
     ],
     "package": "Smart Cruise Control (SCC)"
-  },
-  "Hyundai Elantra Non-SCC 2022": {
-    "platform": "HYUNDAI_ELANTRA_2022_NON_SCC",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Elantra Non-SCC",
-    "year": [
-      "2022"
-    ],
-    "package": "No Smart Cruise Control (Non-SCC)"
   },
   "Hyundai Genesis 2015-16": {
     "platform": "HYUNDAI_GENESIS",
@@ -1478,16 +1448,6 @@
       "2020"
     ],
     "package": "Smart Cruise Control (SCC)"
-  },
-  "Hyundai Kona Non-SCC 2019": {
-    "platform": "HYUNDAI_KONA_NON_SCC",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Kona Non-SCC",
-    "year": [
-      "2019"
-    ],
-    "package": "No Smart Cruise Control (Non-SCC)"
   },
   "Hyundai Nexo 2021": {
     "platform": "HYUNDAI_NEXO_1ST_GEN",
@@ -1747,16 +1707,6 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Kia Ceed Plug-in Hybrid Non-SCC 2022": {
-    "platform": "KIA_CEED_PHEV_2022_NON_SCC",
-    "make": "Kia",
-    "brand": "hyundai",
-    "model": "Ceed Plug-in Hybrid Non-SCC",
-    "year": [
-      "2022"
-    ],
-    "package": "No Smart Cruise Control (Non-SCC)"
-  },
   "Kia EV6 (Southeast Asia only) 2022-24": {
     "platform": "KIA_EV6",
     "make": "Kia",
@@ -1815,26 +1765,6 @@
       "2023"
     ],
     "package": "Smart Cruise Control (SCC)"
-  },
-  "Kia Forte Non-SCC 2019": {
-    "platform": "KIA_FORTE_2019_NON_SCC",
-    "make": "Kia",
-    "brand": "hyundai",
-    "model": "Forte Non-SCC",
-    "year": [
-      "2019"
-    ],
-    "package": "No Smart Cruise Control (Non-SCC)"
-  },
-  "Kia Forte Non-SCC 2021": {
-    "platform": "KIA_FORTE_2021_NON_SCC",
-    "make": "Kia",
-    "brand": "hyundai",
-    "model": "Forte Non-SCC",
-    "year": [
-      "2021"
-    ],
-    "package": "No Smart Cruise Control (Non-SCC)"
   },
   "Kia K5 2021-24": {
     "platform": "KIA_K5_2021",
@@ -2054,17 +1984,6 @@
       "2021"
     ],
     "package": "Smart Cruise Control (SCC)"
-  },
-  "Kia Seltos Non-SCC 2023-24": {
-    "platform": "KIA_SELTOS_2023_NON_SCC",
-    "make": "Kia",
-    "brand": "hyundai",
-    "model": "Seltos Non-SCC",
-    "year": [
-      "2023",
-      "2024"
-    ],
-    "package": "No Smart Cruise Control (Non-SCC)"
   },
   "Kia Sorento 2018": {
     "platform": "KIA_SORENTO",
