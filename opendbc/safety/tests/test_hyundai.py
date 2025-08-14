@@ -18,7 +18,7 @@ LDA_BUTTON = [
   {"SAFETY_PARAM_SP": HyundaiSafetyFlagsSP.HAS_LDA_BUTTON},
 ]
 
-# All combinations of non-SCC and hybrid cars
+# All combinations of non-SCC cars
 _ALL_NON_SCC_COMBOS = [
   # Hybrid
   {"PCM_STATUS_MSG": ("E_CRUISE_CONTROL", "CF_Lvr_CruiseSet"),
