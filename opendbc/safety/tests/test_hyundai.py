@@ -20,6 +20,11 @@ LDA_BUTTON = [
 
 # All combinations of non-SCC cars
 _ALL_NON_SCC_COMBOS = [
+  # Hybrid
+  {"PCM_STATUS_MSG": ("E_CRUISE_CONTROL", "CF_Lvr_CruiseSet"),
+   "ACC_STATE_MSG": ("E_CRUISE_CONTROL", "CRUISE_LAMP_M"),
+   "GAS_MSG": ("E_EMS11", "CR_Vcu_AccPedDep_Pos"),
+   "SAFETY_PARAM": HyundaiSafetyFlags.HYBRID_GAS},
   # EV
   {"PCM_STATUS_MSG": ("LABEL11", "CC_ACT"),
    "ACC_STATE_MSG": ("LABEL11", "CC_React"),
@@ -477,6 +482,7 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
 
 @parameterized_class(ALL_NON_SCC_COMBOS)
 class TestHyundaiNonSCCSafety(TestHyundaiSafety):
+
   PCM_STATUS_MSG = ("", "")
   ACC_STATE_MSG = ("", "")
   GAS_MSG = ("", "")
