@@ -2,7 +2,7 @@ import copy
 import numpy as np
 from opendbc.car import CanBusBase
 from opendbc.car.crc import CRC16_XMODEM
-from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.car.hyundai.values import HyundaiFlags, ActvACISta, ESA_ActvSta
 
 
 class CanBus(CanBusBase):
@@ -53,7 +53,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   lkas_values["LKA_AVAILABLE"] = 0
 
   # Angle control doesn't support using LFA yet
-  if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+  if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING and CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
     # TODO: HAS_LANE_SAFETY isn't used by the stock system
     lkas_values |= {
       "LKA_MODE": 0,  # TODO: not used by the stock system
@@ -69,6 +69,19 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   lfa_values = copy.copy(common_values)
   lfa_values["NEW_SIGNAL_1"] = 0
 
+  ADAS_CMD_35_10ms_values = {}
+  if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING and CP.flags & HyundaiFlags.SEND_LFA:
+    # Here we create ADAS_CMD_35_10ms
+    ActvACILvl2Sta = ActvACISta.ACTIVE35_ACTIVE if lat_active else ActvACISta.INACTIVE if enabled else ActvACISta.INIT
+    ADAS_CMD_35_10ms_values = {
+      "ADAS_ActvACISta": ActvACISta.INIT.value,
+      "ADAS_ActvACILvl2Sta": ActvACILvl2Sta.value,
+      "ADAS_StrAnglReqVal": apply_angle,
+      "ADAS_ACIAnglTqRedcGainVal": apply_torque if lat_active else 0,
+      "FCA_ESA_ActvSta": ESA_ActvSta.INACTIVE.value,
+      "FCA_ESA_TqBstGainVal": 0
+    }
+
   # For cars with an ADAS ECU (commonly HDA2), by sending LKAS actuation messages we're
   # telling the ADAS ECU to forward our steering and disable stock LFA lane centering.
   ret = []
@@ -77,6 +90,9 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     if CP.openpilotLongitudinalControl:
       ret.append(packer.make_can_msg("LFA", CAN.ECAN, lfa_values))
     ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, lkas_values))
+  elif CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING and CP.flags & HyundaiFlags.SEND_LFA:
+    # For cars with an HDA1 and LFA2, we send LFA messages to the ADAS ECU.
+    ret.append(packer.make_can_msg("ADAS_CMD_35_10ms", CAN.ACAN, ADAS_CMD_35_10ms_values))
   else:
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, lfa_values))
 
