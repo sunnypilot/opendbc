@@ -34,7 +34,9 @@ class CarStateExt:
       cruise_enabled_msg = "LABEL11" if self.CP.flags & HyundaiFlags.EV else \
                            "E_CRUISE_CONTROL" if self.CP.flags & HyundaiFlags.HYBRID else \
                            "LVR12"
-      cruise_enabled_sig = "CC_ACT" if self.CP.flags & HyundaiFlags.EV else "CRUISE_LAMP_S"
+      cruise_enabled_sig = "CC_ACT" if self.CP.flags & HyundaiFlags.EV else \
+                           "CRUISE_LAMP_S" if self.CP.flags & HyundaiFlags.HYBRID else \
+                           "CF_Lvr_CruiseSet"
       cruise_speed_msg = "E_EMS11" if self.CP.flags & HyundaiFlags.EV else \
                          "ELECT_GEAR" if self.CP.flags & HyundaiFlags.HYBRID else \
                          "LVR12"
