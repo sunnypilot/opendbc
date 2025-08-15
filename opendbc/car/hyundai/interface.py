@@ -55,7 +55,7 @@ class CarInterface(CarInterfaceBase):
         # detect LKA steering
         ret.flags |= HyundaiFlags.CANFD_LKA_STEERING.value
         # we only have validated ALT messages for angle steering cars
-        if 0x110 in fingerprint[CAN.CAM] or ret.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+        if 0x110 in fingerprint[CAN.CAM]:
           ret.flags |= HyundaiFlags.CANFD_LKA_STEERING_ALT.value
       else:
         # no LKA steering
