@@ -422,16 +422,18 @@ BO_ 474 ADRV_0x1da: 32 ADRV
  SG_ SET_ME_22 : 31|8@0+ (1,0) [0|255] "" XXX
  SG_ SET_ME_41 : 47|8@0+ (1,0) [0|255] "" XXX
 
-BO_ 480 LFAHDA_CLUSTER: 16 ADRV
- SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
- SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_4 : 24|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_5 : 25|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_2 : 30|1@0+ (1,0) [0|1] "" XXX
- SG_ HDA_ICON : 31|1@1+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_1 : 32|3@1+ (1,0) [0|7] "" XXX
- SG_ LFA_ICON : 47|2@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_3 : 49|1@0+ (1,0) [0|1] "" XXX
+BO_ 480 LFAHDA_CLUSTER: 16 FR_CMR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|0] ""  CGW
+ SG_ COUNTER : 16|8@1+ (1,0) [0|0] ""  CGW
+ SG_ HDA_OptUsmSta : 24|3@1+ (1,0) [0|0] ""  CGW
+ SG_ LFA_OptUsmSta : 27|3@1+ (1,0) [0|0] ""  CGW
+ SG_ HDA_CntrlModSta : 30|2@1+ (1,0) [0|0] ""  CGW
+ SG_ HDA_InfoPUDis : 32|3@1+ (1,0) [0|0] ""  CGW
+ SG_ HDA_AutoSetSpdSta : 35|2@1+ (1,0) [0|0] ""  CGW
+ SG_ HDA_AutoSetSpdUpdtSta : 37|2@1+ (1,0) [0|0] ""  CGW
+ SG_ HDA_AutoSetSpdVal : 39|8@1+ (1,0) [0|0] "km/h"  CGW
+ SG_ HDA_LFA_SymSta : 47|2@1+ (1,0) [0|0] ""  CGW
+ SG_ HDA_LFA_WrnSnd : 49|2@1+ (1,0) [0|0] ""  Dummy
 
 BO_ 485 BLINDSPOTS_FRONT_CORNER_1: 16 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -732,7 +734,15 @@ CM_ SG_ 437 Info_RtLnHdingAnglVal "This signal outputs the heading angle of righ
 CM_ SG_ 437 Info_RtLnCvtrVal "This signal outputs the curvature of right line.";
 CM_ SG_ 437 ID_CIPV "Valid Object = 1 to 255 - ID detected by front camera can vary depending on vehicle environment. - Additional logic would be required to apply this signal for ISG.";
 CM_ SG_ 437 Relative_Velocity "+ : Preceding, - : Oncoming - Velocity detected by front camera can vary depending on vehicle environment. - Additional logic would be required to apply this signal for ISG. - Confirmaiton by Autonomous Driving Engineering Team is required to use ID_C";
-CM_ SG_ 480 NEW_SIGNAL_5 "todo: figure out why always set to 1";
+CM_ SG_ 480 HDA_OptUsmSta "This is HDA system status needed for the cluster USM display.";
+CM_ SG_ 480 LFA_OptUsmSta "This is LFA system status needed for the cluster USM display.";
+CM_ SG_ 480 HDA_CntrlModSta "This is HDA Control Mode needed for longitudinal/lateral control and cluster display.";
+CM_ SG_ 480 HDA_InfoPUDis "This is HDA information display needed for the cluster pop-up display.";
+CM_ SG_ 480 HDA_AutoSetSpdSta "This is information if Auto Set Speed Control is enabled or not";
+CM_ SG_ 480 HDA_AutoSetSpdUpdtSta "This is information if Auto Set Speed Control is updated or not.";
+CM_ SG_ 480 HDA_AutoSetSpdVal "This is auto set speed value for SCC controller in Auto Set Spped Mode.";
+CM_ SG_ 480 HDA_LFA_SymSta "This signal shows the state of steering assist.";
+CM_ SG_ 480 HDA_LFA_WrnSnd "HDA/LFA Additional Warning Sound";
 CM_ BO_ 506 "Sent by the camera containing speed limit information. ISLW stands for Intelligent Speed Limit Warning, and ISLA is Intelligent Speed Limit Assist. it also contains road sign information.";
 CM_ SG_ 506 FR_CMR_Crc2Val "The data area for CRC calculation is based on the data length (DLC) of the message DB.The CRC shall be calculated over the entire data block (excluding the CRC bytes) including the user data, alive counter and Data ID - CRC Polynomial (0x1021) , In";
 CM_ SG_ 506 FR_CMR_AlvCnt2Val "For the first transmission request for a data element the counter shall be initialized with 0 and shall be incremented by 1 for every subsequent send request. When the counter reaches the maximum value(0xFF), then it shall restart with 0 for the next s";
@@ -918,6 +928,14 @@ VAL_ 437 Info_RtLnCvtrVal 65534 "Reserved" 65535 "Error indicator";
 VAL_ 463 CRUISE_BUTTONS 0 "none" 1 "res_accel" 2 "set_decel" 3 "gap_distance" 4 "pause_resume";
 VAL_ 463 RIGHT_PADDLE 0 "Not Pulled" 1 "Pulled";
 VAL_ 463 LEFT_PADDLE 0 "Not Pulled" 1 "Pulled";
+VAL_ 480 HDA_OptUsmSta 0 "Not Applied" 1 "Function Off" 2 "Function On" 3 "Reserved" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Invalid (Fail)" ;
+VAL_ 480 LFA_OptUsmSta 0 "Not Applied" 1 "Function Off" 2 "Function On" 3 "Reserved" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Invalid (Fail)" ;
+VAL_ 480 HDA_CntrlModSta 0 "System Deactive (Default)" 1 "System Ready" 2 "System Active" 3 "Reserved" ;
+VAL_ 480 HDA_InfoPUDis 0 "No pop-up" 1 "system start pop-up" 2 "system auto disengaged pop-up by highway off" 3 "system auto disengaged pop-up" 4 "system Fail pop-up" 5 "Hands-off pop up" 6 "Hands-off pop up w/ sound" 7 "System Automatic off" ;
+VAL_ 480 HDA_AutoSetSpdSta 0 "Auto Set Speed Off" 1 "Auto Set Speed On" 2 "Reserved" 3 "Error indicator" ;
+VAL_ 480 HDA_AutoSetSpdUpdtSta 0 "Auto Set Speed Update Off" 1 "Auto Set Speed Update On" 2 "Reserved" 3 "Error indicator" ;
+VAL_ 480 HDA_LFA_SymSta 0 "Off" 1 "Gray" 2 "Green" 3 "Green blink" ;
+VAL_ 480 HDA_LFA_WrnSnd 0 "Off " 1 "Additional Warning Sound" 2 "Reserved" 3 "Error indicator" ;
 VAL_ 506 ISLW_OptUsmSta 0 "None ISLW Option (Default)" 1 "System Disabled by USM" 2 "System Enable by USM" 3 "Invalid";
 VAL_ 506 ISLW_SysSta 0 "Normal (Default)" 1 "System Fail" 2 "ISLW Temporary Unavailable" 3 "Reserved";
 VAL_ 506 ISLW_NoPassingInfoDis 0 "None Display (Default)" 1 "LHD No Passing Zone Display" 2 "RHD No Passing Zone Display" 3 "Reserved" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Invalid";

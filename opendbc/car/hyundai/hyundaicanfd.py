@@ -156,8 +156,15 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
 
 def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
   values = {
-    "HDA_ICON": 1 if enabled else 0,
-    "LFA_ICON": lfa_icon,
+    "HDA_OptUsmSta": 2 if enabled else 1,  # 0 "Not Applied" 1 "Function Off" 2 "Function On" ... 7 "Invalid (Fail)"
+    "LFA_OptUsmSta": 0,  # 0 "Not Applied" 1 "Function Off" 2 "Function On" ... 7 "Invalid (Fail)"
+    "HDA_CntrlModSta": 0,  # 0 "System Deactive (Default)" 1 "System Ready" 2 "System Active" 3 "Reserved"
+    "HDA_InfoPUDis": 0,  # 0 "No pop-up" 1 "system start pop-up" 2 "system auto disengaged pop-up by highway off" 3 "system auto disengaged pop-up" 4
+    "HDA_AutoSetSpdSta": 0,  # 0 "Auto Set Speed Off" 1 "Auto Set Speed On" 2 "Reserved" 3 "Error indicator"
+    "HDA_AutoSetSpdUpdtSta": 0,  # 0 "Auto Set Speed Update Off" 1 "Auto Set Speed Update On" 2 "Reserved" 3 "Error indicator"
+    "HDA_AutoSetSpdVal": 0,  # km/h
+    "HDA_LFA_SymSta": lfa_icon,  # 0 "Off" 1 "Gray" 2 "Green" 3 "Green blink"
+    "HDA_LFA_WrnSnd": ""  # 0 "Off " 1 "Additional Warning Sound" 2 "Reserved" 3 "Error indicator"
   }
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
