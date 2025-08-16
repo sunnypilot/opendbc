@@ -61,8 +61,8 @@ class CarInterface(CarInterfaceBase):
         # no LKA steering
         if 0x1cf not in fingerprint[CAN.ECAN]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
-        #if not ret.flags & HyundaiFlags.RADAR_SCC:  # Note: HDA1 LFA2 falls enters this too, to it will likely work with long too.
-        #  ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
+        if not ret.flags & HyundaiFlags.RADAR_SCC:  # Note: HDA1 LFA2 falls enters this too, to it will likely work with long too.
+          ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
         if 0xCB in fingerprint[CAN.CAM]:  # ADAS_CMD_35_10ms
           ret.flags |= HyundaiFlags.SEND_LFA.value
 
