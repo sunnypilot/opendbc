@@ -72,7 +72,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   ADAS_CMD_35_10ms_values = {}
   if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING and CP.flags & HyundaiFlags.SEND_LFA:
     # Here we create ADAS_CMD_35_10ms
-    ActvACILvl2Sta = ActvACISta.ACTIVE35_ACTIVE if lat_active else ActvACISta.INACTIVE if enabled else ActvACISta.INIT
+    ActvACILvl2Sta = ActvACISta.ACTIVE35_ACTIVE if lat_active else ActvACISta.INACTIVE if enabled else ActvACISta.INACTIVE
     ADAS_CMD_35_10ms_values = {
       "ADAS_ActvACISta": ActvACISta.INIT.value,
       "ADAS_ActvACILvl2Sta": ActvACILvl2Sta.value,
