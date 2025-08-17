@@ -164,7 +164,7 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
     "HDA_AutoSetSpdUpdtSta": 0,  # 0 "Auto Set Speed Update Off" 1 "Auto Set Speed Update On" 2 "Reserved" 3 "Error indicator"
     "HDA_AutoSetSpdVal": 0,  # km/h
     "HDA_LFA_SymSta": lfa_icon,  # 0 "Off" 1 "Gray" 2 "Green" 3 "Green blink"
-    "HDA_LFA_WrnSnd": ""  # 0 "Off " 1 "Additional Warning Sound" 2 "Reserved" 3 "Error indicator"
+    "HDA_LFA_WrnSnd": 0  # 0 "Off " 1 "Additional Warning Sound" 2 "Reserved" 3 "Error indicator"
   }
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
