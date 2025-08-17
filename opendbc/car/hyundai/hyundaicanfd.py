@@ -38,15 +38,13 @@ class CanBus(CanBusBase):
 
 def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon):
   common_values = {
-    "LKA_MODE": 2,
-    "LKA_ICON": lkas_icon,
-    "TORQUE_REQUEST": apply_torque,
-    "LKA_ASSIST": 0,
-    "STEER_REQ": 1 if lat_active else 0,
-    "STEER_MODE": 0,
-    "HAS_LANE_SAFETY": 0,  # hide LKAS settings
-    "NEW_SIGNAL_2": 0,
-    "DAMP_FACTOR": 100,  # can potentially tuned for better perf [3, 200]
+    "LKA_OptUsmSta": 2,
+    "LKA_SysIndReq": 2 if enabled else 1,
+    "StrTqReqVal": apply_torque,
+    "LKA_SysWrn": 0,
+    "ActToiSta": 1 if lat_active else 0,
+    "Damping_Gain": 100,  # can potentially tuned for better perf [3, 200]
+    "LKA_UsmMod": 0,  # hide LKAS settings
   }
 
   lkas_values = copy.copy(common_values)
@@ -56,11 +54,11 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
     # TODO: HAS_LANE_SAFETY isn't used by the stock system
     lkas_values |= {
-      "LKA_MODE": 0,  # TODO: not used by the stock system
-      "TORQUE_REQUEST": 0,  # we don't use torque
-      "STEER_REQ": 0,  # we don't use torque
+      "LKA_OptUsmSta": 0,  # TODO: not used by the stock system
+      "StrTqReqVal": 0,  # we don't use torque
+      "ActToiSta": 0,  # we don't use torque
       # this goes 0 when LFA lane changes, 3 when LKA_ICON is >=green
-      "LKA_AVAILABLE": 3 if lat_active else 0,
+      "LKA_RcgSta": 3 if lat_active else 0,
       "ADAS_StrAnglReqVal": apply_angle,
       "LKAS_ANGLE_ACTIVE": 2 if lat_active else 1,
       "ADAS_ACIAnglTqRedcGainVal": apply_torque if lat_active else 0,
