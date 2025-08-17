@@ -38,8 +38,8 @@ class CanBus(CanBusBase):
 
 
 def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon, vEgoRaw):
-  damp_factor_v = [20, 30]
-  damp_factor_lkp = [100, 112]
+  damp_factor_v = [11, 22]
+  damp_factor_lkp = [100, 115]
 
   common_values = {
     "LKA_MODE": 2,
