@@ -2,6 +2,7 @@
 
 #include "opendbc/safety/safety_declarations.h"
 #include "opendbc/safety/modes/hyundai_common.h"
+#include <stdio.h>
 
 #define HYUNDAI_LIMITS(steer, rate_up, rate_down) { \
   .max_torque = (steer), \
@@ -58,10 +59,9 @@ const LongitudinalLimits HYUNDAI_LONG_LIMITS = {
 #define HYUNDAI_LDA_BUTTON_ADDR_CHECK \
   {.msg = {{0x391, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 50U}, { 0 }, { 0 }}}, \
 
-#define HYUNDAI_NON_SCC_ADDR_CHECK \
-  {.msg = {{0x592U, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},    \
-           {0x595U, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},    \
-           {0x367U, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}}}, \
+#define HYUNDAI_NON_SCC_HEV_EV_ADDR_CHECK \
+  {.msg = {{0x592U, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},          \
+           {0x595U, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, \
 
 static const CanMsg HYUNDAI_TX_MSGS[] = {
   HYUNDAI_COMMON_TX_MSGS(0)
@@ -209,12 +209,9 @@ static void hyundai_rx_hook(const CANPacket_t *msg) {
       hyundai_common_cruise_state_check(cruise_engaged);
     }
 
-    if ((msg->addr == 0x260U) && !hyundai_ev_gas_signal && !hyundai_hybrid_gas_signal && hyundai_non_scc) {
+    if ((msg->addr == 0x260U) && hyundai_non_scc && !hyundai_ev_gas_signal && !hyundai_hybrid_gas_signal) {
       acc_main_on = GET_BIT(msg, 25U);
-    }
-
-    if (msg->addr == 0x367U) {
-      bool cruise_engaged = msg->data[0] != 0U;
+      bool cruise_engaged = GET_BIT(msg, 26U);
       hyundai_common_cruise_state_check(cruise_engaged);
     }
   }
@@ -408,12 +405,21 @@ static safety_config hyundai_init(uint16_t param) {
 
     static RxCheck hyundai_non_scc_addr_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
-      HYUNDAI_NON_SCC_ADDR_CHECK
     };
 
     static RxCheck hyundai_non_scc_lda_button_addr_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
-      HYUNDAI_NON_SCC_ADDR_CHECK
+      HYUNDAI_LDA_BUTTON_ADDR_CHECK
+    };
+
+    static RxCheck hyundai_hev_ev_non_scc_addr_checks[] = {
+      HYUNDAI_COMMON_RX_CHECKS(false)
+      HYUNDAI_NON_SCC_HEV_EV_ADDR_CHECK
+    };
+
+    static RxCheck hyundai_hev_ev_non_scc_lda_button_addr_checks[] = {
+      HYUNDAI_COMMON_RX_CHECKS(false)
+      HYUNDAI_NON_SCC_HEV_EV_ADDR_CHECK
       HYUNDAI_LDA_BUTTON_ADDR_CHECK
     };
 
@@ -425,10 +431,18 @@ static safety_config hyundai_init(uint16_t param) {
         SET_RX_CHECKS(hyundai_fcev_rx_checks, ret);
       }
     } else if (hyundai_non_scc) {
-      if (hyundai_has_lda_button) {
-        SET_RX_CHECKS(hyundai_non_scc_lda_button_addr_checks, ret);
+      if (hyundai_ev_gas_signal || hyundai_hybrid_gas_signal) {
+        if (hyundai_has_lda_button) {
+          SET_RX_CHECKS(hyundai_hev_ev_non_scc_lda_button_addr_checks, ret);
+        } else {
+          SET_RX_CHECKS(hyundai_hev_ev_non_scc_addr_checks, ret);
+        }
       } else {
-        SET_RX_CHECKS(hyundai_non_scc_addr_checks, ret);
+        if (hyundai_has_lda_button) {
+          SET_RX_CHECKS(hyundai_non_scc_lda_button_addr_checks, ret);
+        } else {
+          SET_RX_CHECKS(hyundai_non_scc_addr_checks, ret);
+        }
       }
     } else {
       if (hyundai_has_lda_button) {

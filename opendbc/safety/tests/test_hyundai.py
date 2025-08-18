@@ -482,7 +482,6 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
 
 @parameterized_class(LDA_BUTTON)
 class TestHyundaiNonSCCSafety(TestHyundaiSafety):
-  cnt_acc_state = 0
 
   @classmethod
   def setUpClass(cls):
@@ -498,13 +497,38 @@ class TestHyundaiNonSCCSafety(TestHyundaiSafety):
     self.safety.init_tests()
 
   def _pcm_status_msg(self, enable):
-    values = {"CF_Lvr_CruiseSet": enable}
-    return self.packer.make_can_msg_panda("LVR12", 0, values)
+    values = {"CRUISE_LAMP_S": enable, "AliveCounter": self.cnt_gas % 4}
+    self.__class__.cnt_gas += 1
+    return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
 
   def _acc_state_msg(self, enable):
-    values = {"CRUISE_LAMP_M": enable, "AliveCounter": self.cnt_acc_state % 4}
-    self.__class__.cnt_acc_state += 1
+    values = {"CRUISE_LAMP_M": enable, "AliveCounter": self.cnt_gas % 4}
+    self.__class__.cnt_gas += 1
     return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
+
+  def _user_gas_msg(self, gas: float, controls_allowed: bool = True):
+    values = {"CF_Ems_AclAct": gas, "CRUISE_LAMP_M": 1, "CRUISE_LAMP_S": controls_allowed, "AliveCounter": self.cnt_gas % 4}
+    self.__class__.cnt_gas += 1
+    return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
+
+  def test_allow_engage_with_gas_pressed(self):
+    self._rx(self._user_gas_msg(1, self.safety.get_controls_allowed()))
+    self.safety.set_controls_allowed(True)
+    self._rx(self._user_gas_msg(1, self.safety.get_controls_allowed()))
+    self.assertTrue(self.safety.get_controls_allowed())
+    self._rx(self._user_gas_msg(1, self.safety.get_controls_allowed()))
+    self.assertTrue(self.safety.get_controls_allowed())
+
+  def test_no_disengage_on_gas(self):
+    self._rx(self._user_gas_msg(0, self.safety.get_controls_allowed()))
+    self.safety.set_controls_allowed(True)
+    self._rx(self._user_gas_msg(self.GAS_PRESSED_THRESHOLD + 1, self.safety.get_controls_allowed()))
+    # Test we allow lateral, but not longitudinal
+    self.assertTrue(self.safety.get_controls_allowed())
+    self.assertFalse(self.safety.get_longitudinal_allowed())
+    # Make sure we can re-gain longitudinal actuation
+    self._rx(self._user_gas_msg(0, self.safety.get_controls_allowed()))
+    self.assertTrue(self.safety.get_longitudinal_allowed())
 
 
 @parameterized_class(ALL_NON_SCC_HEV_EV_COMBOS)
