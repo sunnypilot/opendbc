@@ -610,7 +610,7 @@ class CAR(Platforms):
   )
   KIA_EV9 = HyundaiCanFDPlatformConfig(
     [
-      HyundaiCarDocs("Kia EV9 2025", car_parts=CarParts.common([CarHarness.hyundai_r]))
+      HyundaiCarDocs("Kia EV9 2025-26", car_parts=CarParts.common([CarHarness.hyundai_r]))
     ],
     CarSpecs(mass=2664, wheelbase=3.1, steerRatio=16),
     flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
