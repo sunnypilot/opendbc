@@ -119,6 +119,7 @@ class HyundaiSafetyFlags(IntFlag):
   FCEV_GAS = 256
   ALT_LIMITS_2 = 512
   CANFD_ANGLE_STEERING = 1024
+  CCNC = 2048
 
 
 class HyundaiFlags(IntFlag):
@@ -180,6 +181,8 @@ class HyundaiFlags(IntFlag):
   ALT_LIMITS_2 = 2 ** 26
 
   CANFD_ANGLE_STEERING = 2 ** 27
+
+  CCNC = 2 ** 28
 
 
 class Footnote(Enum):
@@ -364,7 +367,7 @@ class CAR(Platforms):
                      car_parts=CarParts.common([CarHarness.hyundai_p])),
     ],
     CarSpecs(mass=2035, wheelbase=2.81, steerRatio=13.72),
-    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+    flags=HyundaiFlags.CANFD_ANGLE_STEERING | HyundaiFlags.CCNC,
   )
   HYUNDAI_SONATA = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Sonata 2020-23", "All", video="https://www.youtube.com/watch?v=ix63r9kE3Fw",

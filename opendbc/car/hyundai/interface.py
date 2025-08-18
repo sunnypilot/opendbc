@@ -91,6 +91,8 @@ class CarInterface(CarInterfaceBase):
       if ret.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
         ret.steerControlType = structs.CarParams.SteerControlType.angle
         ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CANFD_ANGLE_STEERING.value
+      if ret.flags & HyundaiFlags.CCNC and not ret.flags & HyundaiFlags.CANFD_LKA_STEERING:
+        ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CCNC.value
 
     else:
       # Shared configuration for non CAN-FD cars
