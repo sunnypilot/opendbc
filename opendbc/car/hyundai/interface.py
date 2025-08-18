@@ -66,7 +66,6 @@ class CarInterface(CarInterfaceBase):
         if 0xCB in fingerprint[CAN.CAM]:  # ADAS_CMD_35_10ms
           ret.flags |= HyundaiFlags.SEND_LFA.value
 
-
       # Some LKA steering cars have alternative messages for gear checks
       # ICE cars do not have 0x130; GEARS message on 0x40 or 0x70 instead
       if 0x130 not in fingerprint[CAN.ECAN]:

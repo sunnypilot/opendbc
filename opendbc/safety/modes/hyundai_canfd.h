@@ -206,11 +206,11 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   bool tx = true;
 
   // HDA1 steering
-  if ((msg->addr == 0xCB) && hyundai_canfd_angle_steering) {
+  if ((msg->addr == 0xCBU) && hyundai_canfd_angle_steering) {
     const int lfa_angle_active = (msg->data[3] >> 4U);
     const bool steer_angle_req = lfa_angle_active == 2;
 
-    int desired_angle = (msg->data[5] & 0x3F) << 8 | msg->data[4];
+    int desired_angle = (((uint32_t)(msg->data[5] & 0x3FU)) << 8) | (uint32_t)msg->data[4];
     desired_angle = to_signed(desired_angle, 14);
 
     if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, HYUNDAI_STEERING_PARAMS)) {
@@ -309,7 +309,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
 
   static const CanMsg HYUNDAI_CANFD_LKA_STEERING_LONG_TX_MSGS[] = {
     HYUNDAI_CANFD_LKA_STEERING_COMMON_TX_MSGS(0, 1)
-    HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0,1)
+    HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0, 1)
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(1, true)
     {0x51,  0, 32, .check_relay = false},  // ADRV_0x51
     {0x730, 1,  8, .check_relay = false},  // tester present for ADAS ECU disable
