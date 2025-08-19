@@ -49,17 +49,22 @@ def calculate_angle_torque_reduction_gain(params, CS, apply_torque_last, target_
   if CS.out.steeringPressed:  # User is overriding
     driver_torque = abs(CS.out.steeringTorque)
 
-    # The goal here is to normalize the driver torque to a range of 0.0 to 1.0. We consider that if we are 1.8 above the threshold, we are at 1.0 normalized.
-    normalized = np.clip((driver_torque - params.STEER_THRESHOLD) / ((params.STEER_THRESHOLD * 1.8) - params.STEER_THRESHOLD), 0.0, 1.0)
+    # Normalize torque to 0..1 range
+    normalized = np.clip((driver_torque - params.STEER_THRESHOLD) /
+                         ((params.STEER_THRESHOLD * 1.8) - params.STEER_THRESHOLD), 0.0, 1.0)
 
-    # Quadratic non-linear scaling
-    scale = 0.2 + (1.0 - 0.2) * np.log10(1 + 9 * normalized)
+    k = 3.0  # steepness of sigmoid
+    normalized_nl = 1.0 / (1.0 + np.exp(k * (normalized - 0.3)))
+    target_gain = params.ANGLE_MIN_TORQUE_REDUCTION_GAIN + \
+                  normalized_nl * (params.ANGLE_MAX_TORQUE_REDUCTION_GAIN - params.ANGLE_MIN_TORQUE_REDUCTION_GAIN)
 
-    torque_delta = apply_torque_last - params.ANGLE_MIN_TORQUE_REDUCTION_GAIN
+    # For the delta, we take the ramp down if torque is below the threshold + hefty padding. Otherwise we use the ramp up which gives a more aggressive ramp
+    max_delta = params.ANGLE_RAMP_DOWN_TORQUE_REDUCTION_RATE if driver_torque < params.STEER_THRESHOLD*2.5 else params.ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE 
+    delta = np.clip(target_gain - apply_torque_last, -max_delta, max_delta)
+    smoothed_gain = apply_torque_last + delta
 
-    # Adaptive ramp rate, used to reach the target torque reduction gain on 20 cycles
-    adaptive_ramp_rate = float(max((torque_delta / 20) * scale, 0.004))
-    return max(apply_torque_last - adaptive_ramp_rate, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN)
+    # Ensure gain never goes below minimum
+    return float(max(smoothed_gain, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN))
   else:
     # EU vehicles have been seen to "idle" at 0.384, while US vehicles have been seen idling at "0.92" for LFA.
     target_torque = max(target_torque_reduction_gain, 0.5) # at 0.5 under normal conditions
