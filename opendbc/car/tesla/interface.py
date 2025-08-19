@@ -4,7 +4,7 @@ from opendbc.car.tesla.carcontroller import CarController
 from opendbc.car.tesla.carstate import CarState
 from opendbc.car.tesla.values import TeslaSafetyFlags, CAR
 
-from opendbc.sunnypilot.car.tesla.values import TeslaFlagsSP
+from opendbc.sunnypilot.car.tesla.values import TeslaFlagsSP, TeslaSafetyFlagsSP
 
 
 class CarInterface(CarInterfaceBase):
@@ -45,5 +45,6 @@ class CarInterface(CarInterfaceBase):
 
     if 0x3DF in fingerprint[1]:
       ret.flags |= TeslaFlagsSP.HAS_VEHICLE_BUS.value
+      ret.safetyParam |= TeslaSafetyFlagsSP.HAS_VEHICLE_BUS
 
     return ret

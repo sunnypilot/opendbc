@@ -9,3 +9,7 @@ from enum import IntFlag
 
 class TeslaFlagsSP(IntFlag):
   HAS_VEHICLE_BUS = 1  # 3-finger infotainment press signal is present on the VEHICLE bus with the deprecated Tesla harness installed
+
+
+class TeslaSafetyFlagsSP:
+  HAS_VEHICLE_BUS = 1
