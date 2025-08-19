@@ -264,7 +264,7 @@ BO_ 851 UI_status: 8 VehicleBus
  SG_ UI_pcbTemperature : 48|8@1- (1,40) [-87|167] "degC"  VehicleBus
  SG_ UI_cpuTemperature : 56|8@1- (1,40) [-87|167] "degC"  VehicleBus
 
-BO_ 991 UI_status2: 5 VehicleBus
+BO_ 991 UI_status2: 8 VehicleBus
  SG_ UI_mobileAppStepCount : 0|16@1+ (1,0) [0|65535] ""  VehicleBus
  SG_ UI_userRequestSnapshot : 16|1@1+ (1,0) [0|1] ""  VehicleBus
  SG_ UI_touchDetected : 17|1@1+ (1,0) [0|1] ""  VehicleBus
