@@ -47,8 +47,18 @@ def get_baseline_safety_cp():
 def calculate_angle_torque_reduction_gain(params, CS, apply_torque_last, target_torque_reduction_gain):
   """ Calculate the angle torque reduction gain based on the current steering state. """
   if CS.out.steeringPressed:  # User is overriding
+    driver_torque = abs(CS.out.steeringTorque)
+
+    # The goal here is to normalize the driver torque to a range of 0.0 to 1.0. We consider that if we are 1.8 above the threshold, we are at 1.0 normalized.
+    normalized = np.clip((driver_torque - params.STEER_THRESHOLD) / ((params.STEER_THRESHOLD * 1.8) - params.STEER_THRESHOLD), 0.0, 1.0)
+
+    # Quadratic non-linear scaling
+    scale = 0.2 + (1.0 - 0.2) * np.log10(1 + 9 * normalized)
+
     torque_delta = apply_torque_last - params.ANGLE_MIN_TORQUE_REDUCTION_GAIN
-    adaptive_ramp_rate = max(torque_delta / params.ANGLE_TORQUE_OVERRIDE_CYCLES, 0.004) # the minimum rate of change we've seen
+
+    # Adaptive ramp rate, used to reach the target torque reduction gain on 20 cycles
+    adaptive_ramp_rate = float(max((torque_delta / 20) * scale, 0.004))
     return max(apply_torque_last - adaptive_ramp_rate, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN)
   else:
     # EU vehicles have been seen to "idle" at 0.384, while US vehicles have been seen idling at "0.92" for LFA.
