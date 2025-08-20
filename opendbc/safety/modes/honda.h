@@ -106,6 +106,14 @@ static void honda_rx_hook(const CANPacket_t *msg) {
   if (((msg->addr == 0x1A6U) || (msg->addr == 0x296U)) && (msg->bus == pt_bus)) {
     int button = (msg->data[0] & 0xE0U) >> 5;
 
+    int cruise_setting = (msg->data[(msg->addr == 0x296U) ? 0U : 5U] & 0x0CU) >> 2U;
+    if (cruise_setting == 1) {
+      mads_button_press = MADS_BUTTON_PRESSED;
+    } else if (cruise_setting == 0) {
+      mads_button_press = MADS_BUTTON_NOT_PRESSED;
+    } else {
+    }
+
     // enter controls on the falling edge of set or resume
     bool set = (button != HONDA_BTN_SET) && (cruise_button_prev == HONDA_BTN_SET);
     bool res = (button != HONDA_BTN_RESUME) && (cruise_button_prev == HONDA_BTN_RESUME);
@@ -238,7 +246,7 @@ static bool honda_tx_hook(const CANPacket_t *msg) {
 
   // STEER: safety check
   if ((msg->addr == 0xE4U) || (msg->addr == 0x194U)) {
-    if (!controls_allowed) {
+    if (!(controls_allowed || mads_is_lateral_control_allowed_by_mads())) {
       bool steer_applied = msg->data[0] | msg->data[1];
       if (steer_applied) {
         tx = false;

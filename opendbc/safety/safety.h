@@ -87,6 +87,7 @@ uint32_t safety_mode_cnt = 0U;
 
 uint16_t current_safety_mode = SAFETY_SILENT;
 uint16_t current_safety_param = 0;
+int current_safety_param_sp = 0;
 static const safety_hooks *current_hooks = &nooutput_hooks;
 safety_config current_safety_config;
 
@@ -327,6 +328,7 @@ void safety_tick(const safety_config *cfg) {
       cfg->rx_checks[i].status.lagging = lagging;
       if (lagging) {
         controls_allowed = false;
+        mads_exit_controls(MADS_DISENGAGE_REASON_LAG);
       }
 
       if (lagging || !is_msg_valid(cfg->rx_checks, i)) {
@@ -373,6 +375,7 @@ static void stock_ecu_check(bool stock_ecu_detected) {
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && stock_ecu_detected) {
     relay_malfunction_set();
   }
+  mads_state_update(vehicle_moving, acc_main_on, controls_allowed, brake_pressed || regen_braking, steering_disengage);
 }
 
 static void relay_malfunction_reset(void) {

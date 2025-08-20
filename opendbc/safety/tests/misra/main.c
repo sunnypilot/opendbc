@@ -10,3 +10,6 @@ UNUSED(safety_tx_hook);
 UNUSED(safety_fwd_hook);
 UNUSED(safety_tick);
 UNUSED(set_safety_hooks);
+UNUSED(mads_heartbeat_engaged_check);
+UNUSED(mads_set_alternative_experience);
+UNUSED(get_acc_main_on_mismatches);

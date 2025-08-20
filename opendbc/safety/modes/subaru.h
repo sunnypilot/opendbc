@@ -69,6 +69,7 @@
   {.msg = {{MSG_SUBARU_Wheel_Speeds,    alt_bus,         8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
   {.msg = {{MSG_SUBARU_Brake_Status,    alt_bus,         8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
   {.msg = {{MSG_SUBARU_CruiseControl,   alt_bus,         8, 20U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
+  {.msg = {{MSG_SUBARU_ES_LKAS_State,   SUBARU_CAM_BUS,  8, 10U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
 
 static bool subaru_gen2 = false;
 static bool subaru_longitudinal = false;
@@ -105,10 +106,18 @@ static void subaru_rx_hook(const CANPacket_t *msg) {
     update_sample(&angle_meas, angle_meas_new);
   }
 
+  if ((msg->addr == MSG_SUBARU_ES_LKAS_State) && (msg->bus == SUBARU_CAM_BUS)) {
+    int lkas_hud = (msg->data[2] & 0x0CU) >> 2U;
+    if ((lkas_hud >= 1) && (lkas_hud <= 3)) {
+      mads_button_press = MADS_BUTTON_PRESSED;
+    }
+  }
+
   // enter controls on rising edge of ACC, exit controls on ACC off
   if ((msg->addr == MSG_SUBARU_CruiseControl) && (msg->bus == alt_main_bus)) {
     bool cruise_engaged = (msg->data[5] >> 1) & 1U;
     pcm_cruise_check(cruise_engaged);
+    acc_main_on = GET_BIT(msg, 40U);
   }
 
   // update vehicle moving with any non-zero wheel speed

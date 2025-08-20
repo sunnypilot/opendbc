@@ -169,48 +169,11 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parsers(CP, CP_SP):
-    pt_messages = [
-      ("BCMTurnSignals", 1),
-      ("ECMPRDNL2", 10),
-      ("PSCMStatus", 10),
-      ("ESPStatus", 10),
-      ("BCMDoorBeltStatus", 10),
-      ("BCMGeneralPlatformStatus", 10),
-      ("EBCMWheelSpdFront", 20),
-      ("EBCMWheelSpdRear", 20),
-      ("EBCMFrictionBrakeStatus", 20),
-      ("AcceleratorPedal2", 33),
-      ("ASCMSteeringButton", 33),
-      ("ECMEngineStatus", 100),
-      ("PSCMSteeringAngle", 100),
-      ("ECMAcceleratorPos", 80),
-    ]
-
-    if CP.transmissionType == TransmissionType.direct:
-      pt_messages.append(("EBCMRegenPaddle", 50))
-
-    if CP.enableBsm:
-      pt_messages.append(("BCMBlindSpotMonitor", 10))
-
-
-    cam_messages = []
+    pt_messages = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
       pt_messages += [
-        ("ASCMLKASteeringCmd", 0),
+        ("ASCMLKASteeringCmd", float('nan')),
       ]
-      cam_messages += [
-        ("ASCMLKASteeringCmd", 10),
-      ]
-
-      if CP.carFingerprint in (ALT_ACCS | CC_ONLY_CAR):
-        pt_messages.append(("ECMCruiseControl", 10))
-      else:
-        cam_messages.append(("ASCMActiveCruiseControlStatus", 25))
-
-      if CP.carFingerprint not in SDGM_CAR:
-        cam_messages += [
-          ("AEBCmd", 10),
-        ]
 
     loopback_messages = [
       ("ASCMLKASteeringCmd", float('nan')),
