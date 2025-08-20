@@ -51,10 +51,10 @@ def calculate_angle_torque_reduction_gain(params, CS, apply_torque_last, target_
 
     # Normalize torque to 0..1 range
     normalized = np.clip((driver_torque - params.STEER_THRESHOLD) /
-                         ((params.STEER_THRESHOLD * 1.8) - params.STEER_THRESHOLD), 0.0, 1.0)
+                         ((params.STEER_THRESHOLD * 1.4) - params.STEER_THRESHOLD), 0.0, 1.0)
 
     k = 3.0  # steepness of sigmoid
-    normalized_nl = 1.0 / (1.0 + np.exp(k * (normalized - 0.9)))
+    normalized_nl = 1.0 / (1.0 + np.exp(k * (normalized - 0.1)))
     target_gain = params.ANGLE_MIN_TORQUE_REDUCTION_GAIN + \
                   normalized_nl * (params.ANGLE_MAX_TORQUE_REDUCTION_GAIN - params.ANGLE_MIN_TORQUE_REDUCTION_GAIN)
 
