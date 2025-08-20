@@ -1055,6 +1055,13 @@ FW_VERSIONS = {
     ],
   },
   CAR.HYUNDAI_IONIQ_5: {
+    (Ecu.combinationMeter, 0x7c6, None): [
+      b'\xf1\x00421',
+      b'\xf1\x10',
+    ],
+    (Ecu.eps, 0x730, None): [
+      b'\xf1\x00NEaPFBL5 1.00 1.00 240813',
+    ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
     ],
