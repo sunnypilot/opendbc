@@ -22,4 +22,3 @@ FW_VERSIONS_EXT = {
     ],
   },
 }
-
