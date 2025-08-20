@@ -17,9 +17,6 @@ from opendbc.sunnypilot.car.subaru import subarucan_ext
 from opendbc.sunnypilot.car.subaru.values import SubaruFlagsSP
 from opendbc.can.parser import CANParser
 
-_SNG_ACC_MIN_DIST = 3
-_SNG_ACC_MAX_DIST = 4.5
-
 
 class SnGCarController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
@@ -28,11 +25,9 @@ class SnGCarController:
     self.enabled = CP_SP.flags & (SubaruFlagsSP.STOP_AND_GO | SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE)
     self.manual_parking_brake = CP_SP.flags & SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE
 
-    self.prev_close_distance = 0
     self.last_standstill_frame = 0
     self.prev_cruise_state = 0
     self.epb_resume_frames_remaining = 0
-    self.manual_hold = False
 
   def update_epb_resume_sequence(self, should_resume: bool) -> bool:
     if self.manual_parking_brake:
@@ -65,49 +60,30 @@ class SnGCarController:
     if not CC.enabled or not CC.hudControl.leadVisible:
       return False
 
-    close_distance = CS.es_distance_msg["Close_Distance"]
     in_standstill = CS.out.standstill
-    pcm_standstill = CS.out.cruiseState.standstill
 
     if not in_standstill:
       self.last_standstill_frame = frame
-      self.manual_hold = False
 
     # Check if we've been in standstill long enough
     standstill_duration = (frame - self.last_standstill_frame) * DT_CTRL
     in_standstill_hold = standstill_duration > 0.75
+    if (frame - self.last_standstill_frame) * DT_CTRL >= 0.8:
+      self.last_standstill_frame = frame
 
-    # Car state distance-based conditions (EPB only)
-    in_resume_distance = _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST
-    distance_increasing = close_distance > self.prev_close_distance
-    distance_resume_allowed = in_resume_distance and distance_increasing
-
-    if self.CP.flags & SubaruFlags.PREGLOBAL:
-      if self.manual_parking_brake:
-        # Manual parking brake: Direct resume without sequence
-        send_resume = in_standstill and in_standstill_hold
-
-        if (frame - self.last_standstill_frame) * DT_CTRL >= 0.8:
-          self.last_standstill_frame = frame
-      else:
-        # Pre-Global with EPB: Resume sequence with stock ACC distance conditions
-        should_resume = in_standstill and distance_resume_allowed
-        send_resume = self.update_epb_resume_sequence(should_resume)
+    if self.manual_parking_brake:
+      # Manual parking brake: Direct resume when the standstill hold threshold is reached to prevent ACC fault
+      send_resume = in_standstill_hold
     else:
-      if self.manual_parking_brake:
-        # Manual parking brake: Direct resume without sequence
-        send_resume = in_standstill and in_standstill_hold
-      else:
-        # Global with EPB: Resume sequence with stock ACC distance conditions
-        # Track manual hold state
-        if in_standstill and pcm_standstill and self.prev_cruise_state == 1:
-          self.manual_hold = True
+      # EPB: Resume sequence with planner resume desire
+      # Global: use PCM cruise state "HOLD" as in_standstill
+      if not self.CP.flags & SubaruFlags.PREGLOBAL:
+        in_standstill = CS.cruise_state == 3 and self.prev_cruise_state == 3
 
-        should_resume = pcm_standstill and not self.manual_hold and distance_resume_allowed
-        send_resume = self.update_epb_resume_sequence(should_resume)
+      should_resume = CC.cruiseControl.resume and in_standstill
+      send_resume = self.update_epb_resume_sequence(should_resume)
 
     self.prev_cruise_state = CS.cruise_state
-    self.prev_close_distance = close_distance
 
     return send_resume
 
