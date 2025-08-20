@@ -14,7 +14,7 @@ from opendbc.car.interfaces import CarStateBase
 
 from opendbc.car.subaru.values import SubaruFlags
 from opendbc.sunnypilot.car.subaru import subarucan_ext
-from opendbc.sunnypilot.car.subaru.values import SubaruFlagsSP
+from opendbc.sunnypilot.car.subaru.values_ext import SubaruFlagsSP
 from opendbc.can.parser import CANParser
 
 
