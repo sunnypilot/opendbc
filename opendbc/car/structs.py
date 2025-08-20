@@ -129,5 +129,15 @@ class CarControlSP:
 
 
 @auto_dataclass
+class HkgAngleDebug:
+  applyAngle: float = auto_field()
+  applyAngleSmooth: float = auto_field()
+  applyAngleLimited: float = auto_field()
+  applyAngleBaselineLimited: float = auto_field()
+  maxAngle: float = auto_field()
+  maxAngleDelta: float = auto_field()
+
+
+@auto_dataclass
 class CarStateSP:
-  pass
+  hkgAngleDebug: 'HkgAngleDebug' = field(default_factory=lambda: HkgAngleDebug())

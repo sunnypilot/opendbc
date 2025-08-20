@@ -13,7 +13,7 @@ except ImportError:
 
 from opendbc.can import CANPacker
 from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs
-from opendbc.car.lateral import apply_driver_steer_torque_limits, common_fault_avoidance, apply_steer_angle_limits_vm
+from opendbc.car.lateral import apply_driver_steer_torque_limits, common_fault_avoidance, apply_steer_angle_limits_vm, get_max_angle_delta_vm, get_max_angle_vm
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
 from opendbc.car.hyundai.hyundaicanfd import CanBus
@@ -215,16 +215,25 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     else:
       v_ego_raw = CS.out.vEgoRaw
       apply_angle = np.clip(actuators.steeringAngleDeg, -819.2, 819.1)
+      CS.angle_debug.applyAngle = float(apply_angle)  # for safety checks
 
       if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
         apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last)
 
+      CS.angle_debug.applyAngleSmooth = float(apply_angle)  # for safety checks
+
+      CS.angle_debug.maxAngleDelta = get_max_angle_delta_vm(max(v_ego_raw, 1), self.VM, self.params)
+      CS.angle_debug.maxAngle = get_max_angle_vm(max(v_ego_raw, 1), self.VM, self.params)
+
       apply_angle = apply_steer_angle_limits_vm(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params, self.VM)
+
+      CS.angle_debug.applyAngleLimited = float(apply_angle)  # for safety checks
 
       # if we are not the baseline model, we use the baseline model for further limits to prevent a panda block since it is hardcoded for baseline model.
       if self.CP.carFingerprint != ANGLE_SAFETY_BASELINE_MODEL:
         apply_angle = apply_steer_angle_limits_vm(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params,
                                                   self.BASELINE_VM)
+        CS.angle_debug.applyAngleBaselineLimited = float(apply_angle)  # for safety checks
 
       # Use saturation-based torque reduction gain
       target_torque_reduction_gain = self.angle_torque_reduction_gain_controller.update(
