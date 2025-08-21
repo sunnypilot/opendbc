@@ -26,7 +26,6 @@ class SnGCarController:
     self.manual_parking_brake = CP_SP.flags & SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE
 
     self.last_standstill_frame = 0
-    self.prev_cruise_state = 0
     self.epb_resume_frames_remaining = 0
 
   def update_epb_resume_sequence(self, should_resume: bool) -> bool:
@@ -78,12 +77,10 @@ class SnGCarController:
       # EPB: Resume sequence with planner resume desire
       # Global: use PCM cruise state "HOLD" as in_standstill
       if not self.CP.flags & SubaruFlags.PREGLOBAL:
-        in_standstill = CS.cruise_state == 3 and self.prev_cruise_state == 3
+        in_standstill = CS.out.cruiseState.standstill
 
       should_resume = CC.cruiseControl.resume and in_standstill
       send_resume = self.update_epb_resume_sequence(should_resume)
-
-    self.prev_cruise_state = CS.cruise_state
 
     return send_resume
 
@@ -108,7 +105,6 @@ class SnGCarState:
     self.CP_SP = CP_SP
 
     self.enabled = CP_SP.flags & (SubaruFlagsSP.STOP_AND_GO | SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE)
-    self.cruise_state: float = 0
     self.brake_pedal_msg: dict[str, float] = {}
     self.throttle_msg: dict[str, float] = {}
 
@@ -118,9 +114,6 @@ class SnGCarState:
 
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
-
-    if not self.CP.flags & SubaruFlags.PREGLOBAL:
-      self.cruise_state = cp_cam.vl["ES_DashStatus"]["Cruise_State"]
 
     self.brake_pedal_msg = copy.copy(cp.vl["Brake_Pedal"])
     self.throttle_msg = copy.copy(cp.vl["Throttle"])
