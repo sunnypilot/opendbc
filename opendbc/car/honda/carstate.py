@@ -30,7 +30,7 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
 
     self.main_on_sig_msg = "SCM_FEEDBACK"
-    if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES:
+    if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES or CP.carFingerprint == CAR.HONDA_ODYSSEY_RC5:
       self.main_on_sig_msg = "SCM_BUTTONS"
 
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
