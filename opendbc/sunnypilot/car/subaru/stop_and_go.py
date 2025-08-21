@@ -79,7 +79,7 @@ class SnGCarController:
 
     return send_resume
 
-  def create_stop_and_go(self, packer, CC: structs.CarControl, CS: CarStateBase, pcm_cancel_cmd: bool, frame: int) -> list[CanData]:
+  def create_stop_and_go(self, packer, CC: structs.CarControl, CS: CarStateBase, frame: int) -> list[CanData]:
     can_sends = []
 
     if not self.enabled:
@@ -89,7 +89,7 @@ class SnGCarController:
 
     can_sends.append(subarucan_ext.create_throttle(packer, self.CP, CS.throttle_msg, send_resume and not self.manual_parking_brake))
     if frame % 2 == 0:
-      can_sends.append(subarucan_ext.create_brake_pedal(packer, self.CP, CS.brake_pedal_msg, pcm_cancel_cmd, send_resume and self.manual_parking_brake))
+      can_sends.append(subarucan_ext.create_brake_pedal(packer, self.CP, CS.brake_pedal_msg, send_resume and self.manual_parking_brake))
 
     return can_sends
 
