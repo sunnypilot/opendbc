@@ -21,6 +21,7 @@ def setup_interfaces(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs
 
   _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
   _initialize_radar_tracks(CP, CP_SP, can_recv, can_send)
+  _initialize_stop_and_go(CP, CP_SP, params_dict)
 
 
 def _initialize_custom_longitudinal_tuning(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
@@ -44,10 +45,10 @@ def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, 
       CP.radarUnavailable = not tracks_enabled
 
 
-def _initialize_stop_and_go(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> None:
+def _initialize_stop_and_go(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
   if CP.brand == 'subaru' and not CP.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID):
-    stop_and_go = params.get_bool("SubaruStopAndGo")
-    stop_and_go_manual_parking_brake = params.get_bool("SubaruStopAndGoManualParkingBrake")
+    stop_and_go = params_dict["SubaruStopAndGo"]
+    stop_and_go_manual_parking_brake = params_dict["SubaruStopAndGoManualParkingBrake"]
 
     if stop_and_go:
       CP_SP.flags |= SubaruFlagsSP.STOP_AND_GO.value
