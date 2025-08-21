@@ -220,22 +220,11 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
       if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
         apply_angle = sp_smooth_angle(v_ego_raw, apply_angle, self.apply_angle_last)
 
-      CS.angle_debug.applyAngleSmooth = float(apply_angle)  # for safety checks 
-
-      CS.angle_debug.currentLimits.maxAngleDelta = get_max_angle_delta_vm(max(v_ego_raw, 1), self.VM, self.params)
-      CS.angle_debug.currentLimits.maxAngle = get_max_angle_vm(max(v_ego_raw, 1), self.VM, self.params)
-
-      apply_angle = apply_steer_angle_limits_vm(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params, self.VM)
-
-      CS.angle_debug.applyAngleLimited = float(apply_angle)  # for safety checks
-
-      # if we are not the baseline model, we use the baseline model for further limits to prevent a panda block since it is hardcoded for baseline model.
-      if self.CP.carFingerprint != ANGLE_SAFETY_BASELINE_MODEL:
-        apply_angle = apply_steer_angle_limits_vm(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params,
-                                                  self.BASELINE_VM)
-        CS.angle_debug.applyAngleBaselineLimited = float(apply_angle)  # for safety checks
-        CS.angle_debug.baselineLimits.maxAngleDelta = get_max_angle_delta_vm(max(v_ego_raw, 1), self.BASELINE_VM, self.params)
-        CS.angle_debug.baselineLimits.maxAngle = get_max_angle_vm(max(v_ego_raw, 1), self.BASELINE_VM, self.params)
+      apply_angle = apply_steer_angle_limits_vm(apply_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params,
+                                                self.BASELINE_VM)
+      CS.angle_debug.applyAngleBaselineLimited = float(apply_angle)  # for safety checks
+      CS.angle_debug.baselineLimits.maxAngleDelta = get_max_angle_delta_vm(max(v_ego_raw, 1), self.BASELINE_VM, self.params)
+      CS.angle_debug.baselineLimits.maxAngle = get_max_angle_vm(max(v_ego_raw, 1), self.BASELINE_VM, self.params)
 
       # Use saturation-based torque reduction gain
       target_torque_reduction_gain = self.angle_torque_reduction_gain_controller.update(
