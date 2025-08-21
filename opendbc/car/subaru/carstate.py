@@ -130,7 +130,7 @@ class CarState(CarStateBase, MadsCarState, SnGCarState):
       self.es_infotainment_msg = copy.copy(cp_cam.vl["ES_Infotainment"])
 
     MadsCarState.update_mads(self, ret, can_parsers)
-    SnGCarState.update(self, can_parsers)
+    SnGCarState.update(self, ret, can_parsers)
 
     return ret, ret_sp
 
