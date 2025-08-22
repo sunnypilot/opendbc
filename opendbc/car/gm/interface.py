@@ -224,6 +224,7 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.dashcamOnly = True  # Needs steerRatio, tireStiffness, and lat accel factor tuning
 
+    # FIXME-SP: use GMFlagsSP and GMSafetyFlagsSP
     if candidate in CC_ONLY_CAR:
       ret.safetyConfigs[0].safetyParam |= GMSafetyFlags.FLAG_GM_NO_ACC.value
 
