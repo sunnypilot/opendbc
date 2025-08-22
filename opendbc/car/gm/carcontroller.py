@@ -37,7 +37,6 @@ class CarController(CarControllerBase):
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint][Bus.radar])
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint][Bus.chassis])
 
-    self.prev_op_enabled = False
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
