@@ -6,7 +6,7 @@ import importlib
 import numpy as np
 from collections.abc import Callable
 
-from opendbc.can import CANPacker #pylint: disable=import-error
+from opendbc.can import CANPacker
 from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from opendbc.safety.tests.libsafety import libsafety_py
 
@@ -133,6 +133,7 @@ class PandaSafetyTestBase(unittest.TestCase):
       self._reset_safety_hooks()
       self.assertEqual(meas_min_func(), 0)
       self.assertEqual(meas_max_func(), 0)
+
 
 class LongitudinalAccelSafetyTest(PandaSafetyTestBase, abc.ABC):
 
@@ -668,7 +669,7 @@ class AngleSteeringSafetyTest(VehicleSpeedSafetyTest):
   ANGLE_RATE_UP: list[float]  # windup limit
   ANGLE_RATE_DOWN: list[float]  # unwind limit
 
-    # Real time limits
+  # Real time limits
   LATERAL_FREQUENCY: int = -1  # Hz
 
   @classmethod
