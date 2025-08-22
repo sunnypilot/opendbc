@@ -1239,6 +1239,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Hyundai Elantra Non-SCC 2022": {
+    "platform": "HYUNDAI_ELANTRA_2022_NON_SCC",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Elantra Non-SCC",
+    "year": [
+      "2022"
+    ],
+    "package": "No Smart Cruise Control (Non-SCC)"
+  },
   "Hyundai Genesis 2015-16": {
     "platform": "HYUNDAI_GENESIS",
     "make": "Hyundai",
@@ -1460,6 +1470,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Hyundai Kona Electric Non-SCC 2019": {
+    "platform": "HYUNDAI_KONA_EV_NON_SCC",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Kona Electric Non-SCC",
+    "year": [
+      "2019"
+    ],
+    "package": "No Smart Cruise Control (Non-SCC)"
+  },
   "Hyundai Kona Hybrid 2020": {
     "platform": "HYUNDAI_KONA_HEV",
     "make": "Hyundai",
@@ -1479,6 +1499,16 @@
       "2024"
     ],
     "package": "Smart Cruise Control (SCC)"
+  },
+  "Hyundai Kona Non-SCC 2019": {
+    "platform": "HYUNDAI_KONA_NON_SCC",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Kona Non-SCC",
+    "year": [
+      "2019"
+    ],
+    "package": "No Smart Cruise Control (Non-SCC)"
   },
   "Hyundai Nexo 2021": {
     "platform": "HYUNDAI_NEXO_1ST_GEN",
@@ -1779,6 +1809,16 @@
       "2021"
     ],
     "package": "Smart Cruise Control (SCC)"
+  },
+  "Kia Ceed Plug-in Hybrid Non-SCC 2022": {
+    "platform": "KIA_CEED_PHEV_2022_NON_SCC",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Ceed Plug-in Hybrid Non-SCC",
+    "year": [
+      "2022"
+    ],
+    "package": "No Smart Cruise Control (Non-SCC)"
   },
   "Kia EV6 (Southeast Asia only) 2022-24": {
     "platform": "KIA_EV6",
