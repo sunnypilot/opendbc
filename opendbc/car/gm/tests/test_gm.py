@@ -1,7 +1,8 @@
 from parameterized import parameterized
 
 from opendbc.car.gm.fingerprints import FINGERPRINTS
-from opendbc.car.gm.values import CAMERA_ACC_CAR, GM_RX_OFFSET, CC_ONLY_CAR
+from opendbc.car.gm.values import CAMERA_ACC_CAR, GM_RX_OFFSET
+from opendbc.sunnypilot.car.gm.carstate_ext import CC_ONLY_CAR
 
 CAMERA_DIAGNOSTIC_ADDRESS = 0x24b
 

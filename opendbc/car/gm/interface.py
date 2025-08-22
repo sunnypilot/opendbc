@@ -8,7 +8,9 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.gm.carcontroller import CarController
 from opendbc.car.gm.carstate import CarState
 from opendbc.car.gm.radar_interface import RadarInterface, RADAR_HEADER_MSG, CAMERA_DATA_HEADER_MSG
-from opendbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags, CC_ONLY_CAR
+from opendbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags
+from opendbc.sunnypilot.car.gm.carstate_ext import CC_ONLY_CAR
+from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP, GMSafetyFlagsSP
 from opendbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, LatControlInputs, NanoFFModel
 
 TransmissionType = structs.CarParams.TransmissionType
@@ -17,8 +19,7 @@ NetworkLocation = structs.CarParams.NetworkLocation
 NON_LINEAR_TORQUE_PARAMS = {
   CAR.CHEVROLET_BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
   CAR.GMC_ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
-  CAR.CHEVROLET_SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
-
+  CAR.CHEVROLET_SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122],
   # port extensions
   CAR.CHEVROLET_BOLT_2017: [2.24, 1.1, 0.28, -0.07],
   CAR.CHEVROLET_BOLT_2018: [1.8, 1.1, 0.3, -0.045],
@@ -141,8 +142,6 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to opendbc/car/tests/routes.py, we can remove it from this list.
-    # ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.CHEVROLET_MALIBU, CAR.BUICK_REGAL} or \
-    #                   (ret.networkLocation == NetworkLocation.gateway and ret.radarUnavailable)
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -154,7 +153,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelay = 0.5  # large delay to initially start braking
 
     if candidate == CAR.CHEVROLET_VOLT:
-      ret.minEnableSpeed = -1
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.17]
       ret.lateralTuning.pid.kiBP = [0.]
@@ -224,10 +222,26 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.GMC_YUKON:
       ret.steerActuatorDelay = 0.5
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-      ret.dashcamOnly = True  # Needs steerRatio, tireStiffness, and lat accel factor tuning
 
-    # FIXME-SP: use GMFlagsSP and GMSafetyFlagsSP
+    return ret
+
+  @staticmethod
+  def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
     if candidate in CC_ONLY_CAR:
-      ret.safetyConfigs[0].safetyParam |= GMSafetyFlags.FLAG_GM_NO_ACC.value
+      ret.flags |= GMFlagsSP.NO_ACC.value
+      ret.safetyParam |= GMSafetyFlagsSP.NO_ACC
+
+    # untested platforms, need user validations
+    if candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.CHEVROLET_MALIBU, CAR.BUICK_REGAL}:
+      stock_cp.dashcamOnly = True
+
+    # GMC Yukon needs steerRatio, tireStiffness, and lat accel factor tuning
+    if candidate == CAR.GMC_YUKON:
+      stock_cp.dashcamOnly = True
+
+    # Chevrolet Volt specific settings
+    if candidate == CAR.CHEVROLET_VOLT:
+      stock_cp.minEnableSpeed = -1
 
     return ret

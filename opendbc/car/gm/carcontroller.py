@@ -4,7 +4,8 @@ from opendbc.car import Bus, DT_CTRL, structs
 from opendbc.car.lateral import apply_driver_steer_torque_limits
 from opendbc.car.gm import gmcan
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, CC_ONLY_CAR
+from opendbc.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
+from opendbc.sunnypilot.car.gm.carstate_ext import CC_ONLY_CAR
 from opendbc.car.interfaces import CarControllerBase
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
@@ -31,7 +32,9 @@ class CarController(CarControllerBase):
     self.lka_steering_cmd_counter = 0
     self.lka_icon_status_last = (False, False)
 
-    self.params = CarControllerParams(self.CP)
+    # For CC_ONLY_CAR vehicles, use different gas/brake parameters
+    use_cc_only_car_logic = self.CP.carFingerprint not in CC_ONLY_CAR
+    self.params = CarControllerParams(self.CP, use_cc_only_car_logic)
 
     self.packer_pt = CANPacker(DBC[self.CP.carFingerprint][Bus.pt])
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint][Bus.radar])

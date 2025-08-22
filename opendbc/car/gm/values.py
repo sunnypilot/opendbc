@@ -32,11 +32,14 @@ class CarControllerParams:
   ACCEL_MAX = 2.  # m/s^2
   ACCEL_MIN = -4.  # m/s^2
 
-  def __init__(self, CP):
+  def __init__(self, CP, use_cc_only_car_logic=True):
     # Gas/brake lookups
     self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
-    if CP.carFingerprint in (CAMERA_ACC_CAR | SDGM_CAR) and CP.carFingerprint not in CC_ONLY_CAR:
+    # Import CC_ONLY_CAR here to avoid circular imports
+    from opendbc.sunnypilot.car.gm.carstate_ext import CC_ONLY_CAR
+
+    if CP.carFingerprint in (CAMERA_ACC_CAR | SDGM_CAR) and (not use_cc_only_car_logic or CP.carFingerprint not in CC_ONLY_CAR):
       self.MAX_GAS = 1346.0
       self.MAX_ACC_REGEN = -540.0
       self.INACTIVE_REGEN = -500.0
@@ -63,7 +66,6 @@ class GMSafetyFlags(IntFlag):
   HW_CAM = 1
   HW_CAM_LONG = 2
   EV = 4
-  FLAG_GM_NO_ACC = 8  # FIXME-SP: use GMSafetyFlagsSP
 
 
 class Footnote(Enum):
@@ -319,10 +321,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
 EV_CAR = {CAR.CHEVROLET_VOLT, CAR.CHEVROLET_VOLT_2019, CAR.CHEVROLET_BOLT_EUV,
           CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_2018, CAR.CHEVROLET_BOLT_CC}
 
-# FIXME-SP: use GMFlagsSP
-CC_ONLY_CAR = {CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_2018, CAR.CHEVROLET_BOLT_CC, CAR.CHEVROLET_EQUINOX_CC,
-               CAR.CHEVROLET_SUBURBAN_CC, CAR.CADILLAC_CT6_CC, CAR.CHEVROLET_TRAILBLAZER_CC, CAR.CHEVROLET_MALIBU_CC,
-               CAR.CADILLAC_XT5_CC}
+# CC_ONLY_CAR moved to opendbc.sunnypilot.car.gm.carstate_ext
+# Use CAR.with_sp_flags(GMFlagsSP.NO_ACC) for filtering
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
 CAMERA_ACC_CAR = {CAR.CHEVROLET_BOLT_EUV, CAR.CHEVROLET_SILVERADO, CAR.CHEVROLET_EQUINOX, CAR.CHEVROLET_TRAILBLAZER, CAR.GMC_YUKON}
