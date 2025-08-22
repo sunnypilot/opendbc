@@ -161,6 +161,5 @@ class CarController(CarControllerBase):
     new_actuators.gas = self.apply_gas
     new_actuators.brake = self.apply_brake
 
-    self.prev_op_enabled = CC.enabled
     self.frame += 1
     return new_actuators, can_sends
