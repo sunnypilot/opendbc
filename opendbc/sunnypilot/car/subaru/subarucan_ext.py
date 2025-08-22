@@ -59,8 +59,7 @@ def create_brake_pedal(packer, CP, brake_pedal_msg, speed_cmd):
       "Brake_Pedal",
       "Signal4",
     ]}
-
-  values["COUNTER"] = create_counter(brake_pedal_msg)
+    values["COUNTER"] = create_counter(brake_pedal_msg)
 
   if speed_cmd:
     values["Speed"] = 1 if CP.flags & SubaruFlags.PREGLOBAL else 3
