@@ -32,7 +32,7 @@ def get_params_for_docs(platform) -> tuple[CarParams, CarParamsSP]:
   cp_platform = platform if platform in interfaces else MOCK.MOCK
   CP: CarParams = interfaces[cp_platform].get_params(cp_platform, fingerprint=gen_empty_fingerprint(),
                                                      car_fw=[CarParams.CarFw(ecu=CarParams.Ecu.unknown)],
-                                                     alpha_long=True, docs=True)
+                                                     alpha_long=True, is_release=False, docs=True)
 
   CP_SP: CarParamsSP = interfaces[cp_platform].get_params_sp(CP, cp_platform, fingerprint=gen_empty_fingerprint(),
                                                              car_fw=[CarParams.CarFw(ecu=CarParams.Ecu.unknown)],
@@ -83,7 +83,7 @@ def group_by_make(all_car_docs: list[CarDocs]) -> dict[str, list[CarDocs]]:
 
 
 # CAUTION: This function is imported by shop.comma.ai and comma.ai/vehicles, test changes carefully
-def generate_cars_md(all_car_docs: list[CarDocs], template_fn: str) -> str:
+def generate_cars_md(all_car_docs: list[CarDocs], template_fn: str, **kwargs) -> str:
   with open(template_fn) as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
@@ -91,7 +91,8 @@ def generate_cars_md(all_car_docs: list[CarDocs], template_fn: str) -> str:
   cars_md: str = template.render(all_car_docs=all_car_docs, PartType=PartType,
                                  group_by_make=group_by_make, footnotes=footnotes,
                                  Device=Device, Column=Column, ExtraCarsColumn=ExtraCarsColumn,
-                                 BaseCarHarness=BaseCarHarness, SupportType=SupportType)
+                                 BaseCarHarness=BaseCarHarness, SupportType=SupportType,
+                                 **kwargs)
   return cars_md
 
 

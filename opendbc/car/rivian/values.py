@@ -28,12 +28,13 @@ class ModelYear(StrEnum):
 class RivianCarDocs(CarDocs):
   package: str = "All"
   car_parts: CarParts = field(default_factory=CarParts([Device.threex_angled_mount, CarHarness.rivian]))
-  setup_video_link: str = "https://youtu.be/uaISd1j7Z4U"
+  setup_video: str = "https://youtu.be/uaISd1j7Z4U"
 
 
 @dataclass
 class RivianPlatformConfig(PlatformConfig):
-  dbc_dict: DbcDict = field(default_factory=lambda: {Bus.pt: 'rivian_primary_actuator', Bus.radar: 'rivian_mando_front_radar_generated'})
+  dbc_dict: DbcDict = field(default_factory=lambda: {Bus.pt: 'rivian_primary_actuator', Bus.radar: 'rivian_mando_front_radar_generated',
+                                                     Bus.alt: 'rivian_park_assist_can'})
   wmis: set[WMI] = field(default_factory=set)
   lines: set[ModelLine] = field(default_factory=set)
   years: set[ModelYear] = field(default_factory=set)
