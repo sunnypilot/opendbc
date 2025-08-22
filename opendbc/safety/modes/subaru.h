@@ -66,8 +66,8 @@
   {MSG_SUBARU_ES_STATIC_2,       SUBARU_MAIN_BUS, 8, .check_relay = false}, \
 
 #define SUBARU_STOP_AND_GO_TX_MSGS \
-  {MSG_SUBARU_Throttle,          SUBARU_CAM_BUS,  8, .check_relay = true}, \
-  {MSG_SUBARU_Brake_Pedal,       SUBARU_CAM_BUS,  8, .check_relay = true}, \
+  {MSG_SUBARU_Throttle,          SUBARU_CAM_BUS,  8, .check_relay = false}, \
+  {MSG_SUBARU_Brake_Pedal,       SUBARU_CAM_BUS,  8, .check_relay = false}, \
 
 #define SUBARU_COMMON_RX_CHECKS(alt_bus)                                                                                                         \
   {.msg = {{MSG_SUBARU_Throttle,        SUBARU_MAIN_BUS, 8, 100U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
@@ -212,9 +212,14 @@ static bool subaru_tx_hook(const CANPacket_t *msg) {
     violation |= !(is_tester_present || is_button_rdbi);
   }
 
-  // FIXME-SP: only allow specific bits in certain states
-  if ((msg->addr == MSG_SUBARU_Throttle) || (msg->addr == MSG_SUBARU_Brake_Pedal)) {
-    violation |= !subaru_stop_and_go;
+  if (msg->addr == MSG_SUBARU_Throttle) {
+    int throttle_pedal = msg->data[4];
+    violation |= subaru_common_stop_and_go_throttle_check(throttle_pedal);
+  }
+
+  if (msg->addr == MSG_SUBARU_Brake_Pedal) {
+    int speed = (GET_BYTES(msg, 2, 2) & 0xFFFU);
+    violation |= subaru_common_stop_and_go_brake_pedal_check(speed, false);
   }
 
   if (violation){

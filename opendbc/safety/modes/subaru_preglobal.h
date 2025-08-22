@@ -23,8 +23,8 @@
   {MSG_SUBARU_PG_ES_LKAS,     SUBARU_PG_MAIN_BUS, 8, .check_relay = true}, \
 
 #define SUBARU_PG_STOP_AND_GO_TX_MSGS \
-  {MSG_SUBARU_PG_Throttle,    SUBARU_PG_CAM_BUS,  8, .check_relay = true}, \
-  {MSG_SUBARU_PG_Brake_Pedal, SUBARU_PG_CAM_BUS,  4, .check_relay = true}, \
+  {MSG_SUBARU_PG_Throttle,    SUBARU_PG_CAM_BUS,  8, .check_relay = false}, \
+  {MSG_SUBARU_PG_Brake_Pedal, SUBARU_PG_CAM_BUS,  4, .check_relay = false}, \
 
 static bool subaru_pg_reversed_driver_torque = false;
 
@@ -72,6 +72,7 @@ static bool subaru_preglobal_tx_hook(const CANPacket_t *msg) {
   };
 
   bool tx = true;
+  bool violation = false;
 
   // steer cmd checks
   if (msg->addr == MSG_SUBARU_PG_ES_LKAS) {
@@ -85,9 +86,18 @@ static bool subaru_preglobal_tx_hook(const CANPacket_t *msg) {
     }
   }
 
-  // FIXME-SP: only allow specific bits in certain states
-  if (msg->addr == MSG_SUBARU_PG_Throttle) {
-    tx = subaru_stop_and_go;
+  if (msg->addr == MSG_SUBARU_Throttle) {
+    int throttle_pedal = msg->data[0];
+    violation |= subaru_common_stop_and_go_throttle_check(throttle_pedal);
+  }
+
+  if (msg->addr == MSG_SUBARU_Brake_Pedal) {
+    int speed = (GET_BYTES(msg, 0, 2) & 0xFFFFU);
+    violation |= subaru_common_stop_and_go_brake_pedal_check(speed, true);
+  }
+
+  if (violation) {
+    tx = false;
   }
 
   return tx;
