@@ -254,4 +254,9 @@ class CarInterface(CarInterfaceBase):
     if candidate == CAR.CHEVROLET_VOLT:
       stock_cp.minEnableSpeed = -1
 
+    # CC_ONLY_CAR vehicles should use camera car speed thresholds
+    if candidate in CC_ONLY_CAR:
+      stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
+      stock_cp.minSteerSpeed = 6 * CV.MPH_TO_MS   # 6 mph
+
     return ret
