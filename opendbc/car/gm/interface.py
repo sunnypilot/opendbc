@@ -20,7 +20,10 @@ NON_LINEAR_TORQUE_PARAMS = {
   CAR.CHEVROLET_BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
   CAR.GMC_ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
   CAR.CHEVROLET_SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122],
-  # port extensions
+}
+
+# sunnypilot-specific torque parameters for Bolt cars that actually use the d parameter
+NON_LINEAR_TORQUE_PARAMS_SP = {
   CAR.CHEVROLET_BOLT_2017: [2.24, 1.1, 0.28, -0.07],
   CAR.CHEVROLET_BOLT_2018: [1.8, 1.1, 0.3, -0.045],
 }
@@ -64,10 +67,17 @@ class CarInterface(CarInterfaceBase):
     # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
     # This has big effect on the stability about 0 (noise when going straight)
     # ToDo: To generalize to other GMs, explore tanh function as the nonlinear
-    non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
+    # Use sunnypilot-specific parameters for Bolt cars that need the d parameter, fallback to upstream for others
+    non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS_SP.get(self.CP.carFingerprint) or NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
     assert non_linear_torque_params, "The params are not defined"
-    a, b, c, d = non_linear_torque_params
-    steer_torque = (sig(latcontrol_inputs.lateral_acceleration * a) * b) + (latcontrol_inputs.lateral_acceleration * c) + d
+
+    # Only use d parameter for cars that actually need it (2017/2018 Bolt), others ignore it like upstream
+    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS_SP:
+      a, b, c, d = non_linear_torque_params
+      steer_torque = (sig(latcontrol_inputs.lateral_acceleration * a) * b) + (latcontrol_inputs.lateral_acceleration * c) + d
+    else:
+      a, b, c, _ = non_linear_torque_params  # upstream approach ignores d parameter
+      steer_torque = (sig(latcontrol_inputs.lateral_acceleration * a) * b) + (latcontrol_inputs.lateral_acceleration * c)
     return float(steer_torque)
 
   def torque_from_lateral_accel_neural(self, latcontrol_inputs: LatControlInputs, torque_params: structs.CarParams.LateralTorqueTuning,
