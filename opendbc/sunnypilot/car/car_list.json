@@ -817,6 +817,153 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
+  "Holden Astra 2017": {
+    "platform": "HOLDEN_ASTRA",
+    "make": "Holden",
+    "brand": "gm",
+    "model": "Astra",
+    "year": [
+      "2017"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Chevrolet Malibu 2017": {
+    "platform": "CHEVROLET_MALIBU",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Malibu",
+    "year": [
+      "2017"
+    ],
+    "package": "Premier Trim"
+  },
+  "Cadillac ATS 2018": {
+    "platform": "CADILLAC_ATS",
+    "make": "Cadillac",
+    "brand": "gm",
+    "model": "ATS",
+    "year": [
+      "2018"
+    ],
+    "package": "Premium Performance Trim"
+  },
+  "Buick Regal 2018": {
+    "platform": "BUICK_REGAL",
+    "make": "Buick",
+    "brand": "gm",
+    "model": "Regal",
+    "year": [
+      "2018"
+    ],
+    "package": "Essence Trim"
+  },
+  "Chevrolet Bolt EV 2017": {
+    "platform": "CHEVROLET_BOLT_2017",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV",
+    "year": [
+      "2017"
+    ],
+    "package": "See documentation"
+  },
+  "Chevrolet Bolt EV 2018-21": {
+    "platform": "CHEVROLET_BOLT_2018",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV",
+    "year": [
+      "2018",
+      "2019",
+      "2020",
+      "2021"
+    ],
+    "package": "See documentation"
+  },
+  "Chevrolet Bolt EUV LT 2022-23": {
+    "platform": "CHEVROLET_BOLT_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EUV",
+    "year": [
+      "2022",
+      "2023"
+    ],
+    "package": "LT"
+  },
+  "Chevrolet Bolt EV LT 2022-23": {
+    "platform": "CHEVROLET_BOLT_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV",
+    "year": [
+      "2022",
+      "2023"
+    ],
+    "package": "LT"
+  },
+  "Chevrolet Equinox NO ACC 2019-22": {
+    "platform": "CHEVROLET_EQUINOX_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Equinox",
+    "year": [
+      "2019",
+      "2020",
+      "2021",
+      "2022"
+    ],
+    "package": "NO ACC"
+  },
+  "Chevrolet Suburban 2016-20": {
+    "platform": "CHEVROLET_SUBURBAN_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Suburban",
+    "year": [
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020"
+    ],
+    "package": "See documentation"
+  },
+  "Cadillac CT6 No ACC": {
+    "platform": "CADILLAC_CT6_CC",
+    "make": "Cadillac",
+    "brand": "gm",
+    "model": "CT6",
+    "year": [],
+    "package": "No ACC"
+  },
+  "Chevrolet Trailblazer NO ACC 2021-22": {
+    "platform": "CHEVROLET_TRAILBLAZER_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Trailblazer",
+    "year": [
+      "2021",
+      "2022"
+    ],
+    "package": "NO ACC"
+  },
+  "Chevrolet Malibu No ACC": {
+    "platform": "CHEVROLET_MALIBU_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Malibu",
+    "year": [],
+    "package": "No ACC"
+  },
+  "Cadillac XT5 No ACC": {
+    "platform": "CADILLAC_XT5_CC",
+    "make": "Cadillac",
+    "brand": "gm",
+    "model": "XT5",
+    "year": [],
+    "package": "No ACC"
+  },
   "GMC Sierra 1500 2020-21": {
     "platform": "CHEVROLET_SILVERADO",
     "make": "GMC",
