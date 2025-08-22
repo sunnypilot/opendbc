@@ -129,6 +129,7 @@ typedef struct {
   const int max_angle_error;             // used to limit error between meas and cmd while enabled
   const float angle_error_min_speed;     // minimum speed to start limiting angle error
   const uint32_t frequency;              // Hz
+
   const bool angle_is_curvature;         // if true, we can apply max lateral acceleration limits
   const bool enforce_angle_error;        // enables max_angle_error check
   const bool inactive_angle_is_zero;     // if false, enforces angle near meas when disabled (default)
@@ -240,7 +241,6 @@ bool longitudinal_speed_checks(int desired_speed, const LongitudinalLimits limit
 bool longitudinal_gas_checks(int desired_gas, const LongitudinalLimits limits);
 bool longitudinal_transmission_rpm_checks(int desired_transmission_rpm, const LongitudinalLimits limits);
 bool longitudinal_brake_checks(int desired_brake, const LongitudinalLimits limits);
-bool longitudinal_interceptor_checks(const CANPacket_t *to_send);
 void pcm_cruise_check(bool cruise_engaged);
 void speed_mismatch_check(const float speed_2);
 
@@ -249,8 +249,6 @@ void safety_tick(const safety_config *safety_config);
 // This can be set by the safety hooks
 extern bool controls_allowed;
 extern bool relay_malfunction;
-extern bool enable_gas_interceptor;
-extern int gas_interceptor_prev;
 extern bool gas_pressed;
 extern bool gas_pressed_prev;
 extern bool brake_pressed;
