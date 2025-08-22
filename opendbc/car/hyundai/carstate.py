@@ -263,9 +263,9 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
     if self.is_canfd_angle_steering:
       ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["MDPS"]["LKA_ANGLE_FAULT"] != 0
-      # hands_on_wheel = cp.vl["HOD_FD_01_100ms"]["HOD_Dir_Status"] >= 2
+      hands_on_wheel = cp.vl["HOD_FD_01_100ms"]["HOD_Dir_Status"] >= 2
       torque_overriding = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
-      ret.steeringPressed = self.update_steering_pressed(torque_overriding, 2)
+      ret.steeringPressed = self.update_steering_pressed(torque_overriding or hands_on_wheel, 2)
       self.imu_lateral_acceleration = cp.vl["IMU_01_10ms"]["IMU_LatAccelVal"] * 9.81  # m/s^2
     else:
       ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
