@@ -11,7 +11,7 @@ from opendbc.car.honda.carstate import CarState
 from opendbc.car.honda.radar_interface import RadarInterface
 from opendbc.car.interfaces import CarInterfaceBase
 
-from opendbc.sunnypilot.car.honda.values_ext import HondaSafetyFlagsSP
+from opendbc.sunnypilot.car.honda.values_ext import HondaFlagsSP, HondaSafetyFlagsSP
 
 TransmissionType = structs.CarParams.TransmissionType
 
@@ -255,6 +255,7 @@ class CarInterface(CarInterfaceBase):
     eps_modified = False
     for fw in car_fw:
       if fw.ecu == "eps" and b"," in fw.fwVersion:
+        ret.flags |= HondaFlagsSP.EPS_MOD
         eps_modified = True
         ret.dashcamOnly = False
 
