@@ -72,6 +72,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     self.params = CarControllerParams(CP)
     self.is_canfd_angle_steering = CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING
     self.imu_lateral_acceleration = 0.0  # used for CAN FD cars with angle steering
+    self.hands_on_steering_grip = 0
 
     # Angle DEBUG
     self.angle_debug = structs.HkgAngleDebug()
@@ -263,9 +264,9 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
     if self.is_canfd_angle_steering:
       ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["MDPS"]["LKA_ANGLE_FAULT"] != 0
-      hands_on_wheel = cp.vl["HOD_FD_01_100ms"]["HOD_Dir_Status"] >= 2
+      self.hands_on_steering_grip = cp.vl["HOD_FD_01_100ms"]["HOD_Dir_Status"]
       torque_overriding = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
-      ret.steeringPressed = self.update_steering_pressed(torque_overriding or hands_on_wheel, 2)
+      ret.steeringPressed = self.update_steering_pressed(torque_overriding, 5)
       self.imu_lateral_acceleration = cp.vl["IMU_01_10ms"]["IMU_LatAccelVal"] * 9.81  # m/s^2
     else:
       ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)

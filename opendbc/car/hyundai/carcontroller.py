@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from opendbc.car.carlog import carlog
 from opendbc.car.vehicle_model import VehicleModel
@@ -46,37 +47,19 @@ def get_baseline_safety_cp():
 
 def calculate_angle_torque_reduction_gain(params, CS, apply_torque_last, target_torque_reduction_gain):
   """ Calculate the angle torque reduction gain based on the current steering state. """
-  if CS.out.steeringPressed:  # User is overriding
-    driver_torque = abs(CS.out.steeringTorque)
+  scale = 100
+  target_gain = target_torque_reduction_gain
+  driver_torque = abs(CS.out.steeringTorque)
 
-    # Normalize torque to 0..1 range
-    normalized = np.clip((driver_torque - params.STEER_THRESHOLD) /
-                         ((params.STEER_THRESHOLD * 1.4) - params.STEER_THRESHOLD), 0.0, 1.0)
+  if CS.out.steeringPressed:
+    target_gain = params.ANGLE_MIN_TORQUE_REDUCTION_GAIN + (params.ANGLE_MAX_TORQUE_REDUCTION_GAIN - params.ANGLE_MIN_TORQUE_REDUCTION_GAIN) \
+                  * math.exp(-(driver_torque - params.STEER_THRESHOLD) / scale)
 
-    k = .7  # steepness of sigmoid
-    normalized_nl = 1.0 / (1.0 + np.exp(k * (normalized - 0.05)))
-    target_gain = params.ANGLE_MIN_TORQUE_REDUCTION_GAIN + \
-                  normalized_nl * (params.ANGLE_MAX_TORQUE_REDUCTION_GAIN - params.ANGLE_MIN_TORQUE_REDUCTION_GAIN)
+  # Smooth transition (like a rubber band returning)
+  alpha = 0.02
+  new_gain = apply_torque_last + alpha * (target_gain - apply_torque_last)
 
-    # For the delta, we take the ramp down if torque is below the threshold + hefty padding. Otherwise we use the ramp up which gives a more aggressive ramp
-    max_delta = params.ANGLE_RAMP_DOWN_TORQUE_REDUCTION_RATE if driver_torque < params.STEER_THRESHOLD*2.5 else params.ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE 
-    delta = np.clip(target_gain - apply_torque_last, -max_delta, max_delta)
-    smoothed_gain = apply_torque_last + delta
-
-    # Ensure gain never goes below minimum
-    return float(max(smoothed_gain, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN))
-  else:
-    # EU vehicles have been seen to "idle" at 0.384, while US vehicles have been seen idling at "0.92" for LFA.
-    target_torque = max(target_torque_reduction_gain, 0.5) # at 0.5 under normal conditions
-    target_torque = max(target_torque, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN)
-
-    if apply_torque_last > target_torque:
-      reduced_torque = max(apply_torque_last - params.ANGLE_RAMP_DOWN_TORQUE_REDUCTION_RATE, target_torque)
-    else:
-      reduced_torque = min(apply_torque_last + params.ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE, target_torque)
-
-  return float(np.clip(reduced_torque, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN, params.ANGLE_MAX_TORQUE_REDUCTION_GAIN))
-
+  return new_gain
 
 def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: float) -> float:
   """
