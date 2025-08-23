@@ -958,7 +958,7 @@
     ],
     "package": "All"
   },
-  "Honda Clarity 2018-22": {
+  "Honda Clarity 2018-21": {
     "platform": "HONDA_CLARITY",
     "make": "Honda",
     "brand": "honda",
@@ -967,8 +967,7 @@
       "2018",
       "2019",
       "2020",
-      "2021",
-      "2022"
+      "2021"
     ],
     "package": "Honda Sensing"
   },
