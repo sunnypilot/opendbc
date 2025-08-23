@@ -47,11 +47,11 @@ def get_baseline_safety_cp():
 
 def calculate_angle_torque_reduction_gain(params, CS, apply_torque_last, target_torque_reduction_gain):
   """ Calculate the angle torque reduction gain based on the current steering state. """
-  scale = 100
-  target_gain = target_torque_reduction_gain
-  driver_torque = abs(CS.out.steeringTorque)
+  target_gain = max(target_torque_reduction_gain, params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN)
 
   if CS.out.steeringPressed:
+    scale = 100
+    driver_torque = abs(CS.out.steeringTorque)
     target_gain = params.ANGLE_MIN_TORQUE_REDUCTION_GAIN + (params.ANGLE_MAX_TORQUE_REDUCTION_GAIN - params.ANGLE_MIN_TORQUE_REDUCTION_GAIN) \
                   * math.exp(-(driver_torque - params.STEER_THRESHOLD) / scale)
 
@@ -59,7 +59,7 @@ def calculate_angle_torque_reduction_gain(params, CS, apply_torque_last, target_
   alpha = 0.02
   new_gain = apply_torque_last + alpha * (target_gain - apply_torque_last)
 
-  return new_gain
+  return float(np.clip(new_gain, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN, params.ANGLE_MAX_TORQUE_REDUCTION_GAIN))
 
 def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: float) -> float:
   """
@@ -170,7 +170,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
     self.angle_torque_reduction_gain_controller = TorqueReductionGainController(
       angle_threshold=.3,
-      debounce_time=.25,
+      debounce_time=.1,
       min_gain=self.params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN,
       max_gain=self.params.ANGLE_MAX_TORQUE_REDUCTION_GAIN,
       ramp_up_rate=self.params.ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE,
