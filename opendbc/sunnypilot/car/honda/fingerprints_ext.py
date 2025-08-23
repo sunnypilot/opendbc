@@ -31,5 +31,8 @@ FW_VERSIONS_EXT = {
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TRW-A010\x00\x00',
     ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-TRW-A110\x00\x00',
+    ],
   },
 }
