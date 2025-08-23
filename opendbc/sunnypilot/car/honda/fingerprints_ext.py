@@ -10,7 +10,7 @@ from opendbc.car.honda.values import CAR
 
 Ecu = CarParams.Ecu
 
-FW_VERSION_EXT = {
+FW_VERSIONS_EXT = {
   CAR.HONDA_CLARITY: {
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TRW-A910\x00\x00',
