@@ -258,6 +258,8 @@ class CarInterface(CarInterfaceBase):
 
     if candidate == CAR.HONDA_CLARITY:
       ret.safetyParam |= HondaSafetyFlagsSP.CLARITY
+      stock_cp.autoResumeSng = True
+      stock_cp.minEnableSpeed = -1
       if eps_modified:
         for fw in car_fw:
           if fw.ecu == "eps" and b"-" not in fw.fwVersion and b"," in fw.fwVersion:
