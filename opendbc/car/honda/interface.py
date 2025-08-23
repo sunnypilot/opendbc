@@ -257,7 +257,7 @@ class CarInterface(CarInterfaceBase):
       if fw.ecu == "eps" and b"," in fw.fwVersion:
         ret.flags |= HondaFlagsSP.EPS_MOD.value
         eps_modified = True
-        ret.dashcamOnly = False
+        stock_cp.dashcamOnly = False
 
     if candidate == CAR.HONDA_CIVIC:
       if eps_modified:
