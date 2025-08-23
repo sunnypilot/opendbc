@@ -6,7 +6,7 @@ extern uint16_t hyundai_canfd_crc_lut[256];
 uint16_t hyundai_canfd_crc_lut[256];
 
 static const uint8_t HYUNDAI_PREV_BUTTON_SAMPLES = 8;  // roughly 160 ms
-                                                       //
+
 extern const uint32_t HYUNDAI_STANDSTILL_THRSLD;
 const uint32_t HYUNDAI_STANDSTILL_THRSLD = 12;  // 0.375 kph
 
@@ -21,6 +21,7 @@ enum {
   HYUNDAI_PARAM_SP_ESCC = 1,
   HYUNDAI_PARAM_SP_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE = 2,
   HYUNDAI_PARAM_SP_HAS_LDA_BUTTON = 4,
+  HYUNDAI_PARAM_SP_NON_SCC = 8,
 };
 
 // common state
@@ -58,6 +59,9 @@ bool hyundai_longitudinal_main_cruise_toggleable = false;
 extern bool hyundai_has_lda_button;
 bool hyundai_has_lda_button = false;
 
+extern bool hyundai_non_scc;
+bool hyundai_non_scc = false;
+
 static uint8_t hyundai_last_button_interaction;  // button messages since the user pressed an enable button
 
 static bool main_button_prev;
@@ -85,6 +89,7 @@ void hyundai_common_init(uint16_t param) {
   hyundai_escc = GET_FLAG(current_safety_param_sp, HYUNDAI_PARAM_SP_ESCC);
   hyundai_longitudinal_main_cruise_toggleable = GET_FLAG(current_safety_param_sp, HYUNDAI_PARAM_SP_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE);
   hyundai_has_lda_button = GET_FLAG(current_safety_param_sp, HYUNDAI_PARAM_SP_HAS_LDA_BUTTON);
+  hyundai_non_scc = GET_FLAG(current_safety_param_sp, HYUNDAI_PARAM_SP_NON_SCC);
 
   hyundai_last_button_interaction = HYUNDAI_PREV_BUTTON_SAMPLES;
 
@@ -149,14 +154,14 @@ void hyundai_common_cruise_buttons_check(const int cruise_button, const bool mai
 }
 
 #ifdef CANFD
-uint32_t hyundai_common_canfd_compute_checksum(const CANPacket_t *to_push) {
-  int len = GET_LEN(to_push);
-  uint32_t address = GET_ADDR(to_push);
+uint32_t hyundai_common_canfd_compute_checksum(const CANPacket_t *msg) {
+  int len = GET_LEN(msg);
+  uint32_t address = msg->addr;
 
   uint16_t crc = 0;
 
   for (int i = 2; i < len; i++) {
-    crc = (crc << 8U) ^ hyundai_canfd_crc_lut[(crc >> 8U) ^ GET_BYTE(to_push, i)];
+    crc = (crc << 8U) ^ hyundai_canfd_crc_lut[(crc >> 8U) ^ msg->data[i]];
   }
 
   // Add address to crc
