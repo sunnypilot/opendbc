@@ -32,14 +32,11 @@ class CarController(CarControllerBase):
     self.lka_steering_cmd_counter = 0
     self.lka_icon_status_last = (False, False)
 
-    # For CC_ONLY_CAR vehicles, use different gas/brake parameters
-    use_cc_only_car_logic = self.CP.carFingerprint not in CC_ONLY_CAR
     self.params = CarControllerParams(self.CP, self.CP_SP)
 
     self.packer_pt = CANPacker(DBC[self.CP.carFingerprint][Bus.pt])
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint][Bus.radar])
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint][Bus.chassis])
-
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
