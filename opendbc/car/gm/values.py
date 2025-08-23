@@ -5,6 +5,7 @@ from opendbc.car import Bus, PlatformConfig, DbcDict, Platforms, CarSpecs
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarDocs, CarFootnote, CarHarness, CarParts, Column
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP
 
 Ecu = CarParams.Ecu
 
@@ -32,14 +33,14 @@ class CarControllerParams:
   ACCEL_MAX = 2.  # m/s^2
   ACCEL_MIN = -4.  # m/s^2
 
-  def __init__(self, CP, use_cc_only_car_logic=True):
+  def __init__(self, CP, CP_SP=None):
     # Gas/brake lookups
     self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
-    # Import CC_ONLY_CAR here to avoid circular imports
-    from opendbc.sunnypilot.car.gm.carstate_ext import CC_ONLY_CAR
+    # Check if this is a NO_ACC vehicle using CP_SP flags
+    is_no_acc = CP_SP and (CP_SP.flags & GMFlagsSP.NO_ACC)
 
-    if CP.carFingerprint in (CAMERA_ACC_CAR | SDGM_CAR) and (not use_cc_only_car_logic or CP.carFingerprint not in CC_ONLY_CAR):
+    if CP.carFingerprint in (CAMERA_ACC_CAR | SDGM_CAR) and not is_no_acc:
       self.MAX_GAS = 1346.0
       self.MAX_ACC_REGEN = -540.0
       self.INACTIVE_REGEN = -500.0
@@ -124,7 +125,7 @@ class CAR(Platforms):
   )
   CHEVROLET_VOLT = GMASCMPlatformConfig(
     [GMCarDocs("Chevrolet Volt 2017-18", min_enable_speed=0, video="https://youtu.be/QeMCN_4TFfQ")],
-    GMCarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45, tireStiffnessFactor=0.469, minEnableSpeed=-1),
+    GMCarSpecs(mass=1607, wheelbase=2.69, steerRatio=17.7, centerToFrontRatio=0.45, tireStiffnessFactor=0.469),
   )
   CADILLAC_ATS = GMASCMPlatformConfig(
     [GMCarDocs("Cadillac ATS Premium Performance 2018")],
@@ -220,26 +221,32 @@ class CAR(Platforms):
   CHEVROLET_EQUINOX_CC = GMPlatformConfig(
     [GMCarDocs("Chevrolet Equinox NO ACC 2019-22")],
     CHEVROLET_EQUINOX.specs,
+    sp_flags=GMFlagsSP.NO_ACC.value,
   )
   CHEVROLET_SUBURBAN_CC = GMPlatformConfig(
     [GMCarDocs("Chevrolet Suburban 2016-20")],
     CarSpecs(mass=2731, wheelbase=3.302, steerRatio=17.3, centerToFrontRatio=0.49),
+    sp_flags=GMFlagsSP.NO_ACC.value,
   )
   CADILLAC_CT6_CC = GMPlatformConfig(
     [GMCarDocs("Cadillac CT6 No ACC")],
     CarSpecs(mass=2358, wheelbase=3.11, steerRatio=17.7, centerToFrontRatio=0.4),
+    sp_flags=GMFlagsSP.NO_ACC.value,
   )
   CHEVROLET_TRAILBLAZER_CC = GMPlatformConfig(
     [GMCarDocs("Chevrolet Trailblazer NO ACC 2021-22")],
     CHEVROLET_TRAILBLAZER.specs,
+    sp_flags=GMFlagsSP.NO_ACC.value,
   )
   CHEVROLET_MALIBU_CC = GMPlatformConfig(
     [GMCarDocs("Chevrolet Malibu No ACC")],
     CarSpecs(mass=1450, wheelbase=2.8, steerRatio=15.8, centerToFrontRatio=0.4),
+    sp_flags=GMFlagsSP.NO_ACC.value,
   )
   CADILLAC_XT5_CC = GMPlatformConfig(
     [GMCarDocs("Cadillac XT5 No ACC")],
     CarSpecs(mass=1810, wheelbase=2.86, steerRatio=16.34, centerToFrontRatio=0.5),
+    sp_flags=GMFlagsSP.NO_ACC.value,
   )
 
 
@@ -321,8 +328,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
 EV_CAR = {CAR.CHEVROLET_VOLT, CAR.CHEVROLET_VOLT_2019, CAR.CHEVROLET_BOLT_EUV,
           CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_2018, CAR.CHEVROLET_BOLT_CC}
 
-# CC_ONLY_CAR moved to opendbc.sunnypilot.car.gm.carstate_ext
-# Use CAR.with_sp_flags(GMFlagsSP.NO_ACC) for filtering
+# Use CAR.with_sp_flags(GMFlagsSP.NO_ACC) for NO_ACC vehicle filtering
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
 CAMERA_ACC_CAR = {CAR.CHEVROLET_BOLT_EUV, CAR.CHEVROLET_SILVERADO, CAR.CHEVROLET_EQUINOX, CAR.CHEVROLET_TRAILBLAZER, CAR.GMC_YUKON}

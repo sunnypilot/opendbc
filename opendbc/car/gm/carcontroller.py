@@ -34,7 +34,7 @@ class CarController(CarControllerBase):
 
     # For CC_ONLY_CAR vehicles, use different gas/brake parameters
     use_cc_only_car_logic = self.CP.carFingerprint not in CC_ONLY_CAR
-    self.params = CarControllerParams(self.CP, use_cc_only_car_logic)
+    self.params = CarControllerParams(self.CP, self.CP_SP)
 
     self.packer_pt = CANPacker(DBC[self.CP.carFingerprint][Bus.pt])
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint][Bus.radar])

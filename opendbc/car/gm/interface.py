@@ -9,7 +9,6 @@ from opendbc.car.gm.carcontroller import CarController
 from opendbc.car.gm.carstate import CarState
 from opendbc.car.gm.radar_interface import RadarInterface, RADAR_HEADER_MSG, CAMERA_DATA_HEADER_MSG
 from opendbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags
-from opendbc.sunnypilot.car.gm.carstate_ext import CC_ONLY_CAR
 from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP, GMSafetyFlagsSP
 from opendbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, LatControlInputs, NanoFFModel
 
@@ -238,24 +237,18 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
-    if candidate in CC_ONLY_CAR:
-      ret.flags |= GMFlagsSP.NO_ACC.value
-      ret.safetyParam |= GMSafetyFlagsSP.NO_ACC
+    # NO_ACC flag is set directly in platform configs via sp_flags
 
-    # untested platforms, need user validations
-    if candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.CHEVROLET_MALIBU, CAR.BUICK_REGAL}:
-      stock_cp.dashcamOnly = True
-
-    # GMC Yukon needs steerRatio, tireStiffness, and lat accel factor tuning
-    if candidate == CAR.GMC_YUKON:
+    # dashcamOnly platforms: untested platforms need user validations, GMC Yukon needs tuning
+    if candidate in (CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.CHEVROLET_MALIBU, CAR.BUICK_REGAL, CAR.GMC_YUKON):
       stock_cp.dashcamOnly = True
 
     # Chevrolet Volt specific settings
     if candidate == CAR.CHEVROLET_VOLT:
       stock_cp.minEnableSpeed = -1
 
-    # CC_ONLY_CAR vehicles should use camera car speed thresholds
-    if candidate in CC_ONLY_CAR:
+    # NO_ACC vehicles should use camera car speed thresholds
+    if stock_cp.sp_flags & GMFlagsSP.NO_ACC:
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
       stock_cp.minSteerSpeed = 6 * CV.MPH_TO_MS   # 6 mph
 
