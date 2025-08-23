@@ -648,7 +648,7 @@ class TestHondaBoschCANFDAltBrakeSafety(HondaPcmEnableBase, TestHondaBoschCANFDS
 
 class TestHondaNidecClaritySafety(TestHondaNidecPcmSafety):
 
-  BRAKE_SIG = "COMPUTER_BRAKE"
+  BRAKE_SIG = "COMPUTER_BRAKE_ALT"
 
   def setUp(self):
     self.packer = CANPackerPanda("honda_clarity_hybrid_2018_can_generated")
