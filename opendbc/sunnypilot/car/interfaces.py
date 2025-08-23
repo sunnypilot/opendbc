@@ -47,8 +47,8 @@ def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, 
 
 def _initialize_stop_and_go(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
   if CP.brand == 'subaru' and not CP.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID):
-    stop_and_go = params_dict["SubaruStopAndGo"] == 1
-    stop_and_go_manual_parking_brake = params_dict["SubaruStopAndGoManualParkingBrake"] == 1
+    stop_and_go = int(params_dict["SubaruStopAndGo"]) == 1
+    stop_and_go_manual_parking_brake = int(params_dict["SubaruStopAndGoManualParkingBrake"]) == 1
 
     if stop_and_go:
       CP_SP.flags |= SubaruFlagsSP.STOP_AND_GO.value
