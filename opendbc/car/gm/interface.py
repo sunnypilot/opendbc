@@ -248,7 +248,7 @@ class CarInterface(CarInterfaceBase):
       stock_cp.minEnableSpeed = -1
 
     # NO_ACC vehicles should use camera car speed thresholds
-    if stock_cp.sp_flags & GMFlagsSP.NO_ACC:
+    if ret.flags & GMFlagsSP.NO_ACC:
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
       stock_cp.minSteerSpeed = 6 * CV.MPH_TO_MS   # 6 mph
 
