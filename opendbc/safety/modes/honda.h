@@ -32,6 +32,7 @@ static bool honda_fwd_brake = false;
 static bool honda_bosch_long = false;
 static bool honda_bosch_radarless = false;
 static bool honda_bosch_canfd = false;
+static bool honda_clarity = false;
 typedef enum {HONDA_NIDEC, HONDA_BOSCH} HondaHw;
 static HondaHw honda_hw = HONDA_NIDEC;
 
@@ -157,6 +158,10 @@ static void honda_rx_hook(const CANPacket_t *msg) {
       bool honda_stock_aeb = GET_BIT(msg, 29U);
       int honda_stock_brake = (msg->data[0] << 2) | (msg->data[1] >> 6);
 
+      if (honda_clarity) {
+        honda_stock_brake = (msg->data[6] << 2) | (msg->data[7] >> 6);
+      }
+
       // Forward AEB when stock braking is higher than openpilot braking
       // only stop forwarding when AEB event is over
       if (!honda_stock_aeb) {
@@ -208,6 +213,11 @@ static bool honda_tx_hook(const CANPacket_t *msg) {
   // BRAKE: safety check (nidec)
   if ((msg->addr == 0x1FAU) && (msg->bus == bus_pt)) {
     honda_brake = (msg->data[0] << 2) + ((msg->data[1] >> 6) & 0x3U);
+
+    if (honda_clarity) {
+      honda_brake = (msg->data[6] << 2) + ((msg->data[7] >> 6) & 0x3U);
+    }
+
     if (longitudinal_brake_checks(honda_brake, HONDA_NIDEC_LONG_LIMITS)) {
       tx = false;
     }
@@ -297,6 +307,7 @@ static safety_config honda_nidec_init(uint16_t param) {
   honda_bosch_long = false;
   honda_bosch_radarless = false;
   honda_bosch_canfd = false;
+  honda_clarity = false;
 
   safety_config ret;
 
@@ -346,6 +357,8 @@ static safety_config honda_bosch_init(uint16_t param) {
   const uint16_t HONDA_PARAM_RADARLESS = 8;
   const uint16_t HONDA_PARAM_BOSCH_CANFD = 16;
 
+  const uint16_t HONDA_PARAM_SP_CLARITY = 1;
+
   // Bosch radarless has the powertrain bus on bus 0
   static RxCheck honda_bosch_pt0_rx_checks[] = {
     HONDA_COMMON_RX_CHECKS(0)
@@ -378,6 +391,8 @@ static safety_config honda_bosch_init(uint16_t param) {
   const uint16_t HONDA_PARAM_BOSCH_LONG = 2;
   honda_bosch_long = GET_FLAG(param, HONDA_PARAM_BOSCH_LONG);
 #endif
+
+  honda_clarity = GET_FLAG(current_safety_param_sp, HONDA_PARAM_SP_CLARITY);
 
   safety_config ret;
   if (honda_bosch_radarless || honda_bosch_canfd) {
