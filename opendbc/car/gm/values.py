@@ -5,6 +5,7 @@ from opendbc.car import Bus, PlatformConfig, DbcDict, Platforms, CarSpecs
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarDocs, CarFootnote, CarHarness, CarParts, Column
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+
 from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP
 
 Ecu = CarParams.Ecu
@@ -197,6 +198,8 @@ class CAR(Platforms):
     [GMCarDocs("GMC Yukon 2019-20", "Adaptive Cruise Control (ACC) & LKAS")],
     GMCarSpecs(mass=2490, wheelbase=2.94, steerRatio=17.3, centerToFrontRatio=0.5, tireStiffnessFactor=1.0),
   )
+
+  # port extensions
   # Separate car def is required when there is no ASCM
   # (for now) unless there is a way to detect it when it has been unplugged...
   # CHEVROLET_VOLT_CC = GMPlatformConfig(
@@ -221,32 +224,32 @@ class CAR(Platforms):
   CHEVROLET_EQUINOX_CC = GMPlatformConfig(
     [GMCarDocs("Chevrolet Equinox NO ACC 2019-22")],
     CHEVROLET_EQUINOX.specs,
-    sp_flags=GMFlagsSP.NO_ACC.value,
+    sp_flags=GMFlagsSP.NO_ACC,
   )
   CHEVROLET_SUBURBAN_CC = GMPlatformConfig(
     [GMCarDocs("Chevrolet Suburban 2016-20")],
     CarSpecs(mass=2731, wheelbase=3.302, steerRatio=17.3, centerToFrontRatio=0.49),
-    sp_flags=GMFlagsSP.NO_ACC.value,
+    sp_flags=GMFlagsSP.NO_ACC,
   )
   CADILLAC_CT6_CC = GMPlatformConfig(
     [GMCarDocs("Cadillac CT6 No ACC")],
     CarSpecs(mass=2358, wheelbase=3.11, steerRatio=17.7, centerToFrontRatio=0.4),
-    sp_flags=GMFlagsSP.NO_ACC.value,
+    sp_flags=GMFlagsSP.NO_ACC,
   )
   CHEVROLET_TRAILBLAZER_CC = GMPlatformConfig(
     [GMCarDocs("Chevrolet Trailblazer NO ACC 2021-22")],
     CHEVROLET_TRAILBLAZER.specs,
-    sp_flags=GMFlagsSP.NO_ACC.value,
+    sp_flags=GMFlagsSP.NO_ACC,
   )
   CHEVROLET_MALIBU_CC = GMPlatformConfig(
     [GMCarDocs("Chevrolet Malibu No ACC")],
     CarSpecs(mass=1450, wheelbase=2.8, steerRatio=15.8, centerToFrontRatio=0.4),
-    sp_flags=GMFlagsSP.NO_ACC.value,
+    sp_flags=GMFlagsSP.NO_ACC,
   )
   CADILLAC_XT5_CC = GMPlatformConfig(
     [GMCarDocs("Cadillac XT5 No ACC")],
     CarSpecs(mass=1810, wheelbase=2.86, steerRatio=16.34, centerToFrontRatio=0.5),
-    sp_flags=GMFlagsSP.NO_ACC.value,
+    sp_flags=GMFlagsSP.NO_ACC,
   )
 
 
@@ -338,6 +341,9 @@ ALT_ACCS = {CAR.GMC_YUKON}
 
 # We're integrated at the Safety Data Gateway Module on these cars
 SDGM_CAR = {CAR.CADILLAC_XT4, CAR.CHEVROLET_VOLT_2019, CAR.CHEVROLET_TRAVERSE}
+
+# port extensions
+NO_ACC_CAR = CAR.with_sp_flags(GMFlagsSP.NO_ACC)
 
 STEER_THRESHOLD = 1.0
 

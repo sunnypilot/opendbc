@@ -5,8 +5,9 @@ from opendbc.car.lateral import apply_driver_steer_torque_limits
 from opendbc.car.gm import gmcan
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
-from opendbc.sunnypilot.car.gm.carstate_ext import CC_ONLY_CAR
 from opendbc.car.interfaces import CarControllerBase
+
+from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 NetworkLocation = structs.CarParams.NetworkLocation
@@ -102,11 +103,11 @@ class CarController(CarControllerBase):
 
         at_full_stop = CC.longActive and CS.out.standstill
         near_stop = CC.longActive and (abs(CS.out.vEgo) < self.params.NEAR_STOP_BRAKE_PHASE)
-        if self.CP.carFingerprint not in CC_ONLY_CAR:
+        if not self.CP_SP.flags & GMFlagsSP.NO_ACC:
           friction_brake_bus = CanBus.CHASSIS
           # GM Camera exceptions
           # TODO: can we always check the longControlState?
-          if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint not in CC_ONLY_CAR:
+          if self.CP.networkLocation == NetworkLocation.fwdCamera and not self.CP_SP.flags & GMFlagsSP.NO_ACC:
             at_full_stop = at_full_stop and stopping
             friction_brake_bus = CanBus.POWERTRAIN
 

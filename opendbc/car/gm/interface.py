@@ -9,8 +9,9 @@ from opendbc.car.gm.carcontroller import CarController
 from opendbc.car.gm.carstate import CarState
 from opendbc.car.gm.radar_interface import RadarInterface, RADAR_HEADER_MSG, CAMERA_DATA_HEADER_MSG
 from opendbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags
-from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP, GMSafetyFlagsSP
 from opendbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, LatControlInputs, NanoFFModel
+
+from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP, GMSafetyFlagsSP
 
 TransmissionType = structs.CarParams.TransmissionType
 NetworkLocation = structs.CarParams.NetworkLocation

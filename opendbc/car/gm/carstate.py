@@ -4,7 +4,9 @@ from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.gm.values import DBC, AccState, CruiseButtons, STEER_THRESHOLD, SDGM_CAR, ALT_ACCS
-from opendbc.sunnypilot.car.gm.carstate_ext import CC_ONLY_CAR
+
+from opendbc.sunnypilot.car.gm.carstate_ext import CarStateExt
+from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
 TransmissionType = structs.CarParams.TransmissionType
@@ -16,9 +18,10 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
                 CruiseButtons.MAIN: ButtonType.mainCruise, CruiseButtons.CANCEL: ButtonType.cancel}
 
 
-class CarState(CarStateBase):
+class CarState(CarStateBase, CarStateExt):
   def __init__(self, CP, CP_SP):
-    super().__init__(CP, CP_SP)
+    CarStateBase.__init__(self, CP, CP_SP)
+    CarStateExt.__init__(self, CP, CP_SP)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
@@ -131,7 +134,7 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      if self.CP.carFingerprint not in (ALT_ACCS | CC_ONLY_CAR):
+      if self.CP.carFingerprint not in ALT_ACCS or not self.CP_SP.flags & GMFlagsSP.NO_ACC:
         ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
         # This FCW signal only works for SDGM cars. CAM cars send FCW on GMLAN but this bit is always 0 for them
         ret.stockFcw = cam_cp.vl["ASCMActiveCruiseControlStatus"]["FCWAlert"] != 0
@@ -143,11 +146,6 @@ class CarState(CarStateBase):
 
       if self.CP.carFingerprint not in SDGM_CAR:
         ret.stockAeb = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
-
-    if self.CP.carFingerprint in CC_ONLY_CAR:
-      ret.accFaulted = False
-      ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
-      ret.cruiseState.enabled = pt_cp.vl["ECMCruiseControl"]["CruiseActive"] != 0
 
     if self.CP.enableBsm:
       ret.leftBlindspot = pt_cp.vl["BCMBlindSpotMonitor"]["LeftBSM"] == 1
@@ -164,6 +162,8 @@ class CarState(CarStateBase):
 
     if ret.vEgo < self.CP.minSteerSpeed:
       ret.lowSpeedAlert = True
+
+    CarStateExt.update(self, ret, can_parsers)
 
     return ret, ret_sp
 
