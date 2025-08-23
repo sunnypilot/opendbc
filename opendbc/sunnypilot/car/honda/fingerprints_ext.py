@@ -22,7 +22,7 @@ FW_VERSIONS_EXT = {
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TRW-A020\x00\x00',
       b'39990-TRW,A020\x00\x00',  # modified firmware
-      # b'39990,TRW,A020\x00\x00',  # extra modified firmware
+      b'39990,TRW,A020\x00\x00',  # extra modified firmware
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TRW-A210\x00\x00',
