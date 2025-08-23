@@ -102,8 +102,7 @@ class CarInterface(CarInterfaceBase):
     eps_modified = False
     for fw in car_fw:
       if fw.ecu == "eps" and b"," in fw.fwVersion:
-        # FIXME-SP: revert this before merge, this will be updated in the next sync
-        ret.dashcamOnly = True
+        eps_modified = True
 
     if candidate == CAR.HONDA_CIVIC:
       if eps_modified:
@@ -253,11 +252,12 @@ class CarInterface(CarInterfaceBase):
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
     eps_modified = False
-    for fw in car_fw:
-      if fw.ecu == "eps" and b"," in fw.fwVersion:
-        ret.flags |= HondaFlagsSP.EPS_MOD.value
-        eps_modified = True
-        stock_cp.dashcamOnly = False
+    # FIXME-SP: uncomment when the sync brings in https://github.com/commaai/opendbc/pull/2672
+    # for fw in car_fw:
+    #   if fw.ecu == "eps" and b"," in fw.fwVersion:
+    #     ret.flags |= HondaFlagsSP.EPS_MOD.value
+    #     eps_modified = True
+    #     stock_cp.dashcamOnly = False
 
     if candidate == CAR.HONDA_CIVIC:
       if eps_modified:
@@ -283,6 +283,12 @@ class CarInterface(CarInterfaceBase):
         stock_cp.lateralTuning.pid.kpV, stock_cp.lateralTuning.pid.kiV = [[0.21], [0.07]]
 
     elif candidate == CAR.HONDA_CLARITY:
+      # FIXME-SP: remove when the sync brings in https://github.com/commaai/opendbc/pull/2672
+      for fw in car_fw:
+        if fw.ecu == "eps" and b"," in fw.fwVersion:
+          ret.flags |= HondaFlagsSP.EPS_MOD.value
+          eps_modified = True
+
       ret.safetyParam |= HondaSafetyFlagsSP.CLARITY
       stock_cp.autoResumeSng = True
       stock_cp.minEnableSpeed = -1
