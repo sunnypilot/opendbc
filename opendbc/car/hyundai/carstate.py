@@ -74,9 +74,6 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     self.imu_lateral_acceleration = 0.0  # used for CAN FD cars with angle steering
     self.hands_on_steering_grip = 0
 
-    # Angle DEBUG
-    self.angle_debug = structs.HkgAngleDebug()
-
   def recent_button_interaction(self) -> bool:
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
     # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons
@@ -329,7 +326,6 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.blockPcmEnable = not self.recent_button_interaction()
 
-    ret_sp.hkgAngleDebug = self.angle_debug
     return ret, ret_sp
 
   def get_can_parsers_canfd(self, CP):
