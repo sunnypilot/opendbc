@@ -128,11 +128,11 @@ class CarControlSP:
     value: str = auto_field()
 
 
-
 @auto_dataclass
 class HkgAngleDebugLimits:
   maxAngle: float = auto_field()        # maximum angle in degrees
   maxAngleDelta: float = auto_field()   # maximum angle delta in degrees per second
+
 
 @auto_dataclass
 class HkgAngleDebug:
