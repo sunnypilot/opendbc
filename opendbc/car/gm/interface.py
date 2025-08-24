@@ -252,6 +252,6 @@ class CarInterface(CarInterfaceBase):
     if ret.flags & GMFlagsSP.NO_ACC:
       ret.safetyParam |= GMSafetyFlagsSP.NO_ACC
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
-      stock_cp.minSteerSpeed = 2.78   # 6 mph
+      stock_cp.minSteerSpeed = 3.0   # 6 mph
 
     return ret
