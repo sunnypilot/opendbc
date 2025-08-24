@@ -1,5 +1,6 @@
 from opendbc.can import CANPacker
-from opendbc.car import Bus, DT_CTRL, apply_meas_steer_torque_limits
+from opendbc.car import Bus, DT_CTRL
+from opendbc.car.lateral import apply_meas_steer_torque_limits
 from opendbc.car.chrysler import chryslercan
 from opendbc.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
 from opendbc.car.interfaces import CarControllerBase
@@ -12,7 +13,7 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     MadsCarController.__init__(self)
-    CarControllerExt.__init__(self, CP)
+    CarControllerExt.__init__(self, CP, CP_SP)
     self.apply_torque_last = 0
 
     self.hud_count = 0
@@ -64,7 +65,7 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt):
         if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
           lkas_control_bit = False
 
-      lkas_control_bit = CarControllerExt.get_lkas_control_bit(self, CS, lkas_control_bit, self.lkas_control_bit_prev)
+      lkas_control_bit = CarControllerExt.get_lkas_control_bit(self, CS, CC, lkas_control_bit, self.lkas_control_bit_prev)
 
       # EPS faults if LKAS re-enables too quickly
       lkas_control_bit = lkas_control_bit and (self.frame - self.last_lkas_falling_edge > 200)
