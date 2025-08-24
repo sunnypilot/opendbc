@@ -61,6 +61,7 @@ def calculate_angle_torque_reduction_gain(params, CS, apply_torque_last, target_
 
   return float(np.clip(new_gain, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN, params.ANGLE_MAX_TORQUE_REDUCTION_GAIN))
 
+
 def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: float) -> float:
   """
   Smooth the steering angle change based on vehicle speed and an optional smoothing offset.
@@ -197,7 +198,7 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
     # angle control
     else:
       v_ego_raw = CS.out.vEgoRaw
-      apply_angle = np.clip(actuators.steeringAngleDeg, -819.2, 819.1)
+      apply_angle = np.clip(actuators.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX)
       CS.angle_debug.applyAngle = float(apply_angle)  # for safety checks
 
       if self.angle_enable_smoothing_factor and abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
@@ -221,7 +222,9 @@ class CarController(CarControllerBase, EsccCarController, LongitudinalController
 
       # This method ensures that the torque gives up when overriding and controls the ramp rate to avoid feeling jittery.
       apply_torque = calculate_angle_torque_reduction_gain(self.params, CS, self.apply_torque_last, target_torque_reduction_gain)
-      apply_steer_req = CC.latActive and apply_torque != 0  # apply_steer_req is True when we are actively attempting to steer
+
+      # apply_steer_req is True when we are actively attempting to steer and under the angle limit. Otherwise the user is overriding.
+      apply_steer_req = CC.latActive and apply_torque != 0 and self.apply_angle_last <= self.params.ANGLE_LIMITS.STEER_ANGLE_MAX
 
     if not CC.latActive:
       apply_torque = 0
