@@ -3,7 +3,7 @@ import copy
 import math
 
 from opendbc.can import CANDefine, CANParser
-from opendbc.car import Bus, create_button_events, structs, create_button_events_sp
+from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, Buttons, CarControllerParams
@@ -15,7 +15,6 @@ from opendbc.sunnypilot.car.hyundai.mads import MadsCarState
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
-ButtonTypeSP = structs.CarStateSP.ButtonEvent.Type
 
 PREV_BUTTON_SAMPLES = 8
 CLUSTER_SAMPLE_RATE = 20  # frames
@@ -205,9 +204,8 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
-                        *create_button_events(self.lda_button, prev_lda_button, {1: ButtonType.lkas})]
-
-    ret_sp.buttonEvents = [*create_button_events_sp(self.custom_button, prev_custom_button, {1: ButtonTypeSP.customButton})]
+                        *create_button_events(self.lda_button, prev_lda_button, {1: ButtonType.lkas}),
+                        *create_button_events(self.custom_button, prev_custom_button, {1: ButtonType.altButton2})]
 
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
@@ -316,9 +314,8 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.buttonEvents = [*create_button_events(self.cruise_buttons[-1], prev_cruise_buttons, BUTTONS_DICT),
                         *create_button_events(self.main_buttons[-1], prev_main_buttons, {1: ButtonType.mainCruise}),
-                        *create_button_events(self.lda_button, prev_lda_button, {1: ButtonType.lkas})]
-
-    ret_sp.buttonEvents = [*create_button_events_sp(self.custom_button, prev_custom_button, {1: ButtonTypeSP.customButton})]
+                        *create_button_events(self.lda_button, prev_lda_button, {1: ButtonType.lkas}),
+                        *create_button_events(self.custom_button, prev_custom_button, {1: ButtonType.altButton2})]
 
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
