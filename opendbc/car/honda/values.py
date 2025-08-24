@@ -121,16 +121,14 @@ class HondaCarDocs(CarDocs):
     else:
       harness = CarHarness.nidec
 
-      if CP.carFingerprint in (CAR.HONDA_CLARITY,):
-        harness = CarHarness.honda_clarity
-
     if CP.carFingerprint in (CAR.HONDA_PILOT_4G,):
       self.car_parts = CarParts([Device.threex_angled_mount, harness])
     else:
       self.car_parts = CarParts.common([harness])
 
-      if CP.carFingerprint in (CAR.HONDA_CLARITY,):
-        self.car_parts.custom_parts_url = "https://shop.retropilot.org/product/honda-clarity-proxy-board-kit"
+    if CP.carFingerprint in (CAR.HONDA_CLARITY,):
+      self.car_parts = CarParts.common([CarHarness.honda_clarity])
+      self.car_parts.custom_parts_url = "https://shop.retropilot.org/product/honda-clarity-proxy-board-kit"
 
 
 class Footnote(Enum):
