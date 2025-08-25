@@ -91,7 +91,7 @@ class SnGCarController:
       if self.manual_parking_brake:
         can_sends.append(subarucan_ext.create_brake_pedal(packer, self.CP, CS.brake_pedal_msg))
       else:
-        can_sends.append(subarucan_ext.create_throttle(packer, CS.throttle_msg))
+        can_sends.append(subarucan_ext.create_throttle(packer, self.CP, CS.throttle_msg))
 
     return can_sends
 

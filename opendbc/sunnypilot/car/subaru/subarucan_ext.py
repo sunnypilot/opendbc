@@ -40,17 +40,25 @@ def create_throttle(packer, CP, throttle_msg):
   return packer.make_can_msg("Throttle", CanBus.camera, values)
 
 
-def create_brake_pedal(packer, brake_pedal_msg):
-  values = {s: brake_pedal_msg[s] for s in [
-    "Signal1",
-    "Speed",
-    "Signal2",
-    "Brake_Lights",
-    "Signal3",
-    "Brake_Pedal",
-    "Signal4",
-  ]}
-  values["COUNTER"] = create_counter(brake_pedal_msg)
-  values["Speed"] = 3
+def create_brake_pedal(packer, CP, brake_pedal_msg):
+  if CP.flags & SubaruFlags.PREGLOBAL:
+    values = {s: brake_pedal_msg[s] for s in [
+      "Speed",
+      "Brake_Pedal",
+      "Signal1",
+    ]}
+  else:
+    values = {s: brake_pedal_msg[s] for s in [
+      "Signal1",
+      "Speed",
+      "Signal2",
+      "Brake_Lights",
+      "Signal3",
+      "Brake_Pedal",
+      "Signal4",
+    ]}
+    values["COUNTER"] = create_counter(brake_pedal_msg)
+
+  values["Speed"] = 1 if CP.flags & SubaruFlags.PREGLOBAL else 3
 
   return packer.make_can_msg("Brake_Pedal", CanBus.camera, values)
