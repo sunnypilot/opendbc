@@ -16,7 +16,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
     ret.brand = "chrysler"
-    ret.dashcamOnly = candidate in RAM_HD
+    ret.dashcamOnly = False
 
     # radar parsing needs some work, see https://github.com/commaai/openpilot/issues/26842
     ret.radarUnavailable = True # Bus.radar not in DBC[candidate][Bus.radar]

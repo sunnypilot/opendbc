@@ -1,6 +1,6 @@
 from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, create_button_events, structs
-from opendbc.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
+from opendbc.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS, RAM_HD
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarStateBase
 
@@ -67,7 +67,10 @@ class CarState(CarStateBase, MadsCarState):
     ret.genericToggle = cp.vl["STEERING_LEVERS"]["HIGH_BEAM_PRESSED"] == 1
 
     # steering wheel
-    ret.steeringAngleDeg = cp.vl["STEERING"]["STEERING_ANGLE"] + cp.vl["STEERING"]["STEERING_ANGLE_HP"]
+    if self.CP.carFingerprint in RAM_HD:
+      ret.steeringAngleDeg = cp.vl["STEERING"]["STEERING_ANGLE"]
+    else:
+      ret.steeringAngleDeg = cp.vl["STEERING"]["STEERING_ANGLE"] + cp.vl["STEERING"]["STEERING_ANGLE_HP"]
     ret.steeringRateDeg = cp.vl["STEERING"]["STEERING_RATE"]
     ret.steeringTorque = cp.vl["EPS_2"]["COLUMN_TORQUE"]
     ret.steeringTorqueEps = cp.vl["EPS_2"]["EPS_TORQUE_MOTOR"]
