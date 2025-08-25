@@ -35,7 +35,7 @@ def create_throttle(packer, CP, throttle_msg):
     ]}
 
   values["COUNTER"] = create_counter(throttle_msg)
-  values["Throttle_Pedal"] = 10
+  values["Throttle_Pedal"] = 5
 
   return packer.make_can_msg("Throttle", CanBus.camera, values)
 
