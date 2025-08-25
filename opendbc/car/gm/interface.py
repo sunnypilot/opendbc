@@ -10,6 +10,8 @@ from opendbc.car.gm.radar_interface import RadarInterface, RADAR_HEADER_MSG, CAM
 from opendbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags
 from opendbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, LateralAccelFromTorqueCallbackType
 
+from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP, GMSafetyFlagsSP
+
 TransmissionType = structs.CarParams.TransmissionType
 NetworkLocation = structs.CarParams.NetworkLocation
 
@@ -18,6 +20,13 @@ NON_LINEAR_TORQUE_PARAMS = {
   CAR.GMC_ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
   CAR.CHEVROLET_SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
 }
+
+# sunnypilot-specific torque parameters for Bolt cars that actually use the d parameter
+NON_LINEAR_TORQUE_PARAMS_SP = {
+  CAR.CHEVROLET_BOLT_2017: [2.24, 1.1, 0.28, -0.07],
+  CAR.CHEVROLET_BOLT_2018: [1.8, 1.1, 0.3, -0.045],
+}
+
 
 
 class CarInterface(CarInterfaceBase):
@@ -48,12 +57,18 @@ class CarInterface(CarInterfaceBase):
       # The "lat_accel vs torque" relationship is assumed to be the sum of "sigmoid + linear" curves
       # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
       # This has big effect on the stability about 0 (noise when going straight)
-      non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
+      non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS_SP.get(self.CP.carFingerprint) or NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
       assert non_linear_torque_params, "The params are not defined"
-      a, b, c, _ = non_linear_torque_params
-      sig_input = a * lateral_acceleration
-      sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
-      steer_torque = (sig * b) + (lateral_acceleration * c)
+      if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS_SP:
+        a, b, c, d = non_linear_torque_params
+        sig_input = a * lateral_acceleration
+        sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
+        steer_torque = ((sig * b) + (lateral_acceleration * c)) + d
+      else:
+        a, b, c, _ = non_linear_torque_params
+        sig_input = a * lateral_acceleration
+        sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
+        steer_torque = (sig * b) + (lateral_acceleration * c)
       return float(steer_torque)
 
     lataccel_values = np.arange(-5.0, 5.0, 0.01)
@@ -62,7 +77,7 @@ class CarInterface(CarInterfaceBase):
     return torque_values, lataccel_values
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
+    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS or NON_LINEAR_TORQUE_PARAMS_SP:
       torque_values, lataccel_values = self.get_lataccel_torque_siglin()
 
       def torque_from_lateral_accel_siglin(lateral_acceleration: float, torque_params: structs.CarParams.LateralTorqueTuning):
@@ -137,8 +152,6 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to opendbc/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.CHEVROLET_MALIBU, CAR.BUICK_REGAL} or \
-                      (ret.networkLocation == NetworkLocation.gateway and ret.radarUnavailable)
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -162,6 +175,10 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    elif candidate in (CAR.CHEVROLET_MALIBU, CAR.CHEVROLET_MALIBU_CC):
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     elif candidate == CAR.BUICK_LACROSSE:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -180,7 +197,7 @@ class CarInterface(CarInterfaceBase):
         ret.steerActuatorDelay = 0.2
         CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate == CAR.CHEVROLET_BOLT_EUV:
+    elif candidate in (CAR.CHEVROLET_BOLT_EUV, CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_2018, CAR.CHEVROLET_BOLT_CC):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -192,10 +209,10 @@ class CarInterface(CarInterfaceBase):
         ret.minEnableSpeed = -1.
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate == CAR.CHEVROLET_EQUINOX:
+    elif candidate in (CAR.CHEVROLET_EQUINOX, CAR.CHEVROLET_EQUINOX_CC):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate == CAR.CHEVROLET_TRAILBLAZER:
+    elif candidate in (CAR.CHEVROLET_TRAILBLAZER, CAR.CHEVROLET_TRAILBLAZER_CC):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -215,6 +232,26 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.GMC_YUKON:
       ret.steerActuatorDelay = 0.5
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-      ret.dashcamOnly = True  # Needs steerRatio, tireStiffness, and lat accel factor tuning
+
+    return ret
+
+  @staticmethod
+  def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+    # NO_ACC flag is set directly in platform configs via sp_flags
+
+    # dashcamOnly platforms: untested platforms need user validations, GMC Yukon needs tuning
+    if candidate in (CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.CHEVROLET_MALIBU, CAR.BUICK_REGAL, CAR.GMC_YUKON):
+      stock_cp.dashcamOnly = True
+
+    # Chevrolet Volt specific settings
+    if candidate == CAR.CHEVROLET_VOLT:
+      stock_cp.minEnableSpeed = -1
+
+    # NO_ACC vehicles should use camera car speed thresholds
+    if ret.flags & GMFlagsSP.NO_ACC:
+      ret.safetyParam |= GMSafetyFlagsSP.NO_ACC
+      stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
+      stock_cp.minSteerSpeed = 3.0   # 6 mph
 
     return ret

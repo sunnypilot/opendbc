@@ -28,11 +28,16 @@ typedef enum {
 } GmHardware;
 static GmHardware gm_hw = GM_ASCM;
 static bool gm_pcm_cruise = false;
+static bool gm_has_acc = true;
 
 static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
 
   if (msg->bus == 0U) {
+    // Update cruise main (ACC main) state from ECM status for all GM modes
+    if (msg->addr == 0xC9U) {  // ECMEngineStatus
+      acc_main_on = GET_BIT(msg, 29U);
+    }
     if (msg->addr == 0x184U) {
       int torque_driver_new = ((msg->data[6] & 0x7U) << 8) | msg->data[7];
       torque_driver_new = to_signed(torque_driver_new, 11);
@@ -218,6 +223,9 @@ static safety_config gm_init(uint16_t param) {
   gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
 #endif
   gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long;
+
+  const uint16_t GM_PARAM_NO_ACC = 8;
+  gm_has_acc = !GET_FLAG(param, GM_PARAM_NO_ACC);
 
   safety_config ret;
   if (gm_hw == GM_CAM) {
