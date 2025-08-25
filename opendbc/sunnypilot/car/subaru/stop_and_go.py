@@ -17,6 +17,9 @@ from opendbc.sunnypilot.car.subaru import subarucan_ext
 from opendbc.sunnypilot.car.subaru.values_ext import SubaruFlagsSP
 from opendbc.can.parser import CANParser
 
+_SNG_ACC_MIN_DIST = 3
+_SNG_ACC_MAX_DIST = 4.5
+
 
 class SnGCarController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
@@ -27,6 +30,7 @@ class SnGCarController:
 
     self.last_standstill_frame = 0
     self.epb_resume_frames_remaining = 0
+    self.prev_close_distance = 0.0
 
   def update_epb_resume_sequence(self, should_resume: bool) -> bool:
     if self.manual_parking_brake:
@@ -59,6 +63,7 @@ class SnGCarController:
     if not CC.enabled or not CC.hudControl.leadVisible:
       return False
 
+    close_distance = CS.es_distance_msg["Close_Distance"]
     in_standstill = CS.out.standstill
 
     if not in_standstill:
@@ -70,12 +75,20 @@ class SnGCarController:
     if (frame - self.last_standstill_frame) * DT_CTRL >= 0.8:
       self.last_standstill_frame = frame
 
+    # Car state distance-based conditions (EPB only)
+    in_resume_distance = _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST
+    distance_increasing = close_distance > self.prev_close_distance
+    distance_resume_allowed = in_resume_distance and distance_increasing
+
     if self.manual_parking_brake:
       # Manual parking brake: Direct resume when the standstill hold threshold is reached to prevent ACC fault
       send_resume = in_standstill_hold
     else:
       # EPB: Resume sequence with planner resume desire
-      send_resume = self.update_epb_resume_sequence(CC.cruiseControl.resume)
+      should_resume = CC.cruiseControl.resume and distance_resume_allowed
+      send_resume = self.update_epb_resume_sequence(should_resume)
+
+    self.prev_close_distance = close_distance
 
     return send_resume
 
