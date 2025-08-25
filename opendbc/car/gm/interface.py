@@ -27,7 +27,6 @@ NON_LINEAR_TORQUE_PARAMS_SP = {
   CAR.CHEVROLET_BOLT_2018: [1.8, 1.1, 0.3, -0.045],
 }
 
-NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'torque_data/neural_ff_weights.json')
 
 
 class CarInterface(CarInterfaceBase):
@@ -64,7 +63,7 @@ class CarInterface(CarInterfaceBase):
         a, b, c, d = non_linear_torque_params
         sig_input = a * lateral_acceleration
         sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
-        steer_torque = sig = (np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)) + d
+        steer_torque = ((sig * b) + (lateral_acceleration * c)) + d
       else:
         a, b, c, _ = non_linear_torque_params
         sig_input = a * lateral_acceleration
