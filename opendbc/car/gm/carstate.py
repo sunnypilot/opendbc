@@ -134,7 +134,7 @@ class CarState(CarStateBase, CarStateExt):
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      if self.CP.carFingerprint not in ALT_ACCS or not self.CP_SP.flags & GMFlagsSP.NO_ACC:
+      if self.CP.carFingerprint not in ALT_ACCS or not self.CP_SP.flags & GMFlagsSP.NON_ACC:
         ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
         # This FCW signal only works for SDGM cars. CAM cars send FCW on GMLAN but this bit is always 0 for them
         ret.stockFcw = cam_cp.vl["ASCMActiveCruiseControlStatus"]["FCWAlert"] != 0

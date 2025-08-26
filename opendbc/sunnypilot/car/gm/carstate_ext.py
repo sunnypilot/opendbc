@@ -20,7 +20,7 @@ class CarStateExt:
   def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     pt_cp = can_parsers[Bus.pt]
 
-    if self.CP_SP.flags & GMFlagsSP.NO_ACC:
+    if self.CP_SP.flags & GMFlagsSP.NON_ACC:
       ret.cruiseState.enabled = pt_cp.vl["ECMCruiseControl"]["CruiseActive"] != 0
       ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
       ret.accFaulted = False

@@ -236,7 +236,7 @@ class TestGmAscmNonACCSafety(TestGmAscmSafety):
     self.packer = CANPackerPanda("gm_global_a_powertrain_generated")
     self.packer_chassis = CANPackerPanda("gm_global_a_chassis")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_sp(GMSafetyFlagsSP.NO_ACC)
+    self.safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
     self.safety.set_safety_hooks(CarParams.SafetyModel.gm, self.EXTRA_SAFETY_PARAM)
     self.safety.init_tests()
 

@@ -237,7 +237,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
-    # NO_ACC flag is set directly in platform configs via sp_flags
+    # NON_ACC flag is set directly in platform configs via sp_flags
 
     # dashcamOnly platforms: untested platforms need user validations, GMC Yukon needs tuning
     if candidate in (CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.CHEVROLET_MALIBU, CAR.BUICK_REGAL, CAR.GMC_YUKON):
@@ -247,9 +247,9 @@ class CarInterface(CarInterfaceBase):
     if candidate == CAR.CHEVROLET_VOLT:
       stock_cp.minEnableSpeed = -1
 
-    # NO_ACC vehicles should use camera car speed thresholds
-    if ret.flags & GMFlagsSP.NO_ACC:
-      ret.safetyParam |= GMSafetyFlagsSP.NO_ACC
+    # NON_ACC vehicles should use camera car speed thresholds
+    if ret.flags & GMFlagsSP.NON_ACC:
+      ret.safetyParam |= GMSafetyFlagsSP.NON_ACC
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
       stock_cp.minSteerSpeed = 3.0   # 6 mph
 

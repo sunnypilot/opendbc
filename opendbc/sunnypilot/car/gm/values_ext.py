@@ -9,8 +9,8 @@ from enum import IntFlag
 
 
 class GMFlagsSP(IntFlag):
-  NO_ACC = 1
+  NON_ACC = 1
 
 
 class GMSafetyFlagsSP:
-  NO_ACC = 1
+  NON_ACC = 1

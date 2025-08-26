@@ -103,11 +103,11 @@ class CarController(CarControllerBase):
 
         at_full_stop = CC.longActive and CS.out.standstill
         near_stop = CC.longActive and (abs(CS.out.vEgo) < self.params.NEAR_STOP_BRAKE_PHASE)
-        if not self.CP_SP.flags & GMFlagsSP.NO_ACC:
+        if not self.CP_SP.flags & GMFlagsSP.NON_ACC:
           friction_brake_bus = CanBus.CHASSIS
           # GM Camera exceptions
           # TODO: can we always check the longControlState?
-          if self.CP.networkLocation == NetworkLocation.fwdCamera and not self.CP_SP.flags & GMFlagsSP.NO_ACC:
+          if self.CP.networkLocation == NetworkLocation.fwdCamera and not self.CP_SP.flags & GMFlagsSP.NON_ACC:
             at_full_stop = at_full_stop and stopping
             friction_brake_bus = CanBus.POWERTRAIN
 
