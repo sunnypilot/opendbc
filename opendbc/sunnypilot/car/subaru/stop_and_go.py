@@ -85,7 +85,7 @@ class SnGCarController:
       send_resume = in_standstill_hold
     else:
       # EPB: Resume sequence with trigger on distance with lead car increasing
-      should_resume = CS.out.standstill  # and distance_resume_allowed
+      should_resume = CS.out.standstill and distance_resume_allowed
       send_resume = self.update_epb_resume_sequence(should_resume)
 
     self.prev_close_distance = close_distance
