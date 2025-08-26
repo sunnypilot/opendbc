@@ -28,7 +28,6 @@ NON_LINEAR_TORQUE_PARAMS_SP = {
 }
 
 
-
 class CarInterface(CarInterfaceBase):
   CarState = CarState
   CarController = CarController
