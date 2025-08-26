@@ -232,7 +232,7 @@ class CAR(Platforms):
     sp_flags=GMFlagsSP.NO_ACC,
   )
   CADILLAC_CT6_CC = GMPlatformConfig(
-    [GMCarDocs("Cadillac CT6 No ACC")],
+    [GMCarDocs("Cadillac CT6 No ACC 2017-18")],
     CarSpecs(mass=2358, wheelbase=3.11, steerRatio=17.7, centerToFrontRatio=0.4),
     sp_flags=GMFlagsSP.NO_ACC,
   )
@@ -242,12 +242,12 @@ class CAR(Platforms):
     sp_flags=GMFlagsSP.NO_ACC,
   )
   CHEVROLET_MALIBU_CC = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Malibu No ACC")],
+    [GMCarDocs("Chevrolet Malibu No ACC 2016-23")],
     CarSpecs(mass=1450, wheelbase=2.8, steerRatio=15.8, centerToFrontRatio=0.4),
     sp_flags=GMFlagsSP.NO_ACC,
   )
   CADILLAC_XT5_CC = GMPlatformConfig(
-    [GMCarDocs("Cadillac XT5 No ACC")],
+    [GMCarDocs("Cadillac XT5 No ACC 2018")],
     CarSpecs(mass=1810, wheelbase=2.86, steerRatio=16.34, centerToFrontRatio=0.5),
     sp_flags=GMFlagsSP.NO_ACC,
   )

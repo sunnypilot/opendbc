@@ -140,12 +140,15 @@
     ],
     "package": "Driver Confidence Package 2"
   },
-  "Cadillac CT6 No ACC": {
+  "Cadillac CT6 No ACC 2017-18": {
     "platform": "CADILLAC_CT6_CC",
     "make": "Cadillac",
     "brand": "gm",
     "model": "CT6 No ACC",
-    "year": [],
+    "year": [
+      "2017",
+      "2018"
+    ],
     "package": "Adaptive Cruise Control (ACC)"
   },
   "Cadillac Escalade 2017": {
@@ -188,12 +191,14 @@
     ],
     "package": "Driver Assist Package"
   },
-  "Cadillac XT5 No ACC": {
+  "Cadillac XT5 No ACC 2018": {
     "platform": "CADILLAC_XT5_CC",
     "make": "Cadillac",
     "brand": "gm",
     "model": "XT5 No ACC",
-    "year": [],
+    "year": [
+      "2018"
+    ],
     "package": "Adaptive Cruise Control (ACC)"
   },
   "Chevrolet Bolt EUV 2022-23": {
@@ -289,12 +294,21 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
-  "Chevrolet Malibu No ACC": {
+  "Chevrolet Malibu No ACC 2016-23": {
     "platform": "CHEVROLET_MALIBU_CC",
     "make": "Chevrolet",
     "brand": "gm",
     "model": "Malibu No ACC",
-    "year": [],
+    "year": [
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023"
+    ],
     "package": "Adaptive Cruise Control (ACC)"
   },
   "Chevrolet Silverado 1500 2020-21": {
