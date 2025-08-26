@@ -56,7 +56,7 @@ class CarInterface(CarInterfaceBase):
       # The "lat_accel vs torque" relationship is assumed to be the sum of "sigmoid + linear" curves
       # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
       # This has big effect on the stability about 0 (noise when going straight)
-      non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS_SP.get(self.CP.carFingerprint) or NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
+      non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint) or NON_LINEAR_TORQUE_PARAMS_SP.get(self.CP.carFingerprint)
       assert non_linear_torque_params, "The params are not defined"
       if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS_SP:
         a, b, c, d = non_linear_torque_params
@@ -76,7 +76,7 @@ class CarInterface(CarInterfaceBase):
     return torque_values, lataccel_values
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS or NON_LINEAR_TORQUE_PARAMS_SP:
+    if self.CP.carFingerprint in (NON_LINEAR_TORQUE_PARAMS | NON_LINEAR_TORQUE_PARAMS_SP):
       torque_values, lataccel_values = self.get_lataccel_torque_siglin()
 
       def torque_from_lateral_accel_siglin(lateral_acceleration: float, torque_params: structs.CarParams.LateralTorqueTuning):
@@ -86,7 +86,7 @@ class CarInterface(CarInterfaceBase):
       return self.torque_from_lateral_accel_linear
 
   def lateral_accel_from_torque(self) -> LateralAccelFromTorqueCallbackType:
-    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
+    if self.CP.carFingerprint in (NON_LINEAR_TORQUE_PARAMS | NON_LINEAR_TORQUE_PARAMS_SP):
       torque_values, lataccel_values = self.get_lataccel_torque_siglin()
 
       def lateral_accel_from_torque_siglin(torque: float, torque_params: structs.CarParams.LateralTorqueTuning):
