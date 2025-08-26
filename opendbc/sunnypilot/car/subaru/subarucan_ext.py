@@ -35,6 +35,9 @@ def create_throttle(packer, CP, throttle_msg):
     ]}
 
   values["COUNTER"] = create_counter(throttle_msg)
+
+  if not CP.flags & SubaruFlags.PREGLOBAL:
+    values["Off_Accel"] = 4
   values["Throttle_Pedal"] = 5
 
   return packer.make_can_msg("Throttle", CanBus.camera, values)
