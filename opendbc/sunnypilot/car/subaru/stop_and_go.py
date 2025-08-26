@@ -71,8 +71,8 @@ class SnGCarController:
 
     # Check if we've been in standstill long enough
     standstill_duration = (frame - self.last_standstill_frame) * DT_CTRL
-    in_standstill_hold = standstill_duration > 0.75
-    if (frame - self.last_standstill_frame) * DT_CTRL >= 0.8:
+    in_standstill_hold = standstill_duration > 0.5
+    if (frame - self.last_standstill_frame) * DT_CTRL >= 0.55:
       self.last_standstill_frame = frame
 
     # Car state distance-based conditions (EPB only)
@@ -84,8 +84,8 @@ class SnGCarController:
       # Manual parking brake: Direct resume when the standstill hold threshold is reached to prevent ACC fault
       send_resume = in_standstill_hold
     else:
-      # EPB: Resume sequence with planner resume desire
-      should_resume = CC.cruiseControl.resume and distance_resume_allowed
+      # EPB: Resume sequence with trigger on distance with lead car increasing
+      should_resume = CS.out.standstill and distance_resume_allowed
       send_resume = self.update_epb_resume_sequence(should_resume)
 
     self.prev_close_distance = close_distance
@@ -124,8 +124,6 @@ class SnGCarState:
 
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
-
-    ret.cruiseState.standstill = ret.standstill
 
     self.brake_pedal_msg = copy.copy(cp.vl["Brake_Pedal"])
     self.throttle_msg = copy.copy(cp.vl["Throttle"])
