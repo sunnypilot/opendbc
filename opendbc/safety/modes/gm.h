@@ -13,6 +13,12 @@
     {.msg = {{0x1C4, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
     {.msg = {{0xC9, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
 
+#define GM_EV_COMMON_ADDR_CHECK \
+  {.msg = {{0xBD, 0, 7, 40U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+
+#define GM_NON_ACC_ADDR_CHECK \
+  {.msg = {{0x3D1, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+
 static const LongitudinalLimits *gm_long_limits;
 
 enum {
@@ -93,6 +99,11 @@ static void gm_rx_hook(const CANPacket_t *msg) {
 
     if (msg->addr == 0xC9U) {
       acc_main_on = GET_BIT(msg, 29U);
+    }
+
+    if (msg->addr == 0x3D1U) {
+      bool cruise_engaged = (msg->data[4] >> 7) != 0U;
+      pcm_cruise_check(cruise_engaged);
     }
   }
 }
@@ -197,7 +208,18 @@ static safety_config gm_init(uint16_t param) {
 
   static RxCheck gm_ev_rx_checks[] = {
     GM_COMMON_RX_CHECKS
-    {.msg = {{0xBD, 0, 7, 40U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    GM_EV_COMMON_ADDR_CHECK
+  };
+
+  static RxCheck gm_non_acc_rx_checks[] = {
+    GM_COMMON_RX_CHECKS
+    GM_NON_ACC_ADDR_CHECK
+  };
+
+  static RxCheck gm_non_acc_ev_rx_checks[] = {
+    GM_COMMON_RX_CHECKS
+    GM_EV_COMMON_ADDR_CHECK
+    GM_NON_ACC_ADDR_CHECK
   };
 
   static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true},  // pt bus
@@ -236,6 +258,14 @@ static safety_config gm_init(uint16_t param) {
   const bool gm_ev = GET_FLAG(param, GM_PARAM_EV);
   if (gm_ev) {
     SET_RX_CHECKS(gm_ev_rx_checks, ret);
+  }
+
+  if (gm_non_acc) {
+    if (gm_ev) {
+      SET_RX_CHECKS(gm_non_acc_ev_rx_checks, ret);
+    } else {
+      SET_RX_CHECKS(gm_non_acc_rx_checks, ret);
+    }
   }
 
   // ASCM does not forward any messages
