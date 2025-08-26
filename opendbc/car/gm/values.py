@@ -213,6 +213,7 @@ class CAR(Platforms):
   CHEVROLET_BOLT_2018 = GMPlatformConfig(
     [GMCarDocs("Chevrolet Bolt EV 2018-21")],
     CHEVROLET_BOLT_EUV.specs,
+    sp_flags=GMFlagsSP.NON_ACC,
   )
   CHEVROLET_BOLT_CC = GMPlatformConfig(
     [
