@@ -28,7 +28,7 @@ typedef enum {
 } GmHardware;
 static GmHardware gm_hw = GM_ASCM;
 static bool gm_pcm_cruise = false;
-static bool gm_has_acc = true;
+static bool gm_non_acc = true;
 
 static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
@@ -220,8 +220,8 @@ static safety_config gm_init(uint16_t param) {
 #endif
   gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long;
 
-  const uint16_t GM_PARAM_NO_ACC = 8;
-  gm_has_acc = !GET_FLAG(param, GM_PARAM_NO_ACC);
+  const uint16_t GM_PARAM_SP_NON_ACC = 1;
+  gm_non_acc = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_NON_ACC);
 
   safety_config ret;
   if (gm_hw == GM_CAM) {
