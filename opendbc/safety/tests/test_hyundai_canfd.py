@@ -62,7 +62,7 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest):
   BUTTONS_TX_BUS = 1
 
   def _torque_driver_msg(self, torque):
-    values = {"STEERING_COL_TORQUE": torque}
+    values = {"MDPS_StrTqSnsrVal": torque}
     return self.packer.make_can_msg_panda("MDPS", self.PT_BUS, values)
 
   def _torque_cmd_msg(self, torque, steer_req=1):
@@ -185,7 +185,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     return self.packer.make_can_msg_panda(self.STEER_MSG, self.STEER_BUS, values)
 
   def _angle_meas_msg(self, angle: float):
-    values = {"STEERING_ANGLE_2": angle}
+    values = {"MDPS_EstStrAnglVal": angle}
     return self.packer.make_can_msg_panda("MDPS", self.PT_BUS, values)
 
   def _get_steer_cmd_angle_max(self, speed):
