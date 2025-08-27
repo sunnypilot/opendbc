@@ -86,6 +86,7 @@ static bool subaru_preglobal_tx_hook(const CANPacket_t *msg) {
     }
   }
 
+/*
   if (msg->addr == MSG_SUBARU_Throttle) {
     int throttle_pedal = msg->data[0];
     violation |= subaru_common_stop_and_go_throttle_check(throttle_pedal);
@@ -99,6 +100,7 @@ static bool subaru_preglobal_tx_hook(const CANPacket_t *msg) {
   if (violation) {
     tx = false;
   }
+*/
 
   return tx;
 }
