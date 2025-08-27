@@ -36,7 +36,9 @@ def create_throttle(packer, CP, throttle_msg):
 
   values["COUNTER"] = create_counter(throttle_msg)
 
-  if not CP.flags & SubaruFlags.PREGLOBAL:
+  if CP.flags & SubaruFlags.PREGLOBAL:
+    values["Off_Throttle"] = 0
+  else:
     values["Off_Accel"] = 4
   values["Throttle_Pedal"] = 5
 
