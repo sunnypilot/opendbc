@@ -707,14 +707,15 @@ CM_ SG_ 203 ADAS_StrAnglReqVal "(LFA) ADAS Steering Angle Request Value; Capped 
 CM_ SG_ 203 ADAS_ACIAnglTqRedcGainVal "(LFA) ADAS AngleControlInterface Angle Torque Reduction Gain Value";
 CM_ SG_ 203 FCA_ESA_ActvSta "FCA_ESA Active State";
 CM_ SG_ 203 FCA_ESA_TqBstGainVal "FCA_ESA Torque Boost Gain Value";
-CM_ SG_ 234 MDPS_Crc1Val "The data area for CRC calculation is based on the data length (DLC) of the message DB.
+CM_ BO_ 234 "Named MDPS_01_10ms on the official DBC.";
+CM_ SG_ 234 CHECKSUM "The data area for CRC calculation is based on the data length (DLC) of the message DB.
 
 The CRC shall be calculated over the entire data block (excluding the CRC bytes) including the user data, alive counter and Data ID
 
  
 
 - CRC Polynomial (0x1021) , In";
-CM_ SG_ 234 MDPS_AlvCnt1Val "For the first transmission request for a data element the counter shall be initialized with 0 and shall be incremented by 1 for every subsequent send request. 
+CM_ SG_ 234 COUNTER "For the first transmission request for a data element the counter shall be initialized with 0 and shall be incremented by 1 for every subsequent send request. 
 
 When the counter reaches the maximum value(0xFF), then it shall restart with 0 for the next s";
 CM_ SG_ 234 MDPS_WrngLmpSta "The signal indicates the ststus of the MDPS Warning lamp";
