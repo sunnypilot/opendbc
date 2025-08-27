@@ -72,7 +72,7 @@ static bool subaru_preglobal_tx_hook(const CANPacket_t *msg) {
   };
 
   bool tx = true;
-  bool violation = false;
+  // bool violation = false;
 
   // steer cmd checks
   if (msg->addr == MSG_SUBARU_PG_ES_LKAS) {
