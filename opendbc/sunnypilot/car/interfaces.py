@@ -11,7 +11,6 @@ from collections.abc import Callable
 
 from opendbc.car import structs
 from opendbc.car.can_definitions import CanRecvCallable, CanSendCallable
-from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks as hyundai_enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
@@ -71,7 +70,7 @@ class NanoFFModel:
     return pred
 
 
-def setup_interfaces(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
+def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
                      params_list: list[dict[str, str]], can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
   params_dict = {k: v for param in params_list for k, v in param.items()}
 
@@ -79,7 +78,7 @@ def setup_interfaces(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs
   _initialize_radar_tracks(CP, CP_SP, can_recv, can_send)
 
 
-def _initialize_custom_longitudinal_tuning(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
+def _initialize_custom_longitudinal_tuning(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
                                            params_dict: dict[str, str]) -> None:
 
   # Hyundai Custom Longitudinal Tuning
