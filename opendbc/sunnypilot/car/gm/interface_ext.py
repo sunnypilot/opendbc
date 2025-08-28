@@ -12,7 +12,7 @@ from opendbc.car.common.basedir import BASEDIR
 from opendbc.car.gm.interface import CAR
 from opendbc.sunnypilot.car.interfaces import LatControlInputs, NanoFFModel, TorqueFromLateralAccelCallbackTypeTorqueSpace
 
-NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'torque_data/neural_ff_weights.json')
+NEURAL_PARAMS_PATH = os.path.join(BASEDIR, '../sunnypilot/car/torque_data/neural_ff_weights.json')
 
 NON_LINEAR_TORQUE_PARAMS = {
   CAR.CHEVROLET_BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
