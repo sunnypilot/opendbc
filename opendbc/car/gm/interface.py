@@ -27,8 +27,9 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
   CarController = CarController
   RadarInterface = RadarInterface
 
-  def __init__(self):
-    CarInterfaceExt.__init__(self, self.CP, CarInterfaceBase)
+  def __init__(self, CP, CP_SP):
+    CarInterfaceBase.__init__(self, CP, CP_SP)
+    CarInterfaceExt.__init__(self, CP, CarInterfaceBase)
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
