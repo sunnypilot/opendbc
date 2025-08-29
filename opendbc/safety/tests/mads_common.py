@@ -15,6 +15,14 @@ class MadsSafetyTestBase(unittest.TestCase):
   def _acc_state_msg(self, enabled):
     raise NotImplementedError
 
+  def teardown_method(self):
+    self.safety.set_mads_button_press(-1)
+    self.safety.set_controls_allowed_lat(False)
+    self.safety.set_controls_requested_lat(False)
+    self.safety.set_acc_main_on(False)
+    self.safety.set_mads_params(False, False, False)
+    self.safety.set_heartbeat_engaged_mads(True)
+
   def _mads_states_cleanup(self):
     self.safety.set_mads_button_press(-1)
     self.safety.set_controls_allowed_lat(False)
