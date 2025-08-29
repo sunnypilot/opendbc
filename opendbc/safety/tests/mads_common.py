@@ -17,9 +17,6 @@ class MadsSafetyTestBase(unittest.TestCase):
     raise NotImplementedError
 
   def teardown_method(self, method):
-    self._mads_states_cleanup()
-
-  def _mads_states_cleanup(self):
     self.safety.set_mads_button_press(-1)
     self.safety.set_controls_allowed_lat(False)
     self.safety.set_controls_requested_lat(False)
