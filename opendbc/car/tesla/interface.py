@@ -41,4 +41,7 @@ class CarInterface(CarInterfaceBase):
 
     stock_cp.enableBsm = True
 
+    if candidate in (CAR.TESLA_MODEL_X):
+      stock_cp.dashcamOnly = False
+
     return ret
