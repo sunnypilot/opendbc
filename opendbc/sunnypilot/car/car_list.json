@@ -959,6 +959,17 @@
     ],
     "package": "Driver Alert Package II"
   },
+  "GMC Yukon 2019-20": {
+    "platform": "GMC_YUKON",
+    "make": "GMC",
+    "brand": "gm",
+    "model": "Yukon",
+    "year": [
+      "2019",
+      "2020"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & LKAS"
+  },
   "Honda Accord 2018-22": {
     "platform": "HONDA_ACCORD",
     "make": "Honda",

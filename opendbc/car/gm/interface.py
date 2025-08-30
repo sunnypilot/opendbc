@@ -262,10 +262,11 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
       stock_cp.minSteerSpeed = 3.0   # ~6 mph
 
+    # FIXME-SP: uncomment before merge
     # dashcamOnly platforms: untested platforms need user validations, GMC Yukon needs tuning
-    if candidate in (CAR.CHEVROLET_EQUINOX_CC,
-                     CAR.CHEVROLET_SUBURBAN_CC, CAR.CADILLAC_CT6_CC, CAR.CHEVROLET_TRAILBLAZER_CC,
-                     CAR.CADILLAC_XT5_CC):
-      stock_cp.dashcamOnly = True
+    # if candidate in (CAR.CHEVROLET_EQUINOX_CC,
+    #                  CAR.CHEVROLET_SUBURBAN_CC, CAR.CADILLAC_CT6_CC, CAR.CHEVROLET_TRAILBLAZER_CC,
+    #                  CAR.CADILLAC_XT5_CC):
+    #   stock_cp.dashcamOnly = True
 
     return ret
