@@ -140,6 +140,17 @@
     ],
     "package": "Driver Confidence Package 2"
   },
+  "Cadillac CT6 No ACC 2017-18": {
+    "platform": "CADILLAC_CT6_CC",
+    "make": "Cadillac",
+    "brand": "gm",
+    "model": "CT6 No ACC",
+    "year": [
+      "2017",
+      "2018"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
   "Cadillac Escalade 2017": {
     "platform": "CADILLAC_ESCALADE",
     "make": "Cadillac",
@@ -180,6 +191,16 @@
     ],
     "package": "Driver Assist Package"
   },
+  "Cadillac XT5 No ACC 2018": {
+    "platform": "CADILLAC_XT5_CC",
+    "make": "Cadillac",
+    "brand": "gm",
+    "model": "XT5 No ACC",
+    "year": [
+      "2018"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
   "Chevrolet Bolt EUV 2022-23": {
     "platform": "CHEVROLET_BOLT_EUV",
     "make": "Chevrolet",
@@ -191,6 +212,40 @@
     ],
     "package": "Premier or Premier Redline Trim without Super Cruise Package"
   },
+  "Chevrolet Bolt EUV LT 2022-23": {
+    "platform": "CHEVROLET_BOLT_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EUV LT",
+    "year": [
+      "2022",
+      "2023"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Chevrolet Bolt EV 2017": {
+    "platform": "CHEVROLET_BOLT_2017",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV",
+    "year": [
+      "2017"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Chevrolet Bolt EV 2018-21": {
+    "platform": "CHEVROLET_BOLT_2018",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV",
+    "year": [
+      "2018",
+      "2019",
+      "2020",
+      "2021"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
   "Chevrolet Bolt EV 2022-23": {
     "platform": "CHEVROLET_BOLT_EUV",
     "make": "Chevrolet",
@@ -201,6 +256,17 @@
       "2023"
     ],
     "package": "2LT Trim with Adaptive Cruise Control Package"
+  },
+  "Chevrolet Bolt EV LT 2022-23": {
+    "platform": "CHEVROLET_BOLT_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV LT",
+    "year": [
+      "2022",
+      "2023"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
   },
   "Chevrolet Equinox 2019-22": {
     "platform": "CHEVROLET_EQUINOX",
@@ -215,6 +281,36 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
+  "Chevrolet Equinox NO ACC 2019-22": {
+    "platform": "CHEVROLET_EQUINOX_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Equinox NO ACC",
+    "year": [
+      "2019",
+      "2020",
+      "2021",
+      "2022"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Chevrolet Malibu No ACC 2016-23": {
+    "platform": "CHEVROLET_MALIBU_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Malibu No ACC",
+    "year": [
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
   "Chevrolet Silverado 1500 2020-21": {
     "platform": "CHEVROLET_SILVERADO",
     "make": "Chevrolet",
@@ -226,11 +322,36 @@
     ],
     "package": "Safety Package II"
   },
+  "Chevrolet Suburban 2016-20": {
+    "platform": "CHEVROLET_SUBURBAN_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Suburban",
+    "year": [
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
   "Chevrolet Trailblazer 2021-22": {
     "platform": "CHEVROLET_TRAILBLAZER",
     "make": "Chevrolet",
     "brand": "gm",
     "model": "Trailblazer",
+    "year": [
+      "2021",
+      "2022"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Chevrolet Trailblazer NO ACC 2021-22": {
+    "platform": "CHEVROLET_TRAILBLAZER_CC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Trailblazer NO ACC",
     "year": [
       "2021",
       "2022"
@@ -837,6 +958,17 @@
       "2021"
     ],
     "package": "Driver Alert Package II"
+  },
+  "GMC Yukon 2019-20": {
+    "platform": "GMC_YUKON",
+    "make": "GMC",
+    "brand": "gm",
+    "model": "Yukon",
+    "year": [
+      "2019",
+      "2020"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & LKAS"
   },
   "Honda Accord 2018-22": {
     "platform": "HONDA_ACCORD",
