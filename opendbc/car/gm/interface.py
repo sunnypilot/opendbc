@@ -245,12 +245,6 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
-    # dashcamOnly platforms: untested platforms need user validations, GMC Yukon needs tuning
-    if candidate in (CAR.CHEVROLET_EQUINOX_CC,
-                     CAR.CHEVROLET_SUBURBAN_CC, CAR.CADILLAC_CT6_CC, CAR.CHEVROLET_TRAILBLAZER_CC,
-                     CAR.CADILLAC_XT5_CC):
-      stock_cp.dashcamOnly = True
-
     if candidate in (CAR.CHEVROLET_MALIBU_CC, CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_2018, CAR.CHEVROLET_BOLT_CC,
                      CAR.CHEVROLET_TRAILBLAZER_CC):
       stock_cp.steerActuatorDelay = 0.2
@@ -261,8 +255,17 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
 
     # NON_ACC vehicles should use camera car speed thresholds
     if ret.flags & GMFlagsSP.NON_ACC:
+      stock_cp.alphaLongitudinalAvailable = False
+      stock_cp.openpilotLongitudinalControl = False
+      stock_cp.pcmCruise = True
       ret.safetyParam |= GMSafetyFlagsSP.NON_ACC
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
-      stock_cp.minSteerSpeed = 3.0   # 6 mph
+      stock_cp.minSteerSpeed = 3.0   # ~6 mph
+
+    # dashcamOnly platforms: untested platforms need user validations, GMC Yukon needs tuning
+    if candidate in (CAR.CHEVROLET_EQUINOX_CC,
+                     CAR.CHEVROLET_SUBURBAN_CC, CAR.CADILLAC_CT6_CC, CAR.CHEVROLET_TRAILBLAZER_CC,
+                     CAR.CADILLAC_XT5_CC):
+      stock_cp.dashcamOnly = True
 
     return ret
