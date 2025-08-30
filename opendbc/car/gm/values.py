@@ -330,6 +330,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
 # TODO: detect most of these sets live
 EV_CAR = {CAR.CHEVROLET_VOLT, CAR.CHEVROLET_VOLT_2019, CAR.CHEVROLET_BOLT_EUV,
+          # port extensions, Non-ACC
           CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_2018, CAR.CHEVROLET_BOLT_CC}
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
