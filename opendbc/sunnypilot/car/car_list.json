@@ -140,11 +140,11 @@
     ],
     "package": "Driver Confidence Package 2"
   },
-  "Cadillac CT6 No ACC 2017-18": {
-    "platform": "CADILLAC_CT6_CC",
+  "Cadillac CT6 Non-ACC 2017-18": {
+    "platform": "CADILLAC_CT6_NON_ACC_1ST_GEN",
     "make": "Cadillac",
     "brand": "gm",
-    "model": "CT6 No ACC",
+    "model": "CT6 Non-ACC",
     "year": [
       "2017",
       "2018"
@@ -281,11 +281,11 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
-  "Chevrolet Equinox NO ACC 2019-22": {
-    "platform": "CHEVROLET_EQUINOX_CC",
+  "Chevrolet Equinox Non-ACC 2019-22": {
+    "platform": "CHEVROLET_EQUINOX_NON_ACC_3RD_GEN",
     "make": "Chevrolet",
     "brand": "gm",
-    "model": "Equinox NO ACC",
+    "model": "Equinox Non-ACC",
     "year": [
       "2019",
       "2020",
@@ -322,11 +322,11 @@
     ],
     "package": "Safety Package II"
   },
-  "Chevrolet Suburban 2016-20": {
-    "platform": "CHEVROLET_SUBURBAN_CC",
+  "Chevrolet Suburban Non-ACC 2016-20": {
+    "platform": "CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN",
     "make": "Chevrolet",
     "brand": "gm",
-    "model": "Suburban",
+    "model": "Suburban Non-ACC",
     "year": [
       "2016",
       "2017",
@@ -347,11 +347,11 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
-  "Chevrolet Trailblazer NO ACC 2021-22": {
-    "platform": "CHEVROLET_TRAILBLAZER_CC",
+  "Chevrolet Trailblazer Non-ACC 2021-22": {
+    "platform": "CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN",
     "make": "Chevrolet",
     "brand": "gm",
-    "model": "Trailblazer NO ACC",
+    "model": "Trailblazer Non-ACC",
     "year": [
       "2021",
       "2022"

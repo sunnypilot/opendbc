@@ -222,23 +222,23 @@ class CAR(Platforms):
     CHEVROLET_BOLT_EUV.specs,
     sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_EQUINOX_CC = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Equinox NO ACC 2019-22")],
+  CHEVROLET_EQUINOX_NON_ACC_3RD_GEN = GMPlatformConfig(
+    [GMCarDocs("Chevrolet Equinox Non-ACC 2019-22")],
     CHEVROLET_EQUINOX.specs,
     sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_SUBURBAN_CC = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Suburban 2016-20")],
+  CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN = GMPlatformConfig(
+    [GMCarDocs("Chevrolet Suburban Non-ACC 2016-20")],
     CarSpecs(mass=2731, wheelbase=3.302, steerRatio=17.3, centerToFrontRatio=0.49),
     sp_flags=GMFlagsSP.NON_ACC,
   )
-  CADILLAC_CT6_CC = GMPlatformConfig(
-    [GMCarDocs("Cadillac CT6 No ACC 2017-18")],
+  CADILLAC_CT6_NON_ACC_1ST_GEN = GMPlatformConfig(
+    [GMCarDocs("Cadillac CT6 Non-ACC 2017-18")],
     CarSpecs(mass=2358, wheelbase=3.11, steerRatio=17.7, centerToFrontRatio=0.4),
     sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_TRAILBLAZER_CC = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Trailblazer NO ACC 2021-22")],
+  CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN = GMPlatformConfig(
+    [GMCarDocs("Chevrolet Trailblazer Non-ACC 2021-22")],
     CHEVROLET_TRAILBLAZER.specs,
     sp_flags=GMFlagsSP.NON_ACC,
   )

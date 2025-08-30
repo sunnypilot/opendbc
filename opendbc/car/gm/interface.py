@@ -235,8 +235,8 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       ret.steerActuatorDelay = 0.5
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate in (CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN, CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_EQUINOX_CC,
-                       CAR.CHEVROLET_SUBURBAN_CC, CAR.CADILLAC_CT6_CC, CAR.CHEVROLET_TRAILBLAZER_CC, CAR.CHEVROLET_MALIBU_CC,
+    elif candidate in (CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN, CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN,
+                       CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN, CAR.CHEVROLET_MALIBU_CC,
                        CAR.CADILLAC_XT5_CC):
       pass
 
@@ -246,11 +246,11 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
     if candidate in (CAR.CHEVROLET_MALIBU_CC, CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN, CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN,
-                     CAR.CHEVROLET_TRAILBLAZER_CC):
+                     CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN):
       stock_cp.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
 
-    elif candidate in (CAR.CHEVROLET_EQUINOX_CC, ):
+    elif candidate in (CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN, ):
       CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
 
     # NON_ACC vehicles should use camera car speed thresholds
@@ -264,8 +264,8 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
 
     # FIXME-SP: uncomment before merge
     # dashcamOnly platforms: untested platforms need user validations, GMC Yukon needs tuning
-    # if candidate in (CAR.CHEVROLET_EQUINOX_CC,
-    #                  CAR.CHEVROLET_SUBURBAN_CC, CAR.CADILLAC_CT6_CC, CAR.CHEVROLET_TRAILBLAZER_CC,
+    # if candidate in (CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN,
+    #                  CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN,
     #                  CAR.CADILLAC_XT5_CC):
     #   stock_cp.dashcamOnly = True
 
