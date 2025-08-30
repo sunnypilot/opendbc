@@ -212,37 +212,14 @@
     ],
     "package": "Premier or Premier Redline Trim without Super Cruise Package"
   },
-  "Chevrolet Bolt EUV LT 2022-23": {
-    "platform": "CHEVROLET_BOLT_CC",
+  "Chevrolet Bolt EUV LT Non-ACC 2022-23": {
+    "platform": "CHEVROLET_BOLT_NON_ACC_2ND_GEN",
     "make": "Chevrolet",
     "brand": "gm",
-    "model": "Bolt EUV LT",
+    "model": "Bolt EUV LT Non-ACC",
     "year": [
       "2022",
       "2023"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
-  "Chevrolet Bolt EV 2017": {
-    "platform": "CHEVROLET_BOLT_2017",
-    "make": "Chevrolet",
-    "brand": "gm",
-    "model": "Bolt EV",
-    "year": [
-      "2017"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
-  "Chevrolet Bolt EV 2018-21": {
-    "platform": "CHEVROLET_BOLT_2018",
-    "make": "Chevrolet",
-    "brand": "gm",
-    "model": "Bolt EV",
-    "year": [
-      "2018",
-      "2019",
-      "2020",
-      "2021"
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
@@ -257,14 +234,37 @@
     ],
     "package": "2LT Trim with Adaptive Cruise Control Package"
   },
-  "Chevrolet Bolt EV LT 2022-23": {
-    "platform": "CHEVROLET_BOLT_CC",
+  "Chevrolet Bolt EV LT Non-ACC 2022-23": {
+    "platform": "CHEVROLET_BOLT_NON_ACC_2ND_GEN",
     "make": "Chevrolet",
     "brand": "gm",
-    "model": "Bolt EV LT",
+    "model": "Bolt EV LT Non-ACC",
     "year": [
       "2022",
       "2023"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Chevrolet Bolt EV Non-ACC 2017": {
+    "platform": "CHEVROLET_BOLT_NON_ACC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV Non-ACC",
+    "year": [
+      "2017"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Chevrolet Bolt EV Non-ACC 2018-21": {
+    "platform": "CHEVROLET_BOLT_NON_ACC_1ST_GEN",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV Non-ACC",
+    "year": [
+      "2018",
+      "2019",
+      "2020",
+      "2021"
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },

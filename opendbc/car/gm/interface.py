@@ -24,8 +24,8 @@ NON_LINEAR_TORQUE_PARAMS = {
 
 # sunnypilot-specific torque parameters for Bolt cars that actually use the d parameter
 NON_LINEAR_TORQUE_PARAMS_SP = {
-  CAR.CHEVROLET_BOLT_2017: [2.24, 1.1, 0.28, -0.07],
-  CAR.CHEVROLET_BOLT_2018: [1.8, 1.1, 0.3, -0.045],
+  CAR.CHEVROLET_BOLT_NON_ACC: [2.24, 1.1, 0.28, -0.07],
+  CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN: [1.8, 1.1, 0.3, -0.045],
 }
 
 
@@ -235,7 +235,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       ret.steerActuatorDelay = 0.5
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate in (CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_2018, CAR.CHEVROLET_BOLT_CC, CAR.CHEVROLET_EQUINOX_CC,
+    elif candidate in (CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN, CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_EQUINOX_CC,
                        CAR.CHEVROLET_SUBURBAN_CC, CAR.CADILLAC_CT6_CC, CAR.CHEVROLET_TRAILBLAZER_CC, CAR.CHEVROLET_MALIBU_CC,
                        CAR.CADILLAC_XT5_CC):
       pass
@@ -245,7 +245,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
-    if candidate in (CAR.CHEVROLET_MALIBU_CC, CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_2018, CAR.CHEVROLET_BOLT_CC,
+    if candidate in (CAR.CHEVROLET_MALIBU_CC, CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN, CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN,
                      CAR.CHEVROLET_TRAILBLAZER_CC):
       stock_cp.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)

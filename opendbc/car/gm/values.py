@@ -204,20 +204,20 @@ class CAR(Platforms):
   #   CHEVROLET_VOLT.specs,
   #   sp_flags=GMFlagsSP.NON_ACC,
   # )
-  CHEVROLET_BOLT_2017 = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Bolt EV 2017")],
+  CHEVROLET_BOLT_NON_ACC = GMPlatformConfig(
+    [GMCarDocs("Chevrolet Bolt EV Non-ACC 2017")],
     CHEVROLET_BOLT_EUV.specs,
     sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_BOLT_2018 = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Bolt EV 2018-21")],
+  CHEVROLET_BOLT_NON_ACC_1ST_GEN = GMPlatformConfig(
+    [GMCarDocs("Chevrolet Bolt EV Non-ACC 2018-21")],
     CHEVROLET_BOLT_EUV.specs,
     sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_BOLT_CC = GMPlatformConfig(
+  CHEVROLET_BOLT_NON_ACC_2ND_GEN = GMPlatformConfig(
     [
-      GMCarDocs("Chevrolet Bolt EUV LT 2022-23"),
-      GMCarDocs("Chevrolet Bolt EV LT 2022-23"),
+      GMCarDocs("Chevrolet Bolt EUV LT Non-ACC 2022-23"),
+      GMCarDocs("Chevrolet Bolt EV LT Non-ACC 2022-23"),
     ],
     CHEVROLET_BOLT_EUV.specs,
     sp_flags=GMFlagsSP.NON_ACC,
@@ -331,7 +331,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
 # TODO: detect most of these sets live
 EV_CAR = {CAR.CHEVROLET_VOLT, CAR.CHEVROLET_VOLT_2019, CAR.CHEVROLET_BOLT_EUV,
           # port extensions, Non-ACC
-          CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_2018, CAR.CHEVROLET_BOLT_CC}
+          CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN, CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN}
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
 CAMERA_ACC_CAR = {CAR.CHEVROLET_BOLT_EUV, CAR.CHEVROLET_SILVERADO, CAR.CHEVROLET_EQUINOX, CAR.CHEVROLET_TRAILBLAZER, CAR.GMC_YUKON}
