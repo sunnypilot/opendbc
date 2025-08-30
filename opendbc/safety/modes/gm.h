@@ -101,7 +101,7 @@ static void gm_rx_hook(const CANPacket_t *msg) {
     }
 
     if (msg->addr == 0x3D1U) {
-      bool cruise_engaged = (msg->data[4] >> 7) != 0U;
+      bool cruise_engaged = GET_BIT(msg, 39U);
       pcm_cruise_check(cruise_engaged);
     }
   }
