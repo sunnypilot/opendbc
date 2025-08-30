@@ -181,10 +181,6 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate in (CAR.CHEVROLET_MALIBU, CAR.CHEVROLET_MALIBU_CC):
-      ret.steerActuatorDelay = 0.2
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
     elif candidate == CAR.BUICK_LACROSSE:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -203,7 +199,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
         ret.steerActuatorDelay = 0.2
         CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate in (CAR.CHEVROLET_BOLT_EUV, CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_2018, CAR.CHEVROLET_BOLT_CC):
+    elif candidate == CAR.CHEVROLET_BOLT_EUV:
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -215,10 +211,10 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
         ret.minEnableSpeed = -1.
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate in (CAR.CHEVROLET_EQUINOX, CAR.CHEVROLET_EQUINOX_CC):
+    elif candidate == CAR.CHEVROLET_EQUINOX:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate in (CAR.CHEVROLET_TRAILBLAZER, CAR.CHEVROLET_TRAILBLAZER_CC):
+    elif candidate == CAR.CHEVROLET_TRAILBLAZER:
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -254,6 +250,14 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
                      CAR.CHEVROLET_SUBURBAN_CC, CAR.CADILLAC_CT6_CC, CAR.CHEVROLET_TRAILBLAZER_CC,
                      CAR.CADILLAC_XT5_CC):
       stock_cp.dashcamOnly = True
+
+    if candidate in (CAR.CHEVROLET_MALIBU_CC, CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_2018, CAR.CHEVROLET_BOLT_CC,
+                     CAR.CHEVROLET_TRAILBLAZER_CC):
+      stock_cp.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
+
+    elif candidate in (CAR.CHEVROLET_EQUINOX_CC, ):
+      CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
 
     # NON_ACC vehicles should use camera car speed thresholds
     if ret.flags & GMFlagsSP.NON_ACC:
