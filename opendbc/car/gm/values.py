@@ -202,10 +202,12 @@ class CAR(Platforms):
   # CHEVROLET_VOLT_CC = GMPlatformConfig(
   #   [GMCarDocs("Chevrolet Volt LT 2017-18")],
   #   CHEVROLET_VOLT.specs,
+  #   sp_flags=GMFlagsSP.NON_ACC,
   # )
   CHEVROLET_BOLT_2017 = GMPlatformConfig(
     [GMCarDocs("Chevrolet Bolt EV 2017")],
     CHEVROLET_BOLT_EUV.specs,
+    sp_flags=GMFlagsSP.NON_ACC,
   )
   CHEVROLET_BOLT_2018 = GMPlatformConfig(
     [GMCarDocs("Chevrolet Bolt EV 2018-21")],
@@ -218,6 +220,7 @@ class CAR(Platforms):
       GMCarDocs("Chevrolet Bolt EV LT 2022-23"),
     ],
     CHEVROLET_BOLT_EUV.specs,
+    sp_flags=GMFlagsSP.NON_ACC,
   )
   CHEVROLET_EQUINOX_CC = GMPlatformConfig(
     [GMCarDocs("Chevrolet Equinox NO ACC 2019-22")],
