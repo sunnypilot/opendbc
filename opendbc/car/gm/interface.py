@@ -246,7 +246,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
     # dashcamOnly platforms: untested platforms need user validations, GMC Yukon needs tuning
-    if candidate in (CAR.CHEVROLET_BOLT_2017, CAR.CHEVROLET_BOLT_CC, CAR.CHEVROLET_EQUINOX_CC,
+    if candidate in (CAR.CHEVROLET_EQUINOX_CC,
                      CAR.CHEVROLET_SUBURBAN_CC, CAR.CADILLAC_CT6_CC, CAR.CHEVROLET_TRAILBLAZER_CC,
                      CAR.CADILLAC_XT5_CC):
       stock_cp.dashcamOnly = True
