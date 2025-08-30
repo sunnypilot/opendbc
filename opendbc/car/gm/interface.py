@@ -236,8 +236,8 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate in (CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN, CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN,
-                       CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN, CAR.CHEVROLET_MALIBU_CC,
-                       CAR.CADILLAC_XT5_CC):
+                       CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN, CAR.CHEVROLET_MALIBU_NON_ACC_9TH_GEN,
+                       CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
       pass
 
     return ret
@@ -245,7 +245,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
-    if candidate in (CAR.CHEVROLET_MALIBU_CC, CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN, CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN,
+    if candidate in (CAR.CHEVROLET_MALIBU_NON_ACC_9TH_GEN, CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN, CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN,
                      CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN):
       stock_cp.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
@@ -266,7 +266,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
     # dashcamOnly platforms: untested platforms need user validations, GMC Yukon needs tuning
     # if candidate in (CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN,
     #                  CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN,
-    #                  CAR.CADILLAC_XT5_CC):
+    #                  CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
     #   stock_cp.dashcamOnly = True
 
     return ret

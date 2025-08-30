@@ -191,11 +191,11 @@
     ],
     "package": "Driver Assist Package"
   },
-  "Cadillac XT5 No ACC 2018": {
-    "platform": "CADILLAC_XT5_CC",
+  "Cadillac XT5 Non-ACC 2018": {
+    "platform": "CADILLAC_XT5_NON_ACC_1ST_GEN",
     "make": "Cadillac",
     "brand": "gm",
-    "model": "XT5 No ACC",
+    "model": "XT5 Non-ACC",
     "year": [
       "2018"
     ],
@@ -294,11 +294,11 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
-  "Chevrolet Malibu No ACC 2016-23": {
-    "platform": "CHEVROLET_MALIBU_CC",
+  "Chevrolet Malibu Non-ACC 2016-23": {
+    "platform": "CHEVROLET_MALIBU_NON_ACC_9TH_GEN",
     "make": "Chevrolet",
     "brand": "gm",
-    "model": "Malibu No ACC",
+    "model": "Malibu Non-ACC",
     "year": [
       "2016",
       "2017",

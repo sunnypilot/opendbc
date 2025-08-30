@@ -242,13 +242,13 @@ class CAR(Platforms):
     CHEVROLET_TRAILBLAZER.specs,
     sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_MALIBU_CC = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Malibu No ACC 2016-23")],
+  CHEVROLET_MALIBU_NON_ACC_9TH_GEN = GMPlatformConfig(
+    [GMCarDocs("Chevrolet Malibu Non-ACC 2016-23")],
     CarSpecs(mass=1450, wheelbase=2.8, steerRatio=15.8, centerToFrontRatio=0.4),
     sp_flags=GMFlagsSP.NON_ACC,
   )
-  CADILLAC_XT5_CC = GMPlatformConfig(
-    [GMCarDocs("Cadillac XT5 No ACC 2018")],
+  CADILLAC_XT5_NON_ACC_1ST_GEN = GMPlatformConfig(
+    [GMCarDocs("Cadillac XT5 Non-ACC 2018")],
     CarSpecs(mass=1810, wheelbase=2.86, steerRatio=16.34, centerToFrontRatio=0.5),
     sp_flags=GMFlagsSP.NON_ACC,
   )
