@@ -33,7 +33,7 @@ class CarController(CarControllerBase):
     self.lka_steering_cmd_counter = 0
     self.lka_icon_status_last = (False, False)
 
-    self.params = CarControllerParams(self.CP, self.CP_SP)
+    self.params = CarControllerParams(self.CP)
 
     self.packer_pt = CANPacker(DBC[self.CP.carFingerprint][Bus.pt])
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint][Bus.radar])

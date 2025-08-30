@@ -34,14 +34,11 @@ class CarControllerParams:
   ACCEL_MAX = 2.  # m/s^2
   ACCEL_MIN = -4.  # m/s^2
 
-  def __init__(self, CP, CP_SP=None):
+  def __init__(self, CP):
     # Gas/brake lookups
     self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
-    # Check if this is a NON_ACC vehicle using CP_SP flags
-    is_no_acc = CP_SP and (CP_SP.flags & GMFlagsSP.NON_ACC)
-
-    if CP.carFingerprint in (CAMERA_ACC_CAR | SDGM_CAR) and not is_no_acc:
+    if CP.carFingerprint in (CAMERA_ACC_CAR | SDGM_CAR):
       self.MAX_GAS = 1346.0
       self.MAX_ACC_REGEN = -540.0
       self.INACTIVE_REGEN = -500.0
