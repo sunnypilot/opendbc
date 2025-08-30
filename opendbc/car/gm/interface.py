@@ -255,10 +255,6 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
                      CAR.CADILLAC_XT5_CC):
       stock_cp.dashcamOnly = True
 
-    # Chevrolet Volt specific settings
-    if candidate == CAR.CHEVROLET_VOLT:
-      stock_cp.minEnableSpeed = -1
-
     # NON_ACC vehicles should use camera car speed thresholds
     if ret.flags & GMFlagsSP.NON_ACC:
       ret.safetyParam |= GMSafetyFlagsSP.NON_ACC
