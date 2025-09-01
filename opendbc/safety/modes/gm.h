@@ -255,15 +255,15 @@ static safety_config gm_init(uint16_t param) {
   }
 
   const bool gm_ev = GET_FLAG(param, GM_PARAM_EV);
+  if (gm_ev) {
+    SET_RX_CHECKS(gm_ev_rx_checks, ret);
+  }
+
   if (gm_non_acc) {
     if (gm_ev) {
       SET_RX_CHECKS(gm_non_acc_ev_rx_checks, ret);
     } else {
       SET_RX_CHECKS(gm_non_acc_rx_checks, ret);
-    }
-  } else {
-    if (gm_ev) {
-      SET_RX_CHECKS(gm_ev_rx_checks, ret);
     }
   }
 
