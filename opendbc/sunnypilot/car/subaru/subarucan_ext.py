@@ -23,7 +23,6 @@ def create_throttle(packer, CP, throttle_msg, send_resume):
     ]}
   else:
     values = {s: throttle_msg[s] for s in [
-      "CHECKSUM",
       "Signal1",
       "Engine_RPM",
       "Signal2",
