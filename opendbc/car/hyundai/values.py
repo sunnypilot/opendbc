@@ -652,6 +652,11 @@ class CAR(Platforms):
     flags=HyundaiFlags.CHECKSUM_CRC8,
     sp_flags=HyundaiFlagsSP.NON_SCC | HyundaiFlagsSP.NON_SCC_RADAR_FCA,
   )
+  HYUNDAI_SONATA_HEV_2024 = HyundaiCanFDPlatformConfig(
+    [HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_a]))],
+    CarSpecs(mass=1616, wheelbase=2.84, steerRatio=13.27),
+    sp_flags=HyundaiFlagsSP.CCNC,
+  )
 
 
 class Buttons:

@@ -341,4 +341,7 @@ routes = [
   # Segments that test specific issues
   # Controls mismatch due to standstill threshold
   CarTestRoute("bec2dcfde6a64235/2022-04-08--14-21-32", HONDA.HONDA_CRV_HYBRID, segment=22),
+
+  # port extensions
+  CarTestRoute("bc40c72b728178f2/00000006--ee76ae8c42", HYUNDAI.HYUNDAI_SONATA_HEV_2024),
 ]
