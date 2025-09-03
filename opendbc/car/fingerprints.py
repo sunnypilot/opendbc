@@ -10,6 +10,7 @@ from opendbc.car.mock.values import CAR as MOCK
 from opendbc.car.nissan.values import CAR as NISSAN
 from opendbc.car.subaru.values import CAR as SUBARU
 from opendbc.car.toyota.values import CAR as TOYOTA
+from opendbc.car.volvo.values import CAR as VOLVO
 from opendbc.car.volkswagen.values import CAR as VW
 
 FW_VERSIONS = get_interface_attr('FW_VERSIONS', combine_brands=True, ignore_none=True)
@@ -120,6 +121,7 @@ MIGRATION = {
   "KIA SPORTAGE HYBRID 5TH GEN": HYUNDAI.KIA_SPORTAGE_5TH_GEN,
   "KIA SORENTO PLUG-IN HYBRID 4TH GEN": HYUNDAI.KIA_SORENTO_HEV_4TH_GEN,
   "CADILLAC ESCALADE ESV PLATINUM 2019": GM.CADILLAC_ESCALADE_ESV_2019,
+  "VOLVO V60 2015": VOLVO.VOLVO_V60,
 
   # Removal of platform_str, see https://github.com/commaai/openpilot/pull/31868/
   "COMMA BODY": BODY.COMMA_BODY,
