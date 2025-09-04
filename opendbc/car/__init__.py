@@ -18,6 +18,13 @@ ACCELERATION_DUE_TO_GRAVITY = 9.81  # m/s^2
 ButtonType = structs.CarState.ButtonEvent.Type
 
 
+@dataclass
+class AngleSteeringLimits:
+  STEER_ANGLE_MAX: float
+  ANGLE_RATE_LIMIT_UP: tuple[list[float], list[float]]
+  ANGLE_RATE_LIMIT_DOWN: tuple[list[float], list[float]]
+
+
 def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
   if val > val_steady + hyst_gap:
     val_steady = val - hyst_gap

@@ -6,7 +6,7 @@ from opendbc.car.docs_definitions import CarHarness, CarDocs, CarParts
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, p16
 from opendbc.car.structs import CarParams
 
-from opendbc.can.can_define import CANDefine
+from opendbc.can import CANDefine
 
 Ecu = CarParams.Ecu
 

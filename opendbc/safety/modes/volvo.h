@@ -32,43 +32,43 @@ static const CanMsg VOLVO_EUCD_TX_MSGS[] = {
     {.msg = {{VOLVO_EUCD_Brake_Info,    VOLVO_MAIN_BUS, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 50U}, { 0 }, { 0 }}},
   };
 
-static void volvo_rx_hook(const CANPacket_t *to_push) {
-  int bus = GET_BUS(to_push);
-  int addr = GET_ADDR(to_push);
+static void volvo_rx_hook(const CANPacket_t *msg) {
+  //int bus = GET_BUS(to_push);
+  //int addr = GET_ADDR(to_push);
 
-  if (bus == VOLVO_MAIN_BUS) {
-    if (addr == VOLVO_EUCD_VehicleSpeed1) {
+  if (msg->bus == VOLVO_MAIN_BUS) {
+    if (msg->addr == VOLVO_EUCD_VehicleSpeed1) {
       // Signal: VehicleSpeed
-      unsigned int speed_raw = (GET_BYTE(to_push, 6) << 8) | GET_BYTE(to_push, 7);
+      unsigned int speed_raw = (GET_BYTES(msg, 6, 1) << 8) | GET_BYTES(msg, 7, 1);
       vehicle_moving = speed_raw >= 36U;
       UPDATE_VEHICLE_SPEED(speed_raw * 0.01 / 3.6);
     }
 
-    if (addr == VOLVO_EUCD_AccPedal) {
+    if (msg->addr == VOLVO_EUCD_AccPedal) {
       // Signal: AccPedal
-      unsigned int gas_raw = ((GET_BYTE(to_push, 2) & 0x03U) << 8) | GET_BYTE(to_push, 3);
+      unsigned int gas_raw = ((GET_BYTES(msg, 2, 1) & 0x03U) << 8) | GET_BYTES(msg, 3, 1);
       gas_pressed = gas_raw >= 100U;
     }
 
-    if (addr == VOLVO_EUCD_Brake_Info) {
+    if (msg->addr == VOLVO_EUCD_Brake_Info) {
       // Signal: BrakePedal
-      brake_pressed = ((GET_BYTE(to_push, 2) & 0x0CU) >> 2U) == 2U;
+      brake_pressed = ((GET_BYTES(msg, 2, 1) & 0x0CU) >> 2U) == 2U;
     }
 
     // If steering controls messages are received on the destination bus, it's an indication
     // that the relay might be malfunctioning.
     // generic_rx_checks(volvo_lkas_msg_check(addr));
-  } else if (bus == VOLVO_CAM_BUS) {
-    if (addr == VOLVO_EUCD_FSM0) {
+  } else if (msg->bus == VOLVO_CAM_BUS) {
+    if (msg->addr == VOLVO_EUCD_FSM0) {
       // Signal: ACCStatus
-      unsigned int cruise_state = GET_BYTE(to_push, 2) & 0x07U;
+      unsigned int cruise_state = GET_BYTES(msg, 2, 1) & 0x07U;
       bool cruise_engaged = (cruise_state == 6U) || (cruise_state == 7U);
       pcm_cruise_check(cruise_engaged);
     }
   }
 }
 
-static bool volvo_tx_hook(const CANPacket_t *to_send) {
+static bool volvo_tx_hook(const CANPacket_t *msg) {
   //const AngleSteeringLimits VOLVO_STEERING_LIMITS = {
   //  .max_angle = 60000,  // 600 deg, reasonable limit
   //  .angle_deg_to_can = 100,
@@ -83,21 +83,21 @@ static bool volvo_tx_hook(const CANPacket_t *to_send) {
   //};
 
   bool tx = true;
-  int addr = GET_ADDR(to_send);
+  //int addr = GET_ADDR(to_send);
   bool violation = false;
 
   // Safety check for CC button signals.
-  if (addr == VOLVO_EUCD_CCButtons) {
+  if (msg->addr == VOLVO_EUCD_CCButtons) {
     // Violation if resume button is pressed while controls not allowed, or
     // if cancel button is pressed when cruise isn't engaged.
-    violation |= !cruise_engaged_prev && (GET_BIT(to_send, 59U) || !(GET_BIT(to_send, 43U)));  // Signals: ACCOnOffBtn, ACCOnOffBtnInv (cancel)
-    violation |= !controls_allowed && (GET_BIT(to_send, 61U) || !(GET_BIT(to_send, 45U)));  // Signals: ACCResumeBtn, ACCResumeBtnInv (resume)
+    violation |= !cruise_engaged_prev && (GET_BIT(msg, 59U) || !(GET_BIT(msg, 43U)));  // Signals: ACCOnOffBtn, ACCOnOffBtnInv (cancel)
+    violation |= !controls_allowed && (GET_BIT(msg, 61U) || !(GET_BIT(msg, 45U)));  // Signals: ACCResumeBtn, ACCResumeBtnInv (resume)
   }
 
   // Safety check for Lane Keep Assist action.
-  if (addr == VOLVO_EUCD_FSM2) {
+  if (msg->addr == VOLVO_EUCD_FSM2) {
     // Signal: LKASteerDirection
-    unsigned int mode = GET_BYTE(to_send, 5) & 0x03U;
+    unsigned int mode = GET_BYTES(msg, 5, 1) & 0x03U;
     bool lka_active = mode != 0U;
 
     if (lka_active && !controls_allowed) {
