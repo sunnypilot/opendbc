@@ -8,6 +8,8 @@ import opendbc.safety.tests.common as common
 from opendbc.car.structs import CarParams
 from opendbc.safety.tests.common import CANPackerPanda, MAX_WRONG_COUNTERS
 
+from opendbc.sunnypilot.car.honda.values_ext import HondaSafetyFlagsSP
+
 HONDA_N_COMMON_TX_MSGS = [[0xE4, 0], [0x194, 0], [0x1FA, 0], [0x30C, 0], [0x33D, 0]]
 
 
@@ -233,7 +235,6 @@ class HondaBase(common.PandaCarSafetyTest):
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_steer_safety_check(self):
-    self._mads_states_cleanup()
     self.safety.set_controls_allowed(0)
     self.assertTrue(self._tx(self._send_steer_msg(0x0000)))
     self.assertFalse(self._tx(self._send_steer_msg(0x1000)))
@@ -245,41 +246,36 @@ class HondaBase(common.PandaCarSafetyTest):
 
   def test_enable_control_allowed_with_mads_button(self):
     """Tests MADS button state transitions and internal button press state."""
-    try:
-      for enable_mads in (True, False):
-        with self.subTest("enable_mads", mads_enabled=enable_mads):
-          self._mads_states_cleanup()
-          self.safety.set_mads_params(enable_mads, False, False)
+    for enable_mads in (True, False):
+      with self.subTest("enable_mads", mads_enabled=enable_mads):
+        self.safety.set_mads_params(enable_mads, False, False)
 
-          # Verify initial state
-          self._rx(self._lkas_button_msg(False, 0))
-          self.assertEqual(0, self.safety.get_mads_button_press())  # NOT_PRESSED
-          self.assertFalse(self.safety.get_controls_allowed_lat())
+        # Verify initial state
+        self._rx(self._lkas_button_msg(False, 0))
+        self.assertEqual(0, self.safety.get_mads_button_press())  # NOT_PRESSED
+        self.assertFalse(self.safety.get_controls_allowed_lat())
 
-          # Verify press sets correct internal state
-          self._rx(self._lkas_button_msg(False, 1))
-          self.assertEqual(1, self.safety.get_mads_button_press())  # PRESSED
+        # Verify press sets correct internal state
+        self._rx(self._lkas_button_msg(False, 1))
+        self.assertEqual(1, self.safety.get_mads_button_press())  # PRESSED
+        self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+
+        # Verify release sets correct internal state
+        self._rx(self._lkas_button_msg(False, 0))
+        self.assertEqual(0, self.safety.get_mads_button_press())  # NOT_PRESSED
+        self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+
+        # Test invalid values - should not change button press state
+        for invalid_setting in (2, 3):
+          self._rx(self._lkas_button_msg(False, invalid_setting))
+          self.assertEqual(0, self.safety.get_mads_button_press())  # Should remain NOT_PRESSED
           self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
 
-          # Verify release sets correct internal state
-          self._rx(self._lkas_button_msg(False, 0))
-          self.assertEqual(0, self.safety.get_mads_button_press())  # NOT_PRESSED
-          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
-
-          # Test invalid values - should not change button press state
-          for invalid_setting in (2, 3):
-            self._rx(self._lkas_button_msg(False, invalid_setting))
-            self.assertEqual(0, self.safety.get_mads_button_press())  # Should remain NOT_PRESSED
-            self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
-
-          # Verify we can still transition after invalid values
-          self._rx(self._lkas_button_msg(False, 1))
-          self.assertEqual(1, self.safety.get_mads_button_press())
-          self._rx(self._lkas_button_msg(False, 0))
-          self.assertEqual(0, self.safety.get_mads_button_press())
-
-    finally:
-      self._mads_states_cleanup()
+        # Verify we can still transition after invalid values
+        self._rx(self._lkas_button_msg(False, 1))
+        self.assertEqual(1, self.safety.get_mads_button_press())
+        self._rx(self._lkas_button_msg(False, 0))
+        self.assertEqual(0, self.safety.get_mads_button_press())
 
 
 # ********************* Honda Nidec **********************
@@ -296,6 +292,8 @@ class TestHondaNidecSafetyBase(HondaBase):
 
   MAX_GAS = 198
 
+  BRAKE_SIG = "COMPUTER_BRAKE"
+
   def setUp(self):
     self.packer = CANPackerPanda("honda_civic_touring_2016_can_generated")
     self.safety = libsafety_py.libsafety
@@ -303,7 +301,7 @@ class TestHondaNidecSafetyBase(HondaBase):
     self.safety.init_tests()
 
   def _send_brake_msg(self, brake, aeb_req=0, bus=0):
-    values = {"COMPUTER_BRAKE": brake, "AEB_REQ_1": aeb_req}
+    values = {self.BRAKE_SIG: brake, "AEB_REQ_1": aeb_req}
     return self.packer.make_can_msg_panda("BRAKE_COMMAND", bus, values)
 
   def _rx_brake_msg(self, brake, aeb_req=0):
@@ -639,6 +637,18 @@ class TestHondaBoschCANFDAltBrakeSafety(HondaPcmEnableBase, TestHondaBoschCANFDS
   def setUp(self):
     super().setUp()
     self.safety.set_safety_hooks(CarParams.SafetyModel.hondaBosch, HondaSafetyFlags.BOSCH_CANFD | HondaSafetyFlags.ALT_BRAKE)
+    self.safety.init_tests()
+
+
+class TestHondaNidecClaritySafety(TestHondaNidecPcmSafety):
+
+  BRAKE_SIG = "COMPUTER_BRAKE_ALT"
+
+  def setUp(self):
+    self.packer = CANPackerPanda("honda_clarity_hybrid_2018_can_generated")
+    self.safety = libsafety_py.libsafety
+    self.safety.set_current_safety_param_sp(HondaSafetyFlagsSP.CLARITY)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hondaNidec, 0)
     self.safety.init_tests()
 
 
