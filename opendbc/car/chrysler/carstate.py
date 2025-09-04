@@ -1,18 +1,20 @@
 from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, create_button_events, structs
-from opendbc.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS, RAM_HD
+from opendbc.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarStateBase
 
+from opendbc.sunnypilot.car.chrysler.carstate_ext import CarStateExt
 from opendbc.sunnypilot.car.chrysler.mads import MadsCarState
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
 
-class CarState(CarStateBase, MadsCarState):
+class CarState(CarStateBase, MadsCarState, CarStateExt):
   def __init__(self, CP, CP_SP):
     CarStateBase.__init__(self, CP, CP_SP)
     MadsCarState.__init__(self, CP, CP_SP)
+    CarStateExt.__init__(self, CP, CP_SP)
     self.CP = CP
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
 
@@ -67,10 +69,7 @@ class CarState(CarStateBase, MadsCarState):
     ret.genericToggle = cp.vl["STEERING_LEVERS"]["HIGH_BEAM_PRESSED"] == 1
 
     # steering wheel
-    if self.CP.carFingerprint in RAM_HD:
-      ret.steeringAngleDeg = cp.vl["STEERING"]["STEERING_ANGLE"]
-    else:
-      ret.steeringAngleDeg = cp.vl["STEERING"]["STEERING_ANGLE"] + cp.vl["STEERING"]["STEERING_ANGLE_HP"]
+    ret.steeringAngleDeg = cp.vl["STEERING"]["STEERING_ANGLE"] + cp.vl["STEERING"]["STEERING_ANGLE_HP"]
     ret.steeringRateDeg = cp.vl["STEERING"]["STEERING_RATE"]
     ret.steeringTorque = cp.vl["EPS_2"]["COLUMN_TORQUE"]
     ret.steeringTorqueEps = cp.vl["EPS_2"]["EPS_TORQUE_MOTOR"]
@@ -108,6 +107,8 @@ class CarState(CarStateBase, MadsCarState):
       *create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise}),
       *create_button_events(self.lkas_button, self.prev_lkas_button, {1: ButtonType.lkas}),
     ]
+
+    CarStateExt.update(self, ret, can_parsers)
 
     return ret, ret_sp
 
