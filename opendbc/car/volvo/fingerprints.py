@@ -7,7 +7,7 @@ Ecu = car.CarParams.Ecu
 FW_VERSIONS = {
   CAR.VOLVO_V60: {
     (Ecu.engine, 0x7e0, None): [
-      b'PLACEHOLDER',
+      b'31361041 AJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   }
 }
