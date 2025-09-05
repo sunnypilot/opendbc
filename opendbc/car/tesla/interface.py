@@ -4,7 +4,6 @@ from opendbc.car.tesla.carcontroller import CarController
 from opendbc.car.tesla.carstate import CarState
 from opendbc.car.tesla.values import TeslaSafetyFlags, CAR
 
-
 class CarInterface(CarInterfaceBase):
   CarState = CarState
   CarController = CarController
