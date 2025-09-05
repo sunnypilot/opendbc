@@ -7,7 +7,6 @@ from opendbc.car.tesla.teslacan import TeslaCAN
 from opendbc.car.tesla.values import CarControllerParams
 from opendbc.car.vehicle_model import VehicleModel
 from opendbc.sunnypilot.car.tesla.values import TeslaFlagsSP
-from opendbc.car.carlog import carlog
 
 
 def get_safety_CP():
