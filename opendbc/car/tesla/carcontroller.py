@@ -7,6 +7,7 @@ from opendbc.car.tesla.teslacan import TeslaCAN
 from opendbc.car.tesla.values import CarControllerParams
 from opendbc.car.vehicle_model import VehicleModel
 from opendbc.sunnypilot.car.tesla.mads import MadsCarController
+from opendbc.sunnypilot.car.tesla.values import TeslaFlagsSP
 
 
 def get_safety_CP():
@@ -42,7 +43,9 @@ class CarController(CarControllerBase, MadsCarController):
       self.apply_angle_last = apply_steer_angle_limits_vm(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw, CS.out.steeringAngleDeg,
                                                           lat_active, CarControllerParams, self.VM)
 
-      can_sends.append(self.tesla_can.create_steering_control(self.apply_angle_last, lat_active, self.mads.control_type))
+      coop_steering_enabled = CC_SP.flags & TeslaFlagsSP.COOP_STEERING
+      self.control_type = 2 if self.mads.steering_only or coop_steering_enabled else 1
+      can_sends.append(self.tesla_can.create_steering_control(self.apply_angle_last, lat_active, self.control_type))
 
     if self.frame % 10 == 0:
       can_sends.append(self.tesla_can.create_steering_allowed())
