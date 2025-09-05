@@ -43,7 +43,7 @@ class CarController(CarControllerBase, MadsCarController):
       self.apply_angle_last = apply_steer_angle_limits_vm(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw, CS.out.steeringAngleDeg,
                                                           lat_active, CarControllerParams, self.VM)
 
-      coop_steering_enabled = CC_SP.flags & TeslaFlagsSP.COOP_STEERING
+      coop_steering_enabled = self.CP_SP.flags & TeslaFlagsSP.COOP_STEERING
       self.control_type = 2 if self.mads.steering_only or coop_steering_enabled else 1
       can_sends.append(self.tesla_can.create_steering_control(self.apply_angle_last, lat_active, self.control_type))
 
