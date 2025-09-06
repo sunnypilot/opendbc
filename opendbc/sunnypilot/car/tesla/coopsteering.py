@@ -8,7 +8,6 @@ from collections import namedtuple
 
 from opendbc.car import structs
 from opendbc.sunnypilot.car import get_param
-from opendbc.car.carlog import carlog
 
 CoopSteeringDataSP = namedtuple("CoopSteeringDataSP",
                                 ["control_type"])
@@ -21,13 +20,7 @@ class CoopSteeringCarController:
 
   @staticmethod
   def coop_steering_status_update(CC: structs.CarControl, CC_SP: structs.CarControlSP) -> CoopSteeringDataSP:
-    coop_steering = get_param(CC_SP.params, "TeslaCoopSteering", "0") == "1"
-
-    # debug output everything in CC_SP.params which is a list of structs.CarControlSP.Param
-    for param in CC_SP.params:
-      carlog.info("[COOP STEERING] CC_SP.params[%s]: %s (type: %s)", param.key, param.value, type(param.value))
-
-    carlog.info("[COOP STEERING] coop_steering: %s, get_param: %s", coop_steering, get_param(CC_SP.params, "TeslaCoopSteering", "fallback"))
+    coop_steering = get_param(CC_SP.params, "TeslaCoopSteering", "0") == "True"
     control_type = 2 if coop_steering else 1
 
     return CoopSteeringDataSP(control_type)
