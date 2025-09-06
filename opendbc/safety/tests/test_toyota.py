@@ -112,7 +112,6 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
                                                                   [0, 1], [0, 1],
                                                                   [0, 50, 100],
                                                                   np.linspace(-20, 20, 5)):
-      self._mads_states_cleanup()
       self.safety.set_controls_allowed(engaged)
 
       should_tx = not req and not req2 and angle == 0 and torque_wind_down == 0
@@ -124,15 +123,15 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
     for msg in ["trq", "pcm"]:
       self.safety.set_controls_allowed(1)
       if msg == "trq":
-        to_push = self._torque_meas_msg(0)
+        msg = self._torque_meas_msg(0)
       if msg == "pcm":
-        to_push = self._pcm_status_msg(True)
-      self.assertTrue(self._rx(to_push))
-      to_push[0].data[4] = 0
-      to_push[0].data[5] = 0
-      to_push[0].data[6] = 0
-      to_push[0].data[7] = 0
-      self.assertFalse(self._rx(to_push))
+        msg = self._pcm_status_msg(True)
+      self.assertTrue(self._rx(msg))
+      msg[0].data[4] = 0
+      msg[0].data[5] = 0
+      msg[0].data[6] = 0
+      msg[0].data[7] = 0
+      self.assertFalse(self._rx(msg))
       self.assertFalse(self.safety.get_controls_allowed())
 
 
@@ -211,7 +210,6 @@ class TestToyotaSafetyAngle(TestToyotaSafetyBase, common.AngleSteeringSafetyTest
     """
     for controls_allowed in (True, False):
       for angle in np.arange(-90, 90, 1):
-        self._mads_states_cleanup()
         self.safety.set_controls_allowed(controls_allowed)
         self._reset_angle_measurement(angle)
         self._set_prev_desired_angle(angle)

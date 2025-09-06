@@ -6,7 +6,7 @@ import importlib
 import numpy as np
 from collections.abc import Callable
 
-from opendbc.can.packer import CANPacker
+from opendbc.can import CANPacker
 from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from opendbc.safety.tests.libsafety import libsafety_py
 
@@ -266,7 +266,6 @@ class TorqueSteeringSafetyTestBase(PandaSafetyTestBase, abc.ABC):
       max_torque = self._get_max_torque(speed)
       for enabled in [0, 1]:
         for t in range(int(-max_torque * 1.5), int(max_torque * 1.5)):
-          self._mads_states_cleanup()
           self.safety.set_controls_allowed(enabled)
           self._set_prev_torque(t)
           if abs(t) > max_torque or (not enabled and abs(t) > 0):
@@ -543,7 +542,6 @@ class MotorTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
       max_torque = self._get_max_torque(speed)
       for controls_allowed in [True, False]:
         for torque in np.arange(-max_torque - 1000, max_torque + 1000, self.MAX_RATE_UP):
-          self._mads_states_cleanup()
           self.safety.set_controls_allowed(controls_allowed)
           self.safety.set_rt_torque_last(torque)
           self.safety.set_torque_meas(torque, torque)
@@ -663,6 +661,7 @@ class VehicleSpeedSafetyTest(PandaSafetyTestBase):
 class AngleSteeringSafetyTest(VehicleSpeedSafetyTest):
 
   STEER_ANGLE_MAX: float = 300
+  STEER_ANGLE_TEST_MAX: float = None
   DEG_TO_CAN: float
   ANGLE_RATE_BP: list[float]
   ANGLE_RATE_UP: list[float]  # windup limit
@@ -707,7 +706,10 @@ class AngleSteeringSafetyTest(VehicleSpeedSafetyTest):
   def test_angle_cmd_when_enabled(self):
     # when controls are allowed, angle cmd rate limit is enforced
     speeds = [0., 1., 5., 10., 15., 50.]
-    angles = np.concatenate((np.arange(-self.STEER_ANGLE_MAX * 2, self.STEER_ANGLE_MAX * 2, 5), [0]))
+    # TODO: what should CANPacker do here? we should also have good coverage checks on this
+    if self.STEER_ANGLE_TEST_MAX is None:
+        self.STEER_ANGLE_TEST_MAX = self.STEER_ANGLE_MAX * 2
+    angles = np.concatenate((np.arange(-self.STEER_ANGLE_TEST_MAX, self.STEER_ANGLE_TEST_MAX, 5), [0]))
     for a in angles:
       for s in speeds:
         max_delta_up = np.interp(s, self.ANGLE_RATE_BP, self.ANGLE_RATE_UP)
@@ -763,7 +765,6 @@ class AngleSteeringSafetyTest(VehicleSpeedSafetyTest):
           self._reset_angle_measurement(angle_meas)
 
           for angle_cmd in np.arange(-90, 91, 10):
-            self._mads_states_cleanup()
             self._set_prev_desired_angle(angle_cmd)
 
             # controls_allowed is checked if actuation bit is 1, else the angle must be close to meas (inactive)

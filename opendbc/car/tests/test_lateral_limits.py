@@ -7,7 +7,8 @@ import sys
 
 from opendbc.car import DT_CTRL
 from opendbc.car.car_helpers import interfaces
-from opendbc.car.interfaces import ISO_LATERAL_ACCEL, get_torque_params
+from opendbc.car.interfaces import get_torque_params
+from opendbc.car.lateral import ISO_LATERAL_ACCEL
 from opendbc.car.values import PLATFORMS
 
 # ISO 11270 - allowed up jerk is strictly lower than recommended limits
@@ -27,6 +28,7 @@ class TestLateralLimits:
   def setup_class(cls):
     CarInterface = interfaces[cls.car_model]
     CP = CarInterface.get_non_essential_params(cls.car_model)
+    _ = CarInterface.get_non_essential_params_sp(CP, cls.car_model)
 
     if cls.car_model == 'MOCK':
       pytest.skip('Mock car')

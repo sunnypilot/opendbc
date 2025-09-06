@@ -30,23 +30,30 @@ class CarTuningConfig:
 # Default configurations for different car types
 TUNING_CONFIGS = {
   "CANFD": CarTuningConfig(
+    min_upper_jerk=2.0,
+    min_lower_jerk=1.0,
     v_ego_stopping=0.365,
     lookahead_jerk_bp=[2., 5., 20.],
     lookahead_jerk_upper_v=[0.25, 0.5, 1.0],
     lookahead_jerk_lower_v=[0.05, 0.10, 0.325],
   ),
   "EV": CarTuningConfig(
+    min_upper_jerk=1.0,
+    min_lower_jerk=1.0,
     stopping_decel_rate=0.45,
     v_ego_stopping=0.35,
     lookahead_jerk_upper_v=[0.3, 0.7],
     lookahead_jerk_lower_v=[0.2, 0.4],
   ),
   "HYBRID": CarTuningConfig(
+    min_lower_jerk=1.5,
     v_ego_starting=0.15,
     stopping_decel_rate=0.45,
     v_ego_stopping=0.4,
   ),
   "DEFAULT": CarTuningConfig(
+    min_upper_jerk=1.0,
+    min_lower_jerk=1.5,
     lookahead_jerk_bp=[2., 5., 20.],
     lookahead_jerk_upper_v=[0.25, 0.5, 1.0],
     lookahead_jerk_lower_v=[0.05, 0.10, 0.3],
@@ -61,15 +68,15 @@ CAR_SPECIFIC_CONFIGS = {
     lookahead_jerk_bp=[2., 5., 20.],
     lookahead_jerk_upper_v=[1.0, 1.0, 1.0],
     lookahead_jerk_lower_v=[0.05, 0.05, 0.05],
-    jerk_limits=2.5,
-    accel_max=1.0,
+    jerk_limits=3.5,
+    accel_max=1.2,
   ),
   CAR.KIA_NIRO_PHEV_2022: CarTuningConfig(
     stopping_decel_rate=0.3,
     lookahead_jerk_upper_v=[0.3, 1.0],
     upper_jerk_v=[2.0, 3.0, 1.6],
     jerk_limits=5.0,
-    min_lower_jerk=3.0,
+    min_lower_jerk=2.0,
   ),
   CAR.HYUNDAI_IONIQ: CarTuningConfig(
     jerk_limits=3.8,
@@ -79,13 +86,13 @@ CAR_SPECIFIC_CONFIGS = {
     lookahead_jerk_upper_v=[0.3, 1.0],
     upper_jerk_v=[3.0, 3.0, 2.5],
     jerk_limits=3.5,
-    min_upper_jerk=2.0,
+    min_upper_jerk=1.4,
   ),
   CAR.HYUNDAI_KONA_2022: CarTuningConfig(
     stopping_decel_rate=0.3,
     lookahead_jerk_upper_v=[0.3, 1.0],
     lookahead_jerk_lower_v=[0.2, 0.4],
     upper_jerk_v=[2.0, 3.0, 1.6],
-    jerk_limits=3.0,
+    jerk_limits=4.0,
   )
 }

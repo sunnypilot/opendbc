@@ -33,6 +33,8 @@ class CarStateExt:
 
   def update_longitudinal_upgrade(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp_park = can_parsers[Bus.alt]
+    cp_adas = can_parsers[Bus.adas]
+
     prev_increase_button = self.increase_button
     prev_decrease_button = self.decrease_button
 
@@ -51,22 +53,25 @@ class CarStateExt:
       self.increase_counter = self.increase_counter + 1 if self.increase_button else 0
       self.decrease_counter = self.decrease_counter + 1 if self.decrease_button else 0
 
-      set_speed_mph = self.set_speed * CV.MS_TO_MPH
+      metric = cp_adas.vl["Cluster"]["Cluster_Unit"] == 0
+      conversion = CV.KPH_TO_MS if metric else CV.MPH_TO_MS
+      long_press_step = 10.0 if metric else 5.0
+      set_speed_converted = self.set_speed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)
 
       if self.increase_button:
         if self.increase_counter % 66 == 0:
-          self.set_speed = (int(math.ceil((set_speed_mph + 1) / 5.0)) * 5) * CV.MPH_TO_MS
+          self.set_speed = (int(math.ceil((set_speed_converted + 1) / long_press_step)) * long_press_step) * conversion
         elif not prev_increase_button:
-          self.set_speed += CV.MPH_TO_MS
+          self.set_speed += conversion
 
       if self.decrease_button:
         if self.decrease_counter % 66 == 0:
-          self.set_speed = (int(math.floor((set_speed_mph - 1) / 5.0)) * 5) * CV.MPH_TO_MS
+          self.set_speed = (int(math.floor((set_speed_converted - 1) / long_press_step)) * long_press_step) * conversion
         elif not prev_decrease_button:
-          self.set_speed -= CV.MPH_TO_MS
+          self.set_speed -= conversion
 
       if not ret.cruiseState.enabled:
-        self.set_speed = ret.vEgo
+        self.set_speed = ret.vEgoCluster
 
       self.set_speed = max(MIN_SET_SPEED, min(self.set_speed, MAX_SET_SPEED))
       ret.cruiseState.speed = self.set_speed
@@ -84,11 +89,6 @@ class CarStateExt:
     messages = {}
 
     if CP_SP.flags & RivianFlagsSP.LONGITUDINAL_HARNESS_UPGRADE:
-      alt_messages = [
-        ("WheelButtons", 20),
-        ("BSM_BlindSpotIndicator", 20),
-      ]
-
-      messages[Bus.alt] = CANParser(DBC[CP.carFingerprint][Bus.alt], alt_messages, 5)
+      messages[Bus.alt] = CANParser(DBC[CP.carFingerprint][Bus.alt], [], 5)
 
     return messages

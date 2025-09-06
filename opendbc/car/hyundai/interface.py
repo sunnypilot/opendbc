@@ -1,4 +1,4 @@
-from opendbc.car import Bus, get_safety_config, structs
+from opendbc.car import Bus, get_safety_config, structs, uds
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, \
                                                    CANFD_UNSUPPORTED_LONGITUDINAL_CAR, \
@@ -179,6 +179,22 @@ class CarInterface(CarInterfaceBase):
     if stock_cp.flags & HyundaiFlags.ALT_LIMITS_2:
       stock_cp.dashcamOnly = False
 
+    if ret.flags & HyundaiFlagsSP.NON_SCC:
+      stock_cp.alphaLongitudinalAvailable = False
+      stock_cp.openpilotLongitudinalControl = False
+      stock_cp.pcmCruise = True
+      ret.safetyParam |= HyundaiSafetyFlagsSP.NON_SCC
+
+    # untested non-SCC platforms, need user validations
+    if stock_cp.carFingerprint in (CAR.HYUNDAI_BAYON_1ST_GEN_NON_SCC, CAR.KIA_FORTE_2019_NON_SCC, CAR.KIA_FORTE_2021_NON_SCC,
+                                   CAR.KIA_SELTOS_2023_NON_SCC, CAR.GENESIS_G70_2021_NON_SCC):
+      stock_cp.dashcamOnly = True
+
+    # Detect smartMDPS, which bypasses EPS low-speed lockout, allowing sunnypilot to send steering commands down to 0
+    if 0x2AA in fingerprint[0]:
+      stock_cp.minSteerSpeed = 0.0
+      stock_cp.flags &= ~HyundaiFlags.MIN_STEER_32_MPH.value
+
     return ret
 
   @staticmethod
@@ -189,14 +205,23 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
-  def init(CP, CP_SP, can_recv, can_send):
+  def init(CP, CP_SP, can_recv, can_send, communication_control=None):
+    # 0x80 silences response
+    if communication_control is None:
+      communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, 0x80 | uds.CONTROL_TYPE.DISABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
+
     if CP.openpilotLongitudinalControl and not ((CP.flags & (HyundaiFlags.CANFD_CAMERA_SCC | HyundaiFlags.CAMERA_SCC)) or
                                                 (CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC)):
       addr, bus = 0x7d0, CanBus(CP).ECAN if CP.flags & HyundaiFlags.CANFD else 0
       if CP.flags & HyundaiFlags.CANFD_LKA_STEERING.value:
         addr, bus = 0x730, CanBus(CP).ECAN
-      disable_ecu(can_recv, can_send, bus=bus, addr=addr, com_cont_req=b'\x28\x83\x01')
+      disable_ecu(can_recv, can_send, bus=bus, addr=addr, com_cont_req=communication_control)
 
     # for blinkers
     if CP.flags & HyundaiFlags.ENABLE_BLINKERS:
-      disable_ecu(can_recv, can_send, bus=CanBus(CP).ECAN, addr=0x7B1, com_cont_req=b'\x28\x83\x01')
+      disable_ecu(can_recv, can_send, bus=CanBus(CP).ECAN, addr=0x7B1, com_cont_req=communication_control)
+
+  @staticmethod
+  def deinit(CP, can_recv, can_send):
+    communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, 0x80 | uds.CONTROL_TYPE.ENABLE_RX_ENABLE_TX, uds.MESSAGE_TYPE.NORMAL])
+    CarInterface.init(CP, can_recv, can_send, communication_control)
