@@ -10,7 +10,7 @@ from opendbc.car import structs
 from opendbc.sunnypilot.car import get_param
 
 CoopSteeringDataSP = namedtuple("CoopSteeringDataSP",
-                                  ["control_type"])
+                                ["control_type"])
 
 
 class CoopSteeringCarController:
