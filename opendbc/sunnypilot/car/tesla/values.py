@@ -7,6 +7,7 @@ See the LICENSE.md file in the root directory for more details.
 
 from enum import IntFlag
 
+
 class TeslaFlagsSP(IntFlag):
   """
     Flags for Tesla specific quirks within sunnypilot.

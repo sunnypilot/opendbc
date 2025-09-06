@@ -100,6 +100,7 @@ def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, 
       tracks_enabled = hyundai_enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
       CP.radarUnavailable = not tracks_enabled
 
+
 def _initialize_coop_steering(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
   if CP.brand == 'tesla':
     tesla_coop_steering = bool(params_dict.get("TeslaCoopSteering", False))
