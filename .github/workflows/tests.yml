@@ -3,7 +3,7 @@ name: tests
 on:
   push:
     branches:
-      - master
+      - master-tici
   pull_request:
 
 jobs:
@@ -50,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # need master to get diff
+          fetch-depth: 0  # need master-tici to get diff
       - uses: ./.github/workflows/cache
       - name: Run mutation tests
         run: |
@@ -75,7 +75,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         repository: 'sunnypilot/sunnypilot'
-        ref: 'master'
+        ref: 'master-tici'
         submodules: true
     - run: rm -rf opendbc_repo/
     - uses: actions/checkout@v4
