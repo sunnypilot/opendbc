@@ -67,8 +67,7 @@ class CarController(CarControllerBase):
           hca_enabled = True
           if CC.curvatureControllerActive: # PID + (car curv - VM no roll)
             apply_curvature = self.LateralController.update(CS.out, CC, actuators.curvature)
-            current_curvature_no_roll = CC.currentCurvature + CC.rollCompensation
-            apply_curvature = apply_curvature + (CS.out.steeringCurvature - current_curvature_no_roll)
+            apply_curvature = apply_curvature + (CS.out.steeringCurvature - (CC.currentCurvature - CC.rollCompensation))
           else: # car curv - VM with roll
             apply_curvature = actuators.curvature + (CS.out.steeringCurvature - CC.currentCurvature)
           apply_curvature = apply_std_curvature_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, CS.out.steeringCurvature,
