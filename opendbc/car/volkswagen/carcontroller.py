@@ -2,7 +2,6 @@ import numpy as np
 
 from opendbc.can import CANPacker
 from opendbc.car import Bus, DT_CTRL, structs
-from opendbc.car.vehicle_model import VehicleModel
 from opendbc.car.lateral import apply_driver_steer_torque_limits, apply_std_curvature_limits
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarControllerBase
@@ -48,7 +47,6 @@ class CarController(CarControllerBase):
     self.gra_down = False
     self.speed_limit_last = 0
     self.speed_limit_changed_timer = 0
-    self.VM = VehicleModel(CP)
     self.LateralController = LatControlCurvature(self.CCP.CURVATURE_PID, self.CCP.CURVATURE_LIMITS.CURVATURE_MAX, 1 / (DT_CTRL * self.CCP.STEER_STEP))
 
   def update(self, CC, CC_SP, CS, now_nanos):
@@ -68,8 +66,8 @@ class CarController(CarControllerBase):
         if CC.latActive:
           hca_enabled = True
           if CC.curvatureControllerActive: # PID + (car curv - VM no roll)
-            apply_curvature = self.LateralController.update(CS.out, self.VM, CC.rollDEPRECATED, actuators.curvature, CC.steerLimited)
-            apply_curvature = apply_curvature + (CS.out.steeringCurvature - CC.currentCurvatureNoRoll)
+            apply_curvature = self.LateralController.update(CS.out, CC, actuators.curvature)
+            apply_curvature = apply_curvature + (CS.out.steeringCurvature - (CC.currentCurvature + CC.rollCompensation))
           else: # car curv - VM with roll
             apply_curvature = actuators.curvature + (CS.out.steeringCurvature - CC.currentCurvature)
           apply_curvature = apply_std_curvature_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, CS.out.steeringCurvature,
