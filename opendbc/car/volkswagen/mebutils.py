@@ -162,7 +162,8 @@ class LatControlCurvature():
   
   def update(self, CS, CC, desired_curvature):
     actual_curvature_vm    = CC.currentCurvature # includes roll
-    actual_curvature_pose  = CC.angularVelocity[2] / max(CS.vEgo, 0.1)
+    # actual_curvature_car   = CS.yawRate / max(CS.vEgo, 0.1) still to look into further, seems to be not perfectly reliable
+    actual_curvature_pose  = CC.yawRate / max(CS.vEgo, 0.1)
     actual_curvature       = np.interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_pose])
     desired_curvature_corr = desired_curvature - CC.rollCompensation
     error                  = desired_curvature - actual_curvature
