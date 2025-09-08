@@ -2,6 +2,9 @@
 from opendbc.car.structs import CarParams
 from opendbc.car.toyota.values import CAR
 
+from opendbc.sunnypilot.car.fw_versions_ext import merge_fw_versions
+from opendbc.sunnypilot.car.toyota.fingerprints_ext import FW_VERSIONS_EXT
+
 Ecu = CarParams.Ecu
 
 FW_VERSIONS = {
@@ -500,6 +503,7 @@ FW_VERSIONS = {
       b'\x02896630ZZ0000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312K6000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312L0000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+      b'\x028966312L0100\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312Q3000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312Q3100\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312Q4000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
@@ -1187,6 +1191,7 @@ FW_VERSIONS = {
       b'\x01F15264283200\x00\x00\x00\x00',
       b'\x01F15264286100\x00\x00\x00\x00',
       b'\x01F15264286200\x00\x00\x00\x00',
+      b'\x01F152642870\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'\x028965B0R01500\x00\x00\x00\x008965B0R02500\x00\x00\x00\x00',
@@ -1837,18 +1842,25 @@ FW_VERSIONS = {
   CAR.TOYOTA_YARIS: {
     (Ecu.engine, 0x700, None): [
       b'\x0189663K015300\x00\x00\x00\x00',
+      b'\x0189663K023000\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
+      b'\x018965BK002100\x00\x00\x00\x00',
       b'\x018965BK003200\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
+      b'\x01F1526K005600\x00\x00\x00\x00',
       b'\x01F1526K007500\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F0D04100\x00\x00\x00\x00',
       b'\x018821F0D05300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F0W04100\x00\x00\x00\x008646G0W04100\x00\x00\x00\x00',
       b'\x028646F5205200\x00\x00\x00\x008646G5202200\x00\x00\x00\x00',
     ],
   },
 }
+
+FW_VERSIONS = merge_fw_versions(FW_VERSIONS, FW_VERSIONS_EXT)
