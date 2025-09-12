@@ -195,7 +195,7 @@ class CarInterface(CarInterfaceBase):
       stock_cp.minSteerSpeed = 0.0
       stock_cp.flags &= ~HyundaiFlags.MIN_STEER_32_MPH.value
 
-    ret.intelligentCruiseButtonControlAvailable = not (stock_cp.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
+    ret.intelligentCruiseButtonManagementAvailable = not (stock_cp.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
 
     return ret
 

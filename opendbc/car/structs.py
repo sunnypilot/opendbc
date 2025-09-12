@@ -64,7 +64,7 @@ class CarParamsSP:
   flags: int = auto_field()        # flags for car specific quirks
   safetyParam: int = auto_field()  # flags for custom safety flags
   pcmCruiseSpeed: bool = auto_field()
-  intelligentCruiseButtonControlAvailable: bool = auto_field()
+  intelligentCruiseButtonManagementAvailable: bool = auto_field()
 
   neuralNetworkLateralControl: 'CarParamsSP.NeuralNetworkLateralControl' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl())
 
@@ -97,16 +97,16 @@ class ModularAssistiveDrivingSystem:
 
 
 @auto_dataclass
-class IntelligentCruiseButtonControl:
-  state: 'IntelligentCruiseButtonControl.IntelligentCruiseButtonControlState' = field(
-    default_factory=lambda: IntelligentCruiseButtonControl.IntelligentCruiseButtonControlState.inactive
+class IntelligentCruiseButtonManagement:
+  state: 'IntelligentCruiseButtonManagement.IntelligentCruiseButtonManagementState' = field(
+    default_factory=lambda: IntelligentCruiseButtonManagement.IntelligentCruiseButtonManagementState.inactive
   )
-  sendButton: 'IntelligentCruiseButtonControl.SendButtonState' = field(
-    default_factory=lambda: IntelligentCruiseButtonControl.SendButtonState.none
+  sendButton: 'IntelligentCruiseButtonManagement.SendButtonState' = field(
+    default_factory=lambda: IntelligentCruiseButtonManagement.SendButtonState.none
   )
   vTarget: float = auto_field()
 
-  class IntelligentCruiseButtonControlState(StrEnum):
+  class IntelligentCruiseButtonManagementState(StrEnum):
     inactive = auto()
     preActive = auto()
     increasing = auto()
@@ -146,7 +146,7 @@ class CarControlSP:
   params: list['CarControlSP.Param'] = auto_field()
   leadOne: 'LeadData' = field(default_factory=lambda: LeadData())
   leadTwo: 'LeadData' = field(default_factory=lambda: LeadData())
-  intelligentCruiseButtonControl: 'IntelligentCruiseButtonControl' = field(default_factory=lambda: IntelligentCruiseButtonControl())
+  intelligentCruiseButtonManagement: 'IntelligentCruiseButtonManagement' = field(default_factory=lambda: IntelligentCruiseButtonManagement())
 
   @auto_dataclass
   class Param:

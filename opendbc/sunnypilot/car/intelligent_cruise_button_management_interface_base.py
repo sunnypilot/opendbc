@@ -7,7 +7,7 @@ See the LICENSE.md file in the root directory for more details.
 from opendbc.sunnypilot.car import get_param
 
 
-class IntelligentCruiseButtonControlInterfaceBase:
+class IntelligentCruiseButtonManagementInterfaceBase:
   def __init__(self, CP, CP_SP):
     self.CP = CP
     self.CP_SP = CP_SP

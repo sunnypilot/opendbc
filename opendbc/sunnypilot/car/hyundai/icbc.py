@@ -10,10 +10,10 @@ from random import choices
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.hyundai import hyundaican, hyundaicanfd
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CANFD_CAR
-from opendbc.sunnypilot.car.intelligent_cruise_button_control_interface_base import IntelligentCruiseButtonControlInterfaceBase
+from opendbc.sunnypilot.car.intelligent_cruise_button_management_interface_base import IntelligentCruiseButtonManagementInterfaceBase
 
 ButtonType = structs.CarState.ButtonEvent.Type
-SendButtonState = structs.IntelligentCruiseButtonControl.SendButtonState
+SendButtonState = structs.IntelligentCruiseButtonManagement.SendButtonState
 
 BUTTON_COPIES = 2
 BUTTON_COPIES_TIME = 7
@@ -28,7 +28,7 @@ BUTTONS = {
 }
 
 
-class IntelligentCruiseButtonControlInterface(IntelligentCruiseButtonControlInterfaceBase):
+class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManagementInterfaceBase):
   def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
 
@@ -62,7 +62,7 @@ class IntelligentCruiseButtonControlInterface(IntelligentCruiseButtonControlInte
   def update(self, CS, CC_SP, packer, frame, last_button_frame, CAN):
     can_sends = []
     self.CC_SP = CC_SP
-    self.ICBC = CC_SP.intelligentCruiseButtonControl
+    self.ICBC = CC_SP.intelligentCruiseButtonManagement
     self.frame = frame
     self.last_button_frame = last_button_frame
 

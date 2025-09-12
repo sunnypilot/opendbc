@@ -9,7 +9,7 @@ from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParam
 from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
-from opendbc.sunnypilot.car.hyundai.icbc import IntelligentCruiseButtonControlInterface
+from opendbc.sunnypilot.car.hyundai.icbc import IntelligentCruiseButtonManagementInterface
 from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController
 from opendbc.sunnypilot.car.hyundai.lead_data_ext import LeadDataCarController
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarController
@@ -49,14 +49,14 @@ def process_hud_alert(enabled, fingerprint, hud_control):
 
 
 class CarController(CarControllerBase, EsccCarController, LeadDataCarController, LongitudinalController, MadsCarController,
-                    IntelligentCruiseButtonControlInterface):
+                    IntelligentCruiseButtonManagementInterface):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     EsccCarController.__init__(self, CP, CP_SP)
     MadsCarController.__init__(self)
     LeadDataCarController.__init__(self, CP)
     LongitudinalController.__init__(self, CP, CP_SP)
-    IntelligentCruiseButtonControlInterface.__init__(self, CP, CP_SP)
+    IntelligentCruiseButtonManagementInterface.__init__(self, CP, CP_SP)
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_names[Bus.pt])
@@ -126,7 +126,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
                                             stopping, hud_control, actuators, CS, CC))
 
     # Intelligent Cruise Button Control
-    can_sends.extend(IntelligentCruiseButtonControlInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame, self.CAN))
+    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame, self.CAN))
 
     new_actuators = actuators.as_builder()
     new_actuators.torque = apply_torque / self.params.STEER_MAX
