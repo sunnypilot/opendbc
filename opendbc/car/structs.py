@@ -146,6 +146,7 @@ class CarControlSP:
   params: list['CarControlSP.Param'] = auto_field()
   leadOne: 'LeadData' = field(default_factory=lambda: LeadData())
   leadTwo: 'LeadData' = field(default_factory=lambda: LeadData())
+  intelligentCruiseButtonControl: 'IntelligentCruiseButtonControl' = field(default_factory=lambda: IntelligentCruiseButtonControl())
 
   @auto_dataclass
   class Param:
