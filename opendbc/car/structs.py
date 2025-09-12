@@ -96,7 +96,7 @@ class ModularAssistiveDrivingSystem:
     overriding = auto()
 
 
-@auto_dataclass()
+@auto_dataclass
 class IntelligentCruiseButtonControl:
   state: 'IntelligentCruiseButtonControl.IntelligentCruiseButtonControlState' = field(
     default_factory=lambda: IntelligentCruiseButtonControl.IntelligentCruiseButtonControlState.inactive
