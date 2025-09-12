@@ -63,6 +63,8 @@ class StrEnum(_StrEnum):
 class CarParamsSP:
   flags: int = auto_field()        # flags for car specific quirks
   safetyParam: int = auto_field()  # flags for custom safety flags
+  pcmCruiseSpeed: bool = auto_field()
+  intelligentCruiseButtonControlAvailable: bool = auto_field()
 
   neuralNetworkLateralControl: 'CarParamsSP.NeuralNetworkLateralControl' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl())
 
@@ -92,6 +94,29 @@ class ModularAssistiveDrivingSystem:
     enabled = auto()
     softDisabling = auto()
     overriding = auto()
+
+
+@auto_dataclass()
+class IntelligentCruiseButtonControl:
+  state: 'IntelligentCruiseButtonControl.IntelligentCruiseButtonControlState' = field(
+    default_factory=lambda: IntelligentCruiseButtonControl.IntelligentCruiseButtonControlState.inactive
+  )
+  sendButton: 'IntelligentCruiseButtonControl.SendButtonState' = field(
+    default_factory=lambda: IntelligentCruiseButtonControl.SendButtonState.none
+  )
+  vTarget: float = auto_field()
+
+  class IntelligentCruiseButtonControlState(StrEnum):
+    inactive = auto()
+    preActive = auto()
+    increasing = auto()
+    decreasing = auto()
+    holding = auto()
+
+  class SendButtonState(StrEnum):
+    none = auto()
+    increase = auto()
+    decrease = auto()
 
 
 @auto_dataclass
