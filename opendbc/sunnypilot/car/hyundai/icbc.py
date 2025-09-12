@@ -7,13 +7,12 @@ See the LICENSE.md file in the root directory for more details.
 import numpy as np
 from random import choices
 
-from cereal import car
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.hyundai import hyundaican, hyundaicanfd
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CANFD_CAR
 from opendbc.sunnypilot.car.intelligent_cruise_button_control_interface_base import IntelligentCruiseButtonControlInterfaceBase
 
-ButtonType = car.CarState.ButtonEvent.Type
+ButtonType = structs.CarState.ButtonEvent.Type
 SendButtonState = structs.IntelligentCruiseButtonControl.SendButtonState
 
 BUTTON_COPIES = 2
