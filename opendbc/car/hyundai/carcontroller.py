@@ -126,7 +126,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
                                             stopping, hud_control, actuators, CS, CC))
 
     # Intelligent Cruise Button Control
-    IntelligentCruiseButtonControlInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame, self.CAN)
+    can_sends.extend(IntelligentCruiseButtonControlInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame, self.CAN))
 
     new_actuators = actuators.as_builder()
     new_actuators.torque = apply_torque / self.params.STEER_MAX

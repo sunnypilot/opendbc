@@ -12,6 +12,7 @@ class IntelligentCruiseButtonControlInterfaceBase:
     self.CP = CP
     self.CP_SP = CP_SP
     self.CC_SP = None
+    self.ICBC = None
     self.frame = 0
     self.last_button_frame = 0
 
