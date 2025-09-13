@@ -51,14 +51,16 @@ def calculate_angle_torque_reduction_gain(params, CS, apply_torque_last, target_
   """ Calculate the angle torque reduction gain based on the current steering state. """
   target_gain = max(target_torque_reduction_gain, params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN)
 
+  driver_torque = abs(CS.out.steeringTorque)
+  alpha = np.interp(driver_torque, [params.STEER_THRESHOLD * .8 , params.STEER_THRESHOLD * 2], [0.02, 0.1])
+
   if CS.out.steeringPressed:
     scale = 100
-    driver_torque = abs(CS.out.steeringTorque)
-    target_gain = params.ANGLE_MIN_TORQUE_REDUCTION_GAIN + (params.ANGLE_MAX_TORQUE_REDUCTION_GAIN - params.ANGLE_MIN_TORQUE_REDUCTION_GAIN) \
+    clamped_torque_gain = max(apply_torque_last, params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN)
+    target_gain = params.ANGLE_MIN_TORQUE_REDUCTION_GAIN + (clamped_torque_gain - params.ANGLE_MIN_TORQUE_REDUCTION_GAIN) \
                   * math.exp(-(driver_torque - params.STEER_THRESHOLD) / scale)
 
   # Smooth transition (like a rubber band returning)
-  alpha = 0.02
   new_gain = apply_torque_last + alpha * (target_gain - apply_torque_last)
 
   return float(np.clip(new_gain, params.ANGLE_MIN_TORQUE_REDUCTION_GAIN, params.ANGLE_MAX_TORQUE_REDUCTION_GAIN))
