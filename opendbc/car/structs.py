@@ -129,7 +129,7 @@ class CarControlSP:
     type: 'CarControlSP.ParamType' = field(
       default_factory=lambda: CarControlSP.ParamType.string
     )
-  
+
   class ParamType(StrEnum):
     string = auto()
     bool = auto()
