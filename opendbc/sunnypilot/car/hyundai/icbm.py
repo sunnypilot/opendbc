@@ -5,7 +5,6 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 import numpy as np
-from random import choices
 
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.hyundai import hyundaican, hyundaicanfd
@@ -19,8 +18,6 @@ BUTTON_COPIES = 2
 BUTTON_COPIES_TIME = 7
 BUTTON_COPIES_TIME_IMPERIAL = [BUTTON_COPIES_TIME + 3, 70]
 BUTTON_COPIES_TIME_METRIC = [BUTTON_COPIES_TIME, 40]
-POPULATION = [0, 1]
-WEIGHTS = [0.51, 0.49]
 
 BUTTONS = {
   SendButtonState.increase: Buttons.RES_ACCEL,
@@ -53,8 +50,8 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
         # TODO: resume for alt button cars
         pass
       else:
-        for _ in range(BUTTON_COPIES):
-          can_sends.append(hyundaicanfd.create_buttons(packer, self.CP, CAN, CS.buttons_counter + choices(POPULATION, WEIGHTS)[0], send_button))
+        for _ in range(20):
+          can_sends.append(hyundaicanfd.create_buttons(packer, self.CP, CAN, CS.buttons_counter + 1, send_button))
         self.last_button_frame = self.frame
 
     return can_sends
