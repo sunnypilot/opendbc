@@ -9,8 +9,8 @@ import json
 ParamType = structs.CarControlSP.ParamType
 
 
-def get_param_object(params: list[structs.CarControlSP.Param], key: str) -> structs.CarControlSP.Param:
-  return next(param for param in params if param.key == key)
+def get_param_object(params: list[structs.CarControlSP.Param], key: str) -> structs.CarControlSP.Param | None:
+  return next((param for param in params if param.key == key), None)
 
 
 def get_param(params: list[structs.CarControlSP.Param], key: str, default_value = None) -> bytes | str | int | float | bool | dict:
