@@ -7,6 +7,7 @@ from opendbc.car.honda.values import CAR, CruiseButtons, HONDA_BOSCH, HONDA_BOSC
                                      HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from opendbc.car.interfaces import CarControllerBase
 
+from opendbc.sunnypilot.car.honda.carcontroller_ext import CarControllerExt
 from opendbc.sunnypilot.car.honda.mads import MadsCarController
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
@@ -90,10 +91,11 @@ def process_hud_alert(hud_alert):
   return alert_fcw, alert_steer_required
 
 
-class CarController(CarControllerBase, MadsCarController):
+class CarController(CarControllerBase, MadsCarController, CarControllerExt):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     MadsCarController.__init__(self)
+    CarControllerExt.__init__(self, CP, CP_SP)
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.params = CarControllerParams(CP)
     self.CAN = hondacan.CanBus(CP)
@@ -126,7 +128,7 @@ class CarController(CarControllerBase, MadsCarController):
       gas, brake = 0.0, 0.0
 
     # *** rate limit steer ***
-    limited_torque = rate_limit(actuators.torque, self.last_torque, -self.params.STEER_DELTA_DOWN * DT_CTRL,
+    limited_torque = CarControllerExt.rate_limit_ext(self, actuators.torque, self.last_torque, -self.params.STEER_DELTA_DOWN * DT_CTRL,
                                 self.params.STEER_DELTA_UP * DT_CTRL)
     self.last_torque = limited_torque
 
