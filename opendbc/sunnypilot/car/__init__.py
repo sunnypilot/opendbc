@@ -10,33 +10,32 @@ ParamType = structs.CarControlSP.ParamType
 
 
 def get_param_object(params: list[structs.CarControlSP.Param], key: str) -> structs.CarControlSP.Param:
-  return next((param for param in params if param.key == key))
+  return next(param for param in params if param.key == key)
 
 
 def get_param(params: list[structs.CarControlSP.Param], key: str, default_value = None) -> bytes | str | int | float | bool | dict:
   if (param := get_param_object(params, key)) is None:
     return default_value
-  
+
   param_value = _get_param_as_type(param)
   if not isinstance(param_value, type(default_value)) and default_value is not None:
     raise ValueError(f"Param {key} has type {type(param_value)}, but we expected {type(default_value)} based on the default value")
-  
+
   return param_value
 
 
 def _get_param_as_type(param: structs.CarControlSP.Param, *, _forced_param_type: ParamType = None) -> bytes | str | int | float | bool | dict:
-  """ 
+  """
   Convert a Param to its value in the right type
   :param param: The Param to convert.
-  :param  _forced_param_type: (Only for easy sync, will be remove in the future) If given, it will be used instead of the param's own type. 
+  :param  _forced_param_type: (Only for easy sync, will be remove in the future) If given, it will be used instead of the param's own type.
   Must be explicitly passed as a keyword argument.
-  :return: 
   """
   return _convert_param_to_type(param.value, _forced_param_type or param.type)
 
 
 def _convert_param_to_type(value: bytes, param_type: ParamType) -> bytes | str | int | float | bool | dict:
-  """ 
+  """
   Convert a byte value to the specified param type. Used internally when getting a Param to convert it to the right type.
   If this method looks familiar, it's because on SP we have a similar one in sunnylink/utils.py.
   """
