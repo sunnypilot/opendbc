@@ -22,7 +22,6 @@ env = Environment(
     '-std=gnu11',
     '-Wfatal-errors',
     '-Wno-pointer-to-int-cast',
-    '-DCANFD',
     '-g',
     '-O0',
     "-fno-omit-frame-pointer"
@@ -41,8 +40,6 @@ if GetOption('mutation'):
     '-fpass-plugin=/usr/lib/mull-ir-frontend-17',
     '-g',
     '-grecord-command-line',
-    '-O0',
-    "-fno-omit-frame-pointer"
   ]
   env['CFLAGS'] += flags
   env['LINKFLAGS'] += flags
