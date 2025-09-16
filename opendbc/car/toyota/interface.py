@@ -157,7 +157,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in UNSUPPORTED_DSU_CAR:
       ret.safetyParam |= ToyotaSafetyFlagsSP.UNSUPPORTED_DSU
 
-    if candidate in (CAR.TOYOTA_WILDLANDER, ):
+    if candidate in (CAR.TOYOTA_WILDLANDER_PHEV, ):
       stock_cp.lateralTuning.init('pid')
       stock_cp.lateralTuning.pid.kiBP = [0.0]
       stock_cp.lateralTuning.pid.kpBP = [0.0]

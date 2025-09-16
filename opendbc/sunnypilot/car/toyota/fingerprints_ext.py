@@ -4,7 +4,7 @@ from opendbc.car.toyota.values import CAR
 Ecu = CarParams.Ecu
 
 FW_VERSIONS_EXT = {
-  CAR.TOYOTA_WILDLANDER: {
+  CAR.TOYOTA_WILDLANDER_PHEV: {
     (Ecu.engine, 0x700, None): [
       b'\x01896630R57001\x00\x00\x00\x00',
     ],
