@@ -197,7 +197,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   //   .wheelbase = 2.81,
   // };
 
-  // KIA_SPORTAGE_HEV_2026 values. (most conservative for now) (values can be found on values.py)
+  // KIA_SPORTAGE_HEV_PE values. (most conservative for now) (values can be found on values.py)
   const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
       .slip_factor = -0.0006085930193026732,  // calc_slip_factor(VM)
       .steer_ratio = 13.7,

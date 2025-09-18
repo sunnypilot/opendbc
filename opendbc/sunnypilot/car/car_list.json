@@ -2282,7 +2282,7 @@
     "package": "Smart Cruise Control (SCC)"
   },
   "Kia Sportage Hybrid 2026": {
-    "platform": "KIA_SPORTAGE_HEV_2026",
+    "platform": "KIA_SPORTAGE_HEV_PE",
     "make": "Kia",
     "brand": "hyundai",
     "model": "Sportage Hybrid",
