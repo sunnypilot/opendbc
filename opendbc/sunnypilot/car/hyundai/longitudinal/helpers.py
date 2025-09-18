@@ -21,25 +21,42 @@ class LongitudinalTuningType:
   PREDICTIVE = 2
 
 
-def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
-  # Get car type flags from specific configs or determine from car flags
-  car_config = CAR_SPECIFIC_CONFIGS.get(CP.carFingerprint)
-  # If car is not in specific configs, determine from flags
-  if car_config is None:
+def create_config_from_params(params_dict: dict[str, str], base_config: CarTuningConfig) -> CarTuningConfig:
+  """Create a CarTuningConfig from parameter values."""
+  return CarTuningConfig(
+    accel_max=float(params_dict.get("LongTuningAccelMax", str(base_config.accel_max))),
+    jerk_limits=float(params_dict.get("LongTuningJerkLimits", str(base_config.jerk_limits))),
+    min_upper_jerk=float(params_dict.get("LongTuningMinUpperJerk", str(base_config.min_upper_jerk))),
+    min_lower_jerk=float(params_dict.get("LongTuningMinLowerJerk", str(base_config.min_lower_jerk))),
+  )
+
+
+def get_car_config(CP: structs.CarParams, params_dict: dict[str, str] = None) -> CarTuningConfig:
+  base_config = _get_base_config(CP)
+
+  if params_dict and int(params_dict.get("LongTuningCustomToggle", "0")) == 1:
+    return create_config_from_params(params_dict, base_config)
+
+  return base_config
+
+
+def _get_base_config(CP: structs.CarParams) -> CarTuningConfig:
+  """Extract base config selection logic for reuse."""
+  base_config = CAR_SPECIFIC_CONFIGS.get(CP.carFingerprint)
+  if base_config is None:
     if CP.flags & HyundaiFlags.CANFD:
-      car_config = TUNING_CONFIGS["CANFD"]
+      base_config = TUNING_CONFIGS["CANFD"]
     elif CP.flags & HyundaiFlags.EV:
-      car_config = TUNING_CONFIGS["EV"]
+      base_config = TUNING_CONFIGS["EV"]
     elif CP.flags & HyundaiFlags.HYBRID:
-      car_config = TUNING_CONFIGS["HYBRID"]
+      base_config = TUNING_CONFIGS["HYBRID"]
     else:
-      car_config = TUNING_CONFIGS["DEFAULT"]
+      base_config = TUNING_CONFIGS["DEFAULT"]
+  return base_config
 
-  return car_config
 
-
-def get_longitudinal_tune(CP: structs.CarParams) -> None:
-  config = get_car_config(CP)
+def get_longitudinal_tune(CP: structs.CarParams, params_dict: dict[str, str] = None) -> None:
+  config = get_car_config(CP, params_dict)
   CP.vEgoStopping = config.v_ego_stopping
   CP.vEgoStarting = config.v_ego_starting
   CP.stoppingDecelRate = config.stopping_decel_rate
@@ -56,8 +73,12 @@ def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -
   return rate_limit(desired_accel, last_accel, -val, val)
 
 
-def ramp_update(current, target):
+def ramp_update(current, target, min_value=None):
   error = target - current
   if abs(error) > JERK_THRESHOLD:
-    return current + float(np.clip(error, -JERK_STEP, JERK_STEP))
-  return target
+    next_val = current + float(np.clip(error, -JERK_STEP, JERK_STEP))
+  else:
+    next_val = target
+  if min_value is not None:
+    next_val = max(min_value, next_val)
+  return next_val
