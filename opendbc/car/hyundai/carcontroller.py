@@ -52,7 +52,7 @@ def calculate_angle_torque_reduction_gain(params, CS, apply_torque_last, target_
   target_gain = max(target_torque_reduction_gain, params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN)
 
   driver_torque = abs(CS.out.steeringTorque)
-  alpha = np.interp(driver_torque, [params.STEER_THRESHOLD * .8 , params.STEER_THRESHOLD * 2], [0.02, 0.1])
+  alpha = np.interp(driver_torque, [params.STEER_THRESHOLD * .8, params.STEER_THRESHOLD * 2], [0.02, 0.1])
 
   if CS.out.steeringPressed:
     scale = 100
