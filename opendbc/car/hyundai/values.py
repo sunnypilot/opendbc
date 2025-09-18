@@ -556,6 +556,13 @@ class CAR(Platforms):
     # weight from SX and above trims, average of FWD and AWD version, steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sportage/2023/specifications
     CarSpecs(mass=1725, wheelbase=2.756, steerRatio=13.6),
   )
+  KIA_SPORTAGE_HEV_2026 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia Sportage Hybrid 2026", car_parts=CarParts.common([CarHarness.hyundai_n])),
+    ],
+    CarSpecs(mass=1812, wheelbase=2.756, steerRatio=13.7),
+    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+  )
   KIA_SORENTO = HyundaiPlatformConfig(
     [
       HyundaiCarDocs("Kia Sorento 2018", "Advanced Smart Cruise Control & LKAS", video="https://www.youtube.com/watch?v=Fkh3s6WHJz8",
