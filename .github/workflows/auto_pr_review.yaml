@@ -27,11 +27,11 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        target: /^(?!master$|master$).*/
+        target: /^(?!master-tici$|master-tici$).*/
         exclude: /sunnypilot:.*/
         change-to: ${{ github.base_ref }}
         already-exists-action: close_this
-        already-exists-comment: "Your PR should be made against the `master` branch"
+        already-exists-comment: "Your PR should be made against the `master-tici` branch"
 
     # Welcome comment
     - name: "First timers PR"
