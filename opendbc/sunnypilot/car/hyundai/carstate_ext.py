@@ -6,6 +6,7 @@ See the LICENSE.md file in the root directory for more details.
 """
 
 from enum import StrEnum
+import copy
 
 from opendbc.car import Bus, structs
 from opendbc.can.parser import CANParser
@@ -19,6 +20,7 @@ class CarStateExt:
     self.CP_SP = CP_SP
 
     self.aBasis = 0.0
+    self.msg_161, self.msg_162, self.msg_1b5 = {}, {}, {}
 
   def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser], speed_conv: float) -> None:
     cp = can_parsers[Bus.pt]
@@ -55,5 +57,15 @@ class CarStateExt:
 
   def update_canfd_ext(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp = can_parsers[Bus.pt]
+    cp_cam = can_parsers[Bus.cam]
 
     self.aBasis = cp.vl["TCS"]["aBasis"]
+
+    if self.CP_SP.flags & HyundaiFlagsSP.CCNC and not self.CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
+      self.msg_161, self.msg_162, self.msg_1b5 = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"], cp_cam.vl["FR_CMR_03_50ms"]))
+      self.cruise_info = copy.copy((cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp).vl["SCC_CONTROL"])
+      ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"]["LEFT_LAMP_ALT"],
+                                                                      cp.vl["BLINKERS"]["RIGHT_LAMP_ALT"])
+      if self.CP.enableBsm:
+        ret.leftBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"]["FL_INDICATOR_ALT"] != 0
+        ret.rightBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"]["FR_INDICATOR_ALT"] != 0
