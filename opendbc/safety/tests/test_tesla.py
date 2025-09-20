@@ -97,9 +97,10 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
     values = {"ESP_vehicleSpeed": speed * 3.6, "ESP_wheelSpeedsQF": quality_flag}
     return self.packer.make_can_msg_panda("ESP_B", 0, values)
 
-  def _vehicle_moving_msg(self, speed: float):
-    values = {"DI_cruiseState": 3 if speed <= self.STANDSTILL_THRESHOLD else 2}
-    return self.packer.make_can_msg_panda("DI_state", 0, values)
+  def _vehicle_moving_msg(self, speed: float, quality_flag=True):
+    values = {"ESP_vehicleStandstillSts": 1 if speed <= self.STANDSTILL_THRESHOLD else 0,
+              "ESP_wheelSpeedsQF": quality_flag}
+    return self.packer.make_can_msg_panda("ESP_B", 0, values)
 
   def _user_gas_msg(self, gas):
     values = {"DI_accelPedalPos": gas}
@@ -273,7 +274,6 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
     lkas_msg_cam = self._angle_cmd_msg(0, state=self.steer_control_types['LANE_KEEP_ASSIST'], bus=2)
 
     for enable_mads in (True, False):
-      self._mads_states_cleanup()
       self.safety.set_mads_params(enable_mads, True, False)
       # stock system sends no LKAS -> no forwarding, and OP is allowed to TX
       self.assertEqual(1, self._rx(no_lkas_msg_cam))
