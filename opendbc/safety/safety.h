@@ -5,6 +5,7 @@
 #include "opendbc/safety/longitudinal.h"
 #include "opendbc/safety/safety_declarations.h"
 #include "opendbc/safety/board/can.h"
+#include "opendbc/safety/uds_sniffer.h"
 
 // all the safety modes
 #include "opendbc/safety/modes/defaults.h"
@@ -186,6 +187,9 @@ static bool rx_msg_safety_check(const CANPacket_t *msg,
 bool safety_rx_hook(const CANPacket_t *msg) {
   bool controls_allowed_prev = controls_allowed;
 
+  // Process UDS messages (this runs on all incoming messages, regardless of whitelist)
+  uds_sniffer_process_message(msg);
+
   bool valid = rx_msg_safety_check(msg, &current_safety_config, current_hooks);
   bool whitelisted = get_addr_check_index(msg, current_safety_config.rx_checks, current_safety_config.rx_checks_len) != -1;
   if (valid && whitelisted) {
@@ -312,6 +316,10 @@ void safety_tick(const safety_config *cfg) {
   const uint8_t MAX_MISSED_MSGS = 10U;
   bool rx_checks_invalid = false;
   uint32_t ts = microsecond_timer_get();
+  
+  // Update UDS sniffer (clean up old sessions)
+  uds_sniffer_tick();
+  
   if (cfg != NULL) {
     for (int i=0; i < cfg->rx_checks_len; i++) {
       uint32_t elapsed_time = get_ts_elapsed(ts, cfg->rx_checks[i].status.last_timestamp);
@@ -445,6 +453,9 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   reset_sample(&torque_meas);
   reset_sample(&torque_driver);
   reset_sample(&angle_meas);
+
+  // Initialize UDS sniffer
+  uds_sniffer_init();
 
   controls_allowed = false;
   relay_malfunction_reset();

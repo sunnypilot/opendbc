@@ -2,6 +2,8 @@
 
 #include "opendbc/safety/safety_declarations.h"
 #include "opendbc/safety/modes/hyundai_common.h"
+#include "opendbc/safety/modes/hyundai_uds_handler.h"
+#include <stdio.h>
 
 #define HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(bus) \
   {0x1CF, bus, 8, .check_relay = false},  /* CRUISE_BUTTON */   \
@@ -44,6 +46,17 @@
 // SCC_CONTROL (from ADAS unit or camera)
 #define HYUNDAI_CANFD_SCC_ADDR_CHECK(scc_bus)                                                                            \
   {.msg = {{0x1a0, (scc_bus), 32, 50U, .max_counter = 0xffU, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
+
+int my_strcmp(const char *a, const char *b) {
+  while (*a && *b) {       // loop until one string ends
+    if (*a != *b) {      // check for difference
+      return *a - *b;  // return difference
+    }
+    a++;
+    b++;
+  }
+  return *a - *b;          // handles cases where lengths differ
+}
 
 static bool hyundai_canfd_alt_buttons = false;
 static bool hyundai_canfd_lka_steering_alt = false;
@@ -177,11 +190,11 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   // HYUNDAI_SANTA_FE_HEV_5TH_GEN: -0.00059689759884299
 
   // IONIQ 5 PE values.
-  // const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
-  //   .slip_factor = -0.0008688329819908074,  // calc_slip_factor(VM)
-  //   .steer_ratio = 14.26,
-  //   .wheelbase = 2.97,
-  // };
+  AngleSteeringParams IONIQ_5_HYUNDAI_STEERING_PARAMS = {
+    .slip_factor = -0.0008688329819908074,  // calc_slip_factor(VM)
+    .steer_ratio = 14.26,
+    .wheelbase = 2.97,
+  };
 
   // // GENESIS_GV80_2025 values. (values can be found on values.py)
   // const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
@@ -191,13 +204,19 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   // };
 
   // HYUNDAI_SANTA_FE_HEV_5TH_GEN values. (most conservative for now) (values can be found on values.py)
-  const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
+  AngleSteeringParams BASELINE_HYUNDAI_STEERING_PARAMS = {
     .slip_factor = -0.00059689759884299,  // calc_slip_factor(VM)
     .steer_ratio = 13.72,
     .wheelbase = 2.81,
   };
 
   bool tx = true;
+  
+  const AngleSteeringParams *HYUNDAI_STEERING_PARAMS = &BASELINE_HYUNDAI_STEERING_PARAMS;
+  if(hyundai_uds_data.ecu_software_version_received && my_strcmp(hyundai_uds_data.ecu_software_version, "NE  MFC  AT EUR LHD 1.00 1.03 99211-GI500 240809") == 0)
+  {
+    HYUNDAI_STEERING_PARAMS = &IONIQ_5_HYUNDAI_STEERING_PARAMS;
+  }
 
   // steering
   const unsigned int steer_addr = (hyundai_canfd_lka_steering && !hyundai_longitudinal) ? hyundai_canfd_get_lka_addr() : 0x12aU;
@@ -209,7 +228,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
       int desired_angle = (msg->data[11] << 6U) | (msg->data[10] >> 2U);
       desired_angle = to_signed(desired_angle, 14);
 
-      if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, HYUNDAI_STEERING_PARAMS)) {
+      if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, *HYUNDAI_STEERING_PARAMS)) {
         tx = false;
       }
     } else {
@@ -323,6 +342,9 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     {0x160, 0, 16, .check_relay = (longitudinal)}, /* ADRV_0x160 */ \
 
   hyundai_common_init(param);
+
+  // Initialize UDS sniffer for Hyundai CANFD
+  hyundai_canfd_init_uds_sniffer();
 
   gen_crc_lookup_table_16(0x1021, hyundai_canfd_crc_lut);
   hyundai_canfd_alt_buttons = GET_FLAG(param, HYUNDAI_PARAM_CANFD_ALT_BUTTONS);
