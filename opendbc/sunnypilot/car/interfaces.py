@@ -93,7 +93,7 @@ def _initialize_custom_longitudinal_tuning(CI, CP: structs.CarParams, CP_SP: str
   _ = CI.get_longitudinal_tuning_sp(CP, CP_SP)
 
 
-def _initialize_radar(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
+def _initialize_radar(CI: CarInterfaceBaseSP, CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
 
   # Hyundai Radar
   if CP.brand == 'hyundai':
