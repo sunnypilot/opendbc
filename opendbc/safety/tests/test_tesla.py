@@ -285,10 +285,8 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
 
         # stock system sends LKAS, if lat active: block (return -1), if not active: forward (return 0)
         self.assertEqual(1, self._rx(lkas_msg_cam))
-        expected_fwd = -1 if lat_active else 0
-        self.assertEqual(expected_fwd, self.safety.safety_fwd_hook(2, lkas_msg_cam.addr))
-        expected_tx = lat_active
-        self.assertEqual(expected_tx, self._tx(no_lkas_msg))
+        self.assertEqual(-1 if lat_active else 0, self.safety.safety_fwd_hook(2, lkas_msg_cam.addr))
+        self.assertEqual(lat_active, self._tx(no_lkas_msg))
 
   def test_angle_cmd_when_enabled(self):
     # We properly test lateral acceleration and jerk below
