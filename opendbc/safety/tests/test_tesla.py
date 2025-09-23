@@ -283,7 +283,7 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
         self.assertEqual(-1, self.safety.safety_fwd_hook(2, no_lkas_msg_cam.addr))
         self.assertTrue(self._tx(no_lkas_msg))
 
-        # stock system sends LKAS, if lat active: block (return -1), if not active: forward (return 0)
+        # if lat active: block stock LKAS + allow OP TX, else: forward stock LKAS + block OP TX
         self.assertEqual(1, self._rx(lkas_msg_cam))
         self.assertEqual(-1 if lat_active else 0, self.safety.safety_fwd_hook(2, lkas_msg_cam.addr))
         self.assertEqual(lat_active, self._tx(no_lkas_msg))
