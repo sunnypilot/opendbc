@@ -190,12 +190,20 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   //   .wheelbase = 2.95,
   // };
 
-  // HYUNDAI_SANTA_FE_HEV_5TH_GEN values. (most conservative for now) (values can be found on values.py)
+  // HYUNDAI_SANTA_FE_HEV_5TH_GEN values. (values can be found on values.py)
+  // const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
+  //   .slip_factor = -0.00059689759884299,  // calc_slip_factor(VM)
+  //   .steer_ratio = 13.72,
+  //   .wheelbase = 2.81,
+  // };
+
+  // KIA_SPORTAGE_HEV_2026 values. (most conservative for now) (values can be found on values.py)
   const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
-    .slip_factor = -0.00059689759884299,  // calc_slip_factor(VM)
-    .steer_ratio = 13.72,
-    .wheelbase = 2.81,
-  };
+      .slip_factor = -0.0006085930193026732,  // calc_slip_factor(VM)
+      .steer_ratio = 13.7,
+      .wheelbase = 2.756,
+    };
+  
 
   bool tx = true;
 

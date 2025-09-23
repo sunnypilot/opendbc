@@ -2281,6 +2281,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Kia Sportage Hybrid 2026": {
+    "platform": "KIA_SPORTAGE_HEV_2026",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Sportage Hybrid",
+    "year": [
+      "2026"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Kia Stinger 2018-20": {
     "platform": "KIA_STINGER",
     "make": "Kia",

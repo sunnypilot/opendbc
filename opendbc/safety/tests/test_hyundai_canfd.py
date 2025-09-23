@@ -364,7 +364,8 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         f"{car_name} max steering angle delta at {speed:.1f} m/s is {delta_diff_pct:.2f}% " +
         f"lower than {baseline_car} ({current_max_delta:.4f} vs {baseline_max_delta:.4f} deg/frame). " +
         f"Must be >= {self.ANGLE_SAFETY_THRESHOLD_PCT}% to ensure safety." +
-        f"Consider updating the baseline model to be {car_name} (which will lower the threshold for ALL models)."
+        f"Consider updating the baseline model to be {car_name} (which will lower the threshold for ALL models)." +
+        f"Slip Factor: {repr(calc_slip_factor(current_vm))}"
       )
 
 
