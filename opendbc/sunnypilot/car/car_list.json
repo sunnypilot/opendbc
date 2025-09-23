@@ -2313,6 +2313,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Kia Sportage (without HDA II) 2026": {
+    "platform": "KIA_SPORTAGE_2026",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Sportage (without HDA II)",
+    "year": [
+      "2026"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Kia Sportage Hybrid 2023": {
     "platform": "KIA_SPORTAGE_5TH_GEN",
     "make": "Kia",
