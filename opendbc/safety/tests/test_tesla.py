@@ -273,17 +273,22 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
     no_lkas_msg_cam = self._angle_cmd_msg(0, state=True, bus=2)
     lkas_msg_cam = self._angle_cmd_msg(0, state=self.steer_control_types['LANE_KEEP_ASSIST'], bus=2)
 
-    for enable_mads in (True, False):
-      self.safety.set_mads_params(enable_mads, True, False)
-      # stock system sends no LKAS -> no forwarding, and OP is allowed to TX
-      self.assertEqual(1, self._rx(no_lkas_msg_cam))
-      self.assertEqual(-1, self.safety.safety_fwd_hook(2, no_lkas_msg_cam.addr))
-      self.assertTrue(self._tx(no_lkas_msg))
+    for lat_active in (True, False):
+      with self.subTest(lat_active=lat_active):
+        self.safety.set_mads_params(True, True, False)
+        self.safety.set_controls_allowed_lat(lat_active)
 
-      # stock system sends LKAS -> forwarding, and OP is not allowed to TX
-      self.assertEqual(1, self._rx(lkas_msg_cam))
-      self.assertEqual(-1 if enable_mads else 0, self.safety.safety_fwd_hook(2, lkas_msg_cam.addr))
-      self.assertEqual(enable_mads, self._tx(no_lkas_msg))
+        # stock system sends no LKAS -> no forwarding, and OP is allowed to TX
+        self.assertEqual(1, self._rx(no_lkas_msg_cam))
+        self.assertEqual(-1, self.safety.safety_fwd_hook(2, no_lkas_msg_cam.addr))
+        self.assertTrue(self._tx(no_lkas_msg))
+
+        # stock system sends LKAS, if lat active: block (return -1). If not active: forward (return 0)
+        self.assertEqual(1, self._rx(lkas_msg_cam))
+        expected_fwd = -1 if lat_active else 0
+        self.assertEqual(expected_fwd, self.safety.safety_fwd_hook(2, lkas_msg_cam.addr))
+        expected_tx = lat_active
+        self.assertEqual(expected_tx, self._tx(no_lkas_msg))
 
   def test_angle_cmd_when_enabled(self):
     # We properly test lateral acceleration and jerk below
