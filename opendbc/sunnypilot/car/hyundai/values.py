@@ -14,6 +14,7 @@ class HyundaiSafetyFlagsSP:
   LONG_MAIN_CRUISE_TOGGLEABLE = 2
   HAS_LDA_BUTTON = 4
   NON_SCC = 8
+  CCNC = 16
 
 
 class HyundaiFlagsSP(IntFlag):
@@ -29,3 +30,4 @@ class HyundaiFlagsSP(IntFlag):
   NON_SCC = 2 ** 6
   NON_SCC_RADAR_FCA = 2 ** 7  # most with FCA come from the camera
   NON_SCC_NO_FCA = 2 ** 8  # not all have FCA
+  CCNC = 2 ** 9
