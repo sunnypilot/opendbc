@@ -13,7 +13,7 @@ from opendbc.car import structs
 from opendbc.car.can_definitions import CanRecvCallable, CanSendCallable
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks as hyundai_enable_radar_tracks
-from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType, RadarType
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 
@@ -75,6 +75,7 @@ def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
   params_dict = {k: v for param in params_list for k, v in param.items()}
 
   _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
+  _initialize_radar(CI, CP, CP_SP, params_dict)
   _initialize_radar_tracks(CP, CP_SP, can_recv, can_send)
 
 
@@ -90,6 +91,19 @@ def _initialize_custom_longitudinal_tuning(CI, CP: structs.CarParams, CP_SP: str
       CP_SP.flags |= HyundaiFlagsSP.LONG_TUNING_PREDICTIVE.value
 
   _ = CI.get_longitudinal_tuning_sp(CP, CP_SP)
+
+
+def _initialize_radar(CI: CarInterfaceBaseSP, CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
+
+  # Hyundai Radar
+  if CP.brand == 'hyundai':
+    hyundai_radar = params_dict["HyundaiRadar"]
+    if hyundai_radar == RadarType.OFF:
+      CP_SP.flags |= HyundaiFlagsSP.RADAR_OFF.value
+    if hyundai_radar == RadarType.LEAD_ONLY:
+      CP_SP.flags |= HyundaiFlagsSP.RADAR_LEAD_ONLY.value
+    if hyundai_radar == RadarType.FULL_RADAR:
+      CP_SP.flags |= HyundaiFlagsSP.RADAR_FULL_RADAR.value
 
 
 def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
