@@ -14,6 +14,7 @@ from opendbc.car.tesla.values import CAR as TESLA
 from opendbc.car.toyota.values import CAR as TOYOTA
 from opendbc.car.values import Platform
 from opendbc.car.volkswagen.values import CAR as VOLKSWAGEN
+from opendbc.car.volvo.values import CAR as VOLVO
 from opendbc.car.body.values import CAR as COMMA
 
 # FIXME: add routes for these cars
@@ -317,6 +318,7 @@ routes = [
   CarTestRoute("a4af1602d8e668ac/2022-02-03--12-17-07", MAZDA.MAZDA_CX5_2022),
 
   CarTestRoute("bc095dc92e101734/000000db--ee9fe46e57", RIVIAN.RIVIAN_R1_GEN1),
+  CarTestRoute("1a659bbcb3d24b75/000000b0--9131b9899d", VOLVO.VOLVO_V60),
 
   CarTestRoute("7dc058789994da80/00000112--adb970f6a8", TESLA.TESLA_MODEL_3),
   CarTestRoute("46cdc864ec865f4b/00000007--42f94db730", TESLA.TESLA_MODEL_Y),
