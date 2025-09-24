@@ -7,10 +7,11 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.gm.carcontroller import CarController
 from opendbc.car.gm.carstate import CarState
 from opendbc.car.gm.radar_interface import RadarInterface, RADAR_HEADER_MSG, CAMERA_DATA_HEADER_MSG
-from opendbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags
+from opendbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags, NO_ACC_CAR
 from opendbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, LateralAccelFromTorqueCallbackType
 
 from opendbc.sunnypilot.car.gm.interface_ext import CarInterfaceExt
+from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP, GMSafetyFlagsSP
 
 TransmissionType = structs.CarParams.TransmissionType
 NetworkLocation = structs.CarParams.NetworkLocation
@@ -19,6 +20,12 @@ NON_LINEAR_TORQUE_PARAMS = {
   CAR.CHEVROLET_BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
   CAR.GMC_ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
   CAR.CHEVROLET_SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
+}
+
+# sunnypilot-specific torque parameters for Bolt cars that actually use the d parameter
+NON_LINEAR_TORQUE_PARAMS_SP = {
+  CAR.CHEVROLET_BOLT_NON_ACC: [2.24, 1.1, 0.28, -0.07],
+  CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN: [1.8, 1.1, 0.3, -0.045],
 }
 
 
@@ -54,12 +61,18 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       # The "lat_accel vs torque" relationship is assumed to be the sum of "sigmoid + linear" curves
       # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
       # This has big effect on the stability about 0 (noise when going straight)
-      non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
+      non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint) or NON_LINEAR_TORQUE_PARAMS_SP.get(self.CP.carFingerprint)
       assert non_linear_torque_params, "The params are not defined"
-      a, b, c, _ = non_linear_torque_params
-      sig_input = a * lateral_acceleration
-      sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
-      steer_torque = (sig * b) + (lateral_acceleration * c)
+      if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS_SP:
+        a, b, c, d = non_linear_torque_params
+        sig_input = a * lateral_acceleration
+        sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
+        steer_torque = ((sig * b) + (lateral_acceleration * c)) + d
+      else:
+        a, b, c, _ = non_linear_torque_params
+        sig_input = a * lateral_acceleration
+        sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
+        steer_torque = (sig * b) + (lateral_acceleration * c)
       return float(steer_torque)
 
     lataccel_values = np.arange(-5.0, 5.0, 0.01)
@@ -68,7 +81,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
     return torque_values, lataccel_values
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
+    if self.CP.carFingerprint in (NON_LINEAR_TORQUE_PARAMS | NON_LINEAR_TORQUE_PARAMS_SP):
       torque_values, lataccel_values = self.get_lataccel_torque_siglin()
 
       def torque_from_lateral_accel_siglin(lateral_acceleration: float, torque_params: structs.CarParams.LateralTorqueTuning):
@@ -78,7 +91,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       return self.torque_from_lateral_accel_linear
 
   def lateral_accel_from_torque(self) -> LateralAccelFromTorqueCallbackType:
-    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
+    if self.CP.carFingerprint in (NON_LINEAR_TORQUE_PARAMS | NON_LINEAR_TORQUE_PARAMS_SP):
       torque_values, lataccel_values = self.get_lataccel_torque_siglin()
 
       def lateral_accel_from_torque_siglin(torque: float, torque_params: structs.CarParams.LateralTorqueTuning):
@@ -102,7 +115,9 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
 
     ret.longitudinalTuning.kiBP = [5., 35.]
 
-    if candidate in (CAMERA_ACC_CAR | SDGM_CAR):
+    # FIXME-SP: investigate NO_ACC_CAR configs before merging
+    #           this should not be done here if possible
+    if candidate in (CAMERA_ACC_CAR | SDGM_CAR | NO_ACC_CAR):
       ret.alphaLongitudinalAvailable = candidate not in SDGM_CAR
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarUnavailable = True  # no radar
@@ -221,6 +236,39 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
     elif candidate == CAR.GMC_YUKON:
       ret.steerActuatorDelay = 0.5
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-      ret.dashcamOnly = True  # Needs steerRatio, tireStiffness, and lat accel factor tuning
+
+    elif candidate in (CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN, CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN,
+                       CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN, CAR.CHEVROLET_MALIBU_NON_ACC_9TH_GEN,
+                       CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
+      pass
+
+    return ret
+
+  @staticmethod
+  def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+    if candidate in (CAR.CHEVROLET_MALIBU_NON_ACC_9TH_GEN, CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN, CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN,
+                     CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN):
+      stock_cp.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
+
+    elif candidate in (CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN, ):
+      CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
+
+    # NON_ACC vehicles should use camera car speed thresholds
+    if ret.flags & GMFlagsSP.NON_ACC:
+      stock_cp.alphaLongitudinalAvailable = False
+      stock_cp.openpilotLongitudinalControl = False
+      stock_cp.pcmCruise = True
+      ret.safetyParam |= GMSafetyFlagsSP.NON_ACC
+      stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
+      stock_cp.minSteerSpeed = 3.0   # ~6 mph
+
+    # FIXME-SP: uncomment before merge
+    # dashcamOnly platforms: untested platforms need user validations, GMC Yukon needs tuning
+    # if candidate in (CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN,
+    #                  CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN,
+    #                  CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
+    #   stock_cp.dashcamOnly = True
 
     return ret
