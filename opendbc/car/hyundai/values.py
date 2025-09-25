@@ -562,7 +562,7 @@ class CAR(Platforms):
       HyundaiCarDocs("Kia Sportage (without HDA II) 2026", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
     CarSpecs(mass=1735, wheelbase=2.756, steerRatio=13.7),
-    flags=HyundaiFlags.CCNC,
+    flags=HyundaiFlags.CANFD_ANGLE_STEERING | HyundaiFlags.CCNC,
   )
   KIA_SORENTO = HyundaiPlatformConfig(
     [
