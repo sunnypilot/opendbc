@@ -53,7 +53,10 @@ class CarStateExt:
         ret.stockFcw = aeb_warning and not aeb_braking
         ret.stockAeb = aeb_warning and aeb_braking
 
-  def update_canfd_ext(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
+  def update_canfd_ext(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser],
+                       speed_factor: float) -> None:
     cp = can_parsers[Bus.pt]
 
     self.aBasis = cp.vl["TCS"]["aBasis"]
+
+    ret_sp.speedLimit = cp.vl["FR_CMR_02_100ms"]["ISLW_SpdCluMainDis"] * speed_factor
