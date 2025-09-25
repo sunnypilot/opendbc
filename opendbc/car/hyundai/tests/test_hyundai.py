@@ -22,7 +22,6 @@ Ecu = CarParams.Ecu
 NO_DATES_PLATFORMS = {
   # CAN FD
   CAR.KIA_SPORTAGE_5TH_GEN,
-  CAR.KIA_SPORTAGE_2026,
   CAR.HYUNDAI_SANTA_CRUZ_1ST_GEN,
   CAR.HYUNDAI_SANTA_CRUZ_2025,
   CAR.HYUNDAI_TUCSON_4TH_GEN,
@@ -191,7 +190,7 @@ class TestHyundaiFingerprint:
           else:
             assert all(date is not None for _, date in codes)
 
-          if car_model in (CAR.HYUNDAI_GENESIS, CAR.KIA_SPORTAGE_2026):
+          if car_model == CAR.HYUNDAI_GENESIS:
             pytest.skip("No part numbers for car model")
 
           # Hyundai places the ECU part number in their FW versions, assert all parsable
