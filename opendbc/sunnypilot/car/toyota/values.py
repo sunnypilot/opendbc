@@ -9,3 +9,4 @@ See the LICENSE.md file in the root directory for more details.
 class ToyotaSafetyFlagsSP:
   DEFAULT = 0
   UNSUPPORTED_DSU = 1
+  GAS_INTERCEPTOR = 2
