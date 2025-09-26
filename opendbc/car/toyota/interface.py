@@ -171,7 +171,6 @@ class CarInterface(CarInterfaceBase):
     if ret.enableGasInterceptor:
       ret.safetyParam |= ToyotaSafetyFlagsSP.GAS_INTERCEPTOR
       stock_cp.minEnableSpeed = -1.
-      ret.minEnableSpeed = -1.
 
     return ret
 
