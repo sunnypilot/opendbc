@@ -7,6 +7,7 @@ See the LICENSE.md file in the root directory for more details.
 
 from enum import IntFlag
 
+
 class ToyotaFlagsSP(IntFlag):
   SMART_DSU = 1
   RADAR_CAN_FILTER = 2

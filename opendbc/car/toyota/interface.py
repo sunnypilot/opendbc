@@ -203,7 +203,7 @@ class CarInterface(CarInterfaceBase):
     stock_cp.openpilotLongitudinalControl = use_sdsu or \
       stock_cp.enableDsu or \
       candidate in (TSS2_CAR - RADAR_ACC_CAR) or \
-      stock_cp.flags & ToyotaFlags.DISABLE_RADAR
+      bool(stock_cp.flags & ToyotaFlags.DISABLE_RADAR)
 
     ret.enableGasInterceptor = 0x201 in fingerprint[0] and stock_cp.openpilotLongitudinalControl and \
                                not stock_cp.flags & ToyotaFlags.SECOC
