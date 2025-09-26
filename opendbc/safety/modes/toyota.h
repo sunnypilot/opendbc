@@ -62,11 +62,6 @@
 #define TOYOTA_DSU_CRUISE_ADDR_CHECK                                                                                                      \
   {.msg = {{0x365, 0, 7, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 5U}, { 0 }, { 0 }}},  \
 
-// panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
-// If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
-// Threshold calculated from DBC gains: round((((15 + 75.555) / 0.159375) + ((15 + 151.111) / 0.159375)) / 2) = 805
-extern const uint32_t TOYOTA_GAS_INTERCEPTOR_THRSLD;
-const uint32_t TOYOTA_GAS_INTERCEPTOR_THRSLD = 805U;
 #define TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK                                                   \
   {.msg = {{0x201U, 0, 6, 50U, .ignore_checksum = true, .max_counter = 15U}, { 0 }, { 0 }}}, \
 
@@ -207,8 +202,13 @@ static void toyota_rx_hook(const CANPacket_t *msg) {
 
     // sample gas interceptor
     if ((msg->addr == 0x201U) && enable_gas_interceptor) {
+      // panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
+      // If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
+      // Threshold calculated from DBC gains: round((((15 + 75.555) / 0.159375) + ((15 + 151.111) / 0.159375)) / 2) = 805
+      const uint32_t toyota_gas_interceptor_thrsld = 805U;
+
       uint32_t gas_interceptor = TOYOTA_GET_INTERCEPTOR(msg);
-      gas_pressed = gas_interceptor > TOYOTA_GAS_INTERCEPTOR_THRSLD;
+      gas_pressed = gas_interceptor > toyota_gas_interceptor_thrsld;
 
       // TODO: remove this, only left in for gas_interceptor_prev test
       gas_interceptor_prev = gas_interceptor;
