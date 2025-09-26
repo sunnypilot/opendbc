@@ -173,7 +173,7 @@ class CarInterface(CarInterfaceBase):
     if 0x2AA in fingerprint[0] and candidate in NO_DSU_CAR:
       ret.flags |= ToyotaFlagsSP.RADAR_CAN_FILTER.value
 
-    use_sdsu = ret.flags & ToyotaFlagsSP.SMART_DSU
+    use_sdsu = bool(ret.flags & ToyotaFlagsSP.SMART_DSU)
     stock_cp.enableDsu = stock_cp.enableDsu and not use_sdsu
 
     if stock_cp.flags & ToyotaFlags.SNG_WITHOUT_DSU and stock_cp.enableDsu:
