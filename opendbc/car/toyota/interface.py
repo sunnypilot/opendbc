@@ -165,8 +165,10 @@ class CarInterface(CarInterfaceBase):
       stock_cp.lateralTuning.pid.kiV = [0.1]
       stock_cp.lateralTuning.pid.kf = 0.00007818594
 
-    if 0x201 in fingerprint[0]:
-      ret.enableGasInterceptor = stock_cp.openpilotLongitudinalControl
+    ret.enableGasInterceptor = 0x201 in fingerprint[0] and stock_cp.openpilotLongitudinalControl and \
+                               not stock_cp.flags & ToyotaFlags.SECOC
+
+    if ret.enableGasInterceptor:
       ret.safetyParam |= ToyotaSafetyFlagsSP.GAS_INTERCEPTOR
       ret.minEnableSpeed = -1.
 
