@@ -20,5 +20,5 @@ class CarStateExt:
     cp = can_parsers[Bus.pt]
 
     if self.CP_SP.enableGasInterceptor:
-      ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
-      ret.gasPressed = ret.gas > 805
+      gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
+      ret.gasPressed = gas > 805

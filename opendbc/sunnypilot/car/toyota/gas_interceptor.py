@@ -18,7 +18,6 @@ class EcuInterceptorCarController:
     self.CP = CP
     self.CP_SP = CP_SP
 
-    self.gas = 0.
     self.interceptor_gas_cmd = 0.
 
   def update(self, CC: structs.CarControl, CS: structs.CarState, actuators: structs.CarControl.Actuators):
@@ -45,6 +44,5 @@ class EcuInterceptorCarController:
       # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
       # This prevents unexpected pedal range rescaling
       can_sends.append(create_gas_interceptor_command(packer, self.interceptor_gas_cmd, frame // 2))
-      self.gas = self.interceptor_gas_cmd
 
     return can_sends
