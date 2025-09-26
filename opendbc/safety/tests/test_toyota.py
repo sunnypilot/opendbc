@@ -440,7 +440,7 @@ class TestToyotaSecOcSafety(TestToyotaSecOcSafetyBase):
 
 class TestToyotaSafetyGasInterceptorBase(GasInterceptorSafetyTest, TestToyotaSafetyBase):
 
-  TX_MSGS = TOYOTA_COMMON_TX_MSGS + TOYOTA_COMMON_LONG_TX_MSGS + GAS_INTERCEPTOR_TX_MSGS
+  TX_MSGS = TOYOTA_COMMON_LONG_TX_MSGS + GAS_INTERCEPTOR_TX_MSGS
   INTERCEPTOR_THRESHOLD = 805
 
   def setUp(self):
