@@ -214,7 +214,6 @@ static void toyota_rx_hook(const CANPacket_t *msg) {
       int gas_interceptor = TOYOTA_GET_INTERCEPTOR(msg);
       gas_pressed = gas_interceptor > toyota_gas_interceptor_thrsld;
 
-      // TODO: remove this, only left in for gas_interceptor_prev test
       gas_interceptor_prev = gas_interceptor;
     }
   }
