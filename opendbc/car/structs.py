@@ -65,7 +65,6 @@ class CarParamsSP:
   safetyParam: int = auto_field()  # flags for custom safety flags
   pcmCruiseSpeed: bool = auto_field()
   intelligentCruiseButtonManagementAvailable: bool = auto_field()
-  enableGasInterceptor: bool = auto_field()
 
   neuralNetworkLateralControl: 'CarParamsSP.NeuralNetworkLateralControl' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl())
 
