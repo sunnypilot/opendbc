@@ -212,6 +212,11 @@ class CarInterface(CarInterfaceBase):
       ret.safetyParam |= ToyotaSafetyFlagsSP.GAS_INTERCEPTOR
       stock_cp.minEnableSpeed = -1.
 
+    if not stock_cp.openpilotLongitudinalControl:
+      stock_cp.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
+    else:
+      stock_cp.safetyConfigs[0].safetyParam &= ~ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
+
     return ret
 
   @staticmethod
