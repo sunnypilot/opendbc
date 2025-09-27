@@ -67,7 +67,7 @@ class GasInterceptorSafetyTest(PandaSafetyTestBase):
 
   def test_allow_engage_with_gas_interceptor_pressed(self):
     self._rx(self._interceptor_user_gas(0x1000))
-    self.safety.set_controls_allowed(1)
+    self.safety.set_controls_allowed(True)
     self._rx(self._interceptor_user_gas(0x1000))
     self.assertTrue(self.safety.get_controls_allowed())
     self._rx(self._interceptor_user_gas(0))

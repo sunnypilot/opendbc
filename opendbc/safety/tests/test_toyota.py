@@ -156,7 +156,7 @@ class TestToyotaSafetyGasInterceptorBase(GasInterceptorSafetyTest, TestToyotaSaf
 
     # Spot check a few gas interceptor tests: (1) reading interceptor,
     # (2) behavior around interceptor, and (3) txing interceptor msgs
-    for test in (self.test_prev_gas_interceptor, self.test_disengage_on_gas_interceptor,
+    for test in (self.test_prev_gas_interceptor, self.test_no_disengage_on_gas_interceptor,
                  self.test_gas_interceptor_safety_check):
       with self.subTest(test=test.__name__):
         with self.assertRaises(AssertionError):
