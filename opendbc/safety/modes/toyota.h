@@ -205,7 +205,7 @@ static void toyota_rx_hook(const CANPacket_t *msg) {
     }
 
     // sample gas interceptor
-    if ((msg->addr == 0x201U) && enable_gas_interceptor) {
+    if (msg->addr == 0x201U) {
       // panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
       // If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
       // Threshold calculated from DBC gains: round((((15 + 75.555) / 0.159375) + ((15 + 151.111) / 0.159375)) / 2) = 805
