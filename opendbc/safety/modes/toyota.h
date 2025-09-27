@@ -110,8 +110,12 @@ static uint8_t toyota_get_counter(const CANPacket_t *msg) {
   return cnt;
 }
 
-static uint32_t TOYOTA_GET_INTERCEPTOR(const CANPacket_t *msg) {
-  return (uint32_t)(((msg->data[0] << 8) + msg->data[1] + (msg->data[2] << 8) + msg->data[3]) / 2U);
+static int TOYOTA_GET_INTERCEPTOR(const CANPacket_t *msg) {
+  uint16_t val1 = (uint16_t)((uint16_t)msg->data[0] << 8U) | (uint16_t)msg->data[1];
+  uint16_t val2 = (uint16_t)((uint16_t)msg->data[2] << 8U) | (uint16_t)msg->data[3];
+  uint16_t avg  = (uint16_t)((val1 + val2) / 2U);
+
+  return (int)avg;
 }
 
 static void toyota_rx_hook(const CANPacket_t *msg) {
@@ -205,9 +209,9 @@ static void toyota_rx_hook(const CANPacket_t *msg) {
       // panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
       // If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
       // Threshold calculated from DBC gains: round((((15 + 75.555) / 0.159375) + ((15 + 151.111) / 0.159375)) / 2) = 805
-      const uint32_t toyota_gas_interceptor_thrsld = 805U;
+      const int toyota_gas_interceptor_thrsld = 805;
 
-      uint32_t gas_interceptor = TOYOTA_GET_INTERCEPTOR(msg);
+      int gas_interceptor = TOYOTA_GET_INTERCEPTOR(msg);
       gas_pressed = gas_interceptor > toyota_gas_interceptor_thrsld;
 
       // TODO: remove this, only left in for gas_interceptor_prev test
