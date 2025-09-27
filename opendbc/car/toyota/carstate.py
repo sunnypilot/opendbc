@@ -29,6 +29,7 @@ _TRAFFIC_SIGNAL_MAP = {
   66: "No overtake"
 }
 
+
 class CarState(CarStateBase):
   def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
