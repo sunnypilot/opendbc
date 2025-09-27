@@ -309,6 +309,7 @@ class CarController(CarControllerBase, SecOCLongCarController, EcuInterceptorCar
     new_actuators.torqueOutputCan = apply_torque
     new_actuators.steeringAngleDeg = self.last_angle
     new_actuators.accel = self.accel
+    new_actuators.gas = self.gas
 
     self.frame += 1
     return new_actuators, can_sends
