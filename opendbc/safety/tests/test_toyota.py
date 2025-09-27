@@ -137,6 +137,32 @@ class TestToyotaSafetyBase(common.PandaCarSafetyTest, common.LongitudinalAccelSa
       self.assertFalse(self.safety.get_controls_allowed())
 
 
+class TestToyotaSafetyGasInterceptorBase(GasInterceptorSafetyTest, TestToyotaSafetyBase):
+
+  TX_MSGS = TOYOTA_COMMON_LONG_TX_MSGS + GAS_INTERCEPTOR_TX_MSGS
+  INTERCEPTOR_THRESHOLD = 805
+
+  def setUp(self):
+    super().setUp()
+    self.safety.set_current_safety_param_sp(ToyotaSafetyFlagsSP.GAS_INTERCEPTOR)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.safety.get_current_safety_param())
+    self.safety.init_tests()
+
+  def test_stock_longitudinal(self):
+    # If stock longitudinal is set, the gas interceptor safety param should not be respected
+    self.safety.set_current_safety_param_sp(ToyotaSafetyFlagsSP.GAS_INTERCEPTOR)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.safety.get_current_safety_param() | ToyotaSafetyFlags.STOCK_LONGITUDINAL)
+    self.safety.init_tests()
+
+    # Spot check a few gas interceptor tests: (1) reading interceptor,
+    # (2) behavior around interceptor, and (3) txing interceptor msgs
+    for test in (self.test_prev_gas_interceptor, self.test_disengage_on_gas_interceptor,
+                 self.test_gas_interceptor_safety_check):
+      with self.subTest(test=test.__name__):
+        with self.assertRaises(AssertionError):
+          test()
+
+
 @parameterized_class(UNSUPPORTED_DSU)
 class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):
 
@@ -436,32 +462,6 @@ class TestToyotaSecOcSafety(TestToyotaSecOcSafetyBase):
           should_tx_2 = (controls_allowed and min_accel <= accel <= max_accel) or accel == self.INACTIVE_ACCEL
           self.assertEqual(should_tx_1, self._tx(self._accel_msg(accel)))
           self.assertEqual(should_tx_2, self._tx(self._accel_msg_2(accel)))
-
-
-class TestToyotaSafetyGasInterceptorBase(GasInterceptorSafetyTest, TestToyotaSafetyBase):
-
-  TX_MSGS = TOYOTA_COMMON_LONG_TX_MSGS + GAS_INTERCEPTOR_TX_MSGS
-  INTERCEPTOR_THRESHOLD = 805
-
-  def setUp(self):
-    super().setUp()
-    self.safety.set_current_safety_param_sp(ToyotaSafetyFlagsSP.GAS_INTERCEPTOR)
-    self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.safety.get_current_safety_param())
-    self.safety.init_tests()
-
-  def test_stock_longitudinal(self):
-    # If stock longitudinal is set, the gas interceptor safety param should not be respected
-    self.safety.set_current_safety_param_sp(ToyotaSafetyFlagsSP.GAS_INTERCEPTOR)
-    self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.safety.get_current_safety_param() | ToyotaSafetyFlags.STOCK_LONGITUDINAL)
-    self.safety.init_tests()
-
-    # Spot check a few gas interceptor tests: (1) reading interceptor,
-    # (2) behavior around interceptor, and (3) txing interceptor msgs
-    for test in (self.test_prev_gas_interceptor, self.test_disengage_on_gas_interceptor,
-                 self.test_gas_interceptor_safety_check):
-      with self.subTest(test=test.__name__):
-        with self.assertRaises(AssertionError):
-          test()
 
 
 if __name__ == "__main__":
