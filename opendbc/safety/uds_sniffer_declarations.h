@@ -62,6 +62,7 @@ typedef struct {
 
 // UDS sniffer callbacks
 typedef void (*uds_message_callback_t)(const uds_message_t *msg, uint32_t tx_addr, uint32_t rx_addr);
+typedef bool (*is_uds_address_callback_t)(uint32_t addr);
 
 // Global UDS sniffer state
 extern uds_session_t uds_sessions[MAX_UDS_SESSIONS];
@@ -70,18 +71,12 @@ extern bool uds_sniffer_enabled;
 
 // UDS sniffer functions
 void uds_sniffer_init(void);
-void uds_sniffer_set_callback(uds_message_callback_t callback);
+void uds_sniffer_set_callbacks(uds_message_callback_t callback, is_uds_address_callback_t callback2);
 void uds_sniffer_enable(bool enable);
 bool uds_sniffer_process_message(const CANPacket_t *msg);
 void uds_sniffer_tick(void);
 
 // Helper functions
-bool is_uds_address(uint32_t addr);
 bool is_isotp_frame(const CANPacket_t *msg);
 uint8_t get_isotp_frame_type(const CANPacket_t *msg);
 uint16_t get_isotp_data_length(const CANPacket_t *msg);
-
-// UDS Data Identifier names (for debugging/logging)
-const char* get_uds_did_name(uint16_t did);
-const char* get_uds_service_name(uint8_t service_id);
-const char* get_uds_nrc_name(uint8_t nrc);

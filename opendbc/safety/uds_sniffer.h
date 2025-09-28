@@ -7,94 +7,11 @@
 // Global UDS sniffer state
 uds_session_t uds_sessions[MAX_UDS_SESSIONS];
 uds_message_callback_t uds_callback = NULL;
+is_uds_address_callback_t is_uds_address_callback = NULL;
 bool uds_sniffer_enabled = false;
 
 void *memcpy(void *dest, const void *src, unsigned int len);
 void *memset(void *str, int c, unsigned int n);
-
-
-// UDS Service name lookup table
-static const struct {
-  uint8_t service_id;
-  const char* name;
-} uds_service_names[] = {
-  {UDS_SERVICE_DIAGNOSTIC_SESSION_CONTROL, "DiagnosticSessionControl"},
-  {UDS_SERVICE_ECU_RESET, "ECUReset"},
-  {UDS_SERVICE_SECURITY_ACCESS, "SecurityAccess"},
-  {UDS_SERVICE_TESTER_PRESENT, "TesterPresent"},
-  {UDS_SERVICE_READ_DATA_BY_IDENTIFIER, "ReadDataByIdentifier"},
-  {UDS_SERVICE_WRITE_DATA_BY_IDENTIFIER, "WriteDataByIdentifier"},
-  {UDS_SERVICE_ROUTINE_CONTROL, "RoutineControl"},
-  {UDS_SERVICE_READ_DTC_INFORMATION, "ReadDTCInformation"},
-  {UDS_SERVICE_CLEAR_DIAGNOSTIC_INFORMATION, "ClearDiagnosticInformation"},
-};
-
-// UDS Data Identifier name lookup table
-static const struct {
-  uint16_t did;
-  const char* name;
-} uds_did_names[] = {
-  {UDS_DID_VIN, "VIN"},
-  {UDS_DID_ECU_SOFTWARE_NUMBER, "ECU_Software_Number"},
-  {UDS_DID_ECU_SOFTWARE_VERSION, "ECU_Software_Version"},
-  {UDS_DID_ECU_HARDWARE_NUMBER, "ECU_Hardware_Number"},
-  {UDS_DID_ECU_SERIAL_NUMBER, "ECU_Serial_Number"},
-  {UDS_DID_ACTIVE_DIAGNOSTIC_SESSION, "Active_Diagnostic_Session"},
-  {0xF180, "Boot_Software_Identification"},
-  {0xF181, "Application_Software_Identification"},
-  {0xF182, "Application_Data_Identification"},
-  {0xF183, "Boot_Software_Fingerprint"},
-  {0xF184, "Application_Software_Fingerprint"},
-  {0xF185, "Application_Data_Fingerprint"},
-  {0xF187, "Vehicle_Manufacturer_Spare_Part_Number"},
-  {0xF18A, "System_Supplier_Identifier"},
-  {0xF18B, "ECU_Manufacturing_Date"},
-  {0xF18D, "Supported_Functional_Units"},
-  {0xF18E, "Vehicle_Manufacturer_Kit_Assembly_Part_Number"},
-  {0xF192, "System_Supplier_ECU_Hardware_Number"},
-  {0xF193, "System_Supplier_ECU_Hardware_Version_Number"},
-  {0xF194, "System_Supplier_ECU_Software_Number"},
-  {0xF195, "System_Supplier_ECU_Software_Version_Number"},
-  {0xF196, "Exhaust_Regulation_Or_Type_Approval_Number"},
-  {0xF197, "System_Name_Or_Engine_Type"},
-  {0xF198, "Repair_Shop_Code_Or_Tester_Serial_Number"},
-  {0xF199, "Programming_Date"},
-  {0xF19A, "Calibration_Repair_Shop_Code_Or_Calibration_Equipment_Serial_Number"},
-  {0xF19B, "Calibration_Date"},
-  {0xF19C, "Calibration_Equipment_Software_Number"},
-  {0xF19D, "ECU_Installation_Date"},
-  {0xF19E, "ODX_File"},
-  {0xF19F, "Entity"},
-};
-
-// UDS Negative Response Code lookup table
-static const struct {
-  uint8_t nrc;
-  const char* name;
-} uds_nrc_names[] = {
-  {0x10, "General_Reject"},
-  {0x11, "Service_Not_Supported"},
-  {0x12, "Sub_Function_Not_Supported"},
-  {0x13, "Incorrect_Message_Length_Or_Invalid_Format"},
-  {0x14, "Response_Too_Long"},
-  {0x21, "Busy_Repeat_Request"},
-  {0x22, "Conditions_Not_Correct"},
-  {0x24, "Request_Sequence_Error"},
-  {0x25, "No_Response_From_Subnet_Component"},
-  {0x26, "Failure_Prevents_Execution_Of_Requested_Action"},
-  {0x31, "Request_Out_Of_Range"},
-  {0x33, "Security_Access_Denied"},
-  {0x35, "Invalid_Key"},
-  {0x36, "Exceed_Number_Of_Attempts"},
-  {0x37, "Required_Time_Delay_Not_Expired"},
-  {0x70, "Upload_Download_Not_Accepted"},
-  {0x71, "Transfer_Data_Suspended"},
-  {0x72, "General_Programming_Failure"},
-  {0x73, "Wrong_Block_Sequence_Counter"},
-  {0x78, "Request_Correctly_Received_Response_Pending"},
-  {0x7E, "Sub_Function_Not_Supported_In_Active_Session"},
-  {0x7F, "Service_Not_Supported_In_Active_Session"},
-};
 
 void uds_sniffer_init(void) {
   // Initialize all sessions as inactive
@@ -109,38 +26,17 @@ void uds_sniffer_init(void) {
     uds_sessions[i].last_timestamp = 0;
   }
   uds_callback = NULL;
+  is_uds_address_callback = NULL;
   uds_sniffer_enabled = false;
 }
 
-void uds_sniffer_set_callback(uds_message_callback_t callback) {
+void uds_sniffer_set_callbacks(uds_message_callback_t callback, is_uds_address_callback_t callback2) {
   uds_callback = callback;
+  is_uds_address_callback = callback2;
 }
 
 void uds_sniffer_enable(bool enable) {
   uds_sniffer_enabled = enable;
-}
-
-bool is_uds_address(uint32_t addr) {
-  // Standard UDS addresses
-  // Physical addressing: 0x7E0-0x7E7 (request), 0x7E8-0x7EF (response)
-  // Functional addressing: 0x7DF (request)
-  // Extended addressing: 0x18DAxxxx, 0x18DBxxxx
-
-  if ((addr >= 0x7E0 && addr <= 0x7EF) || addr == 0x7DF) {
-    return true;
-  }
-
-  // Extended addressing (29-bit CAN IDs)
-  if ((addr & 0xFFFF0000) == 0x18DA0000 || (addr & 0xFFFF0000) == 0x18DB0000) {
-    return true;
-  }
-
-  // Vehicle-specific UDS addresses (Hyundai examples)
-  if (addr == 0x730 || addr == 0x7D0 || addr == 0x740 || addr == 0x7A0 || addr == 0x7CC) {
-    return true;
-  }
-
-  return false;
 }
 
 bool is_isotp_frame(const CANPacket_t *msg) {
@@ -261,7 +157,7 @@ static void parse_and_callback_uds_message(uds_session_t* session) {
 }
 
 bool uds_sniffer_process_message(const CANPacket_t *msg) {
-  if (!uds_sniffer_enabled || !is_uds_address(msg->addr) || !is_isotp_frame(msg)) {
+  if (!uds_sniffer_enabled || !is_uds_address_callback(msg->addr) || !is_isotp_frame(msg)) {
     return false;
   }
 
@@ -363,31 +259,4 @@ void uds_sniffer_tick(void) {
       uds_sessions[i].active = false;
     }
   }
-}
-
-const char* get_uds_service_name(uint8_t service_id) {
-  for (unsigned int i = 0; i < sizeof(uds_service_names) / sizeof(uds_service_names[0]); i++) {
-    if (uds_service_names[i].service_id == service_id) {
-      return uds_service_names[i].name;
-    }
-  }
-  return "Unknown_Service";
-}
-
-const char* get_uds_did_name(uint16_t did) {
-  for (unsigned int i = 0; i < sizeof(uds_did_names) / sizeof(uds_did_names[0]); i++) {
-    if (uds_did_names[i].did == did) {
-      return uds_did_names[i].name;
-    }
-  }
-  return "Unknown_DID";
-}
-
-const char* get_uds_nrc_name(uint8_t nrc) {
-  for (unsigned int i = 0; i < sizeof(uds_nrc_names) / sizeof(uds_nrc_names[0]); i++) {
-    if (uds_nrc_names[i].nrc == nrc) {
-      return uds_nrc_names[i].name;
-    }
-  }
-  return "Unknown_NRC";
 }

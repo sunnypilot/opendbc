@@ -63,24 +63,6 @@ void hkg_canfd_uds_callback(const uds_message_t *msg, uint32_t tx_addr, uint32_t
   // hyundai_uds_data.last_update_timestamp = msg->timestamp;
 }
 
-void hkg_canfd_init_uds_sniffer(void) {
-  // Clear stored data
-  for (size_t i = 0; i < ARRAY_SIZE(hkg_uds_global); i++) {
-    memset(&hkg_uds_global[i].hkg_uds_data, 0, sizeof(hkg_uds_global[i].hkg_uds_data));
-  }
-
-  // Enable UDS sniffer
-  uds_sniffer_enable(true);
-
-  // Set our callback
-  uds_sniffer_set_callback(hkg_canfd_uds_callback);
-}
-
-void hkg_canfd_disable_uds_sniffer(void) {
-  uds_sniffer_enable(false);
-  uds_sniffer_set_callback(NULL);
-}
-
 bool hkg_canfd_is_uds_addr(uint32_t addr) {
   bool found = false;
 
@@ -93,6 +75,24 @@ bool hkg_canfd_is_uds_addr(uint32_t addr) {
   }
 
   return found;
+}
+
+void hkg_canfd_init_uds_sniffer(void) {
+  // Clear stored data
+  for (size_t i = 0; i < ARRAY_SIZE(hkg_uds_global); i++) {
+    memset(&hkg_uds_global[i].hkg_uds_data, 0, sizeof(hkg_uds_global[i].hkg_uds_data));
+  }
+
+  // Enable UDS sniffer
+  uds_sniffer_enable(true);
+
+  // Set our callback
+  uds_sniffer_set_callbacks(hkg_canfd_uds_callback, hkg_canfd_is_uds_addr);
+}
+
+void hkg_canfd_disable_uds_sniffer(void) {
+  uds_sniffer_enable(false);
+  uds_sniffer_set_callbacks(NULL, NULL);
 }
 
 hkg_uds_data_t *get_hkg_uds_data_by_addr(uint32_t ecu_address) {
