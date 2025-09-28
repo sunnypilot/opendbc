@@ -10,9 +10,6 @@ uds_message_callback_t uds_callback = NULL;
 is_uds_address_callback_t is_uds_address_callback = NULL;
 bool uds_sniffer_enabled = false;
 
-void *memcpy(void *dest, const void *src, unsigned int len);
-void *memset(void *str, int c, unsigned int n);
-
 void uds_sniffer_init(void) {
   // Initialize all sessions as inactive
   for (int i = 0; i < MAX_UDS_SESSIONS; i++) {
