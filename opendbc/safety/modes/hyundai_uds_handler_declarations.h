@@ -31,10 +31,10 @@ typedef struct {
 } hkg_uds_data_t;
 
 // UDS callback function for Hyundai CANFD
-void hkg_canfd_uds_callback(const uds_message_t *msg, uint32_t tx_addr, uint32_t rx_addr);
+static void hkg_canfd_uds_callback(const uds_message_t *msg, uint32_t tx_addr, uint32_t rx_addr);
 
 // Helper functions
 void hkg_canfd_init_uds_sniffer(void);
 void hkg_canfd_disable_uds_sniffer(void);
-bool hkg_canfd_is_uds_addr(uint32_t addr);
-void hkg_canfd_process_software_version(uint32_t ecu_address, const uds_message_t *msg);
+static bool hkg_canfd_is_uds_addr(uint32_t addr);
+static void hkg_canfd_process_software_version(uint32_t ecu_address, const uds_message_t *msg);

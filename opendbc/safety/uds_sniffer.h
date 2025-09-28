@@ -36,7 +36,7 @@ void uds_sniffer_enable(bool enable) {
   uds_sniffer_enabled = enable;
 }
 
-bool is_isotp_frame(const CANPacket_t *msg) {
+static bool is_isotp_frame(const CANPacket_t *msg) {
   bool result = false;
   if (GET_LEN(msg) != 0) {
     uint8_t pci = msg->data[0] >> 4;
@@ -45,11 +45,11 @@ bool is_isotp_frame(const CANPacket_t *msg) {
   return result;
 }
 
-uint8_t get_isotp_frame_type(const CANPacket_t *msg) {
+static uint8_t get_isotp_frame_type(const CANPacket_t *msg) {
   return (msg->data[0] >> 4) & 0x0F;
 }
 
-uint16_t get_isotp_data_length(const CANPacket_t *msg) {
+static uint16_t get_isotp_data_length(const CANPacket_t *msg) {
   uint8_t frame_type = get_isotp_frame_type(msg);
   uint16_t result = 0;
 

@@ -70,9 +70,9 @@ bool uds_sniffer_process_message(const CANPacket_t *msg);
 void uds_sniffer_tick(void);
 
 // Helper functions
-bool is_isotp_frame(const CANPacket_t *msg);
-uint8_t get_isotp_frame_type(const CANPacket_t *msg);
-uint16_t get_isotp_data_length(const CANPacket_t *msg);
+static bool is_isotp_frame(const CANPacket_t *msg);
+static uint8_t get_isotp_frame_type(const CANPacket_t *msg);
+static uint16_t get_isotp_data_length(const CANPacket_t *msg);
 
 extern void *memcpy(void *dest, const void *src, unsigned int len);
 extern void *memset(void *str, int c, unsigned int n);

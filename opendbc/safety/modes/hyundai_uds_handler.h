@@ -13,7 +13,7 @@ static hkg_uds_global_t hkg_uds_global[] = {
   {HKG_CAM_UDS_ADDR, {0}},
 };
 
-void hkg_canfd_uds_callback(const uds_message_t *msg, uint32_t tx_addr, uint32_t rx_addr) {
+static void hkg_canfd_uds_callback(const uds_message_t *msg, uint32_t tx_addr, uint32_t rx_addr) {
   // Even though we only process responses, I'm doing this to make it consistent.
   uint32_t ecu_address = msg->is_response ? rx_addr -8 : tx_addr;
   // Only process UDS responses (not requests)
@@ -50,7 +50,7 @@ void hkg_canfd_uds_callback(const uds_message_t *msg, uint32_t tx_addr, uint32_t
   }
 }
 
-bool hkg_canfd_is_uds_addr(uint32_t addr) {
+static bool hkg_canfd_is_uds_addr(uint32_t addr) {
   bool found = false;
 
   for (unsigned int i = 0; i < ARRAY_SIZE(HKG_UDS_REQUEST_ADDRS); i++) {
@@ -91,7 +91,7 @@ hkg_uds_data_t *get_hkg_uds_data_by_addr(uint32_t ecu_address) {
   return NULL;
 }
 
-void hkg_canfd_process_software_version(uint32_t ecu_address, const uds_message_t *msg) {
+static void hkg_canfd_process_software_version(uint32_t ecu_address, const uds_message_t *msg) {
   if (msg->data_length > 0) {
     hkg_uds_data_t *ecu = get_hkg_uds_data_by_addr(ecu_address);
     if (ecu != NULL && msg->data_length < sizeof(ecu->ecu_software_version) && !ecu->ecu_software_version_received) {
