@@ -1,6 +1,5 @@
 #pragma once
 
-//#include <stdint.h>
 #include "opendbc/safety/board/can.h"
 
 // UDS Service Types for sniffing
