@@ -52,10 +52,14 @@ static const hkg_angle_fingerprint_t HKG_ECU_STEERING_FINGERPRINTS[] = {
 };
 
 static bool HKG_ECU_VERSION_MATCH(const char *a, const char *b) {
-  while (*a && *b && *a == *b) {
-    a++; b++;
+  const char *ptr_a = a;
+  const char *ptr_b = b;
+  
+  while (*ptr_a && *ptr_b && *ptr_a == *ptr_b) {
+    ptr_a++;
+    ptr_b++;
   }
-  return *a == *b;
+  return *ptr_a == *ptr_b;
 }
 
 static const AngleSteeringParams *HYUNDAI_LOOKUP_STEERING_PARAMS(uint32_t ecu_address, const hkg_uds_data_t *uds_data) {
