@@ -533,10 +533,22 @@ static safety_config toyota_init(uint16_t param) {
       TOYOTA_PCM_CRUISE_2_ADDR_CHECK
       TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
     };
+    static RxCheck toyota_lka_unsupported_dsu_interceptor_rx_checks[] = {
+      TOYOTA_RX_CHECKS(false)
+      TOYOTA_DSU_CRUISE_ADDR_CHECK
+    };
+    static RxCheck toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks[] = {
+      TOYOTA_ALT_BRAKE_RX_CHECKS(false)
+      TOYOTA_DSU_CRUISE_ADDR_CHECK
+    };
 
     if (!toyota_alt_brake) {
       if (toyota_unsupported_dsu) {
-        SET_RX_CHECKS(toyota_lka_unsupported_dsu_rx_checks, ret);
+        if (enable_gas_interceptor) {
+          SET_RX_CHECKS(toyota_lka_unsupported_dsu_interceptor_rx_checks, ret);
+        } else {
+          SET_RX_CHECKS(toyota_lka_unsupported_dsu_rx_checks, ret);
+        }
       } else {
         if (enable_gas_interceptor) {
           SET_RX_CHECKS(toyota_lka_interceptor_rx_checks, ret);
@@ -546,7 +558,11 @@ static safety_config toyota_init(uint16_t param) {
       }
     } else {
       if (toyota_unsupported_dsu) {
-        SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_rx_checks, ret);
+        if (enable_gas_interceptor) {
+          SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks, ret);
+        } else {
+          SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_rx_checks, ret);
+        }
       } else {
         if (enable_gas_interceptor) {
           SET_RX_CHECKS(toyota_lka_alt_brake_interceptor_rx_checks, ret);
