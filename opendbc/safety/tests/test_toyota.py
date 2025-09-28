@@ -144,13 +144,13 @@ class TestToyotaSafetyGasInterceptorBase(GasInterceptorSafetyTest, TestToyotaSaf
 
   def setUp(self):
     super().setUp()
-    self.safety.set_current_safety_param_sp(ToyotaSafetyFlagsSP.GAS_INTERCEPTOR)
+    self.safety.set_current_safety_param_sp(self.safety.get_current_safety_param_sp() | ToyotaSafetyFlagsSP.GAS_INTERCEPTOR)
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.safety.get_current_safety_param())
     self.safety.init_tests()
 
   def test_stock_longitudinal(self):
     # If stock longitudinal is set, the gas interceptor safety param should not be respected
-    self.safety.set_current_safety_param_sp(ToyotaSafetyFlagsSP.GAS_INTERCEPTOR)
+    self.safety.set_current_safety_param_sp(self.safety.get_current_safety_param_sp() | ToyotaSafetyFlagsSP.GAS_INTERCEPTOR)
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.safety.get_current_safety_param() | ToyotaSafetyFlags.STOCK_LONGITUDINAL)
     self.safety.init_tests()
 
@@ -328,6 +328,10 @@ class TestToyotaAltBrakeSafety(TestToyotaSafetyTorque):
   # No LTA message in the DBC
   def test_lta_steer_cmd(self):
     pass
+
+
+class TestToyotaAltBrakeSafetyGasInterceptor(TestToyotaSafetyGasInterceptorBase, TestToyotaAltBrakeSafety):
+  pass
 
 
 class TestToyotaStockLongitudinalBase(TestToyotaSafetyBase):
