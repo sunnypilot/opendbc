@@ -52,7 +52,7 @@ static bool hyundai_canfd_alt_buttons = false;
 static bool hyundai_canfd_lka_steering_alt = false;
 static bool hyundai_canfd_angle_steering = false;
 
-static const AngleSteeringParams *hyundai_fingerprinted_steering_params = &HYUNDAI_BASELINE_STEERING_PARAMS;
+static const AngleSteeringParams *hkg_fingerprinted_steering_params = &HKG_FALLBACK_STEERING_PARAMS;
 static bool fingerprint_completed = false;
 
 static unsigned int hyundai_canfd_get_lka_addr(void) {
@@ -178,11 +178,11 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   bool tx = true;
 
   if(!fingerprint_completed) {
-    const hyundai_uds_data_t *uds_data = get_hyundai_uds_data_by_addr(HYUDAI_CAM_UDS_ADDR);
+    const hkg_uds_data_t *uds_data = get_hkg_uds_data_by_addr(HKG_CAM_UDS_ADDR);
     if(uds_data != NULL && uds_data->ecu_software_version_received) {
-      hyundai_fingerprinted_steering_params = hyundai_get_steering_params_from_fingerprint(HYUDAI_CAM_UDS_ADDR, uds_data);
+      hkg_fingerprinted_steering_params = HYUNDAI_LOOKUP_STEERING_PARAMS(HKG_CAM_UDS_ADDR, uds_data);
       fingerprint_completed = true;
-      hyundai_canfd_disable_uds_sniffer();
+      hkg_canfd_disable_uds_sniffer();
     }
   }
 
@@ -196,7 +196,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
       int desired_angle = (msg->data[11] << 6U) | (msg->data[10] >> 2U);
       desired_angle = to_signed(desired_angle, 14);
 
-      if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, *hyundai_fingerprinted_steering_params)) {
+      if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, *hkg_fingerprinted_steering_params)) {
         tx = false;
       }
     } else {
@@ -312,7 +312,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
   hyundai_common_init(param);
 
   // Initialize UDS sniffer for Hyundai CANFD
-  hyundai_canfd_init_uds_sniffer();
+  hkg_canfd_init_uds_sniffer();
 
   gen_crc_lookup_table_16(0x1021, hyundai_canfd_crc_lut);
   hyundai_canfd_alt_buttons = GET_FLAG(param, HYUNDAI_PARAM_CANFD_ALT_BUTTONS);
