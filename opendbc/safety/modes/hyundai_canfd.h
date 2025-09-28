@@ -4,7 +4,6 @@
 #include "opendbc/safety/modes/hyundai_common.h"
 #include "opendbc/safety/modes/hyundai_uds_handler.h"
 #include "opendbc/safety/modes/hyundai_angle_steering_fingerprints.h"
-#include <stdio.h>
 
 #define HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(bus) \
   {0x1CF, bus, 8, .check_relay = false},  /* CRUISE_BUTTON */   \
