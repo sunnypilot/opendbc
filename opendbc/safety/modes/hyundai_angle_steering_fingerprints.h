@@ -1,5 +1,5 @@
 #pragma once
-#include "hyundai_uds_handler_declarations.h"
+#include "opendbc/safety/modes/hyundai_uds_handler_declarations.h"
 
 // HYUNDAI_SANTA_FE_HEV_5TH_GEN values. (values can be found on values.py)
 const AngleSteeringParams HYUNDAI_SANTA_FE_HEV_5TH_GEN_STEERING_PARAMS = {
@@ -62,7 +62,7 @@ static const AngleSteeringParams *HYUNDAI_LOOKUP_STEERING_PARAMS(uint32_t ecu_ad
   const AngleSteeringParams *result = &HKG_FALLBACK_STEERING_PARAMS;
   for (size_t i = 0; i < ARRAY_SIZE(HKG_ECU_STEERING_FINGERPRINTS); i++) {
     const hkg_angle_fingerprint_t *ecu_fingerprint = &HKG_ECU_STEERING_FINGERPRINTS[i];
-    if (ecu_address == ecu_fingerprint->ecu_address && HKG_ECU_VERSION_MATCH(uds_data->ecu_software_version,ecu_fingerprint->ecu_software_version)) {
+    if (ecu_address == ecu_fingerprint->ecu_address && HKG_ECU_VERSION_MATCH(uds_data->ecu_software_version, ecu_fingerprint->ecu_software_version)) {
       result = ecu_fingerprint->steering_params;
       break;
     }

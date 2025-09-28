@@ -1,7 +1,7 @@
 #pragma once
 
 #include "opendbc/safety/uds_sniffer_declarations.h"
-#include "stddef.h"
+#include <stddef.h>
 
 
 // Global UDS sniffer state
