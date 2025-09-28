@@ -63,7 +63,7 @@
   {.msg = {{0x365, 0, 7, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 5U}, { 0 }, { 0 }}},  \
 
 #define TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK                                                   \
-  {.msg = {{0x201U, 0, 6, 50U, .ignore_checksum = true, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+  {.msg = {{0x201U, 0, 6, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
 
 static bool toyota_secoc = false;
 static bool toyota_alt_brake = false;
@@ -99,15 +99,6 @@ static int toyota_get_longitudinal_desired_accel_tx(const CANPacket_t *msg) {
   desired_accel = to_signed(desired_accel, 16);
 
   return desired_accel;
-}
-
-static uint8_t toyota_get_counter(const CANPacket_t *msg) {
-  uint8_t cnt = 0U;
-  if (msg->addr == 0x201U) {
-    // Signal: COUNTER_PEDAL
-    cnt = msg->data[4] & 0x0FU;
-  }
-  return cnt;
 }
 
 static int TOYOTA_GET_INTERCEPTOR(const CANPacket_t *msg) {
@@ -473,11 +464,7 @@ static safety_config toyota_init(uint16_t param) {
     if (toyota_stock_longitudinal) {
       SET_TX_MSGS(TOYOTA_TX_MSGS, ret);
     } else {
-      if (enable_gas_interceptor) {
-        SET_TX_MSGS(TOYOTA_INTERCEPTOR_TX_MSGS, ret);
-      } else {
-        SET_TX_MSGS(TOYOTA_LONG_TX_MSGS, ret);
-      }
+      SET_TX_MSGS(TOYOTA_LONG_TX_MSGS, ret);
     }
   }
 
@@ -495,17 +482,7 @@ static safety_config toyota_init(uint16_t param) {
       TOYOTA_PCM_CRUISE_2_ADDR_CHECK
     };
 
-    static RxCheck toyota_lta_interceptor_rx_checks[] = {
-      TOYOTA_RX_CHECKS(true)
-      TOYOTA_PCM_CRUISE_2_ADDR_CHECK
-      TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
-    };
-
-    if (enable_gas_interceptor) {
-      SET_RX_CHECKS(toyota_lta_interceptor_rx_checks, ret);
-    } else {
-      SET_RX_CHECKS(toyota_lta_rx_checks, ret);
-    }
+    SET_RX_CHECKS(toyota_lta_rx_checks, ret);
   } else {
     static RxCheck toyota_lka_rx_checks[] = {
       TOYOTA_RX_CHECKS(false)
@@ -523,51 +500,66 @@ static safety_config toyota_init(uint16_t param) {
       TOYOTA_ALT_BRAKE_RX_CHECKS(false)
       TOYOTA_DSU_CRUISE_ADDR_CHECK
     };
-    static RxCheck toyota_lka_interceptor_rx_checks[] = {
-      TOYOTA_RX_CHECKS(false)
-      TOYOTA_PCM_CRUISE_2_ADDR_CHECK
-      TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
-    };
-    static RxCheck toyota_lka_alt_brake_interceptor_rx_checks[] = {
-      TOYOTA_ALT_BRAKE_RX_CHECKS(false)
-      TOYOTA_PCM_CRUISE_2_ADDR_CHECK
-      TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
-    };
-    static RxCheck toyota_lka_unsupported_dsu_interceptor_rx_checks[] = {
-      TOYOTA_RX_CHECKS(false)
-      TOYOTA_DSU_CRUISE_ADDR_CHECK
-    };
-    static RxCheck toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks[] = {
-      TOYOTA_ALT_BRAKE_RX_CHECKS(false)
-      TOYOTA_DSU_CRUISE_ADDR_CHECK
-    };
 
     if (!toyota_alt_brake) {
       if (toyota_unsupported_dsu) {
-        if (enable_gas_interceptor) {
-          SET_RX_CHECKS(toyota_lka_unsupported_dsu_interceptor_rx_checks, ret);
-        } else {
-          SET_RX_CHECKS(toyota_lka_unsupported_dsu_rx_checks, ret);
-        }
+        SET_RX_CHECKS(toyota_lka_unsupported_dsu_rx_checks, ret);
       } else {
-        if (enable_gas_interceptor) {
-          SET_RX_CHECKS(toyota_lka_interceptor_rx_checks, ret);
-        } else {
-          SET_RX_CHECKS(toyota_lka_rx_checks, ret);
-        }
+        SET_RX_CHECKS(toyota_lka_rx_checks, ret);
       }
     } else {
       if (toyota_unsupported_dsu) {
-        if (enable_gas_interceptor) {
-          SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks, ret);
+        SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_rx_checks, ret);
+      } else {
+        SET_RX_CHECKS(toyota_lka_alt_brake_rx_checks, ret);
+      }
+    }
+  }
+
+  if (enable_gas_interceptor) {
+    SET_TX_MSGS(TOYOTA_INTERCEPTOR_TX_MSGS, ret);
+
+    if (toyota_lta) {
+      static RxCheck toyota_lta_interceptor_rx_checks[] = {
+        TOYOTA_RX_CHECKS(true)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+
+      SET_RX_CHECKS(toyota_lta_interceptor_rx_checks, ret);
+    } else {
+      static RxCheck toyota_lka_interceptor_rx_checks[] = {
+        TOYOTA_RX_CHECKS(false)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+      static RxCheck toyota_lka_alt_brake_interceptor_rx_checks[] = {
+        TOYOTA_ALT_BRAKE_RX_CHECKS(false)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+      static RxCheck toyota_lka_unsupported_dsu_interceptor_rx_checks[] = {
+        TOYOTA_RX_CHECKS(false)
+        TOYOTA_DSU_CRUISE_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+      static RxCheck toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks[] = {
+        TOYOTA_ALT_BRAKE_RX_CHECKS(false)
+        TOYOTA_DSU_CRUISE_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+
+      if (!toyota_alt_brake) {
+        if (toyota_unsupported_dsu) {
+          SET_RX_CHECKS(toyota_lka_unsupported_dsu_interceptor_rx_checks, ret);
         } else {
-          SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_rx_checks, ret);
+          SET_RX_CHECKS(toyota_lka_interceptor_rx_checks, ret);
         }
       } else {
-        if (enable_gas_interceptor) {
-          SET_RX_CHECKS(toyota_lka_alt_brake_interceptor_rx_checks, ret);
+        if (toyota_unsupported_dsu) {
+          SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks, ret);
         } else {
-          SET_RX_CHECKS(toyota_lka_alt_brake_rx_checks, ret);
+          SET_RX_CHECKS(toyota_lka_alt_brake_interceptor_rx_checks, ret);
         }
       }
     }
@@ -582,6 +574,5 @@ const safety_hooks toyota_hooks = {
   .tx = toyota_tx_hook,
   .get_checksum = toyota_get_checksum,
   .compute_checksum = toyota_compute_checksum,
-  .get_counter = toyota_get_counter,
   .get_quality_flag_valid = toyota_get_quality_flag_valid,
 };
