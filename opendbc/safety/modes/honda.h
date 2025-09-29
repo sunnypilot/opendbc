@@ -174,7 +174,7 @@ static void honda_rx_hook(const CANPacket_t *msg) {
   }
 
   // length check because bosch hardware also uses this id (0x201 w/ len = 8)
-  if ((msg->addr == 0x201U) && (GET_LEN(msg) == 6) && enable_gas_interceptor) {
+  if (msg->addr == 0x201U) {
     // panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
     // If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
     // Threshold calculated from DBC gains: round(((83.3 / 0.253984064) + (83.3 / 0.126992032)) / 2) = 492
