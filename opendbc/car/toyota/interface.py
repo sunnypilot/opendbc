@@ -217,6 +217,18 @@ class CarInterface(CarInterfaceBase):
     else:
       stock_cp.safetyConfigs[0].safetyParam &= ~ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
 
+    tune = stock_cp.longitudinalTuning
+    if ret.enableGasInterceptor:
+      tune.kpBP = [0., 5., 20.]
+      tune.kpV = [1.3, 1.0, 0.7]
+      tune.kiBP = [0., 5., 12., 20., 27.]
+      tune.kiV = [.35, .23, .20, .17, .1]
+    else:
+      tune.kpBP = [0., 5., 35.]
+      tune.kiBP = [0., 35.]
+      tune.kpV = [3.6, 2.4, 1.5]
+      tune.kiV = [0.54, 0.36]
+
     return ret
 
   @staticmethod
