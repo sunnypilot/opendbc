@@ -27,7 +27,7 @@ class GasInterceptorSafetyTest(PandaSafetyTestBase):
       raise unittest.SkipTest
 
   def _interceptor_gas_cmd(self, gas: int):
-    values: dict[str, float | int] = {"COUNTER_PEDAL": self.__class__.cnt_gas_cmd & 0xF}
+    values: dict[str, float | int] = {"PEDAL_COUNTER": self.__class__.cnt_gas_cmd & 0xF}
     if gas > 0:
       values["GAS_COMMAND"] = gas * 255.
       values["GAS_COMMAND2"] = gas * 255.
@@ -36,7 +36,7 @@ class GasInterceptorSafetyTest(PandaSafetyTestBase):
 
   def _interceptor_user_gas(self, gas: int):
     values = {"INTERCEPTOR_GAS": gas, "INTERCEPTOR_GAS2": gas,
-              "COUNTER_PEDAL": self.__class__.cnt_user_gas}
+              "PEDAL_COUNTER": self.__class__.cnt_user_gas}
     self.__class__.cnt_user_gas += 1
     return self.packer.make_can_msg_panda("GAS_SENSOR", 0, values)
 

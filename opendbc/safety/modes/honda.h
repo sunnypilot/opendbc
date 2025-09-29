@@ -76,7 +76,7 @@ static uint32_t honda_compute_checksum(const CANPacket_t *msg) {
 static uint8_t honda_get_counter(const CANPacket_t *msg) {
   uint8_t cnt = 0U;
   if (msg->addr == 0x201U) {
-    // Signal: COUNTER_PEDAL
+    // Signal: PEDAL_COUNTER
     cnt = msg->data[4] & 0x0FU;
   } else {
     int counter_byte = GET_LEN(msg) - 1U;
