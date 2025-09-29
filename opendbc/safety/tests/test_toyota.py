@@ -193,8 +193,14 @@ class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSaf
     self.safety.init_tests()
 
 
+@parameterized_class(UNSUPPORTED_DSU)
 class TestToyotaSafetyTorqueGasInterceptor(TestToyotaSafetyGasInterceptorBase, TestToyotaSafetyTorque):
-  pass
+
+  @classmethod
+  def setUpClass(cls):
+    if cls.__name__ == "TestToyotaSafetyTorqueGasInterceptor":
+      cls.safety = None
+      raise unittest.SkipTest
 
 
 class TestToyotaSafetyAngle(TestToyotaSafetyBase, common.AngleSteeringSafetyTest):
@@ -332,7 +338,15 @@ class TestToyotaAltBrakeSafety(TestToyotaSafetyTorque):
     pass
 
 
+@parameterized_class(UNSUPPORTED_DSU)
 class TestToyotaAltBrakeSafetyGasInterceptor(TestToyotaSafetyGasInterceptorBase, TestToyotaAltBrakeSafety):
+
+  @classmethod
+  def setUpClass(cls):
+    if cls.__name__ == "TestToyotaAltBrakeSafetyGasInterceptor":
+      cls.safety = None
+      raise unittest.SkipTest
+
   # No LTA message in the DBC
   def test_lta_steer_cmd(self):
     pass
