@@ -14,7 +14,7 @@ from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, T
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can import CANPacker
 
-from opendbc.sunnypilot.car.toyota.gas_interceptor import EcuInterceptorCarController
+from opendbc.sunnypilot.car.toyota.gas_interceptor import GasInterceptorCarController
 from opendbc.sunnypilot.car.toyota.secoc_long import SecOCLongCarController
 
 Ecu = structs.CarParams.Ecu
@@ -52,11 +52,11 @@ def get_long_tune(CP, params):
                        rate=1 / (DT_CTRL * 3))
 
 
-class CarController(CarControllerBase, SecOCLongCarController, EcuInterceptorCarController):
+class CarController(CarControllerBase, SecOCLongCarController, GasInterceptorCarController):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     SecOCLongCarController.__init__(self, CP)
-    EcuInterceptorCarController.__init__(self, CP, CP_SP)
+    GasInterceptorCarController.__init__(self, CP, CP_SP)
     self.params = CarControllerParams(self.CP)
     self.last_torque = 0
     self.last_angle = 0

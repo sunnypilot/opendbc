@@ -13,7 +13,7 @@ from opendbc.car.toyota.values import CAR, MIN_ACC_SPEED, PEDAL_TRANSITION
 from opendbc.sunnypilot.car import create_gas_interceptor_command
 
 
-class EcuInterceptorCarController:
+class GasInterceptorCarController:
   def __init__(self, CP, CP_SP):
     self.CP = CP
     self.CP_SP = CP_SP
