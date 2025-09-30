@@ -271,7 +271,7 @@ class CarController(CarControllerBase, SecOCLongCarController, GasInterceptorCar
           can_sends.append(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, True, False, lead, CS.acc_type, False, self.distance_button,
                                                           self.SECOC_LONG))
 
-    can_sends.extend(self.create_gas_command(self.packer, self.frame))
+    can_sends.extend(GasInterceptorCarController.create_gas_command(self, CC, CS, actuators, self.packer, self.frame))
 
     # *** hud ui ***
     if self.CP.carFingerprint != CAR.TOYOTA_PRIUS_V:
