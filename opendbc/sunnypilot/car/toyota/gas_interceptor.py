@@ -37,7 +37,7 @@ class GasInterceptorCarController:
       # offset for creep and windbrake
       pedal_offset = np.interp(CS.out.vEgo, [0.0, 2.3, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
       pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
-      self.interceptor_gas_cmd = np.clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
+      self.interceptor_gas_cmd = float(np.clip(pedal_command, 0., MAX_INTERCEPTOR_GAS))
     else:
       self.interceptor_gas_cmd = 0.
 
