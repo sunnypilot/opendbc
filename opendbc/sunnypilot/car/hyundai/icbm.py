@@ -43,15 +43,16 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
 
     return can_sends
 
-  def create_canfd_mock_button_messages(self, packer, CS, CAN, frame, send_button):
+  def create_canfd_mock_button_messages(self, packer, CS, CAN, send_button):
     can_sends = []
     if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
       # TODO: resume for alt button cars
       pass
     else:
-      if frame % 2 == 0:
-        can_sends.append(hyundaicanfd.create_buttons(packer, self.CP, CAN, ((frame // 2) + 1) % 0x10, send_button))
-      self.last_button_frame = self.frame
+      self.button_frame += 1
+      button_counter_offset = [1, 1, 0, None][self.button_frame % 4]
+      if button_counter_offset is not None:
+        can_sends.append(hyundaicanfd.create_buttons(packer, self.CP, CAN, (CS.buttons_counter + button_counter_offset) % 0x10, send_button))
 
     return can_sends
 
@@ -66,7 +67,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       send_button = BUTTONS[self.ICBM.sendButton]
 
       if self.CP.carFingerprint in CANFD_CAR:
-        can_sends.extend(self.create_canfd_mock_button_messages(packer, CS, CAN, frame, send_button))
+        can_sends.extend(self.create_canfd_mock_button_messages(packer, CS, CAN, send_button))
       else:
         can_sends.extend(self.create_can_mock_button_messages(packer, CS, send_button))
 
