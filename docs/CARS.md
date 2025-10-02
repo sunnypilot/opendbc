@@ -181,7 +181,7 @@
 |Kia|EV6 (without HDA II) 2022-24|Highway Driving Assist|[Upstream](#upstream)|
 |Kia|Forte 2019-21|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Kia|Forte 2022-23|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Kia|Forte Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Dashcam mode](#dashcam)|
+|Kia|Forte Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Upstream](#upstream)|
 |Kia|Forte Non-SCC 2021|No Smart Cruise Control (Non-SCC)|[Dashcam mode](#dashcam)|
 |Kia|K5 2021-24|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Kia|K5 Hybrid 2020-22|Smart Cruise Control (SCC)|[Upstream](#upstream)|
