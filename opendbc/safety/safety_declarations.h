@@ -230,9 +230,7 @@ void update_sample(struct sample_t *sample, int sample_new);
 bool get_longitudinal_allowed(void);
 int ROUND(float val);
 void gen_crc_lookup_table_8(uint8_t poly, uint8_t crc_lut[]);
-#ifdef CANFD
 void gen_crc_lookup_table_16(uint16_t poly, uint16_t crc_lut[]);
-#endif
 bool steer_torque_cmd_checks(int desired_torque, int steer_req, const TorqueSteeringLimits limits);
 bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const AngleSteeringLimits limits);
 bool steer_angle_cmd_checks_vm(int desired_angle, bool steer_control_enabled, const AngleSteeringLimits limits,
@@ -242,6 +240,7 @@ bool longitudinal_speed_checks(int desired_speed, const LongitudinalLimits limit
 bool longitudinal_gas_checks(int desired_gas, const LongitudinalLimits limits);
 bool longitudinal_transmission_rpm_checks(int desired_transmission_rpm, const LongitudinalLimits limits);
 bool longitudinal_brake_checks(int desired_brake, const LongitudinalLimits limits);
+bool longitudinal_interceptor_checks(const CANPacket_t *msg);  // gas interceptor
 void pcm_cruise_check(bool cruise_engaged);
 void speed_mismatch_check(const float speed_2);
 
@@ -264,6 +263,8 @@ extern bool vehicle_moving;
 extern bool acc_main_on; // referred to as "ACC off" in ISO 15622:2018
 extern int cruise_button_prev;
 extern bool safety_rx_checks_invalid;
+extern bool enable_gas_interceptor;
+extern int gas_interceptor_prev;
 
 // for safety modes with torque steering control
 extern int desired_torque_last;       // last desired steer torque
