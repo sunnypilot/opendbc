@@ -206,7 +206,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
 
-    CarStateExt.update(self, ret, can_parsers, speed_conv)
+    CarStateExt.update(self, ret, ret_sp, can_parsers, speed_conv)
 
     ret.blockPcmEnable = not self.recent_button_interaction()
 
@@ -313,7 +313,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = self.get_main_cruise(ret)
 
-    CarStateExt.update_canfd_ext(self, ret, can_parsers)
+    CarStateExt.update_canfd_ext(self, ret, ret_sp, can_parsers, speed_factor)
 
     ret.blockPcmEnable = not self.recent_button_interaction()
 
