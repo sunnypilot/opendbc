@@ -5,18 +5,13 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
-from opendbc.car import DT_CTRL, structs
+from opendbc.car import structs
 from opendbc.car.chrysler import chryslercan
 from opendbc.car.chrysler.values import RAM_CARS
 from opendbc.sunnypilot.car.intelligent_cruise_button_management_interface_base import IntelligentCruiseButtonManagementInterfaceBase
 
 ButtonType = structs.CarState.ButtonEvent.Type
 SendButtonState = structs.IntelligentCruiseButtonManagement.SendButtonState
-
-BUTTONS = {
-  SendButtonState.increase: Buttons.RES_ACCEL,
-  SendButtonState.decrease: Buttons.SET_DECEL,
-}
 
 
 class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManagementInterfaceBase):
