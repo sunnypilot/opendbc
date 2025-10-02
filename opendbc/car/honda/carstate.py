@@ -33,7 +33,7 @@ class CarState(CarStateBase, CarStateExt):
       self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
 
     self.car_state_scm_msg = "SCM_FEEDBACK"
-    if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES:
+    if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES or CP.carFingerprint == CAR.HONDA_ODYSSEY_RC5:
       self.car_state_scm_msg = "SCM_BUTTONS"
 
     self.brake_error_msg = "HYBRID_BRAKE_ERROR" if CP.flags & HondaFlags.HYBRID else "STANDSTILL"
