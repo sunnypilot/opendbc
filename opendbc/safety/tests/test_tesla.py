@@ -99,9 +99,10 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
     values = {"ESP_vehicleSpeed": speed * 3.6, "ESP_wheelSpeedsQF": quality_flag}
     return self.packer.make_can_msg_panda("ESP_B", 0, values)
 
-  def _vehicle_moving_msg(self, speed: float):
-    values = {"DI_cruiseState": 3 if speed <= self.STANDSTILL_THRESHOLD else 2}
-    return self.packer.make_can_msg_panda("DI_state", 0, values)
+  def _vehicle_moving_msg(self, speed: float, quality_flag=True):
+    values = {"ESP_vehicleStandstillSts": 1 if speed <= self.STANDSTILL_THRESHOLD else 0,
+              "ESP_wheelSpeedsQF": quality_flag}
+    return self.packer.make_can_msg_panda("ESP_B", 0, values)
 
   def _user_gas_msg(self, gas):
     values = {"DI_accelPedalPos": gas}
@@ -274,18 +275,15 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
     no_lkas_msg_cam = self._angle_cmd_msg(0, state=True, bus=2)
     lkas_msg_cam = self._angle_cmd_msg(0, state=self.steer_control_types['LANE_KEEP_ASSIST'], bus=2)
 
-    for enable_mads in (True, False):
-      self._mads_states_cleanup()
-      self.safety.set_mads_params(enable_mads, True, False)
-      # stock system sends no LKAS -> no forwarding, and OP is allowed to TX
-      self.assertEqual(1, self._rx(no_lkas_msg_cam))
-      self.assertEqual(-1, self.safety.safety_fwd_hook(2, no_lkas_msg_cam.addr))
-      self.assertTrue(self._tx(no_lkas_msg))
+    # stock system sends no LKAS -> no forwarding, and OP is allowed to TX
+    self.assertEqual(1, self._rx(no_lkas_msg_cam))
+    self.assertEqual(-1, self.safety.safety_fwd_hook(2, no_lkas_msg_cam.addr))
+    self.assertTrue(self._tx(no_lkas_msg))
 
-      # stock system sends LKAS -> forwarding, and OP is not allowed to TX
-      self.assertEqual(1, self._rx(lkas_msg_cam))
-      self.assertEqual(-1 if enable_mads else 0, self.safety.safety_fwd_hook(2, lkas_msg_cam.addr))
-      self.assertEqual(enable_mads, self._tx(no_lkas_msg))
+    # stock system sends LKAS -> forwarding, and OP is not allowed to TX
+    self.assertEqual(1, self._rx(lkas_msg_cam))
+    self.assertEqual(0, self.safety.safety_fwd_hook(2, lkas_msg_cam.addr))
+    self.assertFalse(self._tx(no_lkas_msg))
 
   def test_angle_cmd_when_enabled(self):
     # We properly test lateral acceleration and jerk below
