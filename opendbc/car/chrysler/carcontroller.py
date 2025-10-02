@@ -89,8 +89,7 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt, Inte
       can_sends.append(MadsCarController.create_lkas_heartbit(self.packer, CS.lkas_heartbit, self.mads))
 
     # Intelligent Cruise Button Management
-    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame,
-                                                                       self.last_button_frame))
+    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame))
 
     self.frame += 1
 

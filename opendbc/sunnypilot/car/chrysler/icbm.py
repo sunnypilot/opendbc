@@ -6,6 +6,7 @@ See the LICENSE.md file in the root directory for more details.
 """
 
 from opendbc.car import structs
+from opendbc.car.can_definitions import CanData
 from opendbc.car.chrysler import chryslercan
 from opendbc.car.chrysler.values import RAM_CARS
 from opendbc.sunnypilot.car.intelligent_cruise_button_management_interface_base import IntelligentCruiseButtonManagementInterfaceBase
@@ -18,7 +19,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
   def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
 
-  def update(self, CS, CC_SP, packer, frame, last_button_frame, ram_cars, das_bus):
+  def update(self, CS, CC_SP, packer, frame, last_button_frame) -> list[CanData]:
     can_sends = []
     self.CC_SP = CC_SP
     self.ICBM = CC_SP.intelligentCruiseButtonManagement
