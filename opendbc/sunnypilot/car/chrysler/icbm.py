@@ -39,10 +39,10 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
         button_counter_offset = [1, 1, 0, None][self.button_frame % 4]
 
         if ram_cars:
-          can_sends.append(chryslercan.create_cruise_buttons(packer, CS.button_counter, das_bus, self.CP,
+          can_sends.append(chryslercan.create_cruise_buttons(packer, CS.button_counter, das_bus,
                                                              accel=accel, decel=decel))
         elif button_counter_offset is not None:
           can_sends.append(chryslercan.create_cruise_buttons(packer, CS.button_counter + button_counter_offset, das_bus,
-                                                             self.CP, accel=accel, decel=decel))
+                                                             accel=accel, decel=decel))
 
     return can_sends
