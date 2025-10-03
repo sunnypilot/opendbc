@@ -4,15 +4,12 @@ Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
 This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
-
 from enum import IntFlag
 
 
-class HondaFlagsSP(IntFlag):
-  CLARITY = 1
-  EPS_MODIFIED = 2
+class TeslaFlagsSP(IntFlag):
+  HAS_VEHICLE_BUS = 1  # 3-finger infotainment press signal is present on the VEHICLE bus with the deprecated Tesla harness installed
 
 
-class HondaSafetyFlagsSP:
-  CLARITY = 1
-  GAS_INTERCEPTOR = 2
+class TeslaSafetyFlagsSP:
+  HAS_VEHICLE_BUS = 1
