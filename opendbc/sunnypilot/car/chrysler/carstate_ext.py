@@ -33,4 +33,4 @@ class CarStateExt:
         event.pressed = state
         button_events.append(event)
       self.button_states[button.event_type] = state
-    ret.buttonEvents.extend(button_events)
+    ret.buttonEvents += button_events
