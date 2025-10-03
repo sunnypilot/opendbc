@@ -102,13 +102,13 @@ class CarState(CarStateBase, MadsCarState, CarStateExt):
     self.button_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
 
     MadsCarState.update_mads(self, ret, can_parsers)
+    CarStateExt.update(self, ret, ret_sp, can_parsers)
 
     ret.buttonEvents = [
       *create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise}),
       *create_button_events(self.lkas_button, self.prev_lkas_button, {1: ButtonType.lkas}),
+      *self.button_events,
     ]
-
-    CarStateExt.update(self, ret, ret_sp, can_parsers)
 
     return ret, ret_sp
 

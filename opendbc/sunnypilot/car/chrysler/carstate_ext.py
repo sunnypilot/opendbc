@@ -18,19 +18,19 @@ class CarStateExt:
     self.CP = CP
     self.CP_SP = CP_SP
 
+    self.button_events = []
     self.button_states = {button.event_type: False for button in BUTTONS}
 
   def update(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]):
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 
-    button_events = []
+    self.button_events = []
     for button in BUTTONS:
       state = (cp.vl[button.can_addr][button.can_msg] in button.values)
       if self.button_states[button.event_type] != state:
         event = structs.CarState.ButtonEvent.new_message()
         event.type = button.event_type
         event.pressed = state
-        button_events.append(event)
+        self.button_events.append(event)
       self.button_states[button.event_type] = state
-    ret.buttonEvents += button_events
