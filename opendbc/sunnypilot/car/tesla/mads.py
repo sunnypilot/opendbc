@@ -19,7 +19,6 @@ class MadsCarController:
 
   @staticmethod
   def mads_status_update(CC: structs.CarControl, CC_SP: structs.CarControlSP) -> MadsDataSP:
-    mads_steering_only = CC_SP.mads.available and not CC.enabled
     control_type = 1
 
     return MadsDataSP(control_type)
