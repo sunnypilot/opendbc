@@ -367,6 +367,7 @@ class CAR(Platforms):
     ],
     CarSpecs(mass=2035, wheelbase=2.81, steerRatio=13.72),
     flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+    sp_flags=HyundaiFlagsSP.PANDA_FINGERPRINTED
   )
   HYUNDAI_SONATA = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Sonata 2020-23", "All", video="https://www.youtube.com/watch?v=ix63r9kE3Fw",
@@ -425,6 +426,7 @@ class CAR(Platforms):
     ],
     HYUNDAI_IONIQ_5.specs,
     flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
+    sp_flags=HyundaiFlagsSP.PANDA_FINGERPRINTED
   )
   HYUNDAI_IONIQ_6 = HyundaiCanFDPlatformConfig(
     [HyundaiCarDocs("Hyundai Ioniq 6 (with HDA II) 2023-24", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))],
@@ -562,6 +564,7 @@ class CAR(Platforms):
     ],
     CarSpecs(mass=1812, wheelbase=2.756, steerRatio=13.7),
     flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+    sp_flags=HyundaiFlagsSP.PANDA_FINGERPRINTED
   )
   KIA_SORENTO = HyundaiPlatformConfig(
     [
@@ -621,6 +624,7 @@ class CAR(Platforms):
     ],
     CarSpecs(mass=2664, wheelbase=3.1, steerRatio=16),
     flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
+    sp_flags=HyundaiFlagsSP.PANDA_FINGERPRINTED
   )
   KIA_CARNIVAL_4TH_GEN = HyundaiCanFDPlatformConfig(
     [
@@ -706,6 +710,7 @@ class CAR(Platforms):
     ],
     GENESIS_GV80.specs,
     flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+    sp_flags=HyundaiFlagsSP.PANDA_FINGERPRINTED
   )
 
   # port extensions
