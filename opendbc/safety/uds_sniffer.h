@@ -1,5 +1,6 @@
 #pragma once
 
+#include "opendbc/safety/safety_declarations.h"
 #include "opendbc/safety/uds_sniffer_declarations.h"
 #include <stddef.h>
 
@@ -57,6 +58,8 @@ static uint16_t get_isotp_data_length(const CANPacket_t *msg) {
     result = msg->data[0] & 0x0F;
   } else if (frame_type == ISOTP_FIRST_FRAME) {
     result = ((msg->data[0] & 0x0F) << 8) | msg->data[1];
+  } else {
+    result = 0;
   }
 
   return result;
@@ -236,6 +239,8 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
           break;
         }
       }
+    } else {
+      result = false; // Unsupported frame type
     }
     result = true;
   }

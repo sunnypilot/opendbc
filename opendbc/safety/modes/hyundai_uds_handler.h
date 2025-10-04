@@ -89,18 +89,19 @@ void hkg_canfd_disable_uds_sniffer(void) {
 }
 
 hkg_uds_data_t *get_hkg_uds_data_by_addr(uint32_t ecu_address) {
+  hkg_uds_data_t *result = NULL;
   for (size_t i = 0; i < ARRAY_SIZE(hkg_uds_global); i++) {
     if (hkg_uds_global[i].ecu_address == ecu_address) {
-      return &hkg_uds_global[i].hkg_uds_data;
+      result = &hkg_uds_global[i].hkg_uds_data;
     }
   }
-  return NULL;
+  return result;
 }
 
 static void hkg_canfd_process_software_version(uint32_t ecu_address, const uds_message_t *msg) {
   if (msg->data_length > 0) {
     hkg_uds_data_t *ecu = get_hkg_uds_data_by_addr(ecu_address);
-    if (ecu != NULL && msg->data_length < sizeof(ecu->ecu_software_version) && !ecu->ecu_software_version_received) {
+    if ((ecu != NULL) && (msg->data_length < sizeof(ecu->ecu_software_version)) && (!ecu->ecu_software_version_received)) {
       memcpy(ecu->ecu_software_version, msg->data, msg->data_length);
       ecu->ecu_software_version[msg->data_length] = '\0';  // Null terminate
       ecu->ecu_software_version_received = true;

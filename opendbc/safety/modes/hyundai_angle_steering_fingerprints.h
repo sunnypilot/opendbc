@@ -45,7 +45,7 @@ static bool HKG_ECU_VERSION_MATCH(const char *a, const char *b) {
   const char *ptr_a = a;
   const char *ptr_b = b;
   
-  while (*ptr_a && *ptr_b && *ptr_a == *ptr_b) {
+  while ((*ptr_a && *ptr_b && *ptr_a == *ptr_b)) {
     ptr_a++;
     ptr_b++;
   }
@@ -70,7 +70,7 @@ static const AngleSteeringParams *HYUNDAI_LOOKUP_STEERING_PARAMS(uint32_t ecu_ad
   const AngleSteeringParams *result = &HKG_FALLBACK_STEERING_PARAMS;
   for (size_t i = 0; i < ARRAY_SIZE(HKG_ECU_STEERING_FINGERPRINTS); i++) {
     const hkg_angle_fingerprint_t *ecu_fingerprint = &HKG_ECU_STEERING_FINGERPRINTS[i];
-    if (ecu_address == ecu_fingerprint->ecu_address && HKG_ECU_VERSION_MATCH(uds_data->ecu_software_version, ecu_fingerprint->ecu_software_version)) {
+    if ((ecu_address == ecu_fingerprint->ecu_address) && (HKG_ECU_VERSION_MATCH(uds_data->ecu_software_version, ecu_fingerprint->ecu_software_version))) {
       result = ecu_fingerprint->steering_params;
       break;
     }

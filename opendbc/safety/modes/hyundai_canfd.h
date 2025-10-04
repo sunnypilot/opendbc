@@ -180,7 +180,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
 
   if (!fingerprint_completed) {
     const hkg_uds_data_t *uds_data = get_hkg_uds_data_by_addr(HKG_CAM_UDS_ADDR);
-    if (uds_data != NULL && uds_data->ecu_software_version_received) {
+    if ((uds_data != NULL) && (uds_data->ecu_software_version_received)) {
       hkg_fingerprinted_steering_params = HYUNDAI_LOOKUP_STEERING_PARAMS(HKG_CAM_UDS_ADDR, uds_data);
       fingerprint_completed = true;
       hkg_canfd_disable_uds_sniffer();
