@@ -10,12 +10,6 @@
 #define HKG_RADAR_UDS_ADDR 0x7D0u
 #define HKG_CAM_UDS_ADDR 0x7C4u
 
-static const uint32_t HKG_UDS_REQUEST_ADDRS[] = {
-  HKG_ADAS_UDS_ADDR,
-  HKG_RADAR_UDS_ADDR,
-  HKG_CAM_UDS_ADDR,
-};
-
 typedef struct {
   uint32_t ecu_address;
   char ecu_software_version[64];

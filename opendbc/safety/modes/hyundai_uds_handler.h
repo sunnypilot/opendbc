@@ -51,6 +51,12 @@ static void hkg_canfd_uds_callback(const uds_message_t *msg, uint32_t tx_addr, u
 }
 
 static bool hkg_canfd_is_uds_addr(uint32_t addr) {
+  static const uint32_t HKG_UDS_REQUEST_ADDRS[] = {
+    HKG_ADAS_UDS_ADDR,
+    HKG_RADAR_UDS_ADDR,
+    HKG_CAM_UDS_ADDR,
+  };
+
   bool found = false;
 
   for (unsigned int i = 0; i < ARRAY_SIZE(HKG_UDS_REQUEST_ADDRS); i++) {
