@@ -45,7 +45,7 @@ static bool HKG_ECU_VERSION_MATCH(const char *a, const char *b) {
   const char *ptr_a = a;
   const char *ptr_b = b;
   
-  while ((*ptr_a && *ptr_b && *ptr_a == *ptr_b)) {
+  while ((*ptr_a && *ptr_b) && (*ptr_a == *ptr_b)) {
     ptr_a++;
     ptr_b++;
   }

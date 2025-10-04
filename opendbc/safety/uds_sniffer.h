@@ -74,9 +74,9 @@ static uds_session_t* find_or_create_session(uint32_t tx_addr, uint32_t rx_addr,
   // First, try to find existing session
   for (int i = 0; i < MAX_UDS_SESSIONS; i++) {
     if (uds_sessions[i].active &&
-        uds_sessions[i].tx_addr == tx_addr &&
-        uds_sessions[i].rx_addr == rx_addr &&
-        uds_sessions[i].bus == bus) {
+        (uds_sessions[i].tx_addr == tx_addr) &&
+        (uds_sessions[i].rx_addr == rx_addr) &&
+        (uds_sessions[i].bus == bus)) {
       session = &uds_sessions[i];
     }
 
