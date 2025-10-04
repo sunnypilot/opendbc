@@ -95,14 +95,14 @@ static uds_session_t* find_or_create_session(uint32_t tx_addr, uint32_t rx_addr,
   {
     session = free_session ? free_session : oldest_session;
 
-    if (session) {
+    if (session != NULL) {
       session->active = true;
       session->tx_addr = tx_addr;
       session->rx_addr = rx_addr;
       session->bus = bus;
-      session->sequence_number = 0;
-      session->total_length = 0;
-      session->received_length = 0;
+      session->sequence_number = 0u;
+      session->total_length = 0u;
+      session->received_length = 0u;
       session->last_timestamp = microsecond_timer_get();
     }
   }
@@ -190,7 +190,7 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
       uint8_t data_length = msg->data[0] & 0x0Fu;
       if (data_length > 0u && data_length <= 7u) {
         uds_session_t *session = find_or_create_session(tx_addr, rx_addr, msg->bus);
-        if (session) {
+        if (session != NULL) {
           session->total_length = data_length;
           session->received_length = data_length;
           session->last_timestamp = timestamp;
@@ -203,7 +203,7 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
       uint16_t total_length = get_isotp_data_length(msg);
       if (total_length > 7u) {
         uds_session_t *session = find_or_create_session(tx_addr, rx_addr, msg->bus);
-        if (session) {
+        if (session != NULL) {
           session->total_length = total_length;
           session->received_length = 6u; // First frame contains 6 bytes of data
           session->sequence_number = 1u;
@@ -222,7 +222,7 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
             (uds_sessions[i].bus == msg->bus) &&
             (uds_sessions[i].sequence_number == sequence_number)) {
           uds_session_t *session = &uds_sessions[i];
-          uint8_t data_to_copy = MIN(7u, session->total_length - session->received_length);
+          uint8_t data_to_copy = MIN(7, session->total_length - session->received_length);
 
           if (data_to_copy > 0) {
             memcpy(&session->data[session->received_length], &msg->data[1], data_to_copy);
