@@ -73,7 +73,7 @@ static bool hkg_canfd_is_uds_addr(uint32_t addr) {
 void hkg_canfd_init_uds_sniffer(void) {
   // Clear stored data
   for (size_t i = 0; i < ARRAY_SIZE(hkg_uds_global); i++) {
-    memset(&hkg_uds_global[i].hkg_uds_data, 0, sizeof(hkg_uds_global[i].hkg_uds_data));
+    (void)memset(&hkg_uds_global[i].hkg_uds_data, 0, sizeof(hkg_uds_global[i].hkg_uds_data));
   }
 
   // Enable UDS sniffer
