@@ -67,7 +67,7 @@ extern bool uds_sniffer_enabled;
 void uds_sniffer_init(void);
 void uds_sniffer_set_callbacks(uds_message_callback_t callback, is_uds_address_callback_t callback2);
 void uds_sniffer_enable(bool enable);
-bool uds_sniffer_process_message(const CANPacket_t *msg);
+void uds_sniffer_process_message(const CANPacket_t *msg);
 void uds_sniffer_tick(void);
 
 // Helper functions

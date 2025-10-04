@@ -15,7 +15,7 @@ static hkg_uds_global_t hkg_uds_global[] = {
 
 static void hkg_canfd_uds_callback(const uds_message_t *msg, uint32_t tx_addr, uint32_t rx_addr) {
   // Even though we only process responses, I'm doing this to make it consistent.
-  uint32_t ecu_address = msg->is_response ? rx_addr -8u : tx_addr;
+  uint32_t ecu_address = msg->is_response ? (rx_addr - 8u) : tx_addr;
   // Only process UDS responses (not requests)
   if ((msg->is_response && !msg->is_negative_response) && (hkg_canfd_is_uds_addr(tx_addr) || hkg_canfd_is_uds_addr(rx_addr))) {
     // Skip negative responses for now (could be logged for diagnostics)
