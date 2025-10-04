@@ -47,7 +47,7 @@ static bool is_isotp_frame(const CANPacket_t *msg) {
 }
 
 static uint8_t get_isotp_frame_type(const CANPacket_t *msg) {
-  return (msg->data[0] >> 4) & 0x0F;
+  return (msg->data[0] >> 4) & 0x0Fu;
 }
 
 static uint16_t get_isotp_data_length(const CANPacket_t *msg) {
@@ -55,9 +55,9 @@ static uint16_t get_isotp_data_length(const CANPacket_t *msg) {
   uint16_t result = 0;
 
   if (frame_type == ISOTP_SINGLE_FRAME) {
-    result = msg->data[0] & 0x0F;
+    result = msg->data[0] & 0x0Fu;
   } else if (frame_type == ISOTP_FIRST_FRAME) {
-    result = ((msg->data[0] & 0x0F) << 8) | msg->data[1];
+    result = ((msg->data[0] & 0x0Fu) << 8) | msg->data[1];
   } else {
     result = 0;
   }
@@ -111,7 +111,7 @@ static uds_session_t* find_or_create_session(uint32_t tx_addr, uint32_t rx_addr,
 }
 
 static void parse_and_callback_uds_message(uds_session_t* session) {
-  if (session && session->received_length >= 1 && uds_callback) {
+  if (session && session->received_length >= 1u && uds_callback) {
     uds_message_t msg = {0};
     msg.timestamp = session->last_timestamp;
 
@@ -120,12 +120,12 @@ static void parse_and_callback_uds_message(uds_session_t* session) {
 
     // Check if it's a negative response
     if (service_id == UDS_RESPONSE_NEGATIVE) {
-      if (session->received_length >= 3) {
+      if (session->received_length >= 3u) {
         msg.is_negative_response = true;
         msg.service_id = data[1]; // Original service ID
         msg.negative_response_code = data[2];
-        msg.data_length = session->received_length - 3;
-        if (msg.data_length > 0) {
+        msg.data_length = session->received_length - 3u;
+        if (msg.data_length > 0u) {
           memcpy(msg.data, &data[3], MIN(msg.data_length, MAX_UDS_DATA_SIZE));
         }
       }
@@ -187,7 +187,7 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
     }
 
     if (frame_type == ISOTP_SINGLE_FRAME) {
-      uint8_t data_length = msg->data[0] & 0x0F;
+      uint8_t data_length = msg->data[0] & 0x0Fu;
       if (data_length > 0 && data_length <= 7) {
         uds_session_t *session = find_or_create_session(tx_addr, rx_addr, msg->bus);
         if (session) {
@@ -212,7 +212,7 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
         }
       }
     } else if (frame_type == ISOTP_CONSECUTIVE_FRAME) {
-      uint8_t sequence_number = msg->data[0] & 0x0F;
+      uint8_t sequence_number = msg->data[0] & 0x0Fu;
 
       // Find matching session
       for (int i = 0; i < MAX_UDS_SESSIONS; i++) {
@@ -227,7 +227,7 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
           if (data_to_copy > 0) {
             memcpy(&session->data[session->received_length], &msg->data[1], data_to_copy);
             session->received_length += data_to_copy;
-            session->sequence_number = (session->sequence_number + 1) & 0x0F;
+            session->sequence_number = (session->sequence_number + 1) & 0x0Fu;
             session->last_timestamp = timestamp;
 
             // Check if message is complete
