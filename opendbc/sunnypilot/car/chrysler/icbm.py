@@ -5,7 +5,7 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
-from opendbc.car import structs
+from opendbc.car import structs, DT_CTRL
 from opendbc.car.can_definitions import CanData
 from opendbc.car.chrysler import chryslercan
 from opendbc.car.chrysler.values import RAM_CARS
@@ -28,21 +28,23 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     ram_cars = self.CP.carFingerprint in RAM_CARS
     das_bus = 2 if self.CP.carFingerprint in RAM_CARS else 0
 
-    if CS.button_counter != self.last_button_frame:
-      self.last_button_frame = CS.button_counter
+    if self.ICBM.sendButton != SendButtonState.none:
+      accel = self.ICBM.sendButton == SendButtonState.increase
+      decel = self.ICBM.sendButton == SendButtonState.decrease
 
-      if self.ICBM.sendButton != SendButtonState.none:
-        accel = self.ICBM.sendButton == SendButtonState.increase
-        decel = self.ICBM.sendButton == SendButtonState.decrease
-
-        self.button_frame += 1
-        button_counter_offset = [1, 1, 0, None][self.button_frame % 4]
-
-        if ram_cars:
-          can_sends.append(chryslercan.create_cruise_buttons(packer, CS.button_counter, das_bus,
-                                                             accel=accel, decel=decel))
-        elif button_counter_offset is not None:
+      if ram_cars:
+        if (self.frame - self.last_button_frame) * DT_CTRL > 0.05:
+          self.button_frame += 1
+          button_counter_offset = [1, 1, 0, None][self.button_frame % 4]
           can_sends.append(chryslercan.create_cruise_buttons(packer, CS.button_counter + button_counter_offset, das_bus,
                                                              accel=accel, decel=decel))
+          self.last_button_frame = self.frame
+      else:
+        if CS.button_counter != self.last_button_frame:
+          self.button_frame += 1
+          button_counter_offset = [1, 1, 0, None][self.button_frame % 4]
+          if button_counter_offset is not None:
+            can_sends.append(chryslercan.create_cruise_buttons(packer, CS.button_counter + button_counter_offset, das_bus,
+                                                               accel=accel, decel=decel))
 
     return can_sends
