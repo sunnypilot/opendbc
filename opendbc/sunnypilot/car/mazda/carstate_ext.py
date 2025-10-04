@@ -23,7 +23,6 @@ class CarStateExt:
 
   def update(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]):
     cp = can_parsers[Bus.pt]
-    cp_cam = can_parsers[Bus.cam]
 
     button_events = []
     for button in BUTTONS:
