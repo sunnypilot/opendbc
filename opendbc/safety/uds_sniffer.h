@@ -141,15 +141,15 @@ static void parse_and_callback_uds_message(uds_session_t* session) {
       // Parse data identifier for read/write data services
       if ((msg.service_id == UDS_SERVICE_READ_DATA_BY_IDENTIFIER ||
            msg.service_id == UDS_SERVICE_WRITE_DATA_BY_IDENTIFIER) &&
-          session->received_length >= 3) {
+          session->received_length >= 3u) {
         msg.data_identifier = (data[1] << 8) | data[2];
-        msg.data_length = (uint8_t) (session->received_length - 3);
-        if (msg.data_length > 0) {
+        msg.data_length = (uint8_t) (session->received_length - 3u);
+        if (msg.data_length > 0u) {
           memcpy(msg.data, &data[3], MIN(msg.data_length, MAX_UDS_DATA_SIZE));
         }
       } else {
-        msg.data_length = session->received_length - 1;
-        if (msg.data_length > 0) {
+        msg.data_length = session->received_length - 1u;
+        if (msg.data_length > 0u) {
           memcpy(msg.data, &data[1], MIN(msg.data_length, MAX_UDS_DATA_SIZE));
         }
       }
@@ -168,18 +168,18 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
     // Determine if this is a request or response based on address
     uint32_t tx_addr, rx_addr;
 
-    if (msg->addr >= 0x7E8 && msg->addr <= 0x7EF) {
+    if (msg->addr >= 0x7E8u && msg->addr <= 0x7EFu) {
       // Standard response address
       rx_addr = msg->addr;
       tx_addr = msg->addr - 8; // Corresponding request address
-    } else if (msg->addr >= 0x7E0 && msg->addr <= 0x7E7) {
+    } else if (msg->addr >= 0x7E0u && msg->addr <= 0x7E7u) {
       // Standard request address
       tx_addr = msg->addr;
-      rx_addr = msg->addr + 8; // Corresponding response address
-    } else if (msg->addr == 0x7DF) {
+      rx_addr = msg->addr + 8u; // Corresponding response address
+    } else if (msg->addr == 0x7DFu) {
       // Functional request address
       tx_addr = msg->addr;
-      rx_addr = 0; // Will be determined by response
+      rx_addr = 0u; // Will be determined by response
     } else {
       // Vehicle-specific or extended addressing
       tx_addr = msg->addr;
@@ -188,7 +188,7 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
 
     if (frame_type == ISOTP_SINGLE_FRAME) {
       uint8_t data_length = msg->data[0] & 0x0Fu;
-      if (data_length > 0 && data_length <= 7) {
+      if (data_length > 0u && data_length <= 7u) {
         uds_session_t *session = find_or_create_session(tx_addr, rx_addr, msg->bus);
         if (session) {
           session->total_length = data_length;
@@ -201,12 +201,12 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
       }
     } else if (frame_type == ISOTP_FIRST_FRAME) {
       uint16_t total_length = get_isotp_data_length(msg);
-      if (total_length > 7) {
+      if (total_length > 7u) {
         uds_session_t *session = find_or_create_session(tx_addr, rx_addr, msg->bus);
         if (session) {
           session->total_length = total_length;
-          session->received_length = 6; // First frame contains 6 bytes of data
-          session->sequence_number = 1;
+          session->received_length = 6u; // First frame contains 6 bytes of data
+          session->sequence_number = 1u;
           session->last_timestamp = timestamp;
           memcpy(session->data, &msg->data[2], 6);
         }
@@ -222,7 +222,7 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
             (uds_sessions[i].bus == msg->bus) &&
             (uds_sessions[i].sequence_number == sequence_number)) {
           uds_session_t *session = &uds_sessions[i];
-          uint8_t data_to_copy = MIN(7, session->total_length - session->received_length);
+          uint8_t data_to_copy = MIN(7u, session->total_length - session->received_length);
 
           if (data_to_copy > 0) {
             memcpy(&session->data[session->received_length], &msg->data[1], data_to_copy);
