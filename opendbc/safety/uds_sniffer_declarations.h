@@ -77,10 +77,8 @@ static uint16_t get_isotp_data_length(const CANPacket_t *msg);
 
 extern uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last);
 
-#ifndef memcpy
+// cppcheck-suppress misra-c2012-21.2
 extern void *memcpy(void *dest, const void *src, unsigned int len);
-#endif
 
-#ifndef memset
+// cppcheck-suppress misra-c2012-21.2
 extern void *memset(void *str, int c, unsigned int n);
-#endif
