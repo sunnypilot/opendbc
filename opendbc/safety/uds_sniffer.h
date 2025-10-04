@@ -38,7 +38,7 @@ void uds_sniffer_enable(bool enable) {
 
 static bool is_isotp_frame(const CANPacket_t *msg) {
   bool result = false;
-  if (GET_LEN(msg) != 0) {
+  if (GET_LEN(msg) != 0u) {
     uint8_t pci = msg->data[0] >> 4;
     result = (pci <= ISOTP_FLOW_CONTROL_FRAME);
   }

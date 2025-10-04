@@ -61,7 +61,7 @@ static bool hkg_canfd_is_uds_addr(uint32_t addr) {
 
   for (unsigned int i = 0; i < ARRAY_SIZE(HKG_UDS_REQUEST_ADDRS); i++) {
     uint32_t req = HKG_UDS_REQUEST_ADDRS[i];
-    if (addr == req || addr == (req + 8u)) {
+    if ((addr == req) || (addr == (req + 8u))) {
       found = true;
       break;  // still break to avoid extra iterations
     }

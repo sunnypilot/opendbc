@@ -51,7 +51,9 @@ static bool hyundai_canfd_alt_buttons = false;
 static bool hyundai_canfd_lka_steering_alt = false;
 static bool hyundai_canfd_angle_steering = false;
 
+// cppcheck-suppress misra-c2012-8.9
 static const AngleSteeringParams *hkg_fingerprinted_steering_params = &HKG_FALLBACK_STEERING_PARAMS;
+// cppcheck-suppress misra-c2012-8.9
 static bool fingerprint_completed = false;
 
 static unsigned int hyundai_canfd_get_lka_addr(void) {
