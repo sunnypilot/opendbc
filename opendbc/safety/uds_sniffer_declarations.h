@@ -60,6 +60,7 @@ typedef bool (*is_uds_address_callback_t)(uint32_t addr);
 // Global UDS sniffer state
 extern uds_session_t uds_sessions[MAX_UDS_SESSIONS];
 extern uds_message_callback_t uds_callback;
+extern is_uds_address_callback_t is_uds_address_callback;
 extern bool uds_sniffer_enabled;
 
 // UDS sniffer functions

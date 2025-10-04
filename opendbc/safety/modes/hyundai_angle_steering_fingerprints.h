@@ -2,6 +2,7 @@
 #include "opendbc/safety/modes/hyundai_uds_handler_declarations.h"
 
 // HYUNDAI_SANTA_FE_HEV_5TH_GEN values. (values can be found on values.py)
+extern const AngleSteeringParams HYUNDAI_SANTA_FE_HEV_5TH_GEN_STEERING_PARAMS;
 const AngleSteeringParams HYUNDAI_SANTA_FE_HEV_5TH_GEN_STEERING_PARAMS = {
   .slip_factor = -0.00059689759884299,  // calc_slip_factor(VM)
   .steer_ratio = 13.72,
@@ -9,6 +10,7 @@ const AngleSteeringParams HYUNDAI_SANTA_FE_HEV_5TH_GEN_STEERING_PARAMS = {
 };
 
   // IONIQ 5 PE values.
+extern const AngleSteeringParams HYUNDAI_IONIQ_5_PE_STEERING_PARAMS;
 const AngleSteeringParams HYUNDAI_IONIQ_5_PE_STEERING_PARAMS = {
     .slip_factor = -0.0008688329819908074,  // calc_slip_factor(VM)
     .steer_ratio = 14.26,
@@ -16,6 +18,7 @@ const AngleSteeringParams HYUNDAI_IONIQ_5_PE_STEERING_PARAMS = {
   };
 
 // GENESIS_GV80_2025 values. (values can be found on values.py)
+extern const AngleSteeringParams GENESIS_GV80_2025_STEERING_PARAMS;
 const AngleSteeringParams GENESIS_GV80_2025_STEERING_PARAMS = {
   .slip_factor = -0.0005685702046115589,  // calc_slip_factor(VM)
   .steer_ratio = 14.14,
@@ -23,6 +26,7 @@ const AngleSteeringParams GENESIS_GV80_2025_STEERING_PARAMS = {
 };
 
 // // KIA EV9 values. (values can be found on values.py)
+extern const AngleSteeringParams KIA_EV9_STEERING_PARAMS;
 const AngleSteeringParams KIA_EV9_STEERING_PARAMS = {
   .slip_factor = -0.0005410588125765342,  // calc_slip_factor(VM)
   .steer_ratio = 16,
@@ -30,6 +34,7 @@ const AngleSteeringParams KIA_EV9_STEERING_PARAMS = {
 };
 
 // KIA_SPORTAGE_HEV_2026 values. (most conservative for now) (values can be found on values.py)
+extern const AngleSteeringParams KIA_SPORTAGE_HEV_2026_STEERING_PARAMS;
 const AngleSteeringParams KIA_SPORTAGE_HEV_2026_STEERING_PARAMS = {
   .slip_factor = -0.0006085930193026732,  // calc_slip_factor(VM)
   .steer_ratio = 13.7,
