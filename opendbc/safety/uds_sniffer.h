@@ -117,7 +117,7 @@ static void parse_and_callback_uds_message(uds_session_t* session) {
     uds_message_t msg = {0};
     msg.timestamp = session->last_timestamp;
 
-    uint8_t *data = session->data;
+    const uint8_t *data = session->data;
     char service_id = data[0];
 
     // Check if it's a negative response
