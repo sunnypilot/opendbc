@@ -214,10 +214,10 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
       // Find matching session
       for (int i = 0; i < MAX_UDS_SESSIONS; i++) {
         if (uds_sessions[i].active &&
-            uds_sessions[i].tx_addr == tx_addr &&
-            uds_sessions[i].rx_addr == rx_addr &&
-            uds_sessions[i].bus == msg->bus &&
-            uds_sessions[i].sequence_number == sequence_number) {
+            (uds_sessions[i].tx_addr == tx_addr) &&
+            (uds_sessions[i].rx_addr == rx_addr) &&
+            (uds_sessions[i].bus == msg->bus) &&
+            (uds_sessions[i].sequence_number == sequence_number)) {
           uds_session_t *session = &uds_sessions[i];
           uint8_t data_to_copy = MIN(7, session->total_length - session->received_length);
 
