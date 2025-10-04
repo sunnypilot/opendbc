@@ -9,8 +9,8 @@
 #define UDS_SERVICE_SECURITY_ACCESS 0x27u
 
 // UDS Response Types
-#define UDS_RESPONSE_POSITIVE_OFFSET 0x40u
-#define UDS_RESPONSE_NEGATIVE 0x7Fu
+#define UDS_RESPONSE_POSITIVE_OFFSET (char)0x40
+#define UDS_RESPONSE_NEGATIVE (char)0x7F
 
 // UDS Data Identifiers of interest
 #define UDS_DID_ECU_SOFTWARE_NUMBER 0xF188u

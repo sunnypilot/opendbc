@@ -80,7 +80,7 @@ static uds_session_t* find_or_create_session(uint32_t tx_addr, uint32_t rx_addr,
       session = &uds_sessions[i];
     }
 
-    if (!uds_sessions[i].active && free_session == NULL) {
+    if ((!uds_sessions[i].active) && (free_session == NULL)) {
       free_session = &uds_sessions[i];
     }
 
@@ -111,7 +111,7 @@ static uds_session_t* find_or_create_session(uint32_t tx_addr, uint32_t rx_addr,
 }
 
 static void parse_and_callback_uds_message(uds_session_t* session) {
-  if (session && session->received_length >= 1u && uds_callback) {
+  if (session && (session->received_length >= 1u) && uds_callback) {
     uds_message_t msg = {0};
     msg.timestamp = session->last_timestamp;
 
@@ -166,13 +166,14 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
     uint32_t timestamp = microsecond_timer_get();
 
     // Determine if this is a request or response based on address
-    uint32_t tx_addr, rx_addr;
+    uint32_t tx_addr;
+    uint32_t rx_addr;
 
-    if (msg->addr >= 0x7E8u && msg->addr <= 0x7EFu) {
+    if ((msg->addr >= 0x7E8u) && (msg->addr <= 0x7EFu)) {
       // Standard response address
       rx_addr = msg->addr;
       tx_addr = msg->addr - 8; // Corresponding request address
-    } else if (msg->addr >= 0x7E0u && msg->addr <= 0x7E7u) {
+    } else if ((msg->addr >= 0x7E0u) && (msg->addr <= 0x7E7u)) {
       // Standard request address
       tx_addr = msg->addr;
       rx_addr = msg->addr + 8u; // Corresponding response address
@@ -188,7 +189,7 @@ bool uds_sniffer_process_message(const CANPacket_t *msg) {
 
     if (frame_type == ISOTP_SINGLE_FRAME) {
       uint8_t data_length = msg->data[0] & 0x0Fu;
-      if (data_length > 0u && data_length <= 7u) {
+      if ((data_length > 0u) && (data_length <= 7u)) {
         uds_session_t *session = find_or_create_session(tx_addr, rx_addr, msg->bus);
         if (session != NULL) {
           session->total_length = data_length;

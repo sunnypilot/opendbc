@@ -27,6 +27,7 @@ const AngleSteeringParams GENESIS_GV80_2025_STEERING_PARAMS = {
 
 // // KIA EV9 values. (values can be found on values.py)
 extern const AngleSteeringParams KIA_EV9_STEERING_PARAMS;
+// cppcheck-suppress misra-c2012-8.7
 const AngleSteeringParams KIA_EV9_STEERING_PARAMS = {
   .slip_factor = -0.0005410588125765342,  // calc_slip_factor(VM)
   .steer_ratio = 16,
