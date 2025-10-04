@@ -160,89 +160,88 @@ static void parse_and_callback_uds_message(uds_session_t* session) {
 }
 
 void uds_sniffer_process_message(const CANPacket_t *msg) {
-  if (!uds_sniffer_enabled || !is_uds_address_callback(msg->addr) || !is_isotp_frame(msg))
-    return;
+  if (uds_sniffer_enabled && is_uds_address_callback(msg->addr) && is_isotp_frame(msg)) {
+    uint8_t frame_type = get_isotp_frame_type(msg);
+    uint32_t timestamp = microsecond_timer_get();
 
-  uint8_t frame_type = get_isotp_frame_type(msg);
-  uint32_t timestamp = microsecond_timer_get();
+    // Determine if this is a request or response based on address
+    uint32_t tx_addr;
+    uint32_t rx_addr;
 
-  // Determine if this is a request or response based on address
-  uint32_t tx_addr;
-  uint32_t rx_addr;
-
-  if ((msg->addr >= 0x7E8u) && (msg->addr <= 0x7EFu)) {
-    // Standard response address
-    rx_addr = msg->addr;
-    tx_addr = msg->addr - 8u; // Corresponding request address
-  } else if ((msg->addr >= 0x7E0u) && (msg->addr <= 0x7E7u)) {
-    // Standard request address
-    tx_addr = msg->addr;
-    rx_addr = msg->addr + 8u; // Corresponding response address
-  } else if (msg->addr == 0x7DFu) {
-    // Functional request address
-    tx_addr = msg->addr;
-    rx_addr = 0u; // Will be determined by response
-  } else {
-    // Vehicle-specific or extended addressing
-    tx_addr = msg->addr;
-    rx_addr = msg->addr;
-  }
-
-  if (frame_type == ISOTP_SINGLE_FRAME) {
-    uint8_t data_length = msg->data[0] & 0x0Fu;
-    if ((data_length > 0u) && (data_length <= 7u)) {
-      uds_session_t *session = find_or_create_session(tx_addr, rx_addr, msg->bus);
-      if (session != NULL) {
-        session->total_length = data_length;
-        session->received_length = data_length;
-        session->last_timestamp = timestamp;
-        memcpy(session->data, &msg->data[1], data_length);
-        parse_and_callback_uds_message(session);
-        session->active = false; // Single frame complete
-      }
+    if ((msg->addr >= 0x7E8u) && (msg->addr <= 0x7EFu)) {
+      // Standard response address
+      rx_addr = msg->addr;
+      tx_addr = msg->addr - 8u; // Corresponding request address
+    } else if ((msg->addr >= 0x7E0u) && (msg->addr <= 0x7E7u)) {
+      // Standard request address
+      tx_addr = msg->addr;
+      rx_addr = msg->addr + 8u; // Corresponding response address
+    } else if (msg->addr == 0x7DFu) {
+      // Functional request address
+      tx_addr = msg->addr;
+      rx_addr = 0u; // Will be determined by response
+    } else {
+      // Vehicle-specific or extended addressing
+      tx_addr = msg->addr;
+      rx_addr = msg->addr;
     }
-  } else if (frame_type == ISOTP_FIRST_FRAME) {
-    uint16_t total_length = get_isotp_data_length(msg);
-    if (total_length > 7u) {
-      uds_session_t *session = find_or_create_session(tx_addr, rx_addr, msg->bus);
-      if (session != NULL) {
-        session->total_length = total_length;
-        session->received_length = 6u; // First frame contains 6 bytes of data
-        session->sequence_number = 1u;
-        session->last_timestamp = timestamp;
-        memcpy(session->data, &msg->data[2], 6);
-      }
-    }
-  } else if (frame_type == ISOTP_CONSECUTIVE_FRAME) {
-    uint8_t sequence_number = msg->data[0] & 0x0Fu;
 
-    // Find matching session
-    for (int i = 0; i < MAX_UDS_SESSIONS; i++) {
-      if (uds_sessions[i].active &&
-          (uds_sessions[i].tx_addr == tx_addr) &&
-          (uds_sessions[i].rx_addr == rx_addr) &&
-          (uds_sessions[i].bus == msg->bus) &&
-          (uds_sessions[i].sequence_number == sequence_number)) {
-        uds_session_t *session = &uds_sessions[i];
-        uint8_t data_to_copy = MIN(7, session->total_length - session->received_length);
-
-        if (data_to_copy > 0u) {
-          memcpy(&session->data[session->received_length], &msg->data[1], data_to_copy);
-          session->received_length += data_to_copy;
-          session->sequence_number = (session->sequence_number + 1u) & 0x0Fu;
+    if (frame_type == ISOTP_SINGLE_FRAME) {
+      uint8_t data_length = msg->data[0] & 0x0Fu;
+      if ((data_length > 0u) && (data_length <= 7u)) {
+        uds_session_t *session = find_or_create_session(tx_addr, rx_addr, msg->bus);
+        if (session != NULL) {
+          session->total_length = data_length;
+          session->received_length = data_length;
           session->last_timestamp = timestamp;
-
-          // Check if message is complete
-          if (session->received_length >= session->total_length) {
-            parse_and_callback_uds_message(session);
-            session->active = false; // Message complete
-          }
+          memcpy(session->data, &msg->data[1], data_length);
+          parse_and_callback_uds_message(session);
+          session->active = false; // Single frame complete
         }
-        break;
       }
+    } else if (frame_type == ISOTP_FIRST_FRAME) {
+      uint16_t total_length = get_isotp_data_length(msg);
+      if (total_length > 7u) {
+        uds_session_t *session = find_or_create_session(tx_addr, rx_addr, msg->bus);
+        if (session != NULL) {
+          session->total_length = total_length;
+          session->received_length = 6u; // First frame contains 6 bytes of data
+          session->sequence_number = 1u;
+          session->last_timestamp = timestamp;
+          memcpy(session->data, &msg->data[2], 6);
+        }
+      }
+    } else if (frame_type == ISOTP_CONSECUTIVE_FRAME) {
+      uint8_t sequence_number = msg->data[0] & 0x0Fu;
+
+      // Find matching session
+      for (int i = 0; i < MAX_UDS_SESSIONS; i++) {
+        if (uds_sessions[i].active &&
+            (uds_sessions[i].tx_addr == tx_addr) &&
+            (uds_sessions[i].rx_addr == rx_addr) &&
+            (uds_sessions[i].bus == msg->bus) &&
+            (uds_sessions[i].sequence_number == sequence_number)) {
+          uds_session_t *session = &uds_sessions[i];
+          uint8_t data_to_copy = MIN(7, session->total_length - session->received_length);
+
+          if (data_to_copy > 0u) {
+            memcpy(&session->data[session->received_length], &msg->data[1], data_to_copy);
+            session->received_length += data_to_copy;
+            session->sequence_number = (session->sequence_number + 1u) & 0x0Fu;
+            session->last_timestamp = timestamp;
+
+            // Check if message is complete
+            if (session->received_length >= session->total_length) {
+              parse_and_callback_uds_message(session);
+              session->active = false; // Message complete
+            }
+          }
+          break;
+        }
+      }
+    } else {
+      // Unsupported frame type (e.g., Flow Control), ignore
     }
-  } else {
-    // Unsupported frame type (e.g., Flow Control), ignore
   }
 }
 
