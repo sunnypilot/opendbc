@@ -102,7 +102,7 @@ static void hkg_canfd_process_software_version(uint32_t ecu_address, const uds_m
   if (msg->data_length > 0u) {
     hkg_uds_data_t *ecu = get_hkg_uds_data_by_addr(ecu_address);
     if ((ecu != NULL) && (msg->data_length < sizeof(ecu->ecu_software_version)) && (!ecu->ecu_software_version_received)) {
-      memcpy(ecu->ecu_software_version, msg->data, msg->data_length);
+      (void)memcpy(ecu->ecu_software_version, msg->data, msg->data_length);
       ecu->ecu_software_version[msg->data_length] = '\0';  // Null terminate
       ecu->ecu_software_version_received = true;
       ecu->last_update_timestamp = msg->timestamp;

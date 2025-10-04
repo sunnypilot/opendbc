@@ -1,6 +1,8 @@
 #pragma once
 
-#include "opendbc/safety/safety_declarations.h"
+#include "opendbc/safety/board/can.h"
+#include "opendbc/safety/uds_sniffer.h"
+
 #include "opendbc/safety/uds_sniffer_declarations.h"
 #include <stddef.h>
 
@@ -126,7 +128,7 @@ static void parse_and_callback_uds_message(uds_session_t* session) {
         msg.negative_response_code = data[2];
         msg.data_length = session->received_length - 3u;
         if (msg.data_length > 0u) {
-          memcpy(msg.data, &data[3], MIN(msg.data_length, MAX_UDS_DATA_SIZE));
+          (void)memcpy(msg.data, &data[3], MIN(msg.data_length, MAX_UDS_DATA_SIZE));
         }
       }
     } else {
@@ -145,12 +147,12 @@ static void parse_and_callback_uds_message(uds_session_t* session) {
         msg.data_identifier = (data[1] << 8) | data[2];
         msg.data_length = (uint8_t) (session->received_length - 3u);
         if (msg.data_length > 0u) {
-          memcpy(msg.data, &data[3], MIN(msg.data_length, MAX_UDS_DATA_SIZE));
+          (void)memcpy(msg.data, &data[3], MIN(msg.data_length, MAX_UDS_DATA_SIZE));
         }
       } else {
         msg.data_length = session->received_length - 1u;
         if (msg.data_length > 0u) {
-          memcpy(msg.data, &data[1], MIN(msg.data_length, MAX_UDS_DATA_SIZE));
+          (void)memcpy(msg.data, &data[1], MIN(msg.data_length, MAX_UDS_DATA_SIZE));
         }
       }
     }
@@ -194,7 +196,7 @@ void uds_sniffer_process_message(const CANPacket_t *msg) {
           session->total_length = data_length;
           session->received_length = data_length;
           session->last_timestamp = timestamp;
-          memcpy(session->data, &msg->data[1], data_length);
+          (void)memcpy(session->data, &msg->data[1], data_length);
           parse_and_callback_uds_message(session);
           session->active = false; // Single frame complete
         }
@@ -208,7 +210,7 @@ void uds_sniffer_process_message(const CANPacket_t *msg) {
           session->received_length = 6u; // First frame contains 6 bytes of data
           session->sequence_number = 1u;
           session->last_timestamp = timestamp;
-          memcpy(session->data, &msg->data[2], 6);
+          (void)memcpy(session->data, &msg->data[2], 6);
         }
       }
     } else if (frame_type == ISOTP_CONSECUTIVE_FRAME) {
@@ -225,7 +227,7 @@ void uds_sniffer_process_message(const CANPacket_t *msg) {
           uint8_t data_to_copy = MIN(7, session->total_length - session->received_length);
 
           if (data_to_copy > 0u) {
-            memcpy(&session->data[session->received_length], &msg->data[1], data_to_copy);
+            (void)memcpy(&session->data[session->received_length], &msg->data[1], data_to_copy);
             session->received_length += data_to_copy;
             session->sequence_number = (session->sequence_number + 1u) & 0x0Fu;
             session->last_timestamp = timestamp;
