@@ -18,6 +18,7 @@ class CarStateExt:
     self.CP = CP
     self.CP_SP = CP_SP
 
+    self.button_events = []
     self.button_states = {button.event_type: False for button in BUTTONS}
 
   def update(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]):
@@ -33,4 +34,4 @@ class CarStateExt:
         event.pressed = state
         button_events.append(event)
       self.button_states[button.event_type] = state
-    ret.buttonEvents.extend(button_events)
+    self.button_events = button_events

@@ -5,7 +5,7 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
-from opendbc.car import structs
+from opendbc.car import structs, DT_CTRL
 from opendbc.car.can_definitions import CanData
 from opendbc.car.mazda import mazdacan
 from opendbc.car.mazda.values import Buttons
@@ -34,7 +34,8 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     if self.ICBM.sendButton != SendButtonState.none:
       send_button = BUTTONS[self.ICBM.sendButton]
 
-      if self.frame % 10 == 0:
+      if (self.last_button_frame - self.frame) * DT_CTRL > 0.2:
         can_sends.extend(mazdacan.create_button_cmd(packer, self.CP, self.frame // 10, send_button))
+        self.last_button_frame = self.frame
 
     return can_sends

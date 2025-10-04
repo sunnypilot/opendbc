@@ -116,10 +116,13 @@ class CarState(CarStateBase, CarStateExt):
     self.cam_laneinfo = cp_cam.vl["CAM_LANEINFO"]
     ret.steerFaultPermanent = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
 
-    # TODO: add button types for inc and dec
-    ret.buttonEvents = create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
-
     CarStateExt.update(self, ret, ret_sp, can_parsers)
+
+    # TODO: add button types for inc and dec
+    ret.buttonEvents = [
+      *create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise}),
+      *self.button_events,
+    ]
 
     return ret, ret_sp
 
