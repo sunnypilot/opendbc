@@ -27,14 +27,14 @@ class CarInterface(CarInterfaceBase):
       # Altima has EPS on C-CAN unlike the others that have it on V-CAN
       ret.safetyConfigs[0].safetyParam |= NissanSafetyFlags.ALT_EPS_BUS.value
 
-    # Intelligent Cruise Button Management availability
-    ret.intelligentCruiseButtonManagementAvailable = True
-
     return ret
 
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+    # Intelligent Cruise Button Management availability
+    ret.intelligentCruiseButtonManagementAvailable = True
+
     if candidate in (CAR.NISSAN_LEAF, CAR.NISSAN_LEAF_IC):
       ret.safetyParam |= NissanSafetyFlagsSP.LEAF
 
