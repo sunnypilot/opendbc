@@ -4,13 +4,15 @@ from opendbc.car.lateral import apply_std_steer_angle_limits
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.nissan import nissancan
 from opendbc.car.nissan.values import CAR, CarControllerParams
+from opendbc.sunnypilot.car.nissan.icbm import IntelligentCruiseButtonManagementInterface
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
 
-class CarController(CarControllerBase):
+class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterface):
   def __init__(self, dbc_names, CP, CP_SP):
-    super().__init__(dbc_names, CP, CP_SP)
+    CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
+    IntelligentCruiseButtonManagementInterface.__init__(self, CP, CP_SP)
     self.car_fingerprint = CP.carFingerprint
 
     self.apply_angle_last = 0
@@ -68,6 +70,9 @@ class CarController(CarControllerBase):
         can_sends.append(nissancan.create_lkas_hud_info_msg(
           self.packer, CS.lkas_hud_info_msg, steer_hud_alert
         ))
+
+    # Intelligent Cruise Button Management
+    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame))
 
     new_actuators = actuators.as_builder()
     new_actuators.steeringAngleDeg = self.apply_angle_last
