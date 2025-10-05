@@ -50,4 +50,6 @@ class CarInterface(CarInterfaceBase):
       stock_cp.openpilotLongitudinalControl = True
       stock_cp.safetyConfigs[0].safetyParam |= RivianSafetyFlags.LONG_CONTROL.value
 
+    stock_cp.pcmCruise = not stock_cp.openpilotLongitudinalControl
+
     return ret
