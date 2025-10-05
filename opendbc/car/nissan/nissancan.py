@@ -33,6 +33,7 @@ def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
     "NO_BUTTON_PRESSED",
     "GAS_PEDAL",
     "USER_BRAKE_PRESSED",
+    "USER_BRAKE_PRESSED_INVERTED",
     "NEW_SIGNAL_2",
     "GAS_PRESSED_INVERTED",
     "unsure1",
