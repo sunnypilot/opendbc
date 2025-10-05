@@ -32,13 +32,13 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       accel = self.ICBM.sendButton == SendButtonState.increase
       decel = self.ICBM.sendButton == SendButtonState.decrease
 
-      if (self.frame - self.last_button_frame) * DT_CTRL > 0.05:
+      if (self.frame - self.last_button_frame) * DT_CTRL > 0.15:
         self.button_frame += 1
         button_counter_offset = [1, 1, 0, None][self.button_frame % 4]
         if button_counter_offset is not None:
           can_sends.append(chryslercan.create_cruise_buttons(packer, CS.button_counter + button_counter_offset, das_bus,
                                                              accel=accel, decel=decel))
-          if (self.frame - self.last_button_frame) * DT_CTRL >= 0.10:
+          if (self.frame - self.last_button_frame) * DT_CTRL >= 0.20:
             self.last_button_frame = self.frame
 
     return can_sends
