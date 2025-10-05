@@ -43,7 +43,9 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     super().__init__(CP, CP_SP)
 
   def _create_button_msg(self, packer, CS, send_button_field: str) -> CanData:
-    values = {s: CS.cruise_throttle_msg[s] for s in CRUISE_THROTTLE_FIELDS}
+    # Some Nissan platforms (e.g., Leaf/Leaf_IC) don't have all of these fields
+    # present in their CRUISE_THROTTLE message. Use .get with a default to avoid KeyErrors
+    values = {s: CS.cruise_throttle_msg.get(s, 0) for s in CRUISE_THROTTLE_FIELDS}
 
     # Set only the requested button, clear others
     values["CANCEL_BUTTON"] = 0
