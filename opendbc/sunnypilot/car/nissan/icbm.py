@@ -69,9 +69,8 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     if self.ICBM.sendButton != SendButtonState.none:
       send_field = BUTTON_FIELDS[self.ICBM.sendButton]
 
-      # Send at ~10 Hz (every 10 frames at 100 Hz control loop)
-      if (self.frame - self.last_button_frame) * DT_CTRL >= 0.1:
+      # Send at ~10 Hz (for 5 of every 10 frames at 100 Hz control loop)
+      if (self.frame - self.last_button_frame) % 10 < 5:
         can_sends.append(self._create_button_msg(packer, CS, send_field))
-        self.last_button_frame = self.frame
 
     return can_sends
