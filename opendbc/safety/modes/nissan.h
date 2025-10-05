@@ -108,10 +108,11 @@ static bool nissan_tx_hook(const CANPacket_t *msg) {
     }
   }
 
-  // acc button check, only allow cancel button to be sent
+  // acc button check, allow cancel, set, and resume buttons to be sent
   if (msg->addr == 0x20bU) {
-    // Violation of any button other than cancel is pressed
-    violation |= ((msg->data[1] & 0x3dU) > 0U);
+    // Violation if any forbidden button bits are set: PROPILOT (0x01), FOLLOW_DISTANCE (0x04), NO_BUTTON_PRESSED (0x20)
+    // Allowed bits: CANCEL (0x02), SET (0x08), RES (0x10)
+    violation |= ((msg->data[1] & 0x25U) > 0U);
   }
 
   if (violation) {

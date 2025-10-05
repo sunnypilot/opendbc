@@ -74,8 +74,8 @@ class TestNissanSafety(common.PandaCarSafetyTest, common.AngleSteeringSafetyTest
       ("cancel", True),
       ("propilot", False),
       ("flw_dist", False),
-      ("_set", False),
-      ("res", False),
+      ("_set", True),
+      ("res", True),
       (None, False),
     ]
     for controls_allowed in (True, False):
