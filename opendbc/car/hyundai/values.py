@@ -40,11 +40,11 @@ class CarControllerParams:
       if CP.carFingerprint in (CAR.KIA_EV6):
         self.STEER_MAX = 350
         self.DYNAMIC_MAX_TORQUE = True
-        self.STEER_MAX_LOOKUP = [4, 12, 20], [384, 330, 300]
+        self.STEER_MAX_LOOKUP = [8, 16, 20], [384, 340, 315]
         self.STEER_DELTA_UP = 4
-        self.STEER_DELTA_UP_LOOKUP = [4, 12, 20], [4, 3, 3]
+        self.STEER_DELTA_UP_LOOKUP = [8, 16, 20], [6, 3, 3]
         self.STEER_DELTA_DOWN = 5
-        self.STEER_DELTA_DOWN_LOOKUP = [4, 12, 20], [4, 4, 3]
+        self.STEER_DELTA_DOWN_LOOKUP = [8, 16, 20], [4, 4, 3]
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.
