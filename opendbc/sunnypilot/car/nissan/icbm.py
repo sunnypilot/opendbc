@@ -52,6 +52,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     values["CANCEL_BUTTON"] = 0
     values["NO_BUTTON_PRESSED"] = 0
     values["PROPILOT_BUTTON"] = 0
+    # sending res+set at the same time causes error
     values["SET_BUTTON"] = 1 if send_button_field == "SET_BUTTON" and not values["RES_BUTTON"] == 1 else 0
     values["RES_BUTTON"] = 1 if send_button_field == "RES_BUTTON" and not values["SET_BUTTON"] == 1 else 0
     values["FOLLOW_DISTANCE_BUTTON"] = 0
@@ -69,9 +70,10 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     if self.ICBM.sendButton != SendButtonState.none:
       send_field = BUTTON_FIELDS[self.ICBM.sendButton]
 
-      #send every 0.2 sec
-      if (self.frame - self.last_button_frame) * DT_CTRL >= 0.2:
+      #send every 0.2 sec, hold button for 0.1 sec
+      if (self.frame - self.last_button_frame) * DT_CTRL >= 0.1:
         can_sends.append(self._create_button_msg(packer, CS, send_field))
-        self.last_button_frame = self.frame
+        if (self.frame - self.last_button_frame) * DT_CTRL >= 0.2:
+          self.last_button_frame = self.frame
 
     return can_sends
