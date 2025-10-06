@@ -11,6 +11,7 @@ from enum import StrEnum
 from opendbc.car import Bus, structs, DT_CTRL
 from opendbc.car.can_definitions import CanData
 from opendbc.car.interfaces import CarStateBase
+from opendbc.car.subaru.values import SubaruFlags
 
 from opendbc.sunnypilot.car.subaru import subarucan_ext
 from opendbc.sunnypilot.car.subaru.values_ext import SubaruFlagsSP
@@ -56,8 +57,6 @@ class SnGCarController:
     Returns:
         bool: True if resume command should be sent, False otherwise
     """
-    if not self.enabled:
-      return False
 
     if not CC.enabled or not CC.hudControl.leadVisible:
       return False
@@ -94,6 +93,9 @@ class SnGCarController:
   def create_stop_and_go(self, packer, CC: structs.CarControl, CS: CarStateBase, frame: int) -> list[CanData]:
     can_sends = []
 
+    if not self.enabled:
+      return can_sends
+
     send_resume = self.update_stop_and_go(CC, CS, frame)
 
     can_sends.append(subarucan_ext.create_throttle(packer, self.CP, CS.throttle_msg, send_resume and not self.manual_parking_brake))
@@ -109,15 +111,14 @@ class SnGCarState:
     self.CP = CP
     self.CP_SP = CP_SP
 
-    self.enabled = CP_SP.flags & (SubaruFlagsSP.STOP_AND_GO | SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE)
     self.brake_pedal_msg: dict[str, float] = {}
     self.throttle_msg: dict[str, float] = {}
 
   def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
-    if not self.enabled:
-      return
-
     cp = can_parsers[Bus.pt]
 
-    self.brake_pedal_msg = copy.copy(cp.vl["Brake_Pedal"])
-    self.throttle_msg = copy.copy(cp.vl["Throttle"])
+    if self.CP.flags & SubaruFlags.PREGLOBAL:
+      self.brake_pedal_msg = copy.copy(cp.vl["Brake_Pedal"])
+
+    if not self.CP.flags & SubaruFlags.HYBRID:
+      self.throttle_msg = copy.copy(cp.vl["Throttle"])
