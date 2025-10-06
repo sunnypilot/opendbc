@@ -79,7 +79,3 @@ FW_VERSIONS: dict[str, dict[tuple, list[bytes]]] = {
 }
 
 FINGERPRINTS = merge_fingerprints(FINGERPRINTS, FINGERPRINTS_EXT)
-
-
-if __name__ == "__main__":
-  print(FINGERPRINTS)
