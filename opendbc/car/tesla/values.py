@@ -37,7 +37,7 @@ class TeslaCarDocsHW4(CarDocs):
 
 @dataclass
 class TeslaPlatformConfig(PlatformConfig):
-  dbc_dict: DbcDict = field(default_factory=lambda: {Bus.party: 'tesla_model3_party'})
+  dbc_dict: DbcDict = field(default_factory=lambda: {Bus.party: 'tesla_model3_party', Bus.adas: 'tesla_model3_vehicle'})
 
 
 class CAR(Platforms):
@@ -52,7 +52,7 @@ class CAR(Platforms):
   TESLA_MODEL_Y = TeslaPlatformConfig(
     [
       TeslaCarDocsHW3("Tesla Model Y (with HW3) 2020-23"),
-      TeslaCarDocsHW4("Tesla Model Y (with HW4) 2024"),
+      TeslaCarDocsHW4("Tesla Model Y (with HW4) 2024-25"),
      ],
     CarSpecs(mass=2072., wheelbase=2.890, steerRatio=12.0),
   )
