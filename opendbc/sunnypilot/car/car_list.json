@@ -140,17 +140,6 @@
     ],
     "package": "Driver Confidence Package 2"
   },
-  "Cadillac CT6 Non-ACC 2017-18": {
-    "platform": "CADILLAC_CT6_NON_ACC_1ST_GEN",
-    "make": "Cadillac",
-    "brand": "gm",
-    "model": "CT6 Non-ACC",
-    "year": [
-      "2017",
-      "2018"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
   "Cadillac Escalade 2017": {
     "platform": "CADILLAC_ESCALADE",
     "make": "Cadillac",
@@ -191,16 +180,6 @@
     ],
     "package": "Driver Assist Package"
   },
-  "Cadillac XT5 Non-ACC 2018": {
-    "platform": "CADILLAC_XT5_NON_ACC_1ST_GEN",
-    "make": "Cadillac",
-    "brand": "gm",
-    "model": "XT5 Non-ACC",
-    "year": [
-      "2018"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
   "Chevrolet Bolt EUV 2022-23": {
     "platform": "CHEVROLET_BOLT_EUV",
     "make": "Chevrolet",
@@ -212,17 +191,6 @@
     ],
     "package": "Premier or Premier Redline Trim without Super Cruise Package"
   },
-  "Chevrolet Bolt EUV LT Non-ACC 2022-23": {
-    "platform": "CHEVROLET_BOLT_NON_ACC_2ND_GEN",
-    "make": "Chevrolet",
-    "brand": "gm",
-    "model": "Bolt EUV LT Non-ACC",
-    "year": [
-      "2022",
-      "2023"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
   "Chevrolet Bolt EV 2022-23": {
     "platform": "CHEVROLET_BOLT_EUV",
     "make": "Chevrolet",
@@ -233,17 +201,6 @@
       "2023"
     ],
     "package": "2LT Trim with Adaptive Cruise Control Package"
-  },
-  "Chevrolet Bolt EV LT Non-ACC 2022-23": {
-    "platform": "CHEVROLET_BOLT_NON_ACC_2ND_GEN",
-    "make": "Chevrolet",
-    "brand": "gm",
-    "model": "Bolt EV LT Non-ACC",
-    "year": [
-      "2022",
-      "2023"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
   },
   "Chevrolet Bolt EV Non-ACC 2017": {
     "platform": "CHEVROLET_BOLT_NON_ACC",
@@ -281,19 +238,6 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
-  "Chevrolet Equinox Non-ACC 2019-22": {
-    "platform": "CHEVROLET_EQUINOX_NON_ACC_3RD_GEN",
-    "make": "Chevrolet",
-    "brand": "gm",
-    "model": "Equinox Non-ACC",
-    "year": [
-      "2019",
-      "2020",
-      "2021",
-      "2022"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
   "Chevrolet Malibu Non-ACC 2016-23": {
     "platform": "CHEVROLET_MALIBU_NON_ACC_9TH_GEN",
     "make": "Chevrolet",
@@ -322,36 +266,11 @@
     ],
     "package": "Safety Package II"
   },
-  "Chevrolet Suburban Non-ACC 2016-20": {
-    "platform": "CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN",
-    "make": "Chevrolet",
-    "brand": "gm",
-    "model": "Suburban Non-ACC",
-    "year": [
-      "2016",
-      "2017",
-      "2018",
-      "2019",
-      "2020"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
   "Chevrolet Trailblazer 2021-22": {
     "platform": "CHEVROLET_TRAILBLAZER",
     "make": "Chevrolet",
     "brand": "gm",
     "model": "Trailblazer",
-    "year": [
-      "2021",
-      "2022"
-    ],
-    "package": "Adaptive Cruise Control (ACC)"
-  },
-  "Chevrolet Trailblazer Non-ACC 2021-22": {
-    "platform": "CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN",
-    "make": "Chevrolet",
-    "brand": "gm",
-    "model": "Trailblazer Non-ACC",
     "year": [
       "2021",
       "2022"
