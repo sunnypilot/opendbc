@@ -5,7 +5,7 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
-from opendbc.car import structs
+from opendbc.car import structs, DT_CTRL
 from opendbc.car.can_definitions import CanData
 from opendbc.car.mazda import mazdacan
 from opendbc.car.mazda.values import Buttons
@@ -24,7 +24,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
   def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
 
-  def update(self, CC_SP, packer, frame, last_button_frame) -> list[CanData]:
+  def update(self, CC_SP, CS, packer, frame, last_button_frame) -> list[CanData]:
     can_sends = []
     self.CC_SP = CC_SP
     self.ICBM = CC_SP.intelligentCruiseButtonManagement
@@ -34,7 +34,11 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     if self.ICBM.sendButton != SendButtonState.none:
       send_button = BUTTONS[self.ICBM.sendButton]
 
-      if self.frame % 10 == 0:
-        can_sends.extend(mazdacan.create_button_cmd(packer, self.CP, self.frame // 10, send_button))
+      if (self.frame - self.last_button_frame) * DT_CTRL > 0.2:
+        self.button_frame += 1
+        button_counter_offset = [1, 1, 0, None][self.button_frame % 4]
+        if button_counter_offset is not None:
+          can_sends.append(mazdacan.create_button_cmd(packer, self.CP, CS.crz_btns_counter + button_counter_offset, send_button))
+          self.last_button_frame = self.frame
 
     return can_sends

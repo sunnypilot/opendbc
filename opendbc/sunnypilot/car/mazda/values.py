@@ -6,7 +6,6 @@ See the LICENSE.md file in the root directory for more details.
 """
 
 from collections import namedtuple
-from enum import IntFlag
 
 from opendbc.car import structs
 
@@ -14,12 +13,8 @@ ButtonType = structs.CarState.ButtonEvent.Type
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 BUTTONS = [
-  Button(ButtonType.accelCruise, "CRUISE_BUTTONS", "ACC_Accel", [1]),
-  Button(ButtonType.decelCruise, "CRUISE_BUTTONS", "ACC_Decel", [1]),
-  Button(ButtonType.cancel, "CRUISE_BUTTONS", "ACC_Cancel", [1]),
-  Button(ButtonType.resumeCruise, "CRUISE_BUTTONS", "ACC_Resume", [1]),
+  Button(ButtonType.accelCruise, "CRZ_BTNS", "SET_P", [1]),
+  Button(ButtonType.decelCruise, "CRZ_BTNS", "SET_M", [1]),
+  Button(ButtonType.cancel, "CRZ_BTNS", "CAN_OFF", [1]),
+  Button(ButtonType.resumeCruise, "CRZ_BTNS", "RES", [1]),
 ]
-
-
-class ChryslerFlagsSP(IntFlag):
-  NO_MIN_STEERING_SPEED = 1
