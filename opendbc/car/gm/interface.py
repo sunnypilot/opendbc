@@ -251,6 +251,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
 
     # NON_ACC vehicles should use camera car speed thresholds
     if ret.flags & GMFlagsSP.NON_ACC:
+      stock_cp.dashcamOnly = False
       stock_cp.alphaLongitudinalAvailable = False
       stock_cp.openpilotLongitudinalControl = False
       stock_cp.pcmCruise = True
