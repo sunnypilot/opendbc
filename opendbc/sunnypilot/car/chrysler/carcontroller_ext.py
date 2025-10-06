@@ -21,4 +21,6 @@ class CarControllerExt:
       if CS.out.gearShifter != GearShifter.drive:
         lkas_control_bit = False
 
+    lkas_control_bit = lkas_control_bit and not CS.out.steerFaultTemporary and not CS.out.steerFaultPermanent
+
     return lkas_control_bit
