@@ -29,7 +29,7 @@ class SnGCarController:
     self.manual_parking_brake = CP_SP.flags & SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE
 
     self.last_standstill_frame = 0
-    self.epb_resume_frames_remaining = 0
+    self.epb_resume_frames_remaining = -1
     self.prev_close_distance = 0.0
 
   def update_epb_resume_sequence(self, should_resume: bool) -> bool:
