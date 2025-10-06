@@ -115,9 +115,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
 
     ret.longitudinalTuning.kiBP = [5., 35.]
 
-    # FIXME-SP: investigate NO_ACC_CAR configs before merging
-    #           this should not be done here if possible
-    if candidate in (CAMERA_ACC_CAR | SDGM_CAR | NO_ACC_CAR):
+    if candidate in (CAMERA_ACC_CAR | SDGM_CAR):
       ret.alphaLongitudinalAvailable = candidate not in SDGM_CAR
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarUnavailable = True  # no radar
