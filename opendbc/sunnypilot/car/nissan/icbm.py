@@ -52,8 +52,8 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     values["CANCEL_BUTTON"] = 0
     values["NO_BUTTON_PRESSED"] = 0
     values["PROPILOT_BUTTON"] = 0
-    values["SET_BUTTON"] = 1 if send_button_field == "SET_BUTTON" else 0
-    values["RES_BUTTON"] = 1 if send_button_field == "RES_BUTTON" else 0
+    values["SET_BUTTON"] = 1 if send_button_field == "SET_BUTTON" and not values["RES_BUTTON"] == 1 else 0
+    values["RES_BUTTON"] = 1 if send_button_field == "RES_BUTTON" and not values["SET_BUTTON"] == 1 else 0
     values["FOLLOW_DISTANCE_BUTTON"] = 0
 
     can_bus = 1 if self.CP.carFingerprint == CAR.NISSAN_ALTIMA else 2
@@ -69,10 +69,9 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     if self.ICBM.sendButton != SendButtonState.none:
       send_field = BUTTON_FIELDS[self.ICBM.sendButton]
 
-      #send every 0.2 sec for 0.1 sec
-      if (self.frame - self.last_button_frame) * DT_CTRL >= 0.1:
+      #send every 0.2 sec
+      if (self.frame - self.last_button_frame) * DT_CTRL >= 0.2:
         can_sends.append(self._create_button_msg(packer, CS, send_field))
-        if (self.frame - self.last_button_frame) * DT_CTRL >= 0.2:
-          self.last_button_frame = self.frame
+        self.last_button_frame = self.frame
 
     return can_sends
