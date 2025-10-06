@@ -37,7 +37,7 @@ class SnGCarController:
       return False
 
     if should_resume:
-      self.epb_resume_frames_remaining = 5
+      self.epb_resume_frames_remaining = 15
 
     send_resume = self.epb_resume_frames_remaining > 0
     if self.epb_resume_frames_remaining > 0:
