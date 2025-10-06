@@ -342,9 +342,6 @@ ALT_ACCS = {CAR.GMC_YUKON}
 # We're integrated at the Safety Data Gateway Module on these cars
 SDGM_CAR = {CAR.CADILLAC_XT4, CAR.CHEVROLET_VOLT_2019, CAR.CHEVROLET_TRAVERSE}
 
-# port extensions
-NO_ACC_CAR = CAR.with_sp_flags(GMFlagsSP.NON_ACC)
-
 STEER_THRESHOLD = 1.0
 
 DBC = CAR.create_dbc_map()
