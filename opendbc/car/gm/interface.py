@@ -247,10 +247,11 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
 
     # NON_ACC vehicles should use camera car speed thresholds
     if ret.flags & GMFlagsSP.NON_ACC:
-      stock_cp.dashcamOnly = False
       stock_cp.alphaLongitudinalAvailable = False
+      stock_cp.networkLocation = NetworkLocation.fwdCamera
       stock_cp.openpilotLongitudinalControl = False
       stock_cp.pcmCruise = True
+      stock_cp.safetyConfigs[0].safetyParam |= GMSafetyFlags.HW_CAM.value
       ret.safetyParam |= GMSafetyFlagsSP.NON_ACC
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
       stock_cp.minSteerSpeed = 3.0   # ~6 mph
