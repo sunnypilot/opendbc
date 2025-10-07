@@ -47,10 +47,12 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     # Some Nissan platforms (e.g., Leaf) don't have all of these fields present in their CRUISE_THROTTLE message. Use .get with a default to avoid KeyErrors.
     values = {s: CS.cruise_throttle_msg.get(s, 0) for s in CRUISE_THROTTLE_FIELDS}
 
-    # Don't send any buttons if the user is pressing buttons on the steering wheel
-    if values["CANCEL_BUTTON"] == 0 and values["PROPILOT_BUTTON"] == 0 and values["SET_BUTTON"] == 0 and values["RES_BUTTON"] == 0 and values["FOLLOW_DISTANCE_BUTTON"] == 0:
-      values["SET_BUTTON"] = 1 if send_button_field == "SET_BUTTON" else 0
-      values["RES_BUTTON"] = 1 if send_button_field == "RES_BUTTON" else 0
+    values["NO_BUTTON_PRESSED"] = 0
+
+    # # Don't send any buttons if the user is pressing buttons on the steering wheel
+    # if values["CANCEL_BUTTON"] == 0 and values["PROPILOT_BUTTON"] == 0 and values["FOLLOW_DISTANCE_BUTTON"] == 0:
+    #   values["SET_BUTTON"] = 1 if send_button_field == "SET_BUTTON" else 0
+    #   values["RES_BUTTON"] = 1 if send_button_field == "RES_BUTTON" else 0
 
     can_bus = 1 if self.CP.carFingerprint == CAR.NISSAN_ALTIMA else 2
     return packer.make_can_msg("CRUISE_THROTTLE", can_bus, values)
@@ -65,11 +67,11 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     if self.ICBM.sendButton != SendButtonState.none:
       send_field = BUTTON_FIELDS[self.ICBM.sendButton]
 
-      # Every 0.2s, continuously send for 0.1s. Sending only once per interval does not work on Nissan.
+      # Every 0.5s, continuously send for 0.1s. Sending only once per interval does not work on Nissan.
       # TODO: lower values if possible
       if (self.frame - self.last_button_frame) * DT_CTRL >= 0.1:
         can_sends.append(self._create_button_msg(packer, CS, send_field))
-        if (self.frame - self.last_button_frame) * DT_CTRL >= 0.2:
+        if (self.frame - self.last_button_frame) * DT_CTRL >= 0.5:
           self.last_button_frame = self.frame
 
     return can_sends
