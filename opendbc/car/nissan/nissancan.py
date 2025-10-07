@@ -52,6 +52,35 @@ def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
   return packer.make_can_msg("CRUISE_THROTTLE", can_bus, values)
 
 
+def create_cruise_button_msg(packer, car_fingerprint, cruise_throttle_msg, send_button_field: str):
+  # Build a CRUISE_THROTTLE message with SET/RES button simulated
+  values = {s: cruise_throttle_msg.get(s, 0) for s in [
+    "COUNTER",
+    "PROPILOT_BUTTON",
+    "CANCEL_BUTTON",
+    "GAS_PEDAL_INVERTED",
+    "SET_BUTTON",
+    "RES_BUTTON",
+    "FOLLOW_DISTANCE_BUTTON",
+    "NO_BUTTON_PRESSED",
+    "GAS_PEDAL",
+    "USER_BRAKE_PRESSED",
+    "USER_BRAKE_PRESSED_INVERTED",
+    "NEW_SIGNAL_2",
+    "GAS_PRESSED_INVERTED",
+    "unsure1",
+    "unsure2",
+    "unsure3",
+  ]}
+
+  values["NO_BUTTON_PRESSED"] = 0
+  values["SET_BUTTON"] = 1 if send_button_field == "SET_BUTTON" else 0
+  values["RES_BUTTON"] = 1 if send_button_field == "RES_BUTTON" else 0
+
+  can_bus = 1 if car_fingerprint == CAR.NISSAN_ALTIMA else 2
+  return packer.make_can_msg("CRUISE_THROTTLE", can_bus, values)
+
+
 def create_cancel_msg(packer, cancel_msg, cruise_cancel):
   values = {s: cancel_msg[s] for s in [
     "CANCEL_SEATBELT",
