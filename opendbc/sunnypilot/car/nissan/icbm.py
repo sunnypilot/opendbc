@@ -67,11 +67,11 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     if self.ICBM.sendButton != SendButtonState.none:
       send_field = BUTTON_FIELDS[self.ICBM.sendButton]
 
-      # Every 0.5s, continuously send for 0.1s. Sending only once per interval does not work on Nissan.
+      # Every 0.2s, continuously send for 0.1s. Sending only once per interval does not work on Nissan.
       # TODO: lower values if possible
       if (self.frame - self.last_button_frame) * DT_CTRL >= 0.1:
         can_sends.append(self._create_button_msg(packer, CS, send_field))
-        if (self.frame - self.last_button_frame) * DT_CTRL >= 0.5:
+        if (self.frame - self.last_button_frame) * DT_CTRL >= 0.2:
           self.last_button_frame = self.frame
 
     return can_sends
