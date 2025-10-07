@@ -31,6 +31,7 @@ class SnGCarController:
     self.last_standstill_frame = 0
     self.epb_resume_frames_remaining = -1
     self.prev_close_distance = 0.0
+    self.prev_standstill = False
 
   def update_epb_resume_sequence(self, should_resume: bool) -> bool:
     if self.manual_parking_brake:
@@ -64,14 +65,12 @@ class SnGCarController:
     close_distance = CS.es_distance_msg["Close_Distance"]
     in_standstill = CS.out.standstill
 
-    if not in_standstill:
+    if in_standstill and not self.prev_standstill:
       self.last_standstill_frame = frame
 
     # Check if we've been in standstill long enough
     standstill_duration = (frame - self.last_standstill_frame) * DT_CTRL
     in_standstill_hold = standstill_duration > 0.5
-    if (frame - self.last_standstill_frame) * DT_CTRL >= 0.55:
-      self.last_standstill_frame = frame
 
     # Car state distance-based conditions (EPB only)
     in_resume_distance = _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST
@@ -87,6 +86,7 @@ class SnGCarController:
       send_resume = self.update_epb_resume_sequence(should_resume)
 
     self.prev_close_distance = close_distance
+    self.prev_standstill = in_standstill
 
     return send_resume
 
