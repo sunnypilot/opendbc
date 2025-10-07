@@ -65,12 +65,11 @@ class SnGCarController:
     close_distance = CS.es_distance_msg["Close_Distance"]
     in_standstill = CS.out.standstill
 
-    if in_standstill and not self.prev_standstill:
-      self.last_standstill_frame = frame
-
     # Check if we've been in standstill long enough
-    standstill_duration = (frame - self.last_standstill_frame) * DT_CTRL
-    in_standstill_hold = standstill_duration > 0.5
+    in_standstill_hold = (frame - self.last_standstill_frame) * DT_CTRL > 0.5
+
+    if not in_standstill:
+      self.last_standstill_frame = frame
 
     # Car state distance-based conditions (EPB only)
     in_resume_distance = _SNG_ACC_MIN_DIST < close_distance < _SNG_ACC_MAX_DIST
