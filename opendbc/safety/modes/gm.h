@@ -34,6 +34,7 @@ typedef enum {
 } GmHardware;
 static GmHardware gm_hw = GM_ASCM;
 static bool gm_pcm_cruise = false;
+static bool gm_non_acc = false;
 
 static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
@@ -86,7 +87,7 @@ static void gm_rx_hook(const CANPacket_t *msg) {
       gas_pressed = msg->data[5] != 0U;
 
       // enter controls on rising edge of ACC, exit controls when ACC off
-      if (gm_pcm_cruise) {
+      if (gm_pcm_cruise && !gm_non_acc) {
         bool cruise_engaged = (msg->data[1] >> 5) != 0U;
         pcm_cruise_check(cruise_engaged);
       }
@@ -242,7 +243,7 @@ static safety_config gm_init(uint16_t param) {
   gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long;
 
   const uint16_t GM_PARAM_SP_NON_ACC = 1;
-  bool gm_non_acc = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_NON_ACC);
+  gm_non_acc = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_NON_ACC);
 
   safety_config ret;
   if (gm_hw == GM_CAM) {
@@ -260,6 +261,7 @@ static safety_config gm_init(uint16_t param) {
   }
 
   if (gm_non_acc) {
+    SET_TX_MSGS(GM_CAM_TX_MSGS, ret);
     if (gm_ev) {
       SET_RX_CHECKS(gm_non_acc_ev_rx_checks, ret);
     } else {
