@@ -69,8 +69,8 @@ class SnGCarController:
 
     # Check if we've been in standstill long enough
     standstill_duration = (frame - self.last_standstill_frame) * DT_CTRL
-    in_standstill_hold = standstill_duration > 0.30
-    if (frame - self.last_standstill_frame) * DT_CTRL >= 0.35:
+    in_standstill_hold = standstill_duration > 0.5
+    if (frame - self.last_standstill_frame) * DT_CTRL >= 0.55:
       self.last_standstill_frame = frame
 
     # Car state distance-based conditions (EPB only)
