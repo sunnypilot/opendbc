@@ -51,8 +51,8 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
 
     # # Don't send any buttons if the user is pressing buttons on the steering wheel
     # if values["CANCEL_BUTTON"] == 0 and values["PROPILOT_BUTTON"] == 0 and values["FOLLOW_DISTANCE_BUTTON"] == 0:
-    #   values["SET_BUTTON"] = 1 if send_button_field == "SET_BUTTON" else 0
-    #   values["RES_BUTTON"] = 1 if send_button_field == "RES_BUTTON" else 0
+    values["SET_BUTTON"] = 1 if send_button_field == "SET_BUTTON" else 0
+    values["RES_BUTTON"] = 1 if send_button_field == "RES_BUTTON" else 0
 
     can_bus = 1 if self.CP.carFingerprint == CAR.NISSAN_ALTIMA else 2
     return packer.make_can_msg("CRUISE_THROTTLE", can_bus, values)
