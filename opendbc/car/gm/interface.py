@@ -16,16 +16,17 @@ from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP, GMSafetyFlagsSP
 TransmissionType = structs.CarParams.TransmissionType
 NetworkLocation = structs.CarParams.NetworkLocation
 
-NON_LINEAR_TORQUE_PARAMS = {
-  CAR.CHEVROLET_BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
-  CAR.GMC_ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
-  CAR.CHEVROLET_SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
-}
-
 # sunnypilot-specific torque parameters for Bolt cars that actually use the d parameter
 NON_LINEAR_TORQUE_PARAMS_SP = {
   CAR.CHEVROLET_BOLT_NON_ACC: [2.24, 1.1, 0.28, -0.07],
   CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN: [1.8, 1.1, 0.3, -0.045],
+}
+
+NON_LINEAR_TORQUE_PARAMS = {
+  CAR.CHEVROLET_BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
+  CAR.GMC_ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
+  CAR.CHEVROLET_SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122],
+  **NON_LINEAR_TORQUE_PARAMS_SP,
 }
 
 
@@ -61,18 +62,13 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       # The "lat_accel vs torque" relationship is assumed to be the sum of "sigmoid + linear" curves
       # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
       # This has big effect on the stability about 0 (noise when going straight)
-      non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint) or NON_LINEAR_TORQUE_PARAMS_SP.get(self.CP.carFingerprint)
+      non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
       assert non_linear_torque_params, "The params are not defined"
-      if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS_SP:
-        a, b, c, d = non_linear_torque_params
-        sig_input = a * lateral_acceleration
-        sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
-        steer_torque = ((sig * b) + (lateral_acceleration * c)) + d
-      else:
-        a, b, c, _ = non_linear_torque_params
-        sig_input = a * lateral_acceleration
-        sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
-        steer_torque = (sig * b) + (lateral_acceleration * c)
+      a, b, c, d = non_linear_torque_params
+      d = d if NON_LINEAR_TORQUE_PARAMS_SP.get(self.CP.carFingerprint) else 0.0
+      sig_input = a * lateral_acceleration
+      sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
+      steer_torque = (sig * b) + (lateral_acceleration * c) + d
       return float(steer_torque)
 
     lataccel_values = np.arange(-5.0, 5.0, 0.01)
@@ -81,7 +77,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
     return torque_values, lataccel_values
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.carFingerprint in (NON_LINEAR_TORQUE_PARAMS | NON_LINEAR_TORQUE_PARAMS_SP):
+    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
       torque_values, lataccel_values = self.get_lataccel_torque_siglin()
 
       def torque_from_lateral_accel_siglin(lateral_acceleration: float, torque_params: structs.CarParams.LateralTorqueTuning):
@@ -91,7 +87,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       return self.torque_from_lateral_accel_linear
 
   def lateral_accel_from_torque(self) -> LateralAccelFromTorqueCallbackType:
-    if self.CP.carFingerprint in (NON_LINEAR_TORQUE_PARAMS | NON_LINEAR_TORQUE_PARAMS_SP):
+    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
       torque_values, lataccel_values = self.get_lataccel_torque_siglin()
 
       def lateral_accel_from_torque_siglin(torque: float, torque_params: structs.CarParams.LateralTorqueTuning):
