@@ -878,6 +878,17 @@
     ],
     "package": "Driver Alert Package II"
   },
+  "Honda Accord 4-Cylinder 2016-17": {
+    "platform": "HONDA_ACCORD_4CYL_9TH_GEN",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Accord 4-Cylinder",
+    "year": [
+      "2016",
+      "2017"
+    ],
+    "package": "Honda Sensing"
+  },
   "Honda Accord 2018-22": {
     "platform": "HONDA_ACCORD",
     "make": "Honda",
