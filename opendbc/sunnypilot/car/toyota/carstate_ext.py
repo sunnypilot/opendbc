@@ -20,6 +20,9 @@ TRAFFIC_SIGNAL_MAP = {
   66: "No overtake"
 }
 
+ZSS_DIFF_THRESHOLD = 4
+ZSS_MAX_THRESHOLD = 10
+
 
 class CarStateExt:
   def __init__(self, CP, CP_SP):
@@ -27,6 +30,10 @@ class CarStateExt:
     self.CP_SP = CP_SP
 
     self.acc_type = 1
+    self.zss_compute = False
+    self.zss_cruise_active_last = False
+    self.zss_angle_offset = 0.
+    self.zss_threshold_count = 0
 
     """Initialize traffic signal variables"""
     self._tsgn1 = None
@@ -55,6 +62,30 @@ class CarStateExt:
     if self.CP_SP.enableGasInterceptor:
       gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
       ret.gasPressed = gas > 805
+
+    # ZSS support thanks to zorrobyte, ErichMoraga, and dragonpilot
+    if self.CP_SP.flags & ToyotaFlagsSP.ZSS:
+      zorro_steer = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"]
+      control_available = ret.cruiseState.available
+
+      # Only compute ZSS offset when control is available
+      if control_available and not self.zss_cruise_active_last:
+        self.zss_threshold_count = 0
+        self.zss_compute = True  # Control was just activated, so allow offset to be recomputed
+      self.zss_cruise_active_last = control_available
+
+      # Compute ZSS offset once we have meaningful angles
+      if self.zss_compute and abs(ret.steeringAngleDeg) > 1e-3 and abs(zorro_steer) > 1e-3:
+        self.zss_compute = False
+        self.zss_angle_offset = zorro_steer - ret.steeringAngleDeg
+
+      # Sanity checks
+      steering_angle_deg = zorro_steer - self.zss_angle_offset
+      if self.zss_threshold_count <= ZSS_MAX_THRESHOLD:
+        if abs(ret.steeringAngleDeg - steering_angle_deg) > ZSS_DIFF_THRESHOLD:
+          self.zss_threshold_count += 1
+        else:
+          ret.steeringAngleDeg = steering_angle_deg
 
     # Update traffic signals and speed limit
     self.update_traffic_signals(cp_cam)
