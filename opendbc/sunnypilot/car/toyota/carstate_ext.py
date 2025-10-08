@@ -11,6 +11,9 @@ from opendbc.car import Bus, structs
 from opendbc.can.parser import CANParser
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
+ZSS_DIFF_THRESHOLD = 4
+ZSS_MAX_THRESHOLD = 10
+
 
 class CarStateExt:
   def __init__(self, CP, CP_SP):
@@ -34,11 +37,11 @@ class CarStateExt:
       ret.gasPressed = gas > 805
 
     # ZSS support thanks to dragonpilot and ErichMoraga
-    if self.CP_SP.flags & ToyotaFlagsSP.ZSS and self.zss_threshold_count <= 10:
+    if self.CP_SP.flags & ToyotaFlagsSP.ZSS:
       zorro_steer = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"]
+      control_available = ret.cruiseState.available
 
       # Only compute ZSS offset when control is available
-      control_available = ret.cruiseState.available
       if control_available and not self.zss_cruise_active_last:
         self.zss_threshold_count = 0
         self.zss_compute = True  # Control was just activated, so allow offset to be recomputed
@@ -52,7 +55,9 @@ class CarStateExt:
 
       # Sanity checks
       steering_angle_deg = zorro_steer - self.zss_angle_offset
-      if abs(ret.steeringAngleDeg - steering_angle_deg) > 4:
-        self.zss_threshold_count += 1
+      if abs(ret.steeringAngleDeg - steering_angle_deg) > ZSS_DIFF_THRESHOLD:
+        if self.zss_threshold_count <= ZSS_MAX_THRESHOLD:
+          self.zss_threshold_count += 1
       else:
-        ret.steeringAngleDeg = steering_angle_deg
+        if self.zss_threshold_count <= ZSS_MAX_THRESHOLD:
+          ret.steeringAngleDeg = steering_angle_deg
