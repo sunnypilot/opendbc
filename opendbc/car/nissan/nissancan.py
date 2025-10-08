@@ -52,7 +52,7 @@ def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
   return packer.make_can_msg("CRUISE_THROTTLE", can_bus, values)
 
 
-def create_cruise_button_msg(packer, car_fingerprint, counter, cruise_throttle_msg, send_button_field: str):
+def create_cruise_button_msg(packer, car_fingerprint, cruise_throttle_msg, send_button_field: str):
   # Build a CRUISE_THROTTLE message with SET/RES button simulated
   values = {s: cruise_throttle_msg[s] for s in [
     "COUNTER",
@@ -73,14 +73,9 @@ def create_cruise_button_msg(packer, car_fingerprint, counter, cruise_throttle_m
     "unsure3",
   ]}
 
-  # Counter (0-3) is precomputed by caller to keep all frame math in one place
-  values["COUNTER"] = counter
-  # Default to no button pressed; override below if a button is requested
-  values["NO_BUTTON_PRESSED"] = 1
+  values["NO_BUTTON_PRESSED"] = 0
   values["SET_BUTTON"] = 1 if send_button_field == "SET_BUTTON" else 0
   values["RES_BUTTON"] = 1 if send_button_field == "RES_BUTTON" else 0
-  if values["SET_BUTTON"] or values["RES_BUTTON"]:
-    values["NO_BUTTON_PRESSED"] = 0
 
   can_bus = 1 if car_fingerprint == CAR.NISSAN_ALTIMA else 2
   return packer.make_can_msg("CRUISE_THROTTLE", can_bus, values)

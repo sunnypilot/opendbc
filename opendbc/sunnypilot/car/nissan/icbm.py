@@ -31,19 +31,14 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     self.frame = frame
     self.last_button_frame = last_button_frame
 
-    # Determine whether we should send a button or just a heartbeat (no button)
-    send_field = None
     if self.ICBM.sendButton != SendButtonState.none:
-      candidate_field = BUTTON_FIELDS[self.ICBM.sendButton]
+      send_field = BUTTON_FIELDS[self.ICBM.sendButton]
+
       # Every 0.3s, continuously send for 0.1s. Sending only once per interval does not work on Nissan.
+      # Every 0.2s was too fast.
       if (self.frame - self.last_button_frame) * DT_CTRL >= 0.1:
-        send_field = candidate_field
+        can_sends.append(create_cruise_button_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, send_field))
         if (self.frame - self.last_button_frame) * DT_CTRL >= 0.3:
           self.last_button_frame = self.frame
-
-    # Send CRUISE_THROTTLE every other frame with updated counter, even when no button is pressed
-    if (self.frame % 2) == 0:
-      counter = (self.frame // 2) % 4
-      can_sends.append(create_cruise_button_msg(packer, self.CP.carFingerprint, counter, CS.cruise_throttle_msg, send_field))
 
     return can_sends
