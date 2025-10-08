@@ -71,7 +71,7 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
           self.packer, CS.lkas_hud_info_msg, steer_hud_alert
         ))
 
-    if CC.cruiseControl.resume and self.frame % 20 < 10:
+    if not CC.cruiseControl.cancel and CC.cruiseControl.resume and self.frame % 20 < 10:
       counter = (CS.cruise_throttle_msg.get("COUNTER", 0) + 1) % 4
       can_sends.append(nissancan.create_cruise_button_msg(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, "RES_BUTTON", counter))
 
