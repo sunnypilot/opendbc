@@ -36,7 +36,7 @@ class CarStateExt:
       gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
       ret.gasPressed = gas > 805
 
-    # ZSS support thanks to dragonpilot and ErichMoraga
+    # ZSS support thanks to zorrobyte, ErichMoraga, and dragonpilot
     if self.CP_SP.flags & ToyotaFlagsSP.ZSS:
       zorro_steer = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"]
       control_available = ret.cruiseState.available
@@ -48,16 +48,14 @@ class CarStateExt:
       self.zss_cruise_active_last = control_available
 
       # Compute ZSS offset once we have meaningful angles
-      if self.zss_compute:
-        if abs(ret.steeringAngleDeg) > 1e-3 and abs(zorro_steer) > 1e-3:
-          self.zss_compute = False
-          self.zss_angle_offset = zorro_steer - ret.steeringAngleDeg
+      if self.zss_compute and abs(ret.steeringAngleDeg) > 1e-3 and abs(zorro_steer) > 1e-3:
+        self.zss_compute = False
+        self.zss_angle_offset = zorro_steer - ret.steeringAngleDeg
 
       # Sanity checks
       steering_angle_deg = zorro_steer - self.zss_angle_offset
-      if abs(ret.steeringAngleDeg - steering_angle_deg) > ZSS_DIFF_THRESHOLD:
-        if self.zss_threshold_count <= ZSS_MAX_THRESHOLD:
+      if self.zss_threshold_count <= ZSS_MAX_THRESHOLD:
+        if abs(ret.steeringAngleDeg - steering_angle_deg) > ZSS_DIFF_THRESHOLD:
           self.zss_threshold_count += 1
-      else:
-        if self.zss_threshold_count <= ZSS_MAX_THRESHOLD:
+        else:
           ret.steeringAngleDeg = steering_angle_deg

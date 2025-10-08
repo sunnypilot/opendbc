@@ -173,6 +173,8 @@ class CarInterface(CarInterfaceBase):
     if 0x2AA in fingerprint[0] and candidate in NO_DSU_CAR:
       ret.flags |= ToyotaFlagsSP.RADAR_CAN_FILTER.value
 
+    # Detect ZSS, which allows sunnypilot to utilize an improved angle sensor for some Toyota vehicles
+    # https://github.com/zorrobyte/betterToyotaAngleSensorForOP
     if 0x23 in fingerprint[0]:
       ret.flags |= ToyotaFlagsSP.ZSS.value
 
