@@ -8,6 +8,7 @@ See the LICENSE.md file in the root directory for more details.
 from enum import StrEnum
 
 from opendbc.car import Bus, structs
+from opendbc.car.carlog import carlog
 from opendbc.can.parser import CANParser
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
@@ -70,7 +71,7 @@ class CarStateExt:
       splsgn4 = cp_cam.vl.get("RSA2", {}).get('SPLSGN4', 0)
     except (KeyError, AttributeError) as e:
       # Handle case where RSA messages are not available
-      print(f"RSA messages not available: {e}")
+      carlog.debug(f"RSA messages not available: {e}")
       return
 
     has_changed = tsgn1 != self._tsgn1 \
@@ -96,26 +97,26 @@ class CarStateExt:
     if not has_changed:
       return
 
-    print('---- TRAFFIC SIGNAL UPDATE -----')
+    carlog.debug('---- TRAFFIC SIGNAL UPDATE -----')
     if tsgn1 is not None and tsgn1 != 0:
-      print(f'TSGN1: {self._traffic_signal_description(tsgn1)}')
+      carlog.debug(f'TSGN1: {self._traffic_signal_description(tsgn1)}')
     if spdval1 is not None and spdval1 != 0:
-      print(f'SPDVAL1: {spdval1}')
+      carlog.debug(f'SPDVAL1: {spdval1}')
     if splsgn1 is not None and splsgn1 != 0:
-      print(f'SPLSGN1: {splsgn1}')
+      carlog.debug(f'SPLSGN1: {splsgn1}')
     if tsgn2 is not None and tsgn2 != 0:
-      print(f'TSGN2: {self._traffic_signal_description(tsgn2)}')
+      carlog.debug(f'TSGN2: {self._traffic_signal_description(tsgn2)}')
     if splsgn2 is not None and splsgn2 != 0:
-      print(f'SPLSGN2: {splsgn2}')
+      carlog.debug(f'SPLSGN2: {splsgn2}')
     if tsgn3 is not None and tsgn3 != 0:
-      print(f'TSGN3: {self._traffic_signal_description(tsgn3)}')
+      carlog.debug(f'TSGN3: {self._traffic_signal_description(tsgn3)}')
     if splsgn3 is not None and splsgn3 != 0:
-      print(f'SPLSGN3: {splsgn3}')
+      carlog.debug(f'SPLSGN3: {splsgn3}')
     if tsgn4 is not None and tsgn4 != 0:
-      print(f'TSGN4: {self._traffic_signal_description(tsgn4)}')
+      carlog.debug(f'TSGN4: {self._traffic_signal_description(tsgn4)}')
     if splsgn4 is not None and splsgn4 != 0:
-      print(f'SPLSGN4: {splsgn4}')
-    print('------------------------')
+      carlog.debug(f'SPLSGN4: {splsgn4}')
+    carlog.debug('------------------------')
 
   def _traffic_signal_description(self, tsgn):
     """Get description for traffic signal code"""
