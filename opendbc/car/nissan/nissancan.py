@@ -54,7 +54,7 @@ def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
 
 def create_cruise_button_msg(packer, car_fingerprint, cruise_throttle_msg, send_button_field: str):
   # Build a CRUISE_THROTTLE message with SET/RES button simulated
-  values = {s: cruise_throttle_msg[s] for s in [
+  values = {s: cruise_throttle_msg.get(s, 0) for s in [
     "COUNTER",
     "PROPILOT_BUTTON",
     "CANCEL_BUTTON",
