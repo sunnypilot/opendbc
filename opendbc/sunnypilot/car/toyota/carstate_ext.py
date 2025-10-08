@@ -18,6 +18,10 @@ class CarStateExt:
     self.CP_SP = CP_SP
 
     self.acc_type = 1
+    self.zss_compute = False
+    self.zss_cruise_active_last = False
+    self.zss_angle_offset = 0.
+    self.zss_threshold_count = 0
 
   def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp = can_parsers[Bus.pt]
@@ -28,3 +32,27 @@ class CarStateExt:
     if self.CP_SP.enableGasInterceptor:
       gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
       ret.gasPressed = gas > 805
+
+    # ZSS support thanks to dragonpilot and ErichMoraga
+    if self.CP_SP.flags & ToyotaFlagsSP.ZSS and self.zss_threshold_count <= 10:
+      zorro_steer = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"]
+
+      # Only compute ZSS offset when control is available
+      control_available = ret.cruiseState.available
+      if control_available and not self.zss_cruise_active_last:
+        self.zss_threshold_count = 0
+        self.zss_compute = True  # Control was just activated, so allow offset to be recomputed
+      self.zss_cruise_active_last = control_available
+
+      # Compute ZSS offset once we have meaningful angles
+      if self.zss_compute:
+        if abs(ret.steeringAngleDeg) > 1e-3 and abs(zorro_steer) > 1e-3:
+          self.zss_compute = False
+          self.zss_angle_offset = zorro_steer - ret.steeringAngleDeg
+
+      # Sanity checks
+      steering_angle_deg = zorro_steer - self.zss_angle_offset
+      if abs(ret.steeringAngleDeg - steering_angle_deg) > 4:
+        self.zss_threshold_count += 1
+      else:
+        ret.steeringAngleDeg = steering_angle_deg
