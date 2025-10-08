@@ -36,7 +36,7 @@ class CarControllerExt:
 
     return lkas_control_bit
 
-  def ram_resume(self, CS: CarStateBase, CC: structs.CarControl, packer, last_button_frame) -> list[CanData]:
+  def ram_resume(self, CC: structs.CarControl, CS: CarStateBase, packer, last_button_frame) -> list[CanData]:
     can_sends = []
 
     if not self.CP.carFingerprint in RAM_CARS:
