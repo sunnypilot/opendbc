@@ -123,6 +123,7 @@ def create_lkas_hud_msg(packer, lkas_hud_msg, enabled, left_line, right_line, le
     "unknown08",
     "unknown05",
     "unknown02",
+    "LARGE_STEERING_WHEEL_ICON"
   ]}
 
   values["RIGHT_LANE_YELLOW_FLASH"] = 1 if right_lane_depart else 0
