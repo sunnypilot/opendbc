@@ -29,4 +29,6 @@ class HyundaiFlagsSP(IntFlag):
   NON_SCC = 2 ** 6
   NON_SCC_RADAR_FCA = 2 ** 7  # most with FCA come from the camera
   NON_SCC_NO_FCA = 2 ** 8  # not all have FCA
-  HAS_CUSTOM_BUTTON = 2 ** 9
+  SPEED_LIMIT_AVAILABLE = 2 ** 9  # platforms with speed limit data available
+  HAS_LKAS12 = 2 ** 10
+  HAS_CUSTOM_BUTTON = 2 ** 11
