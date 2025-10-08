@@ -46,6 +46,8 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt, Inte
         self.last_button_frame = self.frame
         can_sends.append(chryslercan.create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, resume=True))
 
+    CarControllerExt.ram_resume(self, CC, CS, self.packer, self.last_button_frame)
+
     # HUD alerts
     if self.frame % 25 == 0:
       if CS.lkas_car_model != -1:
