@@ -21,6 +21,6 @@ class CarControllerExt:
       if self.CP.minEnableSpeed >= 14.5 and CS.out.gearShifter != GearShifter.drive:
         lkas_control_bit = False
 
-    lkas_control_bit = lkas_control_bit and not CS.out.steerFaultTemporary and not CS.out.steerFaultPermanent
+    lkas_control_bit = lkas_control_bit and CC.latActive and not CS.out.steerFaultTemporary and not CS.out.steerFaultPermanent
 
     return lkas_control_bit
