@@ -130,7 +130,8 @@ static safety_config nissan_init(uint16_t param) {
     {0x4cc, 0, 8, .check_relay = true},   // PROPILOT_HUD_INFO_MSG
     {0x20b, 2, 6, .check_relay = false},  // CRUISE_THROTTLE (X-Trail)
     {0x20b, 1, 6, .check_relay = false},  // CRUISE_THROTTLE (Altima)
-    {0x280, 2, 8, .check_relay = true}    // CANCEL_MSG (Leaf)
+    {0x280, 2, 8, .check_relay = true},   // CANCEL_MSG (Leaf)
+    {0x239, 2, 8, .check_relay = false}   // CRUISE_THROTTLE (Leaf)
   };
 
   // Signals duplicated below due to the fact that these messages can come in on either CAN bus, depending on car model.
