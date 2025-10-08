@@ -23,6 +23,7 @@ def create_throttle(packer, CP, throttle_msg, send_resume):
     ]}
   else:
     values = {s: throttle_msg[s] for s in [
+      "CHECKSUM",
       "Signal1",
       "Engine_RPM",
       "Signal2",
@@ -50,6 +51,7 @@ def create_brake_pedal(packer, CP, brake_pedal_msg, send_resume):
     ]}
   else:
     values = {s: brake_pedal_msg[s] for s in [
+      "CHECKSUM",
       "Signal1",
       "Speed",
       "Signal2",
