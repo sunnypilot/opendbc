@@ -100,7 +100,6 @@ def create_cruise_button_msg(packer, car_fingerprint, cruise_throttle_msg, send_
   values["NO_BUTTON_PRESSED"] = 0
   values["SET_BUTTON"] = 1 if send_button_field == "SET_BUTTON" else 0
   values["RES_BUTTON"] = 1 if send_button_field == "RES_BUTTON" else 0
-  values["COUNTER"] = counter % 4
 
   can_bus = 1 if car_fingerprint == CAR.NISSAN_ALTIMA else 2
   return packer.make_can_msg("CRUISE_THROTTLE", can_bus, values)
