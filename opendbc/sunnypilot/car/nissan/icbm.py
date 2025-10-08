@@ -34,11 +34,15 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     if self.ICBM.sendButton != SendButtonState.none:
       send_field = BUTTON_FIELDS[self.ICBM.sendButton]
 
-      # Every 0.2s, continuously send for 0.1s. Sending only once per interval does not work on Nissan.
-      # TODO: lower values if possible
-      if (self.frame - self.last_button_frame) * DT_CTRL >= 0.1:
-        can_sends.append(create_cruise_button_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, send_field))
-        if (self.frame - self.last_button_frame) * DT_CTRL >= 0.2:
+      # Do it like Mazda: every >0.2s window, send 3 messages with specific counter offsets [1, 1, 0], then skip once
+      if (self.frame - self.last_button_frame) * DT_CTRL > 0.2:
+        self.button_frame += 1
+        button_counter_offset = [1, 1, 0, None][self.button_frame % 4]
+        if button_counter_offset is not None:
+          # compute the counter similarly to Mazda's crz_btns_counter behavior (assume 2-bit counter on Nissan)
+          base_counter = CS.cruise_throttle_msg.get("COUNTER", 0)
+          counter = (base_counter + button_counter_offset) % 4
+          can_sends.append(create_cruise_button_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, send_field, counter))
           self.last_button_frame = self.frame
 
     return can_sends
