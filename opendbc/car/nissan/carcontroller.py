@@ -73,7 +73,7 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
 
     if not CC.cruiseControl.cancel and CC.cruiseControl.resume and self.frame % 20 < 10:
       counter = (CS.cruise_throttle_msg.get("COUNTER", 0) + 1) % 4
-      can_sends.extend(nissancan.create_cruise_button_msg(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, "RES_BUTTON", counter))
+      can_sends.append(nissancan.create_cruise_button_msg(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, "RES_BUTTON", counter))
 
     # Intelligent Cruise Button Management
     can_sends.append(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame))
