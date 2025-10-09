@@ -117,7 +117,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
               pt.dRel = msg[f"{i}_LONG_DIST"]
               pt.yRel = msg[f"{i}_LAT_DIST"]
               pt.vRel = msg[f"{i}_REL_SPEED"]
-              pt.aRel = float('nan')
+              pt.aRel = float('nan')  # confirm REL_ACCEL factor
               pt.yvRel = float('nan')
             else:
               del self.pts[track_key]
@@ -133,7 +133,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
             self.pts[addr].dRel = msg['LONG_DIST']
             self.pts[addr].yRel = msg['LAT_DIST']
             self.pts[addr].vRel = msg['REL_SPEED']
-            self.pts[addr].aRel = msg['REL_ACCEL']
+            self.pts[addr].aRel = msg['REL_ACCEL']  # confirm factor
             self.pts[addr].yvRel = float('nan')
           else:
             del self.pts[addr]
