@@ -236,6 +236,13 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HondaFlagsSP.EPS_MODIFIED.value
         stock_cp.dashcamOnly = False
 
+    if (stock_cp.flags & HondaFlags.NIDEC) and (stock_cp.flags & HondaFlags.HYBRID):
+      ret.safetyParam |= HondaSafetyFlagsSP.NIDEC_HYBRID.value
+      # some hybrids use a different brakehold
+      if (0x223 in fingerprint[CAN.pt]):
+        ret.flags |= HondaFlagsSP.HYBRID_ALT_BRAKEHOLD.value
+      
+
     if candidate == CAR.HONDA_CIVIC:
       if ret.flags & HondaFlagsSP.EPS_MODIFIED:
         # stock request input values:     0x0000, 0x00DE, 0x014D, 0x01EF, 0x0290, 0x0377, 0x0454, 0x0610, 0x06EE
@@ -270,7 +277,6 @@ class CarInterface(CarInterfaceBase):
         stock_cp.lateralTuning.pid.kpV, stock_cp.lateralTuning.pid.kiV = [[0.21], [0.07]]
 
     elif candidate == CAR.HONDA_CLARITY:
-      ret.safetyParam |= HondaSafetyFlagsSP.CLARITY
       stock_cp.autoResumeSng = True
       stock_cp.minEnableSpeed = -1
       if ret.flags & HondaFlagsSP.EPS_MODIFIED:
