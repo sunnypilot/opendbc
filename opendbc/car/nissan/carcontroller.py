@@ -16,6 +16,7 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
     self.car_fingerprint = CP.carFingerprint
 
     self.apply_angle_last = 0
+    self._last_cruise_throttle_counter = None
 
     self.packer = CANPacker(dbc_names[Bus.pt])
 
@@ -71,9 +72,15 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
           self.packer, CS.lkas_hud_info_msg, steer_hud_alert
         ))
 
-    if not CC.cruiseControl.cancel and CC.cruiseControl.resume and self.frame % 20 < 10:
-      counter = (CS.cruise_throttle_msg.get("COUNTER", 0) + 1) % 4
-      can_sends.append(nissancan.create_cruise_button_msg(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, "RES_BUTTON", counter))
+    # Send resume only on frames where CRUISE_THROTTLE counter increases; keep counter as car provides
+    current_counter = CS.cruise_throttle_msg.get("COUNTER", 0)
+    if (self._last_cruise_throttle_counter is not None and current_counter > self._last_cruise_throttle_counter
+        and not CC.cruiseControl.cancel and CC.cruiseControl.resume):
+      can_sends.append(nissancan.create_cruise_button_msg(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, "RES_BUTTON"))
+
+    # Update last seen counter only when it increases
+    if self._last_cruise_throttle_counter is None or current_counter > self._last_cruise_throttle_counter:
+      self._last_cruise_throttle_counter = current_counter
 
     # Intelligent Cruise Button Management
     can_sends.append(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame))

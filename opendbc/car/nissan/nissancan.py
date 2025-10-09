@@ -51,7 +51,7 @@ def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
   return packer.make_can_msg("CRUISE_THROTTLE", can_bus, values)
 
 
-def create_cruise_button_msg(packer, car_fingerprint, cruise_throttle_msg, send_button_field: str, counter: int):
+def create_cruise_button_msg(packer, car_fingerprint, cruise_throttle_msg, send_button_field: str):
   # Build a CRUISE_THROTTLE message with SET/RES button simulated
   # Use a common field set for all Nissans, including Leaf/Leaf_IC
   if car_fingerprint in (CAR.NISSAN_LEAF, CAR.NISSAN_LEAF_IC):
