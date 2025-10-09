@@ -107,7 +107,6 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
           msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
           for i in ("1", "2"):
             track_key = f"{addr}_{i}"
-            dist = msg[f"{i}_LONG_DIST"]
             if track_key not in self.pts:
               self.pts[track_key] = structs.RadarData.RadarPoint()
               self.pts[track_key].trackId = self.track_id
@@ -115,7 +114,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
             if msg[f"{i}_STATE"] in (3, 4):
               pt = self.pts[track_key]
               pt.measured = True
-              pt.dRel = dist
+              pt.dRel = msg[f"{i}_LONG_DIST"]
               pt.yRel = msg[f"{i}_LAT_DIST"]
               pt.vRel = msg[f"{i}_REL_SPEED"]
               pt.aRel = float('nan')
