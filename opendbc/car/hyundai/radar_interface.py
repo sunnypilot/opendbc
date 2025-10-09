@@ -117,7 +117,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
               pt.measured = True
               pt.dRel = dist
               pt.yRel = msg[f"{i}_LAT_DIST"]
-              pt.vRel = float('nan')
+              pt.vRel = msg[f"{i}_REL_SPEED"]
               pt.aRel = float('nan')
               pt.yvRel = float('nan')
             else:
