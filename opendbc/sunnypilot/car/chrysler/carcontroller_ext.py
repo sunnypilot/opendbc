@@ -32,8 +32,6 @@ class CarControllerExt:
       if self.CP.minEnableSpeed >= 14.5 and CS.out.gearShifter != GearShifter.drive:
         lkas_control_bit = False
 
-    lkas_control_bit = lkas_control_bit and not CS.out.steerFaultTemporary and not CS.out.steerFaultPermanent
-
     return lkas_control_bit
 
   def ram_resume(self, CC: structs.CarControl, CS: CarStateBase, packer, last_button_frame) -> list[CanData]:
