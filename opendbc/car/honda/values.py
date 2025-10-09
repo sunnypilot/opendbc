@@ -355,7 +355,6 @@ class CAR(Platforms):
     CarSpecs(mass=1834, wheelbase=2.75, centerToFrontRatio=0.4, steerRatio=16.5),
     radar_dbc_dict('honda_clarity_hybrid_2018_can_generated'),
     flags=HondaFlags.HAS_ALL_DOOR_STATES,
-    sp_flags=HondaFlagsSP.CLARITY,
   )
 
 
