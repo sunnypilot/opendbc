@@ -23,8 +23,8 @@ class HyundaiButtonBase:
 
   def test_button_sends(self):
     """
-      Only RES and CANCEL buttons are allowed
-      - RES allowed while controls allowed
+      RES, SET and CANCEL buttons are allowed
+      - RES and SET allowed while controls allowed
       - CANCEL allowed while cruise is enabled
     """
     self.safety.set_controls_allowed(0)
@@ -33,7 +33,7 @@ class HyundaiButtonBase:
 
     self.safety.set_controls_allowed(1)
     self.assertTrue(self._tx(self._button_msg(Buttons.RESUME, bus=self.BUTTONS_TX_BUS)))
-    self.assertFalse(self._tx(self._button_msg(Buttons.SET, bus=self.BUTTONS_TX_BUS)))
+    self.assertTrue(self._tx(self._button_msg(Buttons.SET, bus=self.BUTTONS_TX_BUS)))
 
     for enabled in (True, False):
       self._rx(self._pcm_status_msg(enabled))
