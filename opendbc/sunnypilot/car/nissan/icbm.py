@@ -18,8 +18,6 @@ BUTTON_FIELDS = {
   SendButtonState.decrease: "SET_BUTTON",
 }
 
-
-
 class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManagementInterfaceBase):
   def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
@@ -34,10 +32,6 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
 
     if self.ICBM.sendButton != SendButtonState.none:
       send_field = BUTTON_FIELDS[self.ICBM.sendButton]
-      if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
-        can_sends.append(create_cruise_button_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, send_field))
-        self.last_button_frame = self.frame
-        if (self.frame - self.last_button_frame) * DT_CTRL > 0.2:
-          self.last_button_frame = self.frame
+      can_sends.append(create_cruise_button_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, send_field))
 
     return can_sends
