@@ -359,8 +359,8 @@ class CAR(Platforms):
   )
   HONDA_ACCORD_9G = HondaNidecPlatformConfig(
     [
-      HondaCarDocs("Honda Accord 2016-17")
-      HondaCarDocs("Honda Accord Hybrid 2017", "All")
+      HondaCarDocs("Honda Accord 2016-17"),
+      HondaCarDocs("Honda Accord Hybrid 2017", "All"),
     ],
     CarSpecs(mass=1487, wheelbase=2.75, centerToFrontRatio=0.39, steerRatio=13.66, tireStiffnessFactor=0.8467),  # 13.37 is end-to-end spec
     radar_dbc_dict('honda_accord_2017_can_ext_generated'),
