@@ -85,7 +85,7 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt, Inte
         apply_torque = 0
       self.apply_torque_last = apply_torque
 
-      can_sends.append(chryslercan.create_lkas_command(self.packer, self.CP, int(apply_torque), lkas_control_bit and CC.latActive))
+      can_sends.append(chryslercan.create_lkas_command(self.packer, self.CP, int(apply_torque), lkas_control_bit))
 
     if self.frame % 10 == 0 and self.CP.carFingerprint not in RAM_CARS:
       can_sends.append(MadsCarController.create_lkas_heartbit(self.packer, CS.lkas_heartbit, self.mads))
