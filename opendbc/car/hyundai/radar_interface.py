@@ -12,6 +12,8 @@ MANDO_RADAR_ADDR = 0x500
 MANDO_RADAR_COUNT = 32
 MRREVO14F_RADAR_ADDR = 0x602
 MRREVO14F_RADAR_COUNT = 16
+MRR30_RADAR_ADDR = 0x210
+MRR30_RADAR_COUNT = 16
 MRR35_RADAR_ADDR = 0x3A5
 MRR35_RADAR_COUNT = 32
 
@@ -33,6 +35,8 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.CP_flags = CP.flags
     if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
       self.radar_addr, self.radar_count = MRREVO14F_RADAR_ADDR, MRREVO14F_RADAR_COUNT
+    elif self.CP_flags & HyundaiFlags.MRR30_RADAR:
+      self.radar_addr, self.radar_count = MRR30_RADAR_ADDR, MRR30_RADAR_COUNT
     elif self.CP_flags & HyundaiFlags.MRR35_RADAR:
       self.radar_addr, self.radar_count = MRR35_RADAR_ADDR, MRR35_RADAR_COUNT
     else:
@@ -94,6 +98,26 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
               pt.dRel = dist
               pt.yRel = msg[f"{i}_LATERAL"]
               pt.vRel = msg[f"{i}_SPEED"]
+              pt.aRel = float('nan')
+              pt.yvRel = float('nan')
+            else:
+              del self.pts[track_key]
+
+        elif self.CP_flags & HyundaiFlags.MRR30_RADAR:
+          msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
+          for i in ("1", "2"):
+            track_key = f"{addr}_{i}"
+            dist = msg[f"{i}_LONG_DIST"]
+            if track_key not in self.pts:
+              self.pts[track_key] = structs.RadarData.RadarPoint()
+              self.pts[track_key].trackId = self.track_id
+              self.track_id += 1
+            if msg[f"{i}_STATE"] in (3, 4):
+              pt = self.pts[track_key]
+              pt.measured = True
+              pt.dRel = dist
+              pt.yRel = msg[f"{i}_LAT_DIST"]
+              pt.vRel = float('nan')
               pt.aRel = float('nan')
               pt.yvRel = float('nan')
             else:
