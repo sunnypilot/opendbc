@@ -1,6 +1,7 @@
 """ AUTO-FORMATTED USING opendbc/car/debug/format_fingerprints.py, EDIT STRUCTURE THERE."""
 from opendbc.car.structs import CarParams
 from opendbc.car.tesla.values import CAR
+from opendbc.sunnypilot.car.fw_versions_ext import merge_fw_versions
 
 Ecu = CarParams.Ecu
 
@@ -18,7 +19,6 @@ FW_VERSIONS = {
       b'TeMYG4_Main_0.0.0 (59),E4H014.29.0',
       b'TeMYG4_Main_0.0.0 (65),E4H015.01.0',
       b'TeMYG4_Main_0.0.0 (67),E4H015.02.1',
-      b'TeMYG4_Main_0.0.0 (67),E4HP015.02.1',
       b'TeMYG4_SingleECU_0.0.0 (33),E4S014.27',
     ],
   },
@@ -45,3 +45,5 @@ FW_VERSIONS = {
     ],
   },
 }
+
+merge_fw_versions(FW_VERSIONS)
