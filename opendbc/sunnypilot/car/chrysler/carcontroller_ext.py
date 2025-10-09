@@ -38,7 +38,7 @@ class CarControllerExt:
   def ram_resume(self, CC: structs.CarControl, CS: CarStateBase, packer, last_button_frame) -> list[CanData]:
     can_sends = []
 
-    if not self.CP.carFingerprint in RAM_CARS:
+    if self.CP.carFingerprint not in RAM_CARS:
       return can_sends
 
     das_bus = 2
