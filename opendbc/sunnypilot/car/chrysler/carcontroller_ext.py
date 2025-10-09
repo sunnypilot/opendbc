@@ -26,11 +26,12 @@ class CarControllerExt:
     if self.CP_SP.flags & ChryslerFlagsSP.NO_MIN_STEERING_SPEED:
       lkas_control_bit = CC.latActive
     elif self.CP.carFingerprint in RAM_DT:
-      lkas_control_bit = lkas_control_bit_prev
-      if self.CP.minEnableSpeed <= CS.out.vEgo <= self.CP.minEnableSpeed + 0.5:
-        lkas_control_bit = True
-      if self.CP.minEnableSpeed >= 14.5 and CS.out.gearShifter != GearShifter.drive:
-        lkas_control_bit = False
+      if not lkas_control_bit:
+        lkas_control_bit = lkas_control_bit_prev
+        if self.CP.minEnableSpeed <= CS.out.vEgo <= self.CP.minEnableSpeed + 0.5:
+          lkas_control_bit = True
+        if self.CP.minEnableSpeed >= 14.5 and CS.out.gearShifter != GearShifter.drive:
+          lkas_control_bit = False
 
     return lkas_control_bit
 
