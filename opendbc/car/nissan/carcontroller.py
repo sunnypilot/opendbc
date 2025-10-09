@@ -48,15 +48,11 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
           CarControllerParams.LKAS_MAX_TORQUE - 0.6 * max(0, abs(CS.out.steeringTorque) - CarControllerParams.STEER_THRESHOLD)
         )
 
-      # Send resume only on frames where CRUISE_THROTTLE counter increases; keep counter as car provides
-      current_counter = CS.cruise_throttle_msg["COUNTER"]
-      if current_counter != self._last_cruise_throttle_counter:
-        if (not CC.cruiseControl.cancel) and CC.cruiseControl.resume:
+      if not CC.cruiseControl.cancel:
+        if CC.cruiseControl.resume:
           can_sends.append(nissancan.create_cruise_button_msg(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, "RES_BUTTON"))
         else:
           can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame))
-
-      self._last_cruise_throttle_counter = current_counter
 
 
     if self.CP.carFingerprint in (CAR.NISSAN_ROGUE, CAR.NISSAN_XTRAIL, CAR.NISSAN_ALTIMA) and pcm_cancel_cmd:
