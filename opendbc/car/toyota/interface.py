@@ -157,8 +157,6 @@ class CarInterface(CarInterfaceBase):
     if candidate in UNSUPPORTED_DSU_CAR:
       ret.safetyParam |= ToyotaSafetyFlagsSP.UNSUPPORTED_DSU
 
-
-
     # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
     # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
     if 0x2FF in fingerprint[0] or (0x2AA in fingerprint[0] and candidate in NO_DSU_CAR):
