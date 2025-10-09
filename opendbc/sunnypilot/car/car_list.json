@@ -878,11 +878,11 @@
     ],
     "package": "Driver Alert Package II"
   },
-  "Honda Accord 4-Cylinder 2016-17": {
-    "platform": "HONDA_ACCORD_4CYL_9TH_GEN",
+  "Honda Accord 2016-17": {
+    "platform": "HONDA_ACCORD_9G",
     "make": "Honda",
     "brand": "honda",
-    "model": "Accord 4-Cylinder",
+    "model": "Accord",
     "year": [
       "2016",
       "2017"
@@ -912,6 +912,16 @@
       "2023",
       "2024",
       "2025"
+    ],
+    "package": "All"
+  },
+  "Honda Accord Hybrid 2017": {
+    "platform": "HONDA_ACCORD_9G",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Accord Hybrid",
+    "year": [
+      "2017"
     ],
     "package": "All"
   },
