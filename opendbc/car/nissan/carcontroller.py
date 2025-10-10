@@ -17,6 +17,7 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
 
     self.apply_angle_last = 0
     self._last_cruise_throttle_counter = None
+    self.last_button_frame = 0
 
     self.packer = CANPacker(dbc_names[Bus.pt])
 
