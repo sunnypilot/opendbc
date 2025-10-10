@@ -63,6 +63,9 @@ class StrEnum(_StrEnum):
 class CarParamsSP:
   flags: int = auto_field()        # flags for car specific quirks
   safetyParam: int = auto_field()  # flags for custom safety flags
+  pcmCruiseSpeed: bool = auto_field()
+  intelligentCruiseButtonManagementAvailable: bool = auto_field()
+  enableGasInterceptor: bool = auto_field()
 
   neuralNetworkLateralControl: 'CarParamsSP.NeuralNetworkLateralControl' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl())
 
@@ -95,6 +98,29 @@ class ModularAssistiveDrivingSystem:
 
 
 @auto_dataclass
+class IntelligentCruiseButtonManagement:
+  state: 'IntelligentCruiseButtonManagement.IntelligentCruiseButtonManagementState' = field(
+    default_factory=lambda: IntelligentCruiseButtonManagement.IntelligentCruiseButtonManagementState.inactive
+  )
+  sendButton: 'IntelligentCruiseButtonManagement.SendButtonState' = field(
+    default_factory=lambda: IntelligentCruiseButtonManagement.SendButtonState.none
+  )
+  vTarget: float = auto_field()
+
+  class IntelligentCruiseButtonManagementState(StrEnum):
+    inactive = auto()
+    preActive = auto()
+    increasing = auto()
+    decreasing = auto()
+    holding = auto()
+
+  class SendButtonState(StrEnum):
+    none = auto()
+    increase = auto()
+    decrease = auto()
+
+
+@auto_dataclass
 class LeadData:
   dRel: float = auto_field()
   yRel: float = auto_field()
@@ -121,6 +147,7 @@ class CarControlSP:
   params: list['CarControlSP.Param'] = auto_field()
   leadOne: 'LeadData' = field(default_factory=lambda: LeadData())
   leadTwo: 'LeadData' = field(default_factory=lambda: LeadData())
+  intelligentCruiseButtonManagement: 'IntelligentCruiseButtonManagement' = field(default_factory=lambda: IntelligentCruiseButtonManagement())
 
   @auto_dataclass
   class Param:
@@ -142,4 +169,4 @@ class CarControlSP:
 
 @auto_dataclass
 class CarStateSP:
-  pass
+  speedLimit: float = auto_field()
