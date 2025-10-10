@@ -68,10 +68,10 @@ class SnGCarController:
       self.last_standstill_frame = frame
 
     # Check if we've been in standstill long enough
-    mpb_standstill_timers = (0.5, 0.0) if self.CP.flags & SubaruFlags.PREGLOBAL else (0.5, 0.55)
+    mpb_standstill_timers = (0.6, 0.6) if self.CP.flags & SubaruFlags.PREGLOBAL else (0.5, 0.55)
     standstill_duration = (frame - self.last_standstill_frame) * DT_CTRL
     in_standstill_hold = standstill_duration > mpb_standstill_timers[0]
-    if mpb_standstill_timers[1] != 0.0 and standstill_duration >= mpb_standstill_timers[1]:
+    if standstill_duration >= mpb_standstill_timers[1]:
       self.last_standstill_frame = frame
 
     # Car state distance-based conditions (EPB only)
