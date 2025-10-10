@@ -32,6 +32,9 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+    # Intelligent Cruise Button Management availability
+    ret.intelligentCruiseButtonManagementAvailable = True
+
     if candidate in (CAR.NISSAN_LEAF, CAR.NISSAN_LEAF_IC):
       ret.safetyParam |= NissanSafetyFlagsSP.LEAF
 
