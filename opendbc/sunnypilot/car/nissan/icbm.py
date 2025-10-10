@@ -32,6 +32,6 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
 
     if self.ICBM.sendButton != SendButtonState.none:
       send_field = BUTTON_FIELDS[self.ICBM.sendButton]
-      can_sends.append(create_cruise_button_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, send_field))
+      can_sends.extend(create_cruise_button_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, send_field))
 
     return can_sends
