@@ -31,7 +31,10 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     self.last_button_frame = last_button_frame
 
     if self.ICBM.sendButton != SendButtonState.none:
-      send_field = BUTTON_FIELDS[self.ICBM.sendButton]
-      can_sends.extend(create_cruise_button_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, send_field))
+      if (self.frame - self.last_button_frame) * DT_CTRL > 0.06:
+        send_field = BUTTON_FIELDS[self.ICBM.sendButton]
+        can_sends.extend(create_cruise_button_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, send_field))
+        if (self.frame - self.last_button_frame) * DT_CTRL > 0.16:
+          self.last_button_frame = self.frame
 
     return can_sends
