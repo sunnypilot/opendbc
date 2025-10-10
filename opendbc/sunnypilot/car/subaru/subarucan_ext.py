@@ -63,6 +63,6 @@ def create_brake_pedal(packer, CP, brake_pedal_msg, send_resume):
     values["COUNTER"] = create_counter(brake_pedal_msg)
 
   if send_resume:
-    values["Speed"] = 1 if CP.flags & SubaruFlags.PREGLOBAL else 3
+    values["Speed"] = 3
 
   return packer.make_can_msg("Brake_Pedal", CanBus.camera, values)
