@@ -11,10 +11,8 @@ from dataclasses import dataclass
 from opendbc.car import structs, DT_CTRL
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams, HyundaiFlags
-from opendbc.sunnypilot.car import get_param
-from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update, \
-                                                                LongitudinalTuningType
-
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
@@ -46,8 +44,6 @@ class LongitudinalController:
     self.CP = CP
     self.CP_SP = CP_SP
 
-    self.long_tuning_param = LongitudinalTuningType.OFF
-
     self.tuning = LongitudinalState()
     self.car_config = get_car_config(CP)
     self.long_control_state_last = LongCtrlState.off
@@ -63,30 +59,9 @@ class LongitudinalController:
     self.comfort_band_lower = 0.0
     self.stopping = False
 
-    self._last_tuning_params: tuple = ()
-    self._tuning_params_dict: dict[str, str] = {}
-    self._param_update_counter = 0
-
-  def _get_tuning_params_dict(self, CC_SP) -> None:
-    """Update car config when tuning parameters change."""
-    params_list = CC_SP.params
-    self.long_tuning_param = get_param(params_list, "HyundaiLongitudinalTuning", LongitudinalTuningType.OFF)
-    if self.long_tuning_param != LongitudinalTuningType.OFF:
-      tuning_values = tuple(p.value.decode('utf-8') if hasattr(p, 'value') else '' for p in params_list if p.key.startswith('LongTuning'))
-      if tuning_values != self._last_tuning_params:
-        self._last_tuning_params = tuning_values
-        self._tuning_params_dict = {p.key: p.value.decode('utf-8') for p in params_list if p.key.startswith('LongTuning')}
-        self.car_config = get_car_config(self.CP, self._tuning_params_dict)
-
-  def _update_tuning_params(self, CC_SP) -> None:
-    """Update tuning parameters every 3 seconds."""
-    if self._param_update_counter % int(3.0 / (DT_CTRL * 2)) == 0:
-      self._get_tuning_params_dict(CC_SP)
-    self._param_update_counter = (self._param_update_counter + 1) % 100000
-
   @property
   def enabled(self) -> bool:
-    return self.long_tuning_param != LongitudinalTuningType.OFF
+    return bool(self.CP_SP.flags & (HyundaiFlagsSP.LONG_TUNING_DYNAMIC | HyundaiFlagsSP.LONG_TUNING_PREDICTIVE))
 
   def fcw(self, CC: structs.CarControl) -> bool:
     return bool(CC.hudControl.visualAlert == VisualAlert.fcw)
@@ -218,27 +193,27 @@ class LongitudinalController:
     j_ego_upper, j_ego_lower = self._calculate_lookahead_jerk(accel_error, velocity)
 
     # Calculate lower jerk limit
-    lower_jerk = max(-j_ego_lower, self.car_config.min_lower_jerk)
+    lower_jerk = max(-j_ego_lower, self.car_config.min_jerk_lower)
 
     # Final jerk limits with thresholds
-    desired_jerk_upper = min(max(j_ego_upper, self.car_config.min_upper_jerk), upper_speed_factor)
+    desired_jerk_upper = min(max(j_ego_upper, self.car_config.min_jerk_upper), upper_speed_factor)
     desired_jerk_lower = min(lower_jerk, lower_speed_factor)
 
     # Calculate dynamic lower jerk for non-predictive tuning
     a_ego_blended = float(np.interp(velocity, [1.0, 2.0], [CS.aBasis, CS.out.aEgo]))
     dynamic_accel_error = a_ego_blended - self.accel_last
     dynamic_lower_jerk = self._calculate_dynamic_lower_jerk(dynamic_accel_error, velocity)
-    dynamic_desired_lower_jerk = max(self.car_config.min_lower_jerk, min(dynamic_lower_jerk, lower_speed_factor))
+    dynamic_desired_lower_jerk = max(self.car_config.min_jerk_lower, min(dynamic_lower_jerk, lower_speed_factor))
 
     # Apply jerk limits based on tuning approach
-    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper, self.car_config.min_upper_jerk)
+    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper, self.car_config.min_jerk_upper)
 
     # Predictive tuning uses calculated desired jerk directly
     # Dynamic tuning applies a ramped approach for smoother transitions
-    if self.long_tuning_param == LongitudinalTuningType.PREDICTIVE:
+    if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_PREDICTIVE:
       self.jerk_lower = desired_jerk_lower
-    elif self.long_tuning_param == LongitudinalTuningType.DYNAMIC:
-      self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk, self.car_config.min_lower_jerk)
+    else:
+      self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk, self.car_config.min_jerk_lower)
 
     # Disable jerk when longitudinal control is inactive
     if not CC.longActive:
@@ -269,7 +244,7 @@ class LongitudinalController:
     if self.stopping:
       self.desired_accel = 0.0
     else:
-      self.desired_accel = float(np.clip(self.accel_cmd, self.car_config.accel_min, self.car_config.accel_max))
+      self.desired_accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
     # Apply jerk-limited integration to get smooth acceleration
     self.actual_accel = jerk_limited_integrator(self.desired_accel, self.accel_last, self.jerk_upper, self.jerk_lower)
@@ -316,28 +291,27 @@ class LongitudinalController:
 
     self.comfort_band_upper = 0.0
     self.comfort_band_lower = 0.0
-    accel = CarControllerParams.ACCEL_MIN
+    accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     self.desired_accel = accel
     self.actual_accel = accel
     self.accel_last = self.actual_accel
     self.jerk_upper = 0.5
     self.jerk_lower = 8.0
 
-  def update(self, CC: structs.CarControl, CC_SP: structs.CarControlSP, CS: CarStateBase) -> None:
+  def update(self, CC: structs.CarControl, CS: CarStateBase) -> None:
     """Update longitudinal control calculations.
 
     This is the main entry point called externally.
 
     Args:
         CC: Car control signals including actuators
-        CC_SP: sunnypilot car control signals including longitudinal tuning parameters and flags
         CS: Car state information
     """
+
     actuators = CC.actuators
     long_control_state = actuators.longControlState
     self.accel_cmd = CC.actuators.accel
 
-    self._update_tuning_params(CC_SP)
     self.get_stopping_state(actuators)
 
     if self.fcw(CC):
