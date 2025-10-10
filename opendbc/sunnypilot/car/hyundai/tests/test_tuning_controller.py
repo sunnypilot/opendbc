@@ -100,7 +100,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
       CS.out = Mock(vEgo=5.0, aEgo=-2.0)
       CS.aBasis = 0.0
       cases = [
-       # (flags, enabled, state, expected_upper, expected_lower)
+        # (flags, enabled, state, expected_upper, expected_lower)
         (0, None, LongCtrlState.pid,      3.0, 5.0),
         (0, None, LongCtrlState.stopping, 1.0, 5.0),
         (HyundaiFlags.CANFD, True,  LongCtrlState.pid, 3.0, 5.0),

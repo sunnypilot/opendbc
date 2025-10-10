@@ -21,45 +21,25 @@ class LongitudinalTuningType:
   PREDICTIVE = 2
 
 
-def create_config_from_params(params_dict: dict[str, str], base_config: CarTuningConfig) -> CarTuningConfig:
-  """Create a CarTuningConfig from parameter values."""
-  return CarTuningConfig(
-    accel_min=float(params_dict.get("LongTuningAccelMin", str(base_config.accel_min))),
-    accel_max=float(params_dict.get("LongTuningAccelMax", str(base_config.accel_max))),
-    v_ego_stopping=float(params_dict.get("LongTuningVEgoStopping", str(base_config.v_ego_stopping))),
-    stopping_decel_rate=float(params_dict.get("LongTuningStoppingDecelRate", str(base_config.stopping_decel_rate))),
-    jerk_limits=float(params_dict.get("LongTuningJerkLimits", str(base_config.jerk_limits))),
-    min_upper_jerk=float(params_dict.get("LongTuningMinUpperJerk", str(base_config.min_upper_jerk))),
-    min_lower_jerk=float(params_dict.get("LongTuningMinLowerJerk", str(base_config.min_lower_jerk))),
-  )
-
-
-def get_car_config(CP: structs.CarParams, params_dict: dict[str, str] = None) -> CarTuningConfig:
-  base_config = _get_base_config(CP)
-
-  if params_dict and int(params_dict.get("LongTuningCustomToggle", 0)) == 1:
-    return create_config_from_params(params_dict, base_config)
-
-  return base_config
-
-
-def _get_base_config(CP: structs.CarParams) -> CarTuningConfig:
-  """Extract base config selection logic for reuse."""
-  base_config = CAR_SPECIFIC_CONFIGS.get(CP.carFingerprint)
-  if base_config is None:
+def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
+  # Get car type flags from specific configs or determine from car flags
+  car_config = CAR_SPECIFIC_CONFIGS.get(CP.carFingerprint)
+  # If car is not in specific configs, determine from flags
+  if car_config is None:
     if CP.flags & HyundaiFlags.CANFD:
-      base_config = TUNING_CONFIGS["CANFD"]
+      car_config = TUNING_CONFIGS["CANFD"]
     elif CP.flags & HyundaiFlags.EV:
-      base_config = TUNING_CONFIGS["EV"]
+      car_config = TUNING_CONFIGS["EV"]
     elif CP.flags & HyundaiFlags.HYBRID:
-      base_config = TUNING_CONFIGS["HYBRID"]
+      car_config = TUNING_CONFIGS["HYBRID"]
     else:
-      base_config = TUNING_CONFIGS["DEFAULT"]
-  return base_config
+      car_config = TUNING_CONFIGS["DEFAULT"]
+
+  return car_config
 
 
-def get_longitudinal_tune(CP: structs.CarParams, params_dict: dict[str, str] = None) -> None:
-  config = get_car_config(CP, params_dict)
+def get_longitudinal_tune(CP: structs.CarParams) -> None:
+  config = get_car_config(CP)
   CP.vEgoStopping = config.v_ego_stopping
   CP.vEgoStarting = config.v_ego_starting
   CP.stoppingDecelRate = config.stopping_decel_rate

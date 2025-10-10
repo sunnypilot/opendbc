@@ -22,7 +22,7 @@ class CarTuningConfig:
   jerk_limits: float = 4.0
   upper_jerk_v: list[float] = field(default_factory=lambda: [3.0, 3.0, 1.6])
   lower_jerk_v: list[float] = field(default_factory=lambda: [5.0, 5.0, 3.0])
-  min_jerk_lower: float = 1.6
+  min_jerk_lower: float = 0.85
   min_jerk_upper: float = 0.5
 
 
@@ -53,6 +53,13 @@ TUNING_CONFIGS = {
 # Car-specific configs
 CAR_SPECIFIC_CONFIGS = {
   CAR.KIA_NIRO_EV: CarTuningConfig(
-    lower_jerk_v=[4.0, 3.0, 3.5],
+    jerk_limits=3.0,
+    min_jerk_lower=0.5,
+    min_jerk_upper=1.0,
+    v_ego_starting=0.15,
+    stopping_decel_rate=0.01,
+    v_ego_stopping=0.05,
+    upper_jerk_v=[1.0, 1.0, 0.5],
+    lower_jerk_v=[2.5, 2.9, 2.8],
   ),
 }

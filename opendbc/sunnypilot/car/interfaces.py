@@ -30,7 +30,7 @@ TorqueFromLateralAccelCallbackTypeTorqueSpace = Callable[[LatControlInputs, stru
 class CarInterfaceBaseSP:
   @staticmethod
   def torque_from_lateral_accel_linear_in_torque_space(latcontrol_inputs: LatControlInputs, torque_params: structs.CarParams.LateralTorqueTuning,
-                                                        gravity_adjusted: bool) -> float:
+                                                       gravity_adjusted: bool) -> float:
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     return latcontrol_inputs.lateral_acceleration / float(torque_params.latAccelFactor)
 
@@ -74,12 +74,13 @@ def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
                      params_list: list[dict[str, str]], can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
   params_dict = {k: v for param in params_list for k, v in param.items()}
 
-  _initialize_radar_tracks(CP, CP_SP, can_recv, can_send)
   _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
+  _initialize_radar_tracks(CP, CP_SP, can_recv, can_send)
 
 
 def _initialize_custom_longitudinal_tuning(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
                                            params_dict: dict[str, str]) -> None:
+
   # Hyundai Custom Longitudinal Tuning
   if CP.brand == 'hyundai':
     hyundai_longitudinal_tuning = int(params_dict["HyundaiLongitudinalTuning"])
