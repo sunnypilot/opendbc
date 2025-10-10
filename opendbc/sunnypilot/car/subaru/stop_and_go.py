@@ -81,7 +81,7 @@ class SnGCarController:
 
     if self.manual_parking_brake:
       # Manual parking brake: Direct resume when the standstill hold threshold is reached to prevent ACC fault
-      send_resume = in_standstill and in_standstill_hold
+      send_resume = in_standstill_hold
     else:
       # EPB: Resume sequence with trigger on distance with lead car increasing
       should_resume = CS.out.standstill and distance_resume_allowed
