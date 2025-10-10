@@ -71,7 +71,7 @@ class ToyotaFlags(IntFlag):
   # these cars use the Lane Tracing Assist (LTA) message for lateral control
   ANGLE_CONTROL = 128
   NO_STOP_TIMER = 256
-  # these cars are speculated to allow stop and go when the DSU is unplugged
+  # these cars are speculated to allow stop and go when the DSU is unplugged or disabled with sDSU
   SNG_WITHOUT_DSU = 512
   # these cars can utilize 2.0 m/s^2
   RAISED_ACCEL_LIMIT = 1024
@@ -394,12 +394,6 @@ class CAR(Platforms):
     CarSpecs(mass=4034. * CV.LB_TO_KG, wheelbase=2.84988, steerRatio=13.3, tireStiffnessFactor=0.444),
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.UNSUPPORTED_DSU,
-  )
-
-  # port extensions
-  TOYOTA_WILDLANDER = ToyotaSecOCPlatformConfig(
-    [ToyotaCarDocs("Toyota Wildlander PHEV 2021", min_enable_speed=MIN_ACC_SPEED)],
-    CarSpecs(mass=4155. * CV.LB_TO_KG, wheelbase=2.69, steerRatio=16.88, tireStiffnessFactor=0.5533),
   )
 
 
