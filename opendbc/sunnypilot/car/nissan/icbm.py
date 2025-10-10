@@ -18,6 +18,7 @@ BUTTON_FIELDS = {
   SendButtonState.decrease: "SET_BUTTON",
 }
 
+
 class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManagementInterfaceBase):
   def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
