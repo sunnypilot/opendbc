@@ -367,6 +367,7 @@ class CAR(Platforms):
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
 
+
 HONDA_NIDEC_ALT_PCM_ACCEL = CAR.with_flags(HondaFlags.NIDEC_ALT_PCM_ACCEL)
 HONDA_NIDEC_ALT_SCM_MESSAGES = CAR.with_flags(HondaFlags.NIDEC_ALT_SCM_MESSAGES)
 HONDA_BOSCH = CAR.with_flags(HondaFlags.BOSCH)
