@@ -241,7 +241,6 @@ class CarInterface(CarInterfaceBase):
       # some hybrids use a different brakehold
       if (0x223 in fingerprint[CAN.pt]):
         ret.flags |= HondaFlagsSP.HYBRID_ALT_BRAKEHOLD.value
-      
 
     if candidate == CAR.HONDA_CIVIC:
       if ret.flags & HondaFlagsSP.EPS_MODIFIED:
