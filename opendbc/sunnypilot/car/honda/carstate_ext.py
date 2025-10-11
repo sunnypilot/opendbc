@@ -25,8 +25,8 @@ class CarStateExt:
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE_HYBRID"] > 1e-5)
 
     if self.CP_SP.flags & HondaFlagsSP.HYBRID_ALT_BRAKEHOLD:
-      ret.brakeHoldActive = cp.vl[BRAKE_HOLD_HYBRID_ALT]["BRAKE_HOLD_ACTIVE"] == 1
-    
+      ret.brakeHoldActive = cp.vl["BRAKE_HOLD_HYBRID_ALT"]["BRAKE_HOLD_ACTIVE"] == 1
+
     if self.CP_SP.enableGasInterceptor:
       # Same threshold as panda, equivalent to 1e-5 with previous DBC scaling
       gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
