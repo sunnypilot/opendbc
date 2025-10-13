@@ -157,14 +157,6 @@ class CarInterface(CarInterfaceBase):
     if candidate in UNSUPPORTED_DSU_CAR:
       ret.safetyParam |= ToyotaSafetyFlagsSP.UNSUPPORTED_DSU
 
-    if candidate in (CAR.TOYOTA_WILDLANDER, ):
-      stock_cp.lateralTuning.init('pid')
-      stock_cp.lateralTuning.pid.kiBP = [0.0]
-      stock_cp.lateralTuning.pid.kpBP = [0.0]
-      stock_cp.lateralTuning.pid.kpV = [0.6]
-      stock_cp.lateralTuning.pid.kiV = [0.1]
-      stock_cp.lateralTuning.pid.kf = 0.00007818594
-
     # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
     # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
     if 0x2FF in fingerprint[0] or (0x2AA in fingerprint[0] and candidate in NO_DSU_CAR):
@@ -172,6 +164,23 @@ class CarInterface(CarInterfaceBase):
 
     if 0x2AA in fingerprint[0] and candidate in NO_DSU_CAR:
       ret.flags |= ToyotaFlagsSP.RADAR_CAN_FILTER.value
+
+    # Detect ZSS, which allows sunnypilot to utilize an improved angle sensor for some Toyota vehicles
+    # https://github.com/zorrobyte/betterToyotaAngleSensorForOP
+    if 0x23 in fingerprint[0] and not stock_cp.flags & ToyotaFlags.SECOC:
+      ret.flags |= ToyotaFlagsSP.ZSS.value
+
+    if candidate == CAR.TOYOTA_PRIUS:
+      if ret.flags & ToyotaFlagsSP.ZSS:
+        stock_cp.steerRatio = 15.0
+        stock_cp.mass = 3370.
+
+        # reuse logic from _get_params
+        # Only give steer angle deadzone to for bad angle sensor prius
+        for fw in car_fw:
+          if fw.ecu == "eps" and not fw.fwVersion == b'8965B47060\x00\x00\x00\x00\x00\x00':
+            stock_cp.steerActuatorDelay = 0.25
+            CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning, steering_angle_deadzone_deg=0.0)
 
     use_sdsu = bool(ret.flags & ToyotaFlagsSP.SMART_DSU)
     stock_cp.enableDsu = stock_cp.enableDsu and not use_sdsu
