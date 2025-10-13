@@ -286,7 +286,7 @@ class CarInterface(CarInterfaceBase):
         stock_cp.lateralParams.torqueBP, stock_cp.lateralParams.torqueV = [[0, 2560], [0, 2560]]
         stock_cp.lateralTuning.pid.kpV, stock_cp.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
-    elif candidate == CAR.CAR.ACURA_TLX_1G:
+    elif candidate == CAR.ACURA_TLX_1G:
       stock_cp.autoResumeSng = True
       stock_cp.minEnableSpeed = -1
       stock_cp.steerActuatorDelay = 0.3
