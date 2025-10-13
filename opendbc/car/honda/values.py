@@ -357,7 +357,15 @@ class CAR(Platforms):
     flags=HondaFlags.HAS_ALL_DOOR_STATES,
     sp_flags=HondaFlagsSP.CLARITY,
   )
-
+  ACURA_TLX_1G = HondaNidecPlatformConfig(
+    [
+      HondaCarDocs("Acura TLX 2015-17", "Advance Package"),
+      HondaCarDocs("Acura TLX 2018-20", "All"),
+    ],
+    CarSpecs(mass=3680 * CV.LB_TO_KG, wheelbase=2.78, steerRatio=15.1, centerToFrontRatio=0.40),  # as spec
+    radar_dbc_dict('acura_mdx_2017_can_ext_generated'),
+    flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
 
 HONDA_NIDEC_ALT_PCM_ACCEL = CAR.with_flags(HondaFlags.NIDEC_ALT_PCM_ACCEL)
 HONDA_NIDEC_ALT_SCM_MESSAGES = CAR.with_flags(HondaFlags.NIDEC_ALT_SCM_MESSAGES)
@@ -380,6 +388,8 @@ STEER_THRESHOLD = {
   CAR.HONDA_CRV_6G: 600,
   CAR.HONDA_CITY_7G: 600,
   CAR.HONDA_NBOX_2G: 600,
+  # port extensions
+  CAR.ACURA_TLX_1G: 30,
 }
 
 
