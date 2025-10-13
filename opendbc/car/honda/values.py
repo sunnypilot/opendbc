@@ -357,6 +357,16 @@ class CAR(Platforms):
     flags=HondaFlags.HAS_ALL_DOOR_STATES,
     sp_flags=HondaFlagsSP.CLARITY,
   )
+  ACURA_MDX_3G = HondaNidecPlatformConfig(
+    [
+      HondaCarDocs("Acura MDX 2014-16", "Advance Package"),
+      HondaCarDocs("Acura MDX 2017-18", "All"),
+      HondaCarDocs("Acura MDX Hybrid 2017-18", "All"),
+    ],
+    CarSpecs(mass=4215 * CV.LB_TO_KG, wheelbase=2.82, steerRatio=16.8, centerToFrontRatio=0.428),  # as spec, learned steerRatio
+    radar_dbc_dict('acura_mdx_2017_can_ext_generated'),
+    flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
 
 
 HONDA_NIDEC_ALT_PCM_ACCEL = CAR.with_flags(HondaFlags.NIDEC_ALT_PCM_ACCEL)
@@ -380,6 +390,8 @@ STEER_THRESHOLD = {
   CAR.HONDA_CRV_6G: 600,
   CAR.HONDA_CITY_7G: 600,
   CAR.HONDA_NBOX_2G: 600,
+  # port extensions
+  CAR.ACURA_MDX_3G: 30,
 }
 
 
