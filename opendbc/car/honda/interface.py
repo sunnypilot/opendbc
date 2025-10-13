@@ -237,7 +237,7 @@ class CarInterface(CarInterfaceBase):
         stock_cp.dashcamOnly = False
 
     if (stock_cp.flags & HondaFlags.NIDEC) and (stock_cp.flags & HondaFlags.HYBRID):
-      ret.safetyParam |= HondaSafetyFlagsSP.NIDEC_HYBRID.value
+      ret.safetyParam |= HondaSafetyFlagsSP.NIDEC_HYBRID
       # some hybrids use a different brakehold
       if (0x223 in fingerprint[CAN.pt]):
         ret.flags |= HondaFlagsSP.HYBRID_ALT_BRAKEHOLD.value
