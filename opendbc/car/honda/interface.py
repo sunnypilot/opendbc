@@ -294,7 +294,6 @@ class CarInterface(CarInterfaceBase):
       stock_cp.lateralTuning.pid.kiBP, stock_cp.lateralTuning.pid.kpBP = [[0.,20], [0.,20]]
       stock_cp.lateralTuning.pid.kpV, stock_cp.lateralTuning.pid.kiV = [[0.4,0.3], [0,0]]
 
-
     if candidate in HONDA_BOSCH:
       pass
     else:
