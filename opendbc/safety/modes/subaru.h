@@ -212,16 +212,6 @@ static bool subaru_tx_hook(const CANPacket_t *msg) {
     violation |= !(is_tester_present || is_button_rdbi);
   }
 
-  // if (msg->addr == MSG_SUBARU_Throttle) {
-  //   int throttle_pedal = msg->data[4];
-  //   violation |= subaru_common_stop_and_go_throttle_check(throttle_pedal);
-  // }
-
-  // if (msg->addr == MSG_SUBARU_Brake_Pedal) {
-  //   int speed = (GET_BYTES(msg, 2, 2) & 0xFFFU);
-  //   violation |= subaru_common_stop_and_go_brake_pedal_check(speed, false);
-  // }
-
   if (violation){
     tx = false;
   }

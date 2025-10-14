@@ -72,7 +72,6 @@ static bool subaru_preglobal_tx_hook(const CANPacket_t *msg) {
   };
 
   bool tx = true;
-  // bool violation = false;
 
   // steer cmd checks
   if (msg->addr == MSG_SUBARU_PG_ES_LKAS) {
@@ -85,23 +84,6 @@ static bool subaru_preglobal_tx_hook(const CANPacket_t *msg) {
       tx = false;
     }
   }
-
-/*
-  if (msg->addr == MSG_SUBARU_Throttle) {
-    int throttle_pedal = msg->data[0];
-    violation |= subaru_common_stop_and_go_throttle_check(throttle_pedal);
-  }
-
-  if (msg->addr == MSG_SUBARU_Brake_Pedal) {
-    int speed = (GET_BYTES(msg, 0, 2) & 0xFFFFU);
-    violation |= subaru_common_stop_and_go_brake_pedal_check(speed, true);
-  }
-
-  if (violation) {
-    tx = false;
-  }
-*/
-
   return tx;
 }
 
