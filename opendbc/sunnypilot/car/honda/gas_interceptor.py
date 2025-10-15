@@ -31,7 +31,7 @@ class GasInterceptorCarController:
         gas_mult = 1.0
       else:
         # gas multiplier to make pedal less touchy at low speed. The interceptor is
-      # way too aggressive at low speed without this
+        # way too aggressive at low speed without this on certain models.
         gas_mult = np.interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
       # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
       # This prevents unexpected pedal range rescaling
