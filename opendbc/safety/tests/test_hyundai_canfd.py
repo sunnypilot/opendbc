@@ -21,6 +21,12 @@ ALL_GAS_EV_HYBRID_COMBOS = [
   {"GAS_MSG": ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL"), "SCC_BUS": 2, "SAFETY_PARAM": HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC},
 ]
 
+ALL_GAS_EV_HYBRID_COMBOS_CCNC = [
+  # Camera SCC
+  {"GAS_MSG": ("ACCELERATOR_BRAKE_ALT", "ACCELERATOR_PEDAL_PRESSED"), "SCC_BUS": 2, "SAFETY_PARAM": HyundaiSafetyFlags.CAMERA_SCC},
+  {"GAS_MSG": ("ACCELERATOR", "ACCELERATOR_PEDAL"), "SCC_BUS": 2, "SAFETY_PARAM": HyundaiSafetyFlags.EV_GAS | HyundaiSafetyFlags.CAMERA_SCC},
+  {"GAS_MSG": ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL"), "SCC_BUS": 2, "SAFETY_PARAM": HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC},
+]
 
 class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest, common.DriverTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):
 
@@ -308,8 +314,10 @@ class TestHyundaiCanfdLFASteeringLongAltButtons(TestHyundaiCanfdLFASteeringLongB
     pass
 
 
-@parameterized_class(ALL_GAS_EV_HYBRID_COMBOS)
-class TestHyundaiCanfdLFASteeringCCNC(TestHyundaiCanfdLFASteeringBase):
+@parameterized_class(ALL_GAS_EV_HYBRID_COMBOS_CCNC)
+class TestHyundaiCanfdLFASteeringCCNC(TestHyundaiCanfdLFASteeringBase): 
+  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162), 2: (0xEA,)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162], 0: [0xEA,]}  
   @classmethod
   def setUpClass(cls):
     if cls.__name__ == "TestHyundaiCanfdLFASteeringCCNC":
@@ -321,7 +329,10 @@ class TestHyundaiCanfdLFASteeringCCNC(TestHyundaiCanfdLFASteeringBase):
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.CCNC | self.SAFETY_PARAM)
     self.safety.init_tests()
-    raise unittest.SkipTest
+
+  def test_ccnc(self):
+    self.assertTrue(self._tx(self.packer.make_can_msg_panda("CCNC_0x161", self.STEER_BUS, {})))
+    self.assertTrue(self._tx(self.packer.make_can_msg_panda("CCNC_0x162", self.STEER_BUS, {})))
 
 
 @parameterized_class(ALL_GAS_EV_HYBRID_COMBOS)
