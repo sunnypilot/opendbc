@@ -318,13 +318,9 @@ class TestHyundaiCanfdLFASteeringCCNC(TestHyundaiCanfdLFASteeringBase):
   def setUpClass(cls):
     packer = CANPackerPanda("hyundai_canfd_generated")
     safety = libsafety_py.libsafety
-    flags = HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CCNC
-    safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, flags)
+    safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CCNC)
     safety.init_tests()
     raise unittest.SkipTest("CCNC coverage-only test")
-
-  def test_init_branch_executes(self):
-    self.assertTrue(True)
 
 
 class TestHyundaiCanfdLFASteeringLongCCNC(TestHyundaiCanfdLFASteeringLongBase):
@@ -337,13 +333,9 @@ class TestHyundaiCanfdLFASteeringLongCCNC(TestHyundaiCanfdLFASteeringLongBase):
   def setUpClass(cls):
     packer = CANPackerPanda("hyundai_canfd_generated")
     safety = libsafety_py.libsafety
-    flags = HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CCNC
-    safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, flags)
+    safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CCNC)
     safety.init_tests()
     raise unittest.SkipTest("CCNC long coverage-only test")
-
-  def test_init_branch_executes(self):
-    self.assertTrue(True)
 
 
 if __name__ == "__main__":
