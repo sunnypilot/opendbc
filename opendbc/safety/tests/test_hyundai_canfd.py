@@ -316,8 +316,9 @@ class TestHyundaiCanfdLFASteeringLongAltButtons(TestHyundaiCanfdLFASteeringLongB
 
 @parameterized_class(ALL_GAS_EV_HYBRID_COMBOS_CCNC)
 class TestHyundaiCanfdLFASteeringCCNC(TestHyundaiCanfdLFASteeringBase): 
-  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162), 2: (0xEA,)}
-  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162], 0: [0xEA,]}  
+  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x7C4, 2]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162), 2: (0x7C4, 0xEA)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162], 0: [0x7C4, 0xEA]}  
   @classmethod
   def setUpClass(cls):
     if cls.__name__ == "TestHyundaiCanfdLFASteeringCCNC":
@@ -333,6 +334,16 @@ class TestHyundaiCanfdLFASteeringCCNC(TestHyundaiCanfdLFASteeringBase):
   def test_ccnc(self):
     self.assertTrue(self._tx(self.packer.make_can_msg_panda("CCNC_0x161", self.STEER_BUS, {})))
     self.assertTrue(self._tx(self.packer.make_can_msg_panda("CCNC_0x162", self.STEER_BUS, {})))
+
+  def test_tx_hook_on_wrong_safety_mode(self):
+    from opendbc.safety.tests.common import make_msg
+    import importlib
+    for test_name in ["TestElm327"]:
+      mod = importlib.import_module("opendbc.safety.tests.test_" + test_name.replace("Test", "").lower())
+      tx_list = [m for m in getattr(mod, test_name).TX_MSGS if m[0] != 0x7C4]  # skip overlapping 0x7C4 from Elm327
+      for addr, bus in tx_list:
+        if [addr, bus] not in self.TX_MSGS:
+          self.assertFalse(self._tx(make_msg(bus, addr)), f"allowed TX {addr=:#x} {bus=}")
 
 
 @parameterized_class(ALL_GAS_EV_HYBRID_COMBOS)
