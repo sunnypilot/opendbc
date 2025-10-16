@@ -308,33 +308,35 @@ class TestHyundaiCanfdLFASteeringLongAltButtons(TestHyundaiCanfdLFASteeringLongB
     pass
 
 
+@parameterized_class(ALL_GAS_EV_HYBRID_COMBOS)
 class TestHyundaiCanfdLFASteeringCCNC(TestHyundaiCanfdLFASteeringBase):
-
-  TX_MSGS = []
-  FWD_BLACKLISTED_ADDRS = {}
-  RELAY_MALFUNCTION_ADDRS = {}
-
   @classmethod
   def setUpClass(cls):
-    packer = CANPackerPanda("hyundai_canfd_generated")
-    safety = libsafety_py.libsafety
-    safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CCNC)
-    safety.init_tests()
+    if cls.__name__ == "TestHyundaiCanfdLFASteeringCCNC":
+      cls.safety = None
+      raise unittest.SkipTest
+
+  def setUp(self):
+    self.packer = CANPackerPanda("hyundai_canfd_generated")
+    self.safety = libsafety_py.libsafety
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CCNC | self.SAFETY_PARAM)
+    self.safety.init_tests()
     raise unittest.SkipTest
 
 
-class TestHyundaiCanfdLFASteeringLongCCNC(TestHyundaiCanfdLFASteeringLongBase):
-
-  TX_MSGS = []
-  FWD_BLACKLISTED_ADDRS = {}
-  RELAY_MALFUNCTION_ADDRS = {}
-
+@parameterized_class(ALL_GAS_EV_HYBRID_COMBOS)
+class TestHyundaiCanfdLFASteeringLongCCNC(TestHyundaiCanfdLFASteeringBase):
   @classmethod
   def setUpClass(cls):
-    packer = CANPackerPanda("hyundai_canfd_generated")
-    safety = libsafety_py.libsafety
-    safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CCNC)
-    safety.init_tests()
+    if cls.__name__ == "TestHyundaiCanfdLFASteeringLongCCNC":
+      cls.safety = None
+      raise unittest.SkipTest
+
+  def setUp(self):
+    self.packer = CANPackerPanda("hyundai_canfd_generated")
+    self.safety = libsafety_py.libsafety
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CCNC | self.SAFETY_PARAM)
+    self.safety.init_tests()
     raise unittest.SkipTest
 
 
