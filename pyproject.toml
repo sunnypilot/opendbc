@@ -84,6 +84,7 @@ explicit_package_bases=true
 line-length = 160
 indent-width = 2
 target-version="py311"
+exclude = ["**/*.ipynb"]
 
 [tool.ruff.lint]
 preview = true
