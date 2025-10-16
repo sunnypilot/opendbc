@@ -320,7 +320,7 @@ class TestHyundaiCanfdLFASteeringCCNC(TestHyundaiCanfdLFASteeringBase):
     safety = libsafety_py.libsafety
     safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CCNC)
     safety.init_tests()
-    raise unittest.SkipTest("CCNC coverage-only test")
+    raise unittest.SkipTest
 
 
 class TestHyundaiCanfdLFASteeringLongCCNC(TestHyundaiCanfdLFASteeringLongBase):
@@ -335,7 +335,7 @@ class TestHyundaiCanfdLFASteeringLongCCNC(TestHyundaiCanfdLFASteeringLongBase):
     safety = libsafety_py.libsafety
     safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CCNC)
     safety.init_tests()
-    raise unittest.SkipTest("CCNC long coverage-only test")
+    raise unittest.SkipTest
 
 
 if __name__ == "__main__":
