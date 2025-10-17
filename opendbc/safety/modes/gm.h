@@ -7,11 +7,13 @@
     {.msg = {{0x184, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
     {.msg = {{0x34A, 0, 5, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
     {.msg = {{0x1E1, 0, 7, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+    {.msg = {{0x1C4, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+    {.msg = {{0xC9, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+
+#define GM_ACC_RX_CHECKS \
     {.msg = {{0xBE, 0, 6, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},    /* Volt, Silverado, Acadia Denali */ \
              {0xBE, 0, 7, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},    /* Bolt EUV */ \
-             {0xBE, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}}},  /* Escalade */ \
-    {.msg = {{0x1C4, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
-    {.msg = {{0xC9, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+             {0xBE, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}}},  /* Escalade */
 
 #define GM_EV_COMMON_ADDR_CHECK \
   {.msg = {{0xBD, 0, 7, 40U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
@@ -36,8 +38,11 @@ static GmHardware gm_hw = GM_ASCM;
 static bool gm_pcm_cruise = false;
 static bool gm_non_acc = false;
 
+#define GM_GET_INTERCEPTOR(msg) ((((msg)->data[0] << 8) + (msg)->data[1] + ((msg)->data[2] << 8) + (msg)->data[3]) / 2U) // avg between 2 tracks
+
 static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
+  const int GM_GAS_INTERCEPTOR_THRESHOLD = 550;
 
   if (msg->bus == 0U) {
     if (msg->addr == 0x184U) {
@@ -84,13 +89,23 @@ static void gm_rx_hook(const CANPacket_t *msg) {
     }
 
     if (msg->addr == 0x1C4U) {
-      gas_pressed = msg->data[5] != 0U;
+      if (!enable_gas_interceptor) {
+        gas_pressed = msg->data[5] != 0U;
+      }
 
       // enter controls on rising edge of ACC, exit controls when ACC off
       if (gm_pcm_cruise && !gm_non_acc) {
         bool cruise_engaged = (msg->data[1] >> 5) != 0U;
         pcm_cruise_check(cruise_engaged);
       }
+    }
+
+    // Pedal Interceptor
+    if ((msg->addr == 0x201U) && enable_gas_interceptor) {
+      int gas_interceptor = GM_GET_INTERCEPTOR(msg);
+      gas_pressed = gas_interceptor > GM_GAS_INTERCEPTOR_THRESHOLD;
+      gas_interceptor_prev = gas_interceptor;
+      // gm_pcm_cruise = false;
     }
 
     if (msg->addr == 0xBDU) {
@@ -168,6 +183,13 @@ static bool gm_tx_hook(const CANPacket_t *msg) {
     }
   }
 
+  // GAS: safety check (interceptor)
+  if (msg->addr == 0x200U) {
+    if (longitudinal_interceptor_checks(msg)) {
+      tx = false;
+    }
+  }
+
   return tx;
 }
 
@@ -185,9 +207,9 @@ static safety_config gm_init(uint16_t param) {
     .max_brake = 400,
   };
 
-  static const CanMsg GM_ASCM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x409, 0, 7, .check_relay = false}, {0x40A, 0, 7, .check_relay = false}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = false},  // pt bus
-                                           {0xA1, 1, 7, .check_relay = false}, {0x306, 1, 8, .check_relay = false}, {0x308, 1, 7, .check_relay = false}, {0x310, 1, 2, .check_relay = false},   // obs bus
-                                           {0x315, 2, 5, .check_relay = false}};  // ch bus
+  static const CanMsg GM_ASCM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x409, 0, 7, .check_relay = false}, {0x40A, 0, 7, .check_relay = false}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = false}, {0x200, 0, 6, .check_relay = false},  // pt bus
+                                            {0xA1, 1, 7, .check_relay = false}, {0x306, 1, 8, .check_relay = false}, {0x308, 1, 7, .check_relay = false}, {0x310, 1, 2, .check_relay = false},   // obs bus
+                                            {0x315, 2, 5, .check_relay = false}};  // ch bus
 
 
   static const LongitudinalLimits GM_CAM_LONG_LIMITS = {
@@ -198,32 +220,41 @@ static safety_config gm_init(uint16_t param) {
   };
 
   // block PSCMStatus (0x184); forwarded through openpilot to hide an alert from the camera
-  static const CanMsg GM_CAM_LONG_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true},  // pt bus
-                                               {0x184, 2, 8, .check_relay = true}};  // camera bus
+  static const CanMsg GM_CAM_LONG_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x1E1, 0, 7, .check_relay = false}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true}, {0x200, 0, 6, .check_relay = false},  // pt bus
+                                                {0x184, 2, 8, .check_relay = true}};  // camera bus
 
 
   static RxCheck gm_rx_checks[] = {
     GM_COMMON_RX_CHECKS
+    GM_ACC_RX_CHECKS
   };
 
   static RxCheck gm_ev_rx_checks[] = {
     GM_COMMON_RX_CHECKS
+    GM_ACC_RX_CHECKS
     GM_EV_COMMON_ADDR_CHECK
   };
 
   static RxCheck gm_non_acc_rx_checks[] = {
-    GM_COMMON_RX_CHECKS
-    GM_NON_ACC_ADDR_CHECK
-  };
+      GM_COMMON_RX_CHECKS
+      GM_NON_ACC_ADDR_CHECK
+    };
 
-  static RxCheck gm_non_acc_ev_rx_checks[] = {
+    static RxCheck gm_non_acc_ev_rx_checks[] = {
+      GM_COMMON_RX_CHECKS
+      GM_EV_COMMON_ADDR_CHECK
+      GM_NON_ACC_ADDR_CHECK
+    };
+
+  static RxCheck gm_pedal_rx_checks[] = {
     GM_COMMON_RX_CHECKS
     GM_EV_COMMON_ADDR_CHECK
     GM_NON_ACC_ADDR_CHECK
+    {.msg = {{0x201, 0, 6, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // pedal
   };
 
-  static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true},  // pt bus
-                                          {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}};  // camera bus
+  static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x1E1, 0, 7, .check_relay = false}, {0x200, 0, 6, .check_relay = false},  // pt bus
+                                           {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}};  // camera bus
 
   gm_hw = GET_FLAG(param, GM_PARAM_HW_CAM) ? GM_CAM : GM_ASCM;
 
@@ -256,7 +287,9 @@ static safety_config gm_init(uint16_t param) {
   }
 
   const bool gm_ev = GET_FLAG(param, GM_PARAM_EV);
-  if (gm_ev) {
+  if (enable_gas_interceptor) {
+    SET_RX_CHECKS(gm_pedal_rx_checks, ret);
+  } else if (gm_ev) {
     SET_RX_CHECKS(gm_ev_rx_checks, ret);
   }
 
