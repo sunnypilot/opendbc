@@ -393,18 +393,20 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
   // UDS: Only tester present ("\x0F\x02\x3E\x00\x00\x00\x00\x00") allowed on diagnostics address
   if (msg->addr == 0x750U) {
     // this address is sub-addressed. only allow tester present to radar (0xF)
-    bool invalid_uds_msg = (GET_BYTES(msg, 0, 4) != 0x003E020FU) || (GET_BYTES(msg, 4, 4) != 0x0U);
-    // SP: Secret sauce from dp. (ask @rav4kumar prior to modifying)
-    // Enhanced BSM
-    bool sp_valid_uds_msgs = ((GET_BYTES(msg, 0, 4) == 0x10002141U) ||  // disable left BSM debug
-                              (GET_BYTES(msg, 0, 4) == 0x60100241U) ||  // enable left BSM debug
-                              (GET_BYTES(msg, 0, 4) == 0x69210241U) ||  // poll left BSM status
-                              (GET_BYTES(msg, 0, 4) == 0x10002142U) ||  // disable right BSM debug
-                              (GET_BYTES(msg, 0, 4) == 0x60100242U) ||  // enable right BSM debug
-                              (GET_BYTES(msg, 0, 4) == 0x69210242U))    // poll right BSM status
-                              && (GET_BYTES(msg, 4, 4) == 0x0U);
+    bool invalid_uds_msg = (GET_BYTES(msg, 0, 4) == 0x003E020FU) && (GET_BYTES(msg, 4, 4) == 0x0U);
 
-    if (invalid_uds_msg && !sp_valid_uds_msgs) {
+    bool sp_valid_uds_msgs = ((GET_BYTES(msg, 0, 4) == 0x10002141U) ||
+                            (GET_BYTES(msg, 0, 4) == 0x60100241U) ||
+                            (GET_BYTES(msg, 0, 4) == 0x69210241U) ||
+                            (GET_BYTES(msg, 0, 4) == 0x10002142U) ||
+                            (GET_BYTES(msg, 0, 4) == 0x60100242U) ||
+                            (GET_BYTES(msg, 0, 4) == 0x69210242U)) &&
+                           (GET_BYTES(msg, 4, 4) == 0x0U);
+
+    // Allow if: (tester present OR enhanced BSM) AND not stock long AND not SecOC
+    bool should_allow = (invalid_uds_msg || sp_valid_uds_msgs) && !toyota_stock_longitudinal && !toyota_secoc;
+
+    if (!should_allow) {
       tx = false;
     }
   }
