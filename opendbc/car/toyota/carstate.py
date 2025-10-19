@@ -9,6 +9,8 @@ from opendbc.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO
                                                   TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
 from opendbc.sunnypilot.car.toyota.carstate_ext import CarStateExt
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
+from opendbc.sunnypilot.car.toyota.ebsm import EnhancedBSMController
+
 
 ButtonType = structs.CarState.ButtonEvent.Type
 SteerControlType = structs.CarParams.SteerControlType
@@ -54,6 +56,7 @@ class CarState(CarStateBase, CarStateExt):
     self.lkas_hud = {}
     self.gvc = 0.0
     self.secoc_synchronization = None
+    self.enhanced_bsm = EnhancedBSMController(CP, CP_SP)
 
   def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     cp = can_parsers[Bus.pt]
@@ -206,6 +209,10 @@ class CarState(CarStateBase, CarStateExt):
       buttonEvents += create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
     ret.buttonEvents = buttonEvents
+
+    # Enhanced BSM
+    if self.CP_SP.flags & ToyotaFlagsSP.SP_ENHANCED_BSM and self.frame > 199:
+      ret.leftBlindspot, ret.rightBlindspot = self.enhanced_bsm.parse_bsm_status(cp)
 
     CarStateExt.update(self, ret, ret_sp, can_parsers)
 
