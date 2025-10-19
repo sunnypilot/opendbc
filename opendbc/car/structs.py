@@ -61,7 +61,7 @@ class StrEnum(_StrEnum):
 
 @auto_dataclass
 class CarParamsSP:
-  flags: int = auto_field()        # flags for car specific quirks
+  flags: int = auto_field()  # flags for car specific quirks
   safetyParam: int = auto_field()  # flags for custom safety flags
   pcmCruiseSpeed: bool = auto_field()
   intelligentCruiseButtonManagementAvailable: bool = auto_field()
