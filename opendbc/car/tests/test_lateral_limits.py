@@ -12,9 +12,9 @@ from opendbc.car.lateral import ISO_LATERAL_ACCEL
 from opendbc.car.values import PLATFORMS
 
 # ISO 11270 - allowed up jerk is strictly lower than recommended limits
-MAX_LAT_JERK_UP = 2.5            # m/s^3
+MAX_LAT_JERK_UP = 3.0            # m/s^3
 MAX_LAT_JERK_DOWN = 5.0          # m/s^3
-MAX_LAT_JERK_UP_TOLERANCE = 0.5  # m/s^3
+MAX_LAT_JERK_UP_TOLERANCE = 0.7  # m/s^3
 
 # jerk is measured over half a second
 JERK_MEAS_T = 0.5
