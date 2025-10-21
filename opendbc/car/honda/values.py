@@ -351,8 +351,8 @@ class CAR(Platforms):
 
   # port extensions
   HONDA_CLARITY = HondaNidecPlatformConfig(
-    [HondaCarDocs("Honda Clarity 2018-21", min_steer_speed=12. * CV.MPH_TO_MS)],
-    CarSpecs(mass=1834, wheelbase=2.75, centerToFrontRatio=0.4, steerRatio=16.5),
+    [HondaCarDocs("Honda Clarity 2018-21", min_steer_speed=3. * CV.MPH_TO_MS)],
+    CarSpecs(mass=4052. * CV.LB_TO_KG, wheelbase=2.75, centerToFrontRatio=0.41, steerRatio=16.50, tireStiffnessFactor=1.),
     radar_dbc_dict('honda_clarity_hybrid_2018_can_generated'),
     flags=HondaFlags.HAS_ALL_DOOR_STATES,
     sp_flags=HondaFlagsSP.CLARITY,
