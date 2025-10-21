@@ -400,8 +400,8 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
                             (GET_BYTES(msg, 0, 4) == 0x69210241U) ||
                             (GET_BYTES(msg, 0, 4) == 0x10002142U) ||
                             (GET_BYTES(msg, 0, 4) == 0x60100242U) ||
-                            (GET_BYTES(msg, 0, 4) == 0x69210242U)) &&
-                           (GET_BYTES(msg, 4, 4) == 0x0U);
+                            (GET_BYTES(msg, 0, 4) == 0x69210242U))
+                            && (GET_BYTES(msg, 4, 4) == 0x0U);
 
     // Allow if: (tester present OR enhanced BSM) AND not stock long AND not SecOC
     bool should_allow = (invalid_uds_msg || sp_valid_uds_msgs) && !toyota_stock_longitudinal && !toyota_secoc;
