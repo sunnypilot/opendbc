@@ -171,6 +171,12 @@ class VolkswagenFlags(IntFlag):
   PQ = 2
 
 
+class VolkswagenFlagsSP(IntFlag):
+  # sunnypilot flags for VW-specific features
+  SP_CC_ONLY = 1 << 3              # CC only mode with radar (has FCW/AEB)
+  SP_CC_ONLY_NO_RADAR = 1 << 4     # CC only mode without radar
+
+
 @dataclass
 class VolkswagenMQBPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: {Bus.pt: 'vw_mqb'})
