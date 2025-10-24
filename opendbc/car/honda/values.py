@@ -264,8 +264,8 @@ class CAR(Platforms):
     CarSpecs(mass=4660 * CV.LB_TO_KG, wheelbase=2.89, centerToFrontRatio=0.442, steerRatio=17.5),
   )
   # mid-model refresh
-  ACURA_MDX_4G_MMR = HondaBoschCANFDPlatformConfig(
-    [HondaCarDocs("Acura MDX 2025", "All except Type S")],
+  ACURA__4G_MMR = HondaBoschCANFDPlatformConfig(
+    [HondaCarDocs("Acura  2025", "All except Type S")],
     CarSpecs(mass=4544 * CV.LB_TO_KG, wheelbase=2.89, centerToFrontRatio=0.428, steerRatio=16.2),
   )
   HONDA_ODYSSEY_5G_MMR = HondaBoschPlatformConfig(
@@ -360,8 +360,8 @@ class CAR(Platforms):
   ACURA_MDX_3G = HondaNidecPlatformConfig(
     [
       HondaCarDocs("Acura MDX 2014-16", "Advance Package"),
-      HondaCarDocs("Acura MDX 2017-18", "All"),
-      HondaCarDocs("Acura MDX Hybrid 2017-18", "All"),
+      HondaCarDocs("Acura MDX 2017-19", "All"),
+      HondaCarDocs("Acura MDX Hybrid 2017-19", "All"),
     ],
     CarSpecs(mass=4215 * CV.LB_TO_KG, wheelbase=2.82, steerRatio=16.8, centerToFrontRatio=0.428),  # as spec, learned steerRatio
     radar_dbc_dict('acura_mdx_2017_can_ext_generated'),
