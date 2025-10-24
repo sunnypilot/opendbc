@@ -297,7 +297,8 @@ class CarInterface(CarInterfaceBase):
 
     stock_cp.autoResumeSng = stock_cp.autoResumeSng or ret.enableGasInterceptor
 
-    ret.intelligentCruiseButtonManagementAvailable = candidate in HONDA_BOSCH
+    # FIXME-SP: disable HONDA_BOSCH_CANFD in release, re-enable HONDA_BOSCH_CANFD for non release
+    ret.intelligentCruiseButtonManagementAvailable = candidate in (HONDA_BOSCH - HONDA_BOSCH_CANFD)
 
     return ret
 
