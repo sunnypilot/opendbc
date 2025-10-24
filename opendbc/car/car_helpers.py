@@ -167,7 +167,7 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
   CP.carFw = car_fw
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
-  CP_SP = CarInterface.get_params_sp(CP, candidate, fingerprints, car_fw, alpha_long_allowed, docs=False)
+  CP_SP = CarInterface.get_params_sp(CP, candidate, fingerprints, car_fw, alpha_long_allowed, is_release, docs=False)
 
   sunnypilot_interfaces(CarInterface, CP, CP_SP, init_params_list_sp, can_recv, can_send)
 
