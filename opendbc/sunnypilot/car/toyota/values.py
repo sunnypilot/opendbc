@@ -30,6 +30,7 @@ class ToyotaFlagsSP(IntFlag):
   RADAR_CAN_FILTER = 2
   ZSS = 4
   SP_ENHANCED_BSM = 8
+  SP_NEED_DEBUG_BSM = 16
 
 
 class ToyotaSafetyFlagsSP:

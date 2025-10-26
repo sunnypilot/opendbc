@@ -57,6 +57,7 @@ class CarState(CarStateBase, CarStateExt):
     self.gvc = 0.0
     self.secoc_synchronization = None
     self.enhanced_bsm = EnhancedBSMController(CP, CP_SP)
+    self.frame = 0
 
   def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     cp = can_parsers[Bus.pt]
@@ -215,6 +216,7 @@ class CarState(CarStateBase, CarStateExt):
       ret.leftBlindspot, ret.rightBlindspot = self.enhanced_bsm.parse_bsm_status(cp)
 
     CarStateExt.update(self, ret, ret_sp, can_parsers)
+    self.frame += 1
 
     return ret, ret_sp
 
