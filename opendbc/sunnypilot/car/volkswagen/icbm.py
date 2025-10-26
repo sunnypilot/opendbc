@@ -1,5 +1,5 @@
 """
-Copyright ©️ TealTwo.
+Copyright ©️ SunnyPilot & a number of other contributors.
 """
 
 from opendbc.car import DT_CTRL, structs
