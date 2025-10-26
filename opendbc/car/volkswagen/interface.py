@@ -108,8 +108,9 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
-                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
-    # Enable ICBM for all VW MQB/PQ vehicles
-    ret.intelligentCruiseButtonManagementAvailable = True
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
+
+    # Enable ICBM only when PCM cruise is available
+    ret.intelligentCruiseButtonManagementAvailable = stock_cp.pcmCruise
 
     return ret
