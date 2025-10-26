@@ -230,7 +230,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
-                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
     CAN = CanBus(stock_cp, fingerprint)
 
     for fw in car_fw:
@@ -299,7 +299,8 @@ class CarInterface(CarInterfaceBase):
 
     stock_cp.autoResumeSng = stock_cp.autoResumeSng or ret.enableGasInterceptor
 
-    ret.intelligentCruiseButtonManagementAvailable = candidate in HONDA_BOSCH
+    ret.intelligentCruiseButtonManagementAvailable = candidate in (HONDA_BOSCH - HONDA_BOSCH_CANFD) or \
+                                                     (candidate in HONDA_BOSCH_CANFD and not is_release_sp)
 
     return ret
 
