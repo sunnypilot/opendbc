@@ -6,7 +6,7 @@ See the LICENSE.md file in the root directory for more details.
 """
 
 from opendbc.car import structs
-from opendbc.car.toyota import toyotacan
+from opendbc.sunnypilot.car.toyota import values
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
 LEFT_BLINDSPOT = b"\x41"
@@ -82,7 +82,7 @@ class EnhancedBSMController:
     # Activate BSM debug mode
     if not debug_enabled:
       if always_on or CS.vEgo > min_speed:
-        can_sends.append(toyotacan.create_set_bsm_debug_mode(side_marker, True))
+        can_sends.append(values.create_set_bsm_debug_mode(side_marker, True))
         if is_left:
           self.left_blindspot_debug_enabled = True
         else:
@@ -90,7 +90,7 @@ class EnhancedBSMController:
     else:
       # Deactivate if not always on and no recent activity
       if not always_on and frame - last_frame > 50:
-        can_sends.append(toyotacan.create_set_bsm_debug_mode(side_marker, False))
+        can_sends.append(values.create_set_bsm_debug_mode(side_marker, False))
         if is_left:
           self.left_blindspot_debug_enabled = False
         else:
@@ -101,7 +101,7 @@ class EnhancedBSMController:
                        (not is_left and frame % e_bsm_rate == e_bsm_rate // 2)
 
       if poll_condition:
-        can_sends.append(toyotacan.create_bsm_polling_status(side_marker))
+        can_sends.append(values.create_bsm_polling_status(side_marker))
         if is_left:
           self.left_last_blindspot_frame = frame
         else:
