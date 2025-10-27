@@ -103,8 +103,8 @@ class CarController(CarControllerBase, SecOCLongCarController, GasInterceptorCar
 
     SecOCLongCarController.update(self, CS, can_sends, self.secoc_prev_reset_counter)
     # Enhanced BSM
-    if self.frame > 200:
-      can_sends.extend(self.enhanced_bsm_controller.create_messages(CS, self.frame, 20, True))
+    #if self.frame > 200:
+    can_sends.extend(self.enhanced_bsm_controller.create_messages(CS, self.frame, 20, True))
 
     # *** handle secoc reset counter increase ***
     if self.CP.flags & ToyotaFlags.SECOC.value:

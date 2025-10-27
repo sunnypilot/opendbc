@@ -212,7 +212,7 @@ class CarState(CarStateBase, CarStateExt):
     ret.buttonEvents = buttonEvents
 
     # Enhanced BSM
-    if self.CP_SP.flags & ToyotaFlagsSP.SP_ENHANCED_BSM and self.frame > 199:
+    if self.CP_SP.flags & ToyotaFlagsSP.SP_ENHANCED_BSM: #and self.frame > 199:
       ret.leftBlindspot, ret.rightBlindspot = self.enhanced_bsm.parse_bsm_status(cp)
 
     CarStateExt.update(self, ret, ret_sp, can_parsers)
