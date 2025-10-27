@@ -226,6 +226,9 @@ class CarState(CarStateBase, CarStateExt):
       ("BLINKERS_STATE", float('nan')),
     ]
 
+    if CP_SP.flags & ToyotaFlagsSP.SP_ENHANCED_BSM:
+      pt_messages.append(("DEBUG", 65))
+
     cam_messages = [
       ("RSA1", 0),
       ("RSA2", 0),
