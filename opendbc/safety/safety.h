@@ -57,8 +57,6 @@ bool vehicle_moving = false;
 bool acc_main_on = false;  // referred to as "ACC off" in ISO 15622:2018
 int cruise_button_prev = 0;
 bool safety_rx_checks_invalid = false;
-bool enable_gas_interceptor = false;
-int gas_interceptor_prev = 0;
 
 // for safety modes with torque steering control
 int desired_torque_last = 0;       // last desired steer torque
@@ -534,16 +532,4 @@ void pcm_cruise_check(bool cruise_engaged) {
   cruise_engaged_prev = cruise_engaged;
 }
 
-void speed_mismatch_check(const float speed_2) {
-  // Disable controls if speeds from two sources are too far apart.
-  // For safety modes that use speed to adjust torque or angle limits
-  const float MAX_SPEED_DELTA = 2.0;  // m/s
-  bool is_invalid_speed = ABS(speed_2 - ((float)vehicle_speed.values[0] / VEHICLE_SPEED_FACTOR)) > MAX_SPEED_DELTA;
-  if (is_invalid_speed) {
-    controls_allowed = false;
-  }
-}
 
-bool longitudinal_interceptor_checks(const CANPacket_t *to_send) {
-  return (!get_longitudinal_allowed() || brake_pressed_prev) && (GET_BYTE(to_send, 0) || GET_BYTE(to_send, 1));
-}

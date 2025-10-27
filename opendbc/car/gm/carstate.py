@@ -3,8 +3,7 @@ from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarStateBase
-from opendbc.car.gm.values import DBC, AccState, CruiseButtons, STEER_THRESHOLD, SDGM_CAR, ALT_ACCS, \
-  CAMERA_ACC_CAR
+from opendbc.car.gm.values import DBC, AccState, CruiseButtons, STEER_THRESHOLD, SDGM_CAR, ALT_ACCS
 
 from opendbc.sunnypilot.car.gm.carstate_ext import CarStateExt
 from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP
@@ -33,9 +32,6 @@ class CarState(CarStateBase, CarStateExt):
     self.pt_lka_steering_cmd_counter = 0
     self.cam_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
-
-    self.single_pedal_mode = False
-    self.pedal_steady = 0.
 
     self.distance_button = 0
 
@@ -104,15 +100,8 @@ class CarState(CarStateBase, CarStateExt):
     # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
-      self.single_pedal_mode = ret.gearShifter == GearShifter.low or pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1
 
-    if self.CP.enableGasInterceptorDEPRECATED:
-      ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
-      # Panda 515 threshold = 10.88. Set lower to avoid panda blocking messages and GasInterceptor faulting.
-      threshold = 20 if self.CP.carFingerprint in CAMERA_ACC_CAR else 4
-      ret.gasPressed = ret.gas > threshold
-    else:
-      ret.gasPressed = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254. > 1e-5
+    ret.gasPressed = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254. > 1e-5
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
     ret.steeringRateDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelRate"]
@@ -188,13 +177,9 @@ class CarState(CarStateBase, CarStateExt):
 
     if CP.transmissionType == TransmissionType.direct:
       pt_messages.append(("EBCMRegenPaddle", 10))
-      pt_messages.append(("EVDriveMode", 0))
 
     if CP.enableBsm:
       pt_messages.append(("BCMBlindSpotMonitor", 10))
-
-    if CP.enableGasInterceptorDEPRECATED:
-      pt_messages.append(("GAS_SENSOR", 50))
 
     loopback_messages = [
       ("ASCMLKASteeringCmd", float('nan')),

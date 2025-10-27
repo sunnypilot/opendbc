@@ -38,11 +38,9 @@ static GmHardware gm_hw = GM_ASCM;
 static bool gm_pcm_cruise = false;
 static bool gm_non_acc = false;
 
-#define GM_GET_INTERCEPTOR(msg) ((((msg)->data[0] << 8) + (msg)->data[1] + ((msg)->data[2] << 8) + (msg)->data[3]) / 2U) // avg between 2 tracks
 
 static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
-  const int GM_GAS_INTERCEPTOR_THRESHOLD = 550;
 
   if (msg->bus == 0U) {
     if (msg->addr == 0x184U) {
@@ -89,9 +87,7 @@ static void gm_rx_hook(const CANPacket_t *msg) {
     }
 
     if (msg->addr == 0x1C4U) {
-      if (!enable_gas_interceptor) {
-        gas_pressed = msg->data[5] != 0U;
-      }
+      gas_pressed = msg->data[5] != 0U;
 
       // enter controls on rising edge of ACC, exit controls when ACC off
       if (gm_pcm_cruise && !gm_non_acc) {
@@ -100,13 +96,6 @@ static void gm_rx_hook(const CANPacket_t *msg) {
       }
     }
 
-    // Pedal Interceptor
-    if ((msg->addr == 0x201U) && enable_gas_interceptor) {
-      int gas_interceptor = GM_GET_INTERCEPTOR(msg);
-      gas_pressed = gas_interceptor > GM_GAS_INTERCEPTOR_THRESHOLD;
-      gas_interceptor_prev = gas_interceptor;
-      // gm_pcm_cruise = false;
-    }
 
     if (msg->addr == 0xBDU) {
       regen_braking = (msg->data[0] >> 4) != 0U;
@@ -183,12 +172,6 @@ static bool gm_tx_hook(const CANPacket_t *msg) {
     }
   }
 
-  // GAS: safety check (interceptor)
-  if (msg->addr == 0x200U) {
-    if (longitudinal_interceptor_checks(msg)) {
-      tx = false;
-    }
-  }
 
   return tx;
 }
@@ -287,19 +270,14 @@ static safety_config gm_init(uint16_t param) {
   }
 
   const bool gm_ev = GET_FLAG(param, GM_PARAM_EV);
-  if (enable_gas_interceptor) {
-    SET_RX_CHECKS(gm_pedal_rx_checks, ret);
-  } else if (gm_ev) {
-    SET_RX_CHECKS(gm_ev_rx_checks, ret);
-  }
 
   if (gm_non_acc) {
+    // NON_ACC case (Sunnypilot pedal interceptor / camera long). We always allow pedal frames.
     SET_TX_MSGS(GM_CAM_TX_MSGS, ret);
-    if (gm_ev) {
-      SET_RX_CHECKS(gm_non_acc_ev_rx_checks, ret);
-    } else {
-      SET_RX_CHECKS(gm_non_acc_rx_checks, ret);
-    }
+    SET_RX_CHECKS(gm_pedal_rx_checks, ret);
+  } else if (gm_ev) {
+    // EV ACC case
+    SET_RX_CHECKS(gm_ev_rx_checks, ret);
   }
 
   // ASCM does not forward any messages
