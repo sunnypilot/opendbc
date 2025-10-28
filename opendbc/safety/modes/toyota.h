@@ -4,7 +4,7 @@
 
 // Stock longitudinal
 #define TOYOTA_BASE_TX_MSGS \
-  {0x191, 0, 8, .check_relay = true}, {0x412, 0, 8, .check_relay = true}, {0x1D2, 0, 8, .check_relay = false},  /* LKAS + LTA + PCM cancel cmd */  \
+  {0x191, 0, 8, .check_relay = true}, {0x412, 0, 8, .check_relay = true}, {0x1D2, 0, 8, .check_relay = false}, {0x750, 0, 8, .check_relay = false}, /* LKAS + LTA + PCM cancel cmd */  \
 
 #define TOYOTA_COMMON_TX_MSGS \
   TOYOTA_BASE_TX_MSGS \
@@ -393,9 +393,16 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
   // UDS: Only tester present ("\x0F\x02\x3E\x00\x00\x00\x00\x00") allowed on diagnostics address
   if (msg->addr == 0x750U) {
     // this address is sub-addressed. only allow tester present to radar (0xF)
-    bool invalid_uds_msg = (GET_BYTES(msg, 0, 4) != 0x003E020FU) || (GET_BYTES(msg, 4, 4) != 0x0U);
-    if (invalid_uds_msg) {
-      tx = 0;
+    bool invalid_uds_msg = (GET_BYTES(msg, 0, 4) == 0x003E020FU) && (GET_BYTES(msg, 4, 4) == 0x0U);
+
+    bool is_auto_lock_unlock = (GET_BYTES(msg, 0, 4) == 0x11300540U) &&  // door lock/unlock command
+                               ((GET_BYTES(msg, 4, 4) == 0x00004000U) || (GET_BYTES(msg, 4, 4) == 0x00008000U));
+
+    // Block if not allowed: must be (tester present OR auto lock/unlock) AND not stock long AND not SecOC
+    bool should_allow = (invalid_uds_msg || is_auto_lock_unlock) && !toyota_stock_longitudinal && !toyota_secoc;
+
+    if (!should_allow) {
+      tx = false;
     }
   }
 
