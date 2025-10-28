@@ -396,8 +396,7 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
     bool invalid_uds_msg = (GET_BYTES(msg, 0, 4) == 0x003E020FU) && (GET_BYTES(msg, 4, 4) == 0x0U);
 
     bool is_auto_lock_unlock = (GET_BYTES(msg, 0, 4) == 0x11300540U) &&  // door lock/unlock command
-                               ((GET_BYTES(msg, 4, 4) == 0x00004000U) ||  // unlock
-                                (GET_BYTES(msg, 4, 4) == 0x00008000U));   // lock
+                               ((GET_BYTES(msg, 4, 4) == 0x00004000U) || (GET_BYTES(msg, 4, 4) == 0x00008000U));
 
     // Block if not allowed: must be (tester present OR auto lock/unlock) AND not stock long AND not SecOC
     bool should_allow = (invalid_uds_msg || is_auto_lock_unlock) && !toyota_stock_longitudinal && !toyota_secoc;
