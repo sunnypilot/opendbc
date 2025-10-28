@@ -12,6 +12,7 @@ class ToyotaFlagsSP(IntFlag):
   SMART_DSU = 1
   RADAR_CAN_FILTER = 2
   ZSS = 4
+  TOYOTA_STOCK_LOGN =8
 
 
 class ToyotaSafetyFlagsSP:
