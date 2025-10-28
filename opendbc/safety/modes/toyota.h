@@ -395,12 +395,12 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
     // this address is sub-addressed. only allow tester present to radar (0xF)
     bool invalid_uds_msg = (GET_BYTES(msg, 0, 4) == 0x003E020FU) && (GET_BYTES(msg, 4, 4) == 0x0U);
 
-    bool sp_valid_uds_msgs = (GET_BYTES(msg, 0, 4) == 0x11300540U) &&  // automatic door locking and unlocking
-                             ((GET_BYTES(msg, 4, 4) == 0x00004000U)  // unlock
-                             || (GET_BYTES(msg, 4, 4) == 0x00008000U));   // lock
+    bool is_auto_lock_unlock = (GET_BYTES(msg, 0, 4) == 0x11300540U) &&  // door lock/unlock command
+                               ((GET_BYTES(msg, 4, 4) == 0x00004000U) ||  // unlock
+                                (GET_BYTES(msg, 4, 4) == 0x00008000U));   // lock
 
-    // Allow if: (tester present OR auto lock/unlock) AND not stock long AND not SecOC
-    bool should_allow = (invalid_uds_msg || sp_valid_uds_msgs) && !toyota_stock_longitudinal && !toyota_secoc;
+    // Block if not allowed: must be (tester present OR auto lock/unlock) AND not stock long AND not SecOC
+    bool should_allow = (invalid_uds_msg || is_auto_lock_unlock) && !toyota_stock_longitudinal && !toyota_secoc;
 
     if (!should_allow) {
       tx = false;
