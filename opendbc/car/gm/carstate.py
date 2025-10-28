@@ -175,12 +175,6 @@ class CarState(CarStateBase, CarStateExt):
         ("ASCMLKASteeringCmd", float('nan')),
       ]
 
-    if CP.transmissionType == TransmissionType.direct:
-      pt_messages.append(("EBCMRegenPaddle", 10))
-
-    if CP.enableBsm:
-      pt_messages.append(("BCMBlindSpotMonitor", 10))
-
     loopback_messages = [
       ("ASCMLKASteeringCmd", float('nan')),
     ]

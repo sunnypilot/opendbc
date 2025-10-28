@@ -38,7 +38,6 @@ static GmHardware gm_hw = GM_ASCM;
 static bool gm_pcm_cruise = false;
 static bool gm_non_acc = false;
 
-
 static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
 
@@ -95,7 +94,6 @@ static void gm_rx_hook(const CANPacket_t *msg) {
         pcm_cruise_check(cruise_engaged);
       }
     }
-
 
     if (msg->addr == 0xBDU) {
       regen_braking = (msg->data[0] >> 4) != 0U;
@@ -172,7 +170,6 @@ static bool gm_tx_hook(const CANPacket_t *msg) {
     }
   }
 
-
   return tx;
 }
 
@@ -190,7 +187,7 @@ static safety_config gm_init(uint16_t param) {
     .max_brake = 400,
   };
 
-  static const CanMsg GM_ASCM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x409, 0, 7, .check_relay = false}, {0x40A, 0, 7, .check_relay = false}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = false}, {0x200, 0, 6, .check_relay = false},  // pt bus
+  static const CanMsg GM_ASCM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x409, 0, 7, .check_relay = false}, {0x40A, 0, 7, .check_relay = false}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = false},  // pt bus
                                             {0xA1, 1, 7, .check_relay = false}, {0x306, 1, 8, .check_relay = false}, {0x308, 1, 7, .check_relay = false}, {0x310, 1, 2, .check_relay = false},   // obs bus
                                             {0x315, 2, 5, .check_relay = false}};  // ch bus
 
@@ -203,9 +200,25 @@ static safety_config gm_init(uint16_t param) {
   };
 
   // block PSCMStatus (0x184); forwarded through openpilot to hide an alert from the camera
-  static const CanMsg GM_CAM_LONG_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x1E1, 0, 7, .check_relay = false}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true}, {0x200, 0, 6, .check_relay = false},  // pt bus
+  static const CanMsg GM_CAM_LONG_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true},  // pt bus
                                                 {0x184, 2, 8, .check_relay = true}};  // camera bus
 
+// Dedicated interceptor variants for each TX set
+static const CanMsg GM_ASCM_INTERCEPTOR_TX_MSGS[] = {
+  {0x180, 0, 4, .check_relay = true}, {0x409, 0, 7, .check_relay = false}, {0x40A, 0, 7, .check_relay = false}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = false}, {0x200, 0, 6, .check_relay = false},
+  {0xA1, 1, 7, .check_relay = false}, {0x306, 1, 8, .check_relay = false}, {0x308, 1, 7, .check_relay = false}, {0x310, 1, 2, .check_relay = false},
+  {0x315, 2, 5, .check_relay = false}
+};
+
+static const CanMsg GM_CAM_LONG_INTERCEPTOR_TX_MSGS[] = {
+  {0x180, 0, 4, .check_relay = true}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true}, {0x200, 0, 6, .check_relay = false}, {0x1E1, 0, 7, .check_relay = false},
+  {0x184, 2, 8, .check_relay = true}
+};
+
+static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
+  {0x180, 0, 4, .check_relay = true}, {0x200, 0, 6, .check_relay = false}, {0x1E1, 0, 7, .check_relay = false},
+  {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}
+};
 
   static RxCheck gm_rx_checks[] = {
     GM_COMMON_RX_CHECKS
@@ -218,16 +231,6 @@ static safety_config gm_init(uint16_t param) {
     GM_EV_COMMON_ADDR_CHECK
   };
 
-  static RxCheck gm_non_acc_rx_checks[] = {
-      GM_COMMON_RX_CHECKS
-      GM_NON_ACC_ADDR_CHECK
-    };
-
-    static RxCheck gm_non_acc_ev_rx_checks[] = {
-      GM_COMMON_RX_CHECKS
-      GM_EV_COMMON_ADDR_CHECK
-      GM_NON_ACC_ADDR_CHECK
-    };
 
   static RxCheck gm_pedal_rx_checks[] = {
     GM_COMMON_RX_CHECKS
@@ -236,7 +239,7 @@ static safety_config gm_init(uint16_t param) {
     {.msg = {{0x201, 0, 6, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // pedal
   };
 
-  static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x1E1, 0, 7, .check_relay = false}, {0x200, 0, 6, .check_relay = false},  // pt bus
+  static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true},  // pt bus
                                            {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}};  // camera bus
 
   gm_hw = GET_FLAG(param, GM_PARAM_HW_CAM) ? GM_CAM : GM_ASCM;
@@ -248,36 +251,45 @@ static safety_config gm_init(uint16_t param) {
   } else {
   }
 
-  bool gm_cam_long = false;
-
-#ifdef ALLOW_DEBUG
   const uint16_t GM_PARAM_HW_CAM_LONG = 2;
-  gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
-#endif
+  bool gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
+
   gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long;
 
   const uint16_t GM_PARAM_SP_NON_ACC = 1;
   gm_non_acc = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_NON_ACC);
 
   safety_config ret;
-  if (gm_hw == GM_CAM) {
-    // FIXME: cppcheck thinks that gm_cam_long is always false. This is not true
-    // if ALLOW_DEBUG is defined but cppcheck is run without ALLOW_DEBUG
-    // cppcheck-suppress knownConditionTrueFalse
-    ret = gm_cam_long ? BUILD_SAFETY_CFG(gm_rx_checks, GM_CAM_LONG_TX_MSGS) : BUILD_SAFETY_CFG(gm_rx_checks, GM_CAM_TX_MSGS);
-  } else {
+  if (gm_hw == GM_ASCM) {
     ret = BUILD_SAFETY_CFG(gm_rx_checks, GM_ASCM_TX_MSGS);
+  } else { // gm_hw == GM_CAM
+    // cppcheck-suppress knownConditionTrueFalse
+    if (gm_cam_long) {
+      ret = BUILD_SAFETY_CFG(gm_rx_checks, GM_CAM_LONG_TX_MSGS);
+    } else {
+      ret = BUILD_SAFETY_CFG(gm_rx_checks, GM_CAM_TX_MSGS);
+    }
   }
 
   const bool gm_ev = GET_FLAG(param, GM_PARAM_EV);
 
   if (gm_non_acc) {
     // NON_ACC case (Sunnypilot pedal interceptor / camera long). We always allow pedal frames.
-    SET_TX_MSGS(GM_CAM_TX_MSGS, ret);
+    if (gm_hw == GM_ASCM) {
+      SET_TX_MSGS(GM_ASCM_INTERCEPTOR_TX_MSGS, ret);
+    } else if (gm_hw == GM_CAM) {
+      if (gm_cam_long) {
+        SET_TX_MSGS(GM_CAM_LONG_INTERCEPTOR_TX_MSGS, ret);
+      } else {
+        SET_TX_MSGS(GM_CAM_INTERCEPTOR_TX_MSGS, ret);
+      }
+    } else {
+    }
     SET_RX_CHECKS(gm_pedal_rx_checks, ret);
   } else if (gm_ev) {
     // EV ACC case
     SET_RX_CHECKS(gm_ev_rx_checks, ret);
+  } else {
   }
 
   // ASCM does not forward any messages

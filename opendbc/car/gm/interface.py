@@ -4,7 +4,7 @@ import numpy as np
 
 from opendbc.car import get_safety_config, structs
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.sunnypilot.car.gm.carcontroller_ext import CarControllerExt as CarController
+from opendbc.car.gm.carcontroller import CarController
 from opendbc.car.gm.carstate import CarState
 from opendbc.car.gm.radar_interface import RadarInterface, RADAR_HEADER_MSG, CAMERA_DATA_HEADER_MSG
 from opendbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags
@@ -206,7 +206,6 @@ class CarInterface(CarInterfaceBase):
         ret.minEnableSpeed = -1.
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-
     elif candidate == CAR.CHEVROLET_EQUINOX:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -232,7 +231,6 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.dashcamOnly = True  # Needs steerRatio, tireStiffness, and lat accel factor tuning
 
-
     return ret
 
   @staticmethod
@@ -254,7 +252,7 @@ class CarInterface(CarInterfaceBase):
       stock_cp.openpilotLongitudinalControl = False
       stock_cp.pcmCruise = True
       stock_cp.safetyConfigs[0].safetyParam |= GMSafetyFlags.HW_CAM.value
-      ret.safetyParam |= GMSafetyFlagsSP.NON_ACC.value
+      ret.safetyParam |= GMSafetyFlagsSP.NON_ACC
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
       stock_cp.minSteerSpeed = 3.0   # ~6 mph
 

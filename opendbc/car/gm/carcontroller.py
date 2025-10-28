@@ -6,6 +6,7 @@ from opendbc.car.gm import gmcan
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
 from opendbc.car.interfaces import CarControllerBase
+from opendbc.sunnypilot.car.gm.carcontroller_ext import GasInterceptorCarController
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 NetworkLocation = structs.CarParams.NetworkLocation
@@ -17,7 +18,7 @@ CAMERA_CANCEL_DELAY_FRAMES = 10
 MIN_STEER_MSG_INTERVAL_MS = 15
 
 
-class CarController(CarControllerBase):
+class CarController(CarControllerBase, GasInterceptorCarController):
   def __init__(self, dbc_names, CP, CP_SP):
     super().__init__(dbc_names, CP, CP_SP)
     self.start_time = 0.
@@ -37,6 +38,7 @@ class CarController(CarControllerBase):
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint][Bus.radar])
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint][Bus.chassis])
 
+    GasInterceptorCarController.__init__(self, CP, CP_SP)
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
@@ -102,7 +104,6 @@ class CarController(CarControllerBase):
 
         at_full_stop = CC.longActive and CS.out.standstill
         near_stop = CC.longActive and (abs(CS.out.vEgo) < self.params.NEAR_STOP_BRAKE_PHASE)
-
         friction_brake_bus = CanBus.CHASSIS
         # GM Camera exceptions
         # TODO: can we always check the longControlState?
@@ -136,7 +137,6 @@ class CarController(CarControllerBase):
           can_sends.append(gmcan.create_adas_steering_status(CanBus.OBSTACLE, idx))
           can_sends.append(gmcan.create_adas_accelerometer_speed_status(CanBus.OBSTACLE, abs(CS.out.vEgo), idx))
 
-
       if self.CP.networkLocation == NetworkLocation.gateway and self.frame % self.params.ADAS_KEEPALIVE_STEP == 0:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
 
@@ -161,6 +161,9 @@ class CarController(CarControllerBase):
     new_actuators.torqueOutputCan = self.apply_torque_last
     new_actuators.gas = self.apply_gas
     new_actuators.brake = self.apply_brake
+
+    # sunnypilot gas interceptor / NON_ACC extensions
+    self.extend_with_interceptor(CC, CS, new_actuators, can_sends)
 
     self.frame += 1
     return new_actuators, can_sends
