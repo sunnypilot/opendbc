@@ -32,7 +32,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
 
   def create_can_mock_button_messages(self, packer, CS, send_button) -> list[CanData]:
     can_sends = []
-    copies_xp = BUTTON_COPIES_TIME_METRIC if self.is_metric else BUTTON_COPIES_TIME_IMPERIAL
+    copies_xp = BUTTON_COPIES_TIME_METRIC if CS.is_metric else BUTTON_COPIES_TIME_IMPERIAL
     copies = int(np.interp(BUTTON_COPIES_TIME, copies_xp, [1, BUTTON_COPIES]))
 
     # send resume at a max freq of 10Hz
@@ -55,7 +55,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
         button_counter_offset = [1, 1, 0, None][self.button_frame % 4]
         if button_counter_offset is not None:
           for _ in range(20):
-            can_sends.append(hyundaicanfd.create_buttons(packer, self.CP, CAN, (CS.buttons_counter + button_counter_offset) % 0x10, send_button))
+            can_sends.append(hyundaicanfd.create_buttons(packer, self.CP, CAN, (CS.buttons_counter + button_counter_offset) % 0xF, send_button))
           self.last_button_frame = self.frame
 
     return can_sends
