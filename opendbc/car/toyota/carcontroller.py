@@ -16,6 +16,7 @@ from opendbc.can import CANPacker
 
 from opendbc.sunnypilot.car.toyota.gas_interceptor import GasInterceptorCarController
 from opendbc.sunnypilot.car.toyota.secoc_long import SecOCLongCarController
+from opendbc.sunnypilot.car.toyota.auto_lock_unlock import AutoLockController
 
 Ecu = structs.CarParams.Ecu
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -83,6 +84,8 @@ class CarController(CarControllerBase, SecOCLongCarController, GasInterceptorCar
     self.secoc_lta_message_counter = 0
     self.secoc_prev_reset_counter = 0
 
+    self.auto_lock_controller = AutoLockController(self.CP_SP)
+
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
     stopping = actuators.longControlState == LongCtrlState.stopping
@@ -96,6 +99,8 @@ class CarController(CarControllerBase, SecOCLongCarController, GasInterceptorCar
 
     # *** control msgs ***
     can_sends = []
+
+    can_sends.extend(self.auto_lock_controller.update(CS))
 
     SecOCLongCarController.update(self, CS, can_sends, self.secoc_prev_reset_counter)
 
