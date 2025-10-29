@@ -15,7 +15,6 @@ CoopSteeringDataSP = namedtuple("CoopSteeringDataSP",
 
 class CoopSteeringCarController:
   def __init__(self):
-    super().__init__()
     self.coop_steering = CoopSteeringDataSP(False)
 
   @staticmethod
