@@ -253,9 +253,15 @@ class _GmCameraInitCoverage(unittest.TestCase):
   def test_gm_camera_paths_init(self):
     safety = libsafety_py.libsafety
 
+    # init ASCM path (GM_ASCM branch)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, 0)
+    safety.init_tests()
+
+    # init camera path (GM_CAM branch)
     safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM)
     safety.init_tests()
 
+    # init camera long path (GM_CAM_LONG branch)
     safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
     safety.init_tests()
 
