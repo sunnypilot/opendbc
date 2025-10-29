@@ -2,7 +2,7 @@ from opendbc.car import get_safety_config, structs
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.volkswagen.carcontroller import CarController
 from opendbc.car.volkswagen.carstate import CarState
-from opendbc.car.volkswagen.values import CanBus, CAR, NetworkLocation, TransmissionType, VolkswagenFlags, VolkswagenSafetyFlags, VolkswagenFlagsSP
+from opendbc.car.volkswagen.values import CanBus, CAR, NetworkLocation, TransmissionType, VolkswagenFlags, VolkswagenSafetyFlags
 
 
 class CarInterface(CarInterfaceBase):
@@ -58,16 +58,6 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= VolkswagenFlags.STOCK_HCA_PRESENT.value
       if 0x6B8 in fingerprint[0]:  # Kombi_03
         ret.flags |= VolkswagenFlags.KOMBI_PRESENT.value
-
-      # Auto-detect CC only mode by checking for ACC_06/ACC_07 presence
-      # ACC_06 = 0x122, ACC_07 = 0x12E, ACC_10 = 0x117
-      has_acc = 0x122 in fingerprint[0] or 0x12E in fingerprint[0]
-      if not has_acc:
-        has_radar = 0x117 in fingerprint[0]  # ACC_10 for FCW/AEB
-        if has_radar:
-          ret.flags |= VolkswagenFlagsSP.SP_CC_ONLY.value
-        else:
-          ret.flags |= VolkswagenFlagsSP.SP_CC_ONLY_NO_RADAR.value
 
     # Global lateral tuning defaults, can be overridden per-vehicle
 
