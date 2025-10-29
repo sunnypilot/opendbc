@@ -253,28 +253,41 @@ class _GmCameraInitCoverage(unittest.TestCase):
   def test_gm_camera_paths_init(self):
     safety = libsafety_py.libsafety
 
-    # init ASCM path (GM_ASCM branch)
+    # ASCM path (GM_ASCM)
     safety.set_safety_hooks(CarParams.SafetyModel.gm, 0)
     safety.init_tests()
+    tx_msgs = safety.get_tx_msgs()
+    self.assertEqual(sorted(tx_msgs), sorted(TestGmAscmSafety.TX_MSGS))
 
-    # init camera path (GM_CAM branch)
+    # camera path (GM_CAM)
     safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM)
     safety.init_tests()
+    tx_msgs = safety.get_tx_msgs()
+    self.assertEqual(sorted(tx_msgs), sorted(TestGmCameraSafety.TX_MSGS))
 
-    # init camera long path (GM_CAM_LONG branch)
-    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
+    # camera long path (GM_CAM_LONG)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm,
+                            GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
     safety.init_tests()
+    tx_msgs = safety.get_tx_msgs()
+    self.assertEqual(sorted(tx_msgs), sorted(TestGmCameraLongitudinalSafety.TX_MSGS))
 
-    # init camera NON_ACC path (GM_CAM with NON_ACC flag)
+    # camera NON_ACC path (camera + NON_ACC flag)
     safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
     safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM)
     safety.init_tests()
+    tx_msgs = safety.get_tx_msgs()
+    # NON_ACC camera should allow the same base TX set as normal camera safety
+    self.assertEqual(sorted(tx_msgs), sorted(TestGmCameraSafety.TX_MSGS))
 
-    # init camera long NON_ACC path (GM_CAM_LONG with NON_ACC flag)
+    # camera long NON_ACC path (camera long + NON_ACC flag)
     safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
     safety.set_safety_hooks(CarParams.SafetyModel.gm,
                             GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
     safety.init_tests()
+    tx_msgs = safety.get_tx_msgs()
+    # NON_ACC + long should match longitudinal camera TX set
+    self.assertEqual(sorted(tx_msgs), sorted(TestGmCameraLongitudinalSafety.TX_MSGS))
 
 
 if __name__ == "__main__":
