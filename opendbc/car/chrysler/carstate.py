@@ -110,8 +110,6 @@ class CarState(CarStateBase, MadsCarState, CarStateExt):
       *self.button_events,
     ]
 
-    CarStateExt.update(self, ret, can_parsers)
-
     return ret, ret_sp
 
   @staticmethod
