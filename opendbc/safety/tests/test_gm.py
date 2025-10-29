@@ -265,6 +265,17 @@ class _GmCameraInitCoverage(unittest.TestCase):
     safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
     safety.init_tests()
 
+    # init camera NON_ACC path (GM_CAM with NON_ACC flag)
+    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM)
+    safety.init_tests()
+
+    # init camera long NON_ACC path (GM_CAM_LONG with NON_ACC flag)
+    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm,
+                            GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
+    safety.init_tests()
+
 
 if __name__ == "__main__":
   unittest.main()
