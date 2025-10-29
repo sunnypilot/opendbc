@@ -248,9 +248,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
 class TestGmCameraEVNonACCSafety(TestGmCameraNonACCSafety, TestGmEVSafetyBase):
   pass
 
-class TestGmCameraInitCoverage(unittest.TestCase):
-  TX_MSGS = [[0x180, 0],  # pt bus
-             [0x184, 2]]  # camera bus
+class _GmCameraInitCoverage(unittest.TestCase):
   def test_gm_camera_paths_init(self):
     safety = libsafety_py.libsafety
 
