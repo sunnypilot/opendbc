@@ -10,8 +10,7 @@ from enum import StrEnum
 
 from opendbc.car import Bus, structs
 from opendbc.can.parser import CANParser
-from opendbc.sunnypilot.car.chrysler.values import BUTTONS
-from opendbc.car.chrysler.values import RAM_HD
+from opendbc.sunnypilot.car.mazda.values import BUTTONS
 
 
 class CarStateExt:
@@ -35,6 +34,3 @@ class CarStateExt:
         button_events.append(event)
       self.button_states[button.event_type] = state
     self.button_events = button_events
-
-    if self.CP.carFingerprint in RAM_HD:
-      ret.steeringAngleDeg = cp.vl["STEERING"]["STEERING_ANGLE"]
