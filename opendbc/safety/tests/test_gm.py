@@ -272,6 +272,13 @@ class _GmCameraInitCoverage(unittest.TestCase):
     tx_msgs = safety.get_tx_msgs()
     self.assertEqual(sorted(tx_msgs), sorted(TestGmCameraLongitudinalSafety.TX_MSGS))
 
+    # ASCM NON_ACC path (GM_ASCM_INTERCEPTOR_TX_MSGS)
+    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, 0)
+    safety.init_tests()
+    tx_msgs = safety.get_tx_msgs()
+    self.assertEqual(sorted(tx_msgs), sorted(TestGmAscmSafety.TX_MSGS))
+
     # camera NON_ACC path (camera + NON_ACC flag)
     safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
     safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM)
