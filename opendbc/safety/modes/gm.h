@@ -284,8 +284,10 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
         SET_TX_MSGS(GM_CAM_INTERCEPTOR_TX_MSGS, ret);
       }
     } else {
-      // Unreachable case - gm_hw can only be GM_ASCM or GM_CAM
-      (void)ret;  // Suppress unused variable warning
+      // This should never happen - gm_hw must be GM_ASCM or GM_CAM
+      // But we include it to make mutations detectable
+      ret.tx_msgs = NULL;
+      ret.tx_msgs_len = 0;
     }
     SET_RX_CHECKS(gm_pedal_rx_checks, ret);
   } else if (gm_ev) {
