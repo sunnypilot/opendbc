@@ -283,7 +283,9 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
       } else {
         SET_TX_MSGS(GM_CAM_INTERCEPTOR_TX_MSGS, ret);
       }
-      // MISRA requires complete if-else chains
+    } else {
+      // Unreachable case - gm_hw can only be GM_ASCM or GM_CAM
+      (void)ret;  // Suppress unused variable warning
     }
     SET_RX_CHECKS(gm_pedal_rx_checks, ret);
   } else if (gm_ev) {
