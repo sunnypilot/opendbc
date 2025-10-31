@@ -289,6 +289,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     // EV ACC case
     SET_RX_CHECKS(gm_ev_rx_checks, ret);
   } else {
+    // Default case - no additional setup needed
   }
 
   // ASCM does not forward any messages
