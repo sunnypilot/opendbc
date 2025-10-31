@@ -253,57 +253,43 @@ class _GmCameraInitCoverage(unittest.TestCase):
   def test_gm_camera_paths_init(self):
     safety = libsafety_py.libsafety
 
-    # init ASCM path (GM_ASCM branch)
+    # ASCM path (GM_ASCM)
     safety.set_safety_hooks(CarParams.SafetyModel.gm, 0)
     safety.init_tests()
+    tx_msgs = safety.get_tx_msgs()
+    self.assertEqual(sorted(tx_msgs), sorted(TestGmAscmSafety.TX_MSGS))
 
-    # init camera path (GM_CAM branch)
+    # camera path (GM_CAM)
     safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM)
     safety.init_tests()
+    tx_msgs = safety.get_tx_msgs()
+    self.assertEqual(sorted(tx_msgs), sorted(TestGmCameraSafety.TX_MSGS))
 
-    # init camera long path (GM_CAM_LONG branch)
-    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
-    safety.init_tests()
-
-    # init camera NON_ACC path (GM_CAM with NON_ACC flag)
-    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
-    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM)
-    safety.init_tests()
-
-    # init camera long NON_ACC path (GM_CAM_LONG with NON_ACC flag)
-    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
-    safety.set_safety_hooks(CarParams.SafetyModel.gm,
-                            GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
-    # init camera long NON_ACC path (GM_CAM_LONG with NON_ACC flag)
-    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
+    # camera long path (GM_CAM_LONG)
     safety.set_safety_hooks(CarParams.SafetyModel.gm,
                             GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
     safety.init_tests()
+    tx_msgs = safety.get_tx_msgs()
+    self.assertEqual(sorted(tx_msgs), sorted(TestGmCameraLongitudinalSafety.TX_MSGS))
 
-    # init ASCM NON_ACC path (ASCM with NON_ACC flag)
+    # camera NON_ACC path (camera + NON_ACC flag)
     safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
-    safety.set_safety_hooks(CarParams.SafetyModel.gm, 0)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM)
     safety.init_tests()
+    tx_msgs = safety.get_tx_msgs()
+    # NON_ACC camera should use interceptor TX messages
+    expected_interceptor_msgs = [[0x180, 0], [0x200, 0], [0x1E1, 0], [0x1E1, 2], [0x184, 2]]
+    self.assertEqual(sorted(tx_msgs), sorted(expected_interceptor_msgs))
 
-    # init camera EV path (GM_CAM with EV flag)
-    safety.set_current_safety_param_sp(0)
-    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.EV)
-    safety.init_tests()
-
-    # init camera long EV path (GM_CAM_LONG with EV flag)
-    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG | GMSafetyFlags.EV)
-    safety.init_tests()
-
-    # init camera NON_ACC EV path (GM_CAM with NON_ACC and EV flags)
+    # camera long NON_ACC path (camera long + NON_ACC flag)
     safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
-    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.EV)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm,
+                            GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
     safety.init_tests()
-
-    # init camera long NON_ACC EV path (GM_CAM_LONG with NON_ACC and EV flags)
-    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
-    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG | GMSafetyFlags.EV)
-    safety.init_tests()
-    safety.init_tests()
+    tx_msgs = safety.get_tx_msgs()
+    # NON_ACC + long should use long interceptor TX messages
+    expected_long_interceptor_msgs = [[0x180, 0], [0x315, 0], [0x2CB, 0], [0x370, 0], [0x200, 0], [0x1E1, 0], [0x184, 2]]
+    self.assertEqual(sorted(tx_msgs), sorted(expected_long_interceptor_msgs))
 
 
 if __name__ == "__main__":
