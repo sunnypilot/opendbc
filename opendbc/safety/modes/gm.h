@@ -283,6 +283,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
       } else {
         SET_TX_MSGS(GM_CAM_INTERCEPTOR_TX_MSGS, ret);
       }
+      // MISRA requires complete if-else chains
     }
     SET_RX_CHECKS(gm_pedal_rx_checks, ret);
   } else if (gm_ev) {
