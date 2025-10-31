@@ -284,10 +284,12 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
         SET_TX_MSGS(GM_CAM_INTERCEPTOR_TX_MSGS, ret);
       }
     } else {
+      // LCOV_EXCL_START - Unreachable code for mutation testing
       // This should never happen - gm_hw must be GM_ASCM or GM_CAM
-      // But we include it to make mutations detectable
+      // But we include it to make mutations detectable and satisfy MISRA
       ret.tx_msgs = NULL;
       ret.tx_msgs_len = 0;
+      // LCOV_EXCL_STOP
     }
     SET_RX_CHECKS(gm_pedal_rx_checks, ret);
   } else if (gm_ev) {
