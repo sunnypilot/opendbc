@@ -242,6 +242,8 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = False
       ret.openpilotLongitudinalControl = True
       ret.autoResumeSng = True
+      ret.safetyParam |= GMSafetyFlagsSP.GAS_INTERCEPTOR.value
+      ret.safetyParam |= GMSafetyFlagsSP.PEDAL_LONG.value
 
       # Pedal interceptor tuning
       ret.longitudinalTuning.kiBP = [0., 3., 6., 35.]
