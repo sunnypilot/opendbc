@@ -269,7 +269,7 @@ class CarInterface(CarInterfaceBase):
       stock_cp.openpilotLongitudinalControl = alpha_long
       stock_cp.pcmCruise = not alpha_long
       stock_cp.safetyConfigs[0].safetyParam |= GMSafetyFlags.HW_CAM.value
-      ret.safetyParam |= GMSafetyFlagsSP.NON_ACC.value
+      stock_cp.safetyConfigs[0].safetyParam |= GMSafetyFlagsSP.NON_ACC.value
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
       stock_cp.minSteerSpeed = 3.0   # ~6 mph
 
