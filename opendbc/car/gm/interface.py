@@ -237,6 +237,7 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptorDEPRECATED:
       ret.networkLocation = NetworkLocation.fwdCamera
+      ret.alphaLongitudinalAvailable = True
       ret.minEnableSpeed = -1
       ret.pcmCruise = False
       ret.openpilotLongitudinalControl = True
