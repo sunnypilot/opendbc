@@ -10,11 +10,13 @@ from opendbc.car.gm.radar_interface import RadarInterface, RADAR_HEADER_MSG, CAM
 from opendbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags
 from opendbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, LateralAccelFromTorqueCallbackType
 
-from opendbc.sunnypilot.car.gm.interface_ext import CarInterfaceExt
 from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP, GMSafetyFlagsSP
 
 TransmissionType = structs.CarParams.TransmissionType
 NetworkLocation = structs.CarParams.NetworkLocation
+
+PEDAL_MSG = 0x201
+
 
 # sunnypilot-specific torque parameters for Bolt cars that actually use the d parameter
 NON_LINEAR_TORQUE_PARAMS_SP = {
@@ -30,14 +32,13 @@ NON_LINEAR_TORQUE_PARAMS = {
 }
 
 
-class CarInterface(CarInterfaceBase, CarInterfaceExt):
+class CarInterface(CarInterfaceBase):
   CarState = CarState
   CarController = CarController
   RadarInterface = RadarInterface
 
   def __init__(self, CP, CP_SP):
     CarInterfaceBase.__init__(self, CP, CP_SP)
-    CarInterfaceExt.__init__(self, CP, CarInterfaceBase)
 
   @staticmethod
   def get_pid_accel_limits(CP, CP_SP, current_speed, cruise_speed):
@@ -102,6 +103,8 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
     ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
     ret.enableBsm = 0x142 in fingerprint[CanBus.POWERTRAIN]
+    if PEDAL_MSG in fingerprint[0]:
+      ret.enableGasInterceptorDEPRECATED = True
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
@@ -232,13 +235,28 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.dashcamOnly = True  # Needs steerRatio, tireStiffness, and lat accel factor tuning
 
+    if ret.enableGasInterceptorDEPRECATED:
+      ret.networkLocation = NetworkLocation.fwdCamera
+      ret.alphaLongitudinalAvailable = True
+      ret.minEnableSpeed = -1
+      ret.pcmCruise = False
+      ret.openpilotLongitudinalControl = True
+      ret.autoResumeSng = True
+      ret.safetyConfigs[0].safetyParam |= GMSafetyFlagsSP.GAS_INTERCEPTOR.value
+      ret.safetyConfigs[0].safetyParam |= GMSafetyFlagsSP.PEDAL_LONG.value
+
+      # Pedal interceptor tuning
+      ret.longitudinalTuning.kiBP = [0., 3., 6., 35.]
+      ret.longitudinalTuning.kiV = [0.125, 0.175, 0.225, 0.33]
+      ret.longitudinalTuning.kf = 0.25
+      ret.stoppingDecelRate = 0.8
+
     return ret
 
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
-    if candidate in (CAR.CHEVROLET_MALIBU_NON_ACC_9TH_GEN, CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN,
-                     CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN):
+    if ret.flags & GMFlagsSP.NON_ACC:
       stock_cp.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
 
@@ -248,12 +266,12 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
     # NON_ACC vehicles should use camera car speed thresholds
     if ret.flags & GMFlagsSP.NON_ACC:
       stock_cp.dashcamOnly = False
-      stock_cp.alphaLongitudinalAvailable = False
+      # alphaLongitudinalAvailable set to True in main interface if pedal interceptor detected
       stock_cp.networkLocation = NetworkLocation.fwdCamera
-      stock_cp.openpilotLongitudinalControl = False
-      stock_cp.pcmCruise = True
+      stock_cp.openpilotLongitudinalControl = alpha_long
+      stock_cp.pcmCruise = not alpha_long
       stock_cp.safetyConfigs[0].safetyParam |= GMSafetyFlags.HW_CAM.value
-      ret.safetyParam |= GMSafetyFlagsSP.NON_ACC
+      ret.safetyParam |= GMSafetyFlagsSP.NON_ACC.value
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
       stock_cp.minSteerSpeed = 3.0   # ~6 mph
 

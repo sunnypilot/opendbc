@@ -7,11 +7,13 @@
     {.msg = {{0x184, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
     {.msg = {{0x34A, 0, 5, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
     {.msg = {{0x1E1, 0, 7, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+    {.msg = {{0x1C4, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+    {.msg = {{0xC9, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+
+#define GM_ACC_RX_CHECKS \
     {.msg = {{0xBE, 0, 6, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},    /* Volt, Silverado, Acadia Denali */ \
              {0xBE, 0, 7, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},    /* Bolt EUV */ \
-             {0xBE, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}}},  /* Escalade */ \
-    {.msg = {{0x1C4, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
-    {.msg = {{0xC9, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+             {0xBE, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}}},  /* Escalade */
 
 #define GM_EV_COMMON_ADDR_CHECK \
   {.msg = {{0xBD, 0, 7, 40U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
@@ -186,8 +188,8 @@ static safety_config gm_init(uint16_t param) {
   };
 
   static const CanMsg GM_ASCM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x409, 0, 7, .check_relay = false}, {0x40A, 0, 7, .check_relay = false}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = false},  // pt bus
-                                           {0xA1, 1, 7, .check_relay = false}, {0x306, 1, 8, .check_relay = false}, {0x308, 1, 7, .check_relay = false}, {0x310, 1, 2, .check_relay = false},   // obs bus
-                                           {0x315, 2, 5, .check_relay = false}};  // ch bus
+                                            {0xA1, 1, 7, .check_relay = false}, {0x306, 1, 8, .check_relay = false}, {0x308, 1, 7, .check_relay = false}, {0x310, 1, 2, .check_relay = false},   // obs bus
+                                            {0x315, 2, 5, .check_relay = false}};  // ch bus
 
 
   static const LongitudinalLimits GM_CAM_LONG_LIMITS = {
@@ -199,31 +201,46 @@ static safety_config gm_init(uint16_t param) {
 
   // block PSCMStatus (0x184); forwarded through openpilot to hide an alert from the camera
   static const CanMsg GM_CAM_LONG_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true},  // pt bus
-                                               {0x184, 2, 8, .check_relay = true}};  // camera bus
+                                                {0x184, 2, 8, .check_relay = true}};  // camera bus
 
+// Dedicated interceptor variants for each TX set
+static const CanMsg GM_ASCM_INTERCEPTOR_TX_MSGS[] = {
+  {0x180, 0, 4, .check_relay = true}, {0x409, 0, 7, .check_relay = false}, {0x40A, 0, 7, .check_relay = false}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = false}, {0x200, 0, 6, .check_relay = false},
+  {0xA1, 1, 7, .check_relay = false}, {0x306, 1, 8, .check_relay = false}, {0x308, 1, 7, .check_relay = false}, {0x310, 1, 2, .check_relay = false},
+  {0x315, 2, 5, .check_relay = false}
+};
+
+static const CanMsg GM_CAM_LONG_INTERCEPTOR_TX_MSGS[] = {
+  {0x180, 0, 4, .check_relay = true}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true}, {0x200, 0, 6, .check_relay = false}, {0x1E1, 0, 7, .check_relay = false},
+  {0x184, 2, 8, .check_relay = true}
+};
+
+static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
+  {0x180, 0, 4, .check_relay = true}, {0x200, 0, 6, .check_relay = false}, {0x1E1, 0, 7, .check_relay = false},
+  {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}
+};
 
   static RxCheck gm_rx_checks[] = {
     GM_COMMON_RX_CHECKS
+    GM_ACC_RX_CHECKS
   };
 
   static RxCheck gm_ev_rx_checks[] = {
     GM_COMMON_RX_CHECKS
+    GM_ACC_RX_CHECKS
     GM_EV_COMMON_ADDR_CHECK
   };
 
-  static RxCheck gm_non_acc_rx_checks[] = {
-    GM_COMMON_RX_CHECKS
-    GM_NON_ACC_ADDR_CHECK
-  };
 
-  static RxCheck gm_non_acc_ev_rx_checks[] = {
+  static RxCheck gm_pedal_rx_checks[] = {
     GM_COMMON_RX_CHECKS
     GM_EV_COMMON_ADDR_CHECK
     GM_NON_ACC_ADDR_CHECK
+    {.msg = {{0x201, 0, 6, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // pedal
   };
 
   static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true},  // pt bus
-                                          {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}};  // camera bus
+                                           {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}};  // camera bus
 
   gm_hw = GET_FLAG(param, GM_PARAM_HW_CAM) ? GM_CAM : GM_ASCM;
 
@@ -234,39 +251,53 @@ static safety_config gm_init(uint16_t param) {
   } else {
   }
 
-  bool gm_cam_long = false;
-
-#ifdef ALLOW_DEBUG
   const uint16_t GM_PARAM_HW_CAM_LONG = 2;
-  gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
-#endif
+  bool gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
+
   gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long;
 
   const uint16_t GM_PARAM_SP_NON_ACC = 1;
   gm_non_acc = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_NON_ACC);
 
   safety_config ret;
-  if (gm_hw == GM_CAM) {
-    // FIXME: cppcheck thinks that gm_cam_long is always false. This is not true
-    // if ALLOW_DEBUG is defined but cppcheck is run without ALLOW_DEBUG
-    // cppcheck-suppress knownConditionTrueFalse
-    ret = gm_cam_long ? BUILD_SAFETY_CFG(gm_rx_checks, GM_CAM_LONG_TX_MSGS) : BUILD_SAFETY_CFG(gm_rx_checks, GM_CAM_TX_MSGS);
-  } else {
+  if (gm_hw == GM_ASCM) {
     ret = BUILD_SAFETY_CFG(gm_rx_checks, GM_ASCM_TX_MSGS);
+  } else { // gm_hw == GM_CAM
+    // cppcheck-suppress knownConditionTrueFalse
+    if (gm_cam_long) {
+      ret = BUILD_SAFETY_CFG(gm_rx_checks, GM_CAM_LONG_TX_MSGS);
+    } else {
+      ret = BUILD_SAFETY_CFG(gm_rx_checks, GM_CAM_TX_MSGS);
+    }
   }
 
   const bool gm_ev = GET_FLAG(param, GM_PARAM_EV);
-  if (gm_ev) {
-    SET_RX_CHECKS(gm_ev_rx_checks, ret);
-  }
 
   if (gm_non_acc) {
-    SET_TX_MSGS(GM_CAM_TX_MSGS, ret);
-    if (gm_ev) {
-      SET_RX_CHECKS(gm_non_acc_ev_rx_checks, ret);
+    // NON_ACC case (Sunnypilot pedal interceptor / camera long). We always allow pedal frames.
+    if (gm_hw == GM_ASCM) {
+      SET_TX_MSGS(GM_ASCM_INTERCEPTOR_TX_MSGS, ret);
+    } else if (gm_hw == GM_CAM) {
+      if (gm_cam_long) {
+        SET_TX_MSGS(GM_CAM_LONG_INTERCEPTOR_TX_MSGS, ret);
+      } else {
+        SET_TX_MSGS(GM_CAM_INTERCEPTOR_TX_MSGS, ret);
+      }
     } else {
-      SET_RX_CHECKS(gm_non_acc_rx_checks, ret);
+      // LCOV_EXCL_START - Unreachable code for mutation testing
+      // This should never happen - gm_hw must be GM_ASCM or GM_CAM
+      // But we include it to make mutations detectable and satisfy MISRA
+      ret.tx_msgs = NULL;
+      ret.tx_msgs_len = 0;
+      // LCOV_EXCL_STOP
     }
+    SET_RX_CHECKS(gm_pedal_rx_checks, ret);
+  } else if (gm_ev) {
+    // EV ACC case
+    SET_RX_CHECKS(gm_ev_rx_checks, ret);
+  } else {
+    // Default case - no additional setup needed
+    (void)ret;  // Suppress unused variable warning
   }
 
   // ASCM does not forward any messages

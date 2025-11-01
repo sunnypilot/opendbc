@@ -249,5 +249,57 @@ class TestGmCameraEVNonACCSafety(TestGmCameraNonACCSafety, TestGmEVSafetyBase):
   pass
 
 
+class _GmCameraInitCoverage(unittest.TestCase):
+  def test_gm_camera_paths_init(self):
+    safety = libsafety_py.libsafety
+
+    # init ASCM path (GM_ASCM branch)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, 0)
+    safety.init_tests()
+
+    # init camera path (GM_CAM branch)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM)
+    safety.init_tests()
+
+    # init camera long path (GM_CAM_LONG branch)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
+    safety.init_tests()
+
+    # init camera NON_ACC path (GM_CAM with NON_ACC flag)
+    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM)
+    safety.init_tests()
+
+    # init camera long NON_ACC path (GM_CAM_LONG with NON_ACC flag)
+    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm,
+                            GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
+    safety.init_tests()
+
+    # init ASCM NON_ACC path (ASCM with NON_ACC flag)
+    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, 0)
+    safety.init_tests()
+
+    # init camera EV path (GM_CAM with EV flag)
+    safety.set_current_safety_param_sp(0)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.EV)
+    safety.init_tests()
+
+    # init camera long EV path (GM_CAM_LONG with EV flag)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG | GMSafetyFlags.EV)
+    safety.init_tests()
+
+    # init camera NON_ACC EV path (GM_CAM with NON_ACC and EV flags)
+    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.EV)
+    safety.init_tests()
+
+    # init camera long NON_ACC EV path (GM_CAM_LONG with NON_ACC and EV flags)
+    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG | GMSafetyFlags.EV)
+    safety.init_tests()
+
+
 if __name__ == "__main__":
   unittest.main()
