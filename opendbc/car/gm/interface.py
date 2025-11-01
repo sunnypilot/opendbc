@@ -266,14 +266,27 @@ class CarInterface(CarInterfaceBase):
     # NON_ACC vehicles should use camera car speed thresholds
     if ret.flags & GMFlagsSP.NON_ACC:
       stock_cp.dashcamOnly = False
-      # alphaLongitudinalAvailable set to True in main interface if pedal interceptor detected
       stock_cp.networkLocation = NetworkLocation.fwdCamera
-      stock_cp.openpilotLongitudinalControl = alpha_long
-      stock_cp.pcmCruise = not alpha_long
       stock_cp.safetyConfigs[0].safetyParam |= GMSafetyFlags.HW_CAM.value
       ret.safetyParam |= GMSafetyFlagsSP.NON_ACC.value
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
       stock_cp.minSteerSpeed = 3.0   # ~6 mph
+
+      # Check if pedal interceptor is present
+      has_pedal = PEDAL_MSG in fingerprint[0]
+
+      if has_pedal:
+        # With pedal interceptor: enable alpha long, disable PCM cruise
+        stock_cp.alphaLongitudinalAvailable = True
+        stock_cp.openpilotLongitudinalControl = True
+        stock_cp.pcmCruise = False
+        ret.safetyParam |= GMSafetyFlagsSP.GAS_INTERCEPTOR.value
+        ret.safetyParam |= GMSafetyFlagsSP.PEDAL_LONG.value
+      else:
+        # Without pedal interceptor: disable longitudinal
+        stock_cp.alphaLongitudinalAvailable = False
+        stock_cp.openpilotLongitudinalControl = False
+        stock_cp.pcmCruise = True
 
     # dashcamOnly platforms: untested platforms, need user validations
     if candidate in (CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN,
