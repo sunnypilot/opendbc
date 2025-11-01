@@ -266,7 +266,7 @@ class CarInterface(CarInterfaceBase):
     # NON_ACC vehicles should use camera car speed thresholds
     if ret.flags & GMFlagsSP.NON_ACC:
       stock_cp.dashcamOnly = False
-      stock_cp.alphaLongitudinalAvailable = False
+      # alphaLongitudinalAvailable set to True in main interface if pedal interceptor detected
       stock_cp.networkLocation = NetworkLocation.fwdCamera
       stock_cp.openpilotLongitudinalControl = alpha_long
       stock_cp.pcmCruise = not alpha_long
