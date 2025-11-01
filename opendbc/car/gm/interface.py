@@ -242,8 +242,6 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = False
       ret.openpilotLongitudinalControl = True
       ret.autoResumeSng = True
-      ret.safetyConfigs[0].safetyParam |= GMSafetyFlagsSP.GAS_INTERCEPTOR.value
-      ret.safetyConfigs[0].safetyParam |= GMSafetyFlagsSP.PEDAL_LONG.value
 
       # Pedal interceptor tuning
       ret.longitudinalTuning.kiBP = [0., 3., 6., 35.]
@@ -271,7 +269,7 @@ class CarInterface(CarInterfaceBase):
       stock_cp.openpilotLongitudinalControl = alpha_long
       stock_cp.pcmCruise = not alpha_long
       stock_cp.safetyConfigs[0].safetyParam |= GMSafetyFlags.HW_CAM.value
-      stock_cp.safetyConfigs[0].safetyParam |= GMSafetyFlagsSP.NON_ACC.value
+      ret.safetyParam |= GMSafetyFlagsSP.NON_ACC.value
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
       stock_cp.minSteerSpeed = 3.0   # ~6 mph
 
