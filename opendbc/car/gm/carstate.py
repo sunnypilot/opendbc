@@ -102,6 +102,8 @@ class CarState(CarStateBase, CarStateExt):
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
 
     ret.gasPressed = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254. > 1e-5
+    if self.CP.enableGasInterceptorDEPRECATED:
+      ret = CarStateExt.update_gas_pressed(self, ret, pt_cp)
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
     ret.steeringRateDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelRate"]
