@@ -262,7 +262,7 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
 
     # NON_ACC vehicles should use camera car speed thresholds
-    if CP_SP.flags & GMFlagsSP.NON_ACC:
+    if ret.flags & GMFlagsSP.NON_ACC:
       stock_cp.dashcamOnly = False
       stock_cp.alphaLongitudinalAvailable = False
       stock_cp.networkLocation = NetworkLocation.fwdCamera
