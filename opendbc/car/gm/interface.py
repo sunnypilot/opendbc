@@ -242,7 +242,6 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = False
       ret.openpilotLongitudinalControl = True
       ret.autoResumeSng = True
-      ret.safetyConfigs[0].safetyParam |= GMSafetyFlags.HW_CAM_LONG.value
       ret.safetyConfigs[0].safetyParam |= GMSafetyFlagsSP.GAS_INTERCEPTOR.value
       ret.safetyConfigs[0].safetyParam |= GMSafetyFlagsSP.PEDAL_LONG.value
 
