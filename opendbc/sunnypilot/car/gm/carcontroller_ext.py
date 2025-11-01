@@ -40,8 +40,8 @@ class GasInterceptorCarController:
     This mutates can_sends in-place, and returns nothing.
     """
 
-    # Only run this path for NON_ACC (camera long / pedal cars)
-    if not (self.CP.flags & GMFlagsSP.NON_ACC.value):
+    # Only run this path for NON_ACC (camera long / pedal cars) with a detected interceptor
+    if not (self.CP.enableGasInterceptorDEPRECATED and (self.CP_SP.flags & GMFlagsSP.NON_ACC)):
       return
 
     # Gas/regen/longitudinal pedal command @25Hz (every 4 frames)
@@ -68,7 +68,7 @@ class GasInterceptorCarController:
       )
 
     # While cruise is enabled, continuously send CANCEL to prevent stock ACC from taking over
-    if CS.out.cruiseState.enabled:
+    if self.CP.enableGasInterceptorDEPRECATED and CS.out.cruiseState.enabled:
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
         self.last_button_frame = self.frame
         can_sends.append(
