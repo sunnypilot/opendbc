@@ -282,6 +282,7 @@ class CarInterface(CarInterfaceBase):
         stock_cp.alphaLongitudinalAvailable = True
         stock_cp.openpilotLongitudinalControl = True
         stock_cp.pcmCruise = False
+        stock_cp.minEnableSpeed = -1.
         ret.safetyParam |= GMSafetyFlagsSP.GAS_INTERCEPTOR.value
         ret.safetyParam |= GMSafetyFlagsSP.PEDAL_LONG.value
       else:
