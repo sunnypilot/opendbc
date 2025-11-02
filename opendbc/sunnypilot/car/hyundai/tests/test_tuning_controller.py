@@ -144,6 +144,31 @@ class TestLongitudinalTuningController(unittest.TestCase):
             f"jerk_upper={self.controller.jerk_upper:.2f}, jerk_lower={self.controller.jerk_lower:.2f}")
       self.assertGreater(self.controller.jerk_upper, 0.0)
 
+  def test_comfort_band(self):
+    self.controller.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
+    mock_CC, mock_CS = Mock(), Mock()
+    mock_CS.out = Mock()
+    mock_CC.longActive = True
 
-if __name__ == "__main__":
-  unittest.main()
+    stock_decels_list: list = [-3.0, -2.0, -1.5, -1.0, -0.5, -0.05]
+    stock_accels_list: list = [0.0, 0.3, 0.6, 0.9, 1.2, 1.5]
+    stock_comfort_band_vals: list = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]
+
+    decels_list: list = [-3.5, -3.1, -2.245, -1.853, -1.234, -0.64352, -0.06432, -0.00005]
+    accels_list: list = [0.0, 0.23345, 0.456, 0.5677, 0.6788, 0.834, 1.0, 1.3456, 1.8]
+
+    for decel in decels_list:
+      mock_CS.out.aEgo = decel
+      self.controller.calculate_comfort_band(mock_CC, mock_CS)
+      actual = self.controller.comfort_band_lower
+      expected = float(np.interp(decel, stock_decels_list, stock_comfort_band_vals[::-1]))
+      assert actual == expected
+      assert self.controller.comfort_band_upper == 0.0
+
+    for accel in accels_list:
+      mock_CS.out.aEgo = accel
+      self.controller.calculate_comfort_band(mock_CC, mock_CS)
+      actual = self.controller.comfort_band_upper
+      expected = float(np.interp(accel, stock_accels_list, stock_comfort_band_vals))
+      assert actual == expected
+      assert self.controller.comfort_band_lower == 0.0
