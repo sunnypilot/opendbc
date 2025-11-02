@@ -113,8 +113,6 @@ class CarController(CarControllerBase, GasInterceptorCarController):
 
         if self.CP.enableGasInterceptorDEPRECATED and (self.CP_SP.flags & GMFlagsSP.NON_ACC):
           self.apply_brake = 0
-          near_stop = False
-          at_full_stop = False
 
         # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
