@@ -37,6 +37,7 @@ typedef enum {
 static GmHardware gm_hw = GM_ASCM;
 static bool gm_pcm_cruise = false;
 static bool gm_non_acc = false;
+static bool gm_pedal_long = false;
 
 static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
@@ -161,7 +162,7 @@ static bool gm_tx_hook(const CANPacket_t *msg) {
   }
 
   // BUTTONS: used for resume spamming and cruise cancellation with stock longitudinal
-  if ((msg->addr == 0x1E1U) && gm_pcm_cruise) {
+  if ((msg->addr == 0x1E1U) && (gm_pcm_cruise || gm_pedal_long)) {
     int button = (msg->data[5] >> 4) & 0x7U;
 
     bool allowed_cancel = (button == 6) && cruise_engaged_prev;
@@ -254,10 +255,23 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   const uint16_t GM_PARAM_HW_CAM_LONG = 2;
   bool gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
 
-  gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long;
-
   const uint16_t GM_PARAM_SP_NON_ACC = 1;
+  const uint16_t GM_PARAM_SP_GAS_INTERCEPTOR = 2;
+  const uint16_t GM_PARAM_SP_PEDAL_LONG = 4;
+
   gm_non_acc = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_NON_ACC);
+  bool gm_sp_gas_interceptor = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_GAS_INTERCEPTOR);
+  gm_pedal_long = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_PEDAL_LONG);
+
+  if (gm_sp_gas_interceptor) {
+    enable_gas_interceptor = true;
+  }
+
+  gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long && !gm_pedal_long;
+
+  if (gm_pedal_long || gm_sp_gas_interceptor) {
+    gm_non_acc = true;
+  }
 
   safety_config ret;
   if (gm_hw == GM_ASCM) {
