@@ -91,6 +91,7 @@ class CarInterface(CarInterfaceBase):
 
     if candidate == CAR.RAM_HD_5TH_GEN:
       stock_cp.dashcamOnly = False
+      # https://github.com/commaai/openpilot/issues/25389
       stock_cp.tireStiffnessFactor = 1.0
       stock_cp.tireStiffnessFront = 65155.
       stock_cp.tireStiffnessRear = 80926.
