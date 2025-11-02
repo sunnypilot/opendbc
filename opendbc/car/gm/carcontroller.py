@@ -111,12 +111,15 @@ class CarController(CarControllerBase, GasInterceptorCarController):
           at_full_stop = at_full_stop and stopping
           friction_brake_bus = CanBus.POWERTRAIN
 
+        if self.CP.enableGasInterceptorDEPRECATED and (self.CP_SP.flags & GMFlagsSP.NON_ACC):
+          self.apply_brake = 0
+          near_stop = False
+          at_full_stop = False
+
         # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
-        # For pedal interceptor NON_ACC cars, skip friction brake commands (braking handled via pedal/regen)
-        if not (self.CP.enableGasInterceptorDEPRECATED and (self.CP_SP.flags & GMFlagsSP.NON_ACC)):
-          can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake,
-                                                               idx, CC.enabled, near_stop, at_full_stop, self.CP))
+        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake,
+                                                             idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
         # Send dashboard UI commands (ACC status)
         send_fcw = hud_alert == VisualAlert.fcw
