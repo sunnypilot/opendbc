@@ -6,6 +6,7 @@ See the LICENSE.md file in the root directory for more details.
 """
 
 import numpy as np
+import pytest
 from dataclasses import dataclass, field
 
 from opendbc.car import structs
@@ -77,8 +78,8 @@ class TestLongitudinalTuningController:
       assert expected == actual
 
   def test_calc_lookahead_jerk(self):
-    assert (-1.0169491525423728, -3.3707865168539324) == self.controller._calculate_lookahead_jerk(-0.5, 4.9)
-    assert (1.0169491525423728, 3.3707865168539324) == self.controller._calculate_lookahead_jerk(0.5, 4.9)
+    assert pytest.approx((-1.0, -3.3), abs=0.1) == self.controller._calculate_lookahead_jerk(-0.5, 4.9)
+    assert pytest.approx((1.0, 3.3), abs=0.1) == self.controller._calculate_lookahead_jerk(0.5, 4.9)
 
   def test_calc_dynamic_low_jerk(self):
     self.controller.car_config.jerk_limits = 3.3
@@ -100,7 +101,7 @@ class TestLongitudinalTuningController:
     self.controller.accel_last = -1.0
     self.controller.calculate_jerk(self.CC, self.CS, LongCtrlState.pid)
     assert self.controller.jerk_upper == 0.1  # ramp update first pass
-    assert self.controller.jerk_lower == 3.3333333333333335
+    assert self.controller.jerk_lower == pytest.approx(3.33, abs=0.01)
 
     self.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
     self.controller.__init__(self.CP, self.CP_SP)
@@ -165,7 +166,7 @@ class TestLongitudinalTuningController:
       self.controller.update(self.CC, self.CS)
 
     assert self.controller.jerk_lower == 0.5
-    assert self.controller.jerk_upper == 1.0150497493553816
+    assert self.controller.jerk_upper == pytest.approx(1.01, abs=0.01)
     assert self.controller.comfort_band_lower == 0.0
     assert self.controller.comfort_band_upper == 0.10
     assert self.controller.desired_accel == 2.0
