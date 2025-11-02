@@ -7,6 +7,7 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.sunnypilot.car.gm.carcontroller_ext import GasInterceptorCarController
+from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 NetworkLocation = structs.CarParams.NetworkLocation
