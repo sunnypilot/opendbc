@@ -26,8 +26,8 @@ class GasInterceptorCarController:
     can_sends = []
 
     if self.CP_SP.enableGasInterceptor:
-      # TODO: Test more Nidec cars and add them to the list
-      if self.CP.carFingerprint in (CAR.HONDA_CLARITY):
+      # TODO-SP: Test more Nidec cars and add them to the list
+      if self.CP.carFingerprint == CAR.HONDA_CLARITY:
         gas_mult = 1.0
       else:
         # gas multiplier to make pedal less touchy at low speed. The interceptor is
