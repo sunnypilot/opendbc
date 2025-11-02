@@ -28,6 +28,7 @@ class GasInterceptorCarController:
     if self.CP_SP.enableGasInterceptor:
       # TODO-SP: Test more Nidec cars and add them to the list
       if self.CP.carFingerprint == CAR.HONDA_CLARITY:
+        # mike8643 Clarity Long Tune Interpolation applied to all tested vehicles
         gas_mult = 1.0
       else:
         # gas multiplier to make pedal less touchy at low speed. The interceptor is
