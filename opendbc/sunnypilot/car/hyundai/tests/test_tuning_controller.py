@@ -161,7 +161,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
       mock_CS.out.aEgo = decel
       self.controller.calculate_comfort_band(mock_CC, mock_CS)
       actual = self.controller.comfort_band_lower
-      expected = float(np.interp(decel, stock_decels_list, stock_comfort_band_vals[::-1]))
+      expected = float(np.interp(decel, stock_decels_list, [0.1, 0.08, 0.06, 0.04, 0.02, 0.0]))
       assert actual == expected
       assert self.controller.comfort_band_upper == 0.0
 
