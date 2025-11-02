@@ -300,6 +300,16 @@ class _GmCameraInitCoverage(unittest.TestCase):
     safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG | GMSafetyFlags.EV)
     safety.init_tests()
 
+    # init ASCM pedal interceptor path (ASCM with GAS_INTERCEPTOR flag)
+    safety.set_current_safety_param_sp(GMSafetyFlagsSP.GAS_INTERCEPTOR)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, 0)
+    safety.init_tests()
+
+    # init camera long pedal path (GM_CAM_LONG with NON_ACC, GAS_INTERCEPTOR, PEDAL_LONG flags)
+    safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC | GMSafetyFlagsSP.GAS_INTERCEPTOR | GMSafetyFlagsSP.PEDAL_LONG)
+    safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG)
+    safety.init_tests()
+
 
 if __name__ == "__main__":
   unittest.main()
