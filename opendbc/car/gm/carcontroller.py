@@ -115,8 +115,9 @@ class CarController(CarControllerBase, GasInterceptorCarController):
         if self.CP.enableGasInterceptorDEPRECATED and (self.CP_SP.flags & GMFlagsSP.NON_ACC):
           self.apply_brake = 0
 
-        # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
-        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
+        # GasRegenCmdActive needs to reflect whether openpilot is actually commanding longitudinal torque
+        gas_regen_active = CC.longActive and CC.enabled
+        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, gas_regen_active, at_full_stop))
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake,
                                                              idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
