@@ -22,20 +22,24 @@ class CP:
   flags: int = 0
   radarUnavailable: bool = False
 
+
 @dataclass
 class Actuators:
   accel: float = 0.0
   longControlState = LongCtrlState
+
 
 @dataclass
 class CC:
   actuators: Actuators = field(default_factory=lambda: Actuators())
   longActive: bool = True
 
+
 @dataclass
 class Out:
   vEgo: float = 0.0
   aEgo: float = 0.0
+
 
 @dataclass
 class CS:
