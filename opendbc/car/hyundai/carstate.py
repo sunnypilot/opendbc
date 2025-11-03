@@ -206,6 +206,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
       ret.cruiseState.available = self.get_main_cruise(ret)
 
     CarStateExt.update(self, ret, ret_sp, can_parsers, speed_conv)
+    ret.buttonEvents = [*ret.buttonEvents, *self.update_custom_button(ret, cp)]
 
     ret.blockPcmEnable = not self.recent_button_interaction()
 
@@ -312,6 +313,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
       ret.cruiseState.available = self.get_main_cruise(ret)
 
     CarStateExt.update_canfd_ext(self, ret, ret_sp, can_parsers, speed_factor)
+    ret.buttonEvents = [*ret.buttonEvents, *self.update_custom_button(ret, cp)]
 
     ret.blockPcmEnable = not self.recent_button_interaction()
 
