@@ -21,6 +21,8 @@ BUTTONS = {
 class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManagementInterfaceBase):
   def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
+    self.queue_button = None
+    self.send_button = None
 
   def update(self, CS, CC_SP, packer, frame, last_button_frame) -> list[CanData]:
     can_sends: list[CanData] = []
@@ -29,16 +31,22 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     self.frame = frame
     self.last_button_frame = last_button_frame
 
-    if self.ICBM.sendButton != SendButtonState.none:
-        send_button = BUTTONS[self.ICBM.sendButton]
+    # may add more buttons to this handler later
+    if not self.queue_button and CS.cruise_throttle_msg["FOLLOW_DISTANCE_BUTTON"]:
+      self.queue_button = "FOLLOW_DISTANCE_BUTTON"
 
-        if (self.frame - self.last_button_frame) * DT_CTRL >= 0.11:
-          can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, send_button))
+    if not self.queue_button and self.ICBM.sendButton != SendButtonState.none:
+        self.queue_button = BUTTONS[self.ICBM.sendButton]
 
-          if (self.frame - self.last_button_frame) * DT_CTRL >= 0.15:
-            self.last_button_frame = self.frame
+    if (self.frame - self.last_button_frame) * DT_CTRL < 0.10:
+      can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, "NO_BUTTON_PRESSED"))
 
-    else:
-      self.last_button_frame = self.frame
+    if self.send_button and 0.10 < (self.frame - self.last_button_frame) * DT_CTRL <= 0.14:
+      can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, self.send_button))
+
+    if (self.frame - self.last_button_frame) * DT_CTRL >= 0.14:
+      self.send_button = self.queue_button
+      if self.send_button:
+        self.last_button_frame = self.frame
 
     return can_sends
