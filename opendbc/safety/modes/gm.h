@@ -212,13 +212,14 @@ static const CanMsg GM_ASCM_INTERCEPTOR_TX_MSGS[] = {
 };
 
 static const CanMsg GM_CAM_LONG_INTERCEPTOR_TX_MSGS[] = {
-  {0x180, 0, 4, .check_relay = true}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true}, {0x200, 0, 6, .check_relay = false}, {0x1E1, 0, 7, .check_relay = false},
+  {0x180, 0, 4, .check_relay = true}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true},
+  {0x200, 0, 6, .check_relay = false}, {0xBD, 0, 7, .check_relay = false}, {0x1F5, 0, 8, .check_relay = false}, {0x1E1, 0, 7, .check_relay = false},
   {0x184, 2, 8, .check_relay = true}
 };
 
 static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
-  {0x180, 0, 4, .check_relay = true}, {0x200, 0, 6, .check_relay = false}, {0x1E1, 0, 7, .check_relay = false},
-  {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}
+  {0x180, 0, 4, .check_relay = true}, {0x200, 0, 6, .check_relay = false}, {0xBD, 0, 7, .check_relay = false}, {0x1F5, 0, 8, .check_relay = false},
+  {0x1E1, 0, 7, .check_relay = false}, {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}
 };
 
   static RxCheck gm_rx_checks[] = {
