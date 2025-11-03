@@ -117,11 +117,15 @@ static void gm_rx_hook(const CANPacket_t *msg) {
       acc_main_on = GET_BIT(msg, 29U);
     }
 
-    if ((msg->addr == 0x3D1U) && (gm_pcm_cruise || !gm_non_acc || gm_has_interceptor)) {
+    if (msg->addr == 0x3D1U) {
       bool cruise_engaged = GET_BIT(msg, 39U);
-      pcm_cruise_check(cruise_engaged);
-      if (gm_has_interceptor) {
-        controls_allowed = false;
+      if (!gm_non_acc) {
+        pcm_cruise_check(cruise_engaged);
+      } else {
+        cruise_engaged_prev = cruise_engaged;
+        if (gm_has_interceptor) {
+          controls_allowed = false;
+        }
       }
     }
   }
