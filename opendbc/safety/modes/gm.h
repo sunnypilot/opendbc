@@ -40,6 +40,7 @@ static GmHardware gm_hw = GM_ASCM;
 static bool gm_pcm_cruise = false;
 static bool gm_non_acc = false;
 static bool gm_pedal_long = false;
+static bool gm_has_interceptor = false;
 
 static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
@@ -116,7 +117,7 @@ static void gm_rx_hook(const CANPacket_t *msg) {
       acc_main_on = GET_BIT(msg, 29U);
     }
 
-    if ((msg->addr == 0x3D1U) && (gm_pcm_cruise || !gm_non_acc)) {
+    if ((msg->addr == 0x3D1U) && (gm_pcm_cruise || !gm_non_acc || gm_has_interceptor)) {
       bool cruise_engaged = GET_BIT(msg, 39U);
       pcm_cruise_check(cruise_engaged);
     }
@@ -288,7 +289,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   gm_non_acc = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_NON_ACC);
   bool gm_sp_gas_interceptor = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_GAS_INTERCEPTOR);
   gm_pedal_long = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_PEDAL_LONG);
-  bool gm_has_interceptor = gm_pedal_long || gm_sp_gas_interceptor;
+  gm_has_interceptor = (gm_pedal_long || gm_sp_gas_interceptor);
 
   if (gm_sp_gas_interceptor) {
     enable_gas_interceptor = true;
