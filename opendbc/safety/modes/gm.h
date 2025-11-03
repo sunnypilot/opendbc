@@ -237,6 +237,8 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     GM_COMMON_RX_CHECKS
     GM_EV_COMMON_ADDR_CHECK
     GM_NON_ACC_ADDR_CHECK
+    {.msg = {{0xBD, 0, 7, 40U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},   // Paddle
+    {.msg = {{0x3D1, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // Non-ACC PCM
     {.msg = {{0x201, 0, 6, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // pedal
   };
 
