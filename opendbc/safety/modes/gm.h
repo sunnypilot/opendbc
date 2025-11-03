@@ -3,6 +3,8 @@
 #include "opendbc/safety/safety_declarations.h"
 
 // TODO: do checksum and counter checks. Add correct timestep, 0.1s for now.
+#define GM_GAS_INTERCEPTOR_THRESHOLD 550
+
 #define GM_COMMON_RX_CHECKS \
     {.msg = {{0x184, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
     {.msg = {{0x34A, 0, 5, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
@@ -37,12 +39,21 @@ typedef enum {
 static GmHardware gm_hw = GM_ASCM;
 static bool gm_pcm_cruise = false;
 static bool gm_non_acc = false;
+static bool gm_has_acc = true;
 static bool gm_pedal_long = false;
 
 static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
 
   if (msg->bus == 0U) {
+    if (msg->addr == 0x201U && enable_gas_interceptor) {
+      int gas_track_1 = (msg->data[0] << 8) | msg->data[1];
+      int gas_track_2 = (msg->data[2] << 8) | msg->data[3];
+      int gas_interceptor = (gas_track_1 + gas_track_2) / 2;
+      gas_interceptor_prev = gas_interceptor;
+      gas_pressed = gas_interceptor > GM_GAS_INTERCEPTOR_THRESHOLD;
+    }
+
     if (msg->addr == 0x184U) {
       int torque_driver_new = ((msg->data[6] & 0x7U) << 8) | msg->data[7];
       torque_driver_new = to_signed(torque_driver_new, 11);
@@ -87,10 +98,12 @@ static void gm_rx_hook(const CANPacket_t *msg) {
     }
 
     if (msg->addr == 0x1C4U) {
-      gas_pressed = msg->data[5] != 0U;
+      if (!enable_gas_interceptor) {
+        gas_pressed = msg->data[5] != 0U;
+      }
 
       // enter controls on rising edge of ACC, exit controls when ACC off
-      if (gm_pcm_cruise && !gm_non_acc) {
+      if (gm_pcm_cruise && gm_has_acc) {
         bool cruise_engaged = (msg->data[1] >> 5) != 0U;
         pcm_cruise_check(cruise_engaged);
       }
@@ -104,7 +117,7 @@ static void gm_rx_hook(const CANPacket_t *msg) {
       acc_main_on = GET_BIT(msg, 29U);
     }
 
-    if (msg->addr == 0x3D1U) {
+    if (msg->addr == 0x3D1U && gm_has_acc) {
       bool cruise_engaged = GET_BIT(msg, 39U);
       pcm_cruise_check(cruise_engaged);
     }
@@ -263,6 +276,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   gm_non_acc = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_NON_ACC);
   bool gm_sp_gas_interceptor = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_GAS_INTERCEPTOR);
   gm_pedal_long = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_PEDAL_LONG);
+  gm_has_acc = !gm_non_acc;
 
   if (gm_sp_gas_interceptor) {
     enable_gas_interceptor = true;
@@ -272,6 +286,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
 
   if (gm_pedal_long || gm_sp_gas_interceptor) {
     gm_non_acc = true;
+    gm_has_acc = false;
   }
 
   safety_config ret;
@@ -316,7 +331,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   }
 
   // ASCM does not forward any messages
-  if (gm_hw == GM_ASCM) {
+  if (gm_hw == GM_ASCM || gm_non_acc) {
     ret.disable_forwarding = true;
   }
   return ret;
