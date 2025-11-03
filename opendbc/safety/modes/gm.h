@@ -40,13 +40,12 @@ static GmHardware gm_hw = GM_ASCM;
 static bool gm_pcm_cruise = false;
 static bool gm_non_acc = false;
 static bool gm_pedal_long = false;
-static bool gm_has_interceptor = false;
 
 static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
 
   if (msg->bus == 0U) {
-    if ((msg->addr == 0x201U) && enable_gas_interceptor) {
+    if (msg->addr == 0x201U && enable_gas_interceptor) {
       int gas_track_1 = (msg->data[0] << 8) | msg->data[1];
       int gas_track_2 = (msg->data[2] << 8) | msg->data[3];
       int gas_interceptor = (gas_track_1 + gas_track_2) / 2;
@@ -119,13 +118,10 @@ static void gm_rx_hook(const CANPacket_t *msg) {
 
     if (msg->addr == 0x3D1U) {
       bool cruise_engaged = GET_BIT(msg, 39U);
-      if (gm_has_interceptor) {
-        cruise_engaged_prev = cruise_engaged;
-        if (!cruise_engaged) {
-          controls_allowed = false;
-        }
-      } else {
+      if (!gm_non_acc) {
         pcm_cruise_check(cruise_engaged);
+      } else {
+        cruise_engaged_prev = cruise_engaged;
       }
     }
   }
@@ -323,13 +319,9 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   const bool gm_ev = GET_FLAG(param, GM_PARAM_EV);
 
   if (gm_non_acc) {
+    // NON_ACC case (Sunnypilot pedal interceptor / camera long). We always allow pedal frames.
     if (gm_hw == GM_ASCM) {
-      if (gm_has_interceptor) {
-        SET_TX_MSGS(GM_ASCM_INTERCEPTOR_TX_MSGS, ret);
-        SET_RX_CHECKS(gm_pedal_rx_checks, ret);
-      } else {
-        SET_RX_CHECKS(gm_rx_checks, ret);
-      }
+      SET_TX_MSGS(GM_ASCM_INTERCEPTOR_TX_MSGS, ret);
     } else if (gm_hw == GM_CAM) {
       if (gm_cam_long) {
         if (gm_has_interceptor) {
@@ -337,16 +329,6 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
         }
       } else if (gm_has_interceptor) {
         SET_TX_MSGS(GM_CAM_INTERCEPTOR_TX_MSGS, ret);
-      } else {
-        // No additional TX messages required for this configuration
-      }
-
-      if (gm_has_interceptor) {
-        SET_RX_CHECKS(gm_pedal_rx_checks, ret);
-      } else if (gm_ev) {
-        SET_RX_CHECKS(gm_cam_ev_non_acc_rx_checks, ret);
-      } else {
-        SET_RX_CHECKS(gm_cam_non_acc_rx_checks, ret);
       }
     } else {
       // LCOV_EXCL_START - Unreachable code for mutation testing
@@ -356,6 +338,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
       ret.tx_msgs_len = 0;
       // LCOV_EXCL_STOP
     }
+    SET_RX_CHECKS(gm_pedal_rx_checks, ret);
   } else if (gm_ev) {
     // EV ACC case
     SET_RX_CHECKS(gm_ev_rx_checks, ret);
@@ -365,7 +348,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   }
 
   // ASCM does not forward any messages
-  if ((gm_hw == GM_ASCM) || ((gm_non_acc) && (gm_has_interceptor))) {
+  if (gm_hw == GM_ASCM || gm_non_acc) {
     ret.disable_forwarding = true;
   }
   return ret;
