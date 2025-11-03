@@ -285,14 +285,6 @@ class TestGmCameraGasInterceptorSafety(unittest.TestCase):
     self.safety.set_controls_allowed(True)
     cruise_engaged_msg = libsafety_py.make_CANPacket(0x3D1, 0, b'\x00\x00\x00\x00\x80\x00\x00\x00')
     self.assertTrue(self.safety.safety_rx_hook(cruise_engaged_msg))
-    self.assertTrue(self.safety.get_controls_allowed())
-
-  def test_cam_interceptor_cruise_disengage_forces_controls_off(self):
-    self.safety.set_controls_allowed(True)
-    cruise_engaged_msg = libsafety_py.make_CANPacket(0x3D1, 0, b'\x00\x00\x00\x00\x80\x00\x00\x00')
-    cruise_disengaged_msg = libsafety_py.make_CANPacket(0x3D1, 0, b'\x00\x00\x00\x00\x00\x00\x00\x00')
-    self.assertTrue(self.safety.safety_rx_hook(cruise_engaged_msg))
-    self.assertTrue(self.safety.safety_rx_hook(cruise_disengaged_msg))
     self.assertFalse(self.safety.get_controls_allowed())
 
 

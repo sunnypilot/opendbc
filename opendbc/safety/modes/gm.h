@@ -119,13 +119,13 @@ static void gm_rx_hook(const CANPacket_t *msg) {
 
     if (msg->addr == 0x3D1U) {
       bool cruise_engaged = GET_BIT(msg, 39U);
-      if (gm_has_interceptor) {
+      if (!gm_non_acc) {
+        pcm_cruise_check(cruise_engaged);
+      } else {
         cruise_engaged_prev = cruise_engaged;
-        if (!cruise_engaged) {
+        if (gm_has_interceptor) {
           controls_allowed = false;
         }
-      } else {
-        pcm_cruise_check(cruise_engaged);
       }
     }
   }
@@ -296,7 +296,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   gm_non_acc = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_NON_ACC);
   bool gm_sp_gas_interceptor = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_GAS_INTERCEPTOR);
   gm_pedal_long = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_PEDAL_LONG);
-  bool gm_has_interceptor = gm_pedal_long || gm_sp_gas_interceptor;
+  gm_has_interceptor = (gm_pedal_long || gm_sp_gas_interceptor);
 
   if (gm_sp_gas_interceptor) {
     enable_gas_interceptor = true;
