@@ -19,6 +19,11 @@ class CarStateExt:
     self.single_pedal_mode = False
     self.pedal_steady = 0.
 
+  @staticmethod
+  def extend_pt_can_messages(CP: structs.CarParams, CP_SP: structs.CarParamsSP, pt_messages: list[tuple[str, float]]) -> None:
+    if CP.enableGasInterceptorDEPRECATED:
+      pt_messages.append(("GAS_SENSOR", 50))
+
   def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     pt_cp = can_parsers[Bus.pt]
 
