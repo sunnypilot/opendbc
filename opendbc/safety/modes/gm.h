@@ -45,7 +45,7 @@ static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
 
   if (msg->bus == 0U) {
-    if ((msg->addr == 0x201U) && enable_gas_interceptor) {
+    if (msg->addr == 0x201U && enable_gas_interceptor) {
       int gas_track_1 = (msg->data[0] << 8) | msg->data[1];
       int gas_track_2 = (msg->data[2] << 8) | msg->data[3];
       int gas_interceptor = (gas_track_1 + gas_track_2) / 2;
@@ -329,8 +329,6 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
         }
       } else if (gm_has_interceptor) {
         SET_TX_MSGS(GM_CAM_INTERCEPTOR_TX_MSGS, ret);
-      } else {
-        // No additional TX messages required for this configuration
       }
 
       if (gm_has_interceptor) {
@@ -357,7 +355,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   }
 
   // ASCM does not forward any messages
-  if ((gm_hw == GM_ASCM) || ((gm_non_acc) && (gm_has_interceptor))) {
+  if (gm_hw == GM_ASCM || (gm_non_acc && gm_has_interceptor)) {
     ret.disable_forwarding = true;
   }
   return ret;
