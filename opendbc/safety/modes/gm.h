@@ -121,7 +121,6 @@ static void gm_rx_hook(const CANPacket_t *msg) {
       if (!gm_non_acc) {
         pcm_cruise_check(cruise_engaged);
       } else {
-        pcm_cruise_check(cruise_engaged);
         cruise_engaged_prev = cruise_engaged;
       }
     }
@@ -179,7 +178,7 @@ static bool gm_tx_hook(const CANPacket_t *msg) {
   }
 
   // BUTTONS: used for resume spamming and cruise cancellation with stock longitudinal
-  if ((msg->addr == 0x1E1U) && (gm_pcm_cruise || gm_pedal_long)) {
+  if ((msg->addr == 0x1E1U) && (gm_pcm_cruise || gm_pedal_long || gm_non_acc)) {
     int button = (msg->data[5] >> 4) & 0x7U;
 
     bool allowed_cancel = (button == 6) && cruise_engaged_prev;
@@ -258,6 +257,11 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     {.msg = {{0x201, 0, 6, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // pedal
   };
 
+  static RxCheck gm_cam_non_acc_rx_checks[] = {
+      GM_COMMON_RX_CHECKS
+      GM_ACC_RX_CHECKS
+      GM_NON_ACC_ADDR_CHECK
+    };
 
     static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true},  // pt bus
                                               {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}};  // camera bus
