@@ -202,7 +202,7 @@ static safety_config gm_init(uint16_t param) {
 
   // block PSCMStatus (0x184); forwarded through openpilot to hide an alert from the camera
   static const CanMsg GM_CAM_LONG_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true},  // pt bus
-                                               {0x184, 2, 8, .check_relay = true}};  // camera bus
+                                                {0x184, 2, 8, .check_relay = true}};  // camera bus
 
 // Dedicated interceptor variants for each TX set
 static const CanMsg GM_ASCM_INTERCEPTOR_TX_MSGS[] = {
@@ -237,12 +237,10 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     GM_COMMON_RX_CHECKS
     GM_EV_COMMON_ADDR_CHECK
     GM_NON_ACC_ADDR_CHECK
-    {.msg = {{0xBD, 0, 7, 40U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},   // Paddle
-    {.msg = {{0x3D1, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // Non-ACC PCM
     {.msg = {{0x201, 0, 6, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // pedal
   };
 
-  static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x200, 0, 6, .check_relay = false},  // pt bus
+  static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true},  // pt bus
                                            {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}};  // camera bus
 
   gm_hw = GET_FLAG(param, GM_PARAM_HW_CAM) ? GM_CAM : GM_ASCM;
