@@ -249,6 +249,39 @@ class TestGmCameraEVNonACCSafety(TestGmCameraNonACCSafety, TestGmEVSafetyBase):
   pass
 
 
+class TestGmCameraGasInterceptorSafety(unittest.TestCase):
+  TX_MSGS = [[0x180, 0], [0x200, 0], [0xBD, 0], [0x1F5, 0], [0x1E1, 0], [0x184, 2]]
+  GM_GAS_INTERCEPTOR_THRESHOLD = 550
+
+  def setUp(self):
+    self.safety = libsafety_py.libsafety
+    self.safety.set_current_safety_param_sp(GMSafetyFlagsSP.GAS_INTERCEPTOR)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM)
+    self.safety.init_tests()
+
+  def test_cam_interceptor_tx_whitelist(self):
+    self.safety.set_controls_allowed(True)
+    allowed = libsafety_py.make_CANPacket(0x200, 0, b'\x00\x00\x00\x00\x00\x00')
+    self.assertTrue(self.safety.safety_tx_hook(allowed))
+    blocked = libsafety_py.make_CANPacket(0x501, 0, b'\x00' * 8)
+    self.assertFalse(self.safety.safety_tx_hook(blocked))
+
+  def test_cam_interceptor_rx_updates_gas(self):
+    gas_high = self.GM_GAS_INTERCEPTOR_THRESHOLD + 10
+    high_bytes = gas_high.to_bytes(2, 'big')
+    msg_high = libsafety_py.make_CANPacket(0x201, 0, high_bytes + high_bytes + b'\x00\x00')
+    self.assertTrue(self.safety.safety_rx_hook(msg_high))
+    self.assertEqual(gas_high, self.safety.get_gas_interceptor_prev())
+    self.assertTrue(self.safety.get_gas_pressed_prev())
+
+    gas_low = max(self.GM_GAS_INTERCEPTOR_THRESHOLD - 10, 0)
+    low_bytes = gas_low.to_bytes(2, 'big')
+    msg_low = libsafety_py.make_CANPacket(0x201, 0, low_bytes + low_bytes + b'\x00\x00')
+    self.assertTrue(self.safety.safety_rx_hook(msg_low))
+    self.assertEqual(gas_low, self.safety.get_gas_interceptor_prev())
+    self.assertFalse(self.safety.get_gas_pressed_prev())
+
+
 class _GmCameraInitCoverage(unittest.TestCase):
   def test_gm_camera_paths_init(self):
     safety = libsafety_py.libsafety
