@@ -116,7 +116,7 @@ static void gm_rx_hook(const CANPacket_t *msg) {
       acc_main_on = GET_BIT(msg, 29U);
     }
 
-    if (msg->addr == 0x3D1U) {
+    if (msg->addr == 0x3D1U && !gm_non_acc) {
       bool cruise_engaged = GET_BIT(msg, 39U);
       pcm_cruise_check(cruise_engaged);
     }
@@ -253,19 +253,6 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     {.msg = {{0x201, 0, 6, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // pedal
   };
 
-  static RxCheck gm_cam_non_acc_rx_checks[] = {
-    GM_COMMON_RX_CHECKS
-    GM_ACC_RX_CHECKS
-    GM_NON_ACC_ADDR_CHECK
-  };
-
-  static RxCheck gm_cam_ev_non_acc_rx_checks[] = {
-    GM_COMMON_RX_CHECKS
-    GM_ACC_RX_CHECKS
-    GM_EV_COMMON_ADDR_CHECK
-    GM_NON_ACC_ADDR_CHECK
-  };
-
   static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true},  // pt bus
                                            {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}};  // camera bus
 
@@ -288,7 +275,6 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   gm_non_acc = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_NON_ACC);
   bool gm_sp_gas_interceptor = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_GAS_INTERCEPTOR);
   gm_pedal_long = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_PEDAL_LONG);
-  bool gm_has_interceptor = gm_pedal_long || gm_sp_gas_interceptor;
 
   if (gm_sp_gas_interceptor) {
     enable_gas_interceptor = true;
@@ -296,7 +282,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
 
   gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long && !gm_pedal_long;
 
-  if (gm_has_interceptor) {
+  if (gm_pedal_long || gm_sp_gas_interceptor) {
     gm_non_acc = true;
   }
 
@@ -315,28 +301,14 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   const bool gm_ev = GET_FLAG(param, GM_PARAM_EV);
 
   if (gm_non_acc) {
+    // NON_ACC case (Sunnypilot pedal interceptor / camera long). We always allow pedal frames.
     if (gm_hw == GM_ASCM) {
-      if (gm_has_interceptor) {
-        SET_TX_MSGS(GM_ASCM_INTERCEPTOR_TX_MSGS, ret);
-        SET_RX_CHECKS(gm_pedal_rx_checks, ret);
-      } else {
-        SET_RX_CHECKS(gm_rx_checks, ret);
-      }
+      SET_TX_MSGS(GM_ASCM_INTERCEPTOR_TX_MSGS, ret);
     } else if (gm_hw == GM_CAM) {
       if (gm_cam_long) {
-        if (gm_has_interceptor) {
-          SET_TX_MSGS(GM_CAM_LONG_INTERCEPTOR_TX_MSGS, ret);
-        }
-      } else if (gm_has_interceptor) {
-        SET_TX_MSGS(GM_CAM_INTERCEPTOR_TX_MSGS, ret);
-      }
-
-      if (gm_has_interceptor) {
-        SET_RX_CHECKS(gm_pedal_rx_checks, ret);
-      } else if (gm_ev) {
-        SET_RX_CHECKS(gm_cam_ev_non_acc_rx_checks, ret);
+        SET_TX_MSGS(GM_CAM_LONG_INTERCEPTOR_TX_MSGS, ret);
       } else {
-        SET_RX_CHECKS(gm_cam_non_acc_rx_checks, ret);
+        SET_TX_MSGS(GM_CAM_INTERCEPTOR_TX_MSGS, ret);
       }
     } else {
       // LCOV_EXCL_START - Unreachable code for mutation testing
@@ -346,6 +318,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
       ret.tx_msgs_len = 0;
       // LCOV_EXCL_STOP
     }
+    SET_RX_CHECKS(gm_pedal_rx_checks, ret);
   } else if (gm_ev) {
     // EV ACC case
     SET_RX_CHECKS(gm_ev_rx_checks, ret);
@@ -355,7 +328,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   }
 
   // ASCM does not forward any messages
-  if (gm_hw == GM_ASCM || (gm_non_acc && gm_has_interceptor)) {
+  if (gm_hw == GM_ASCM || gm_non_acc) {
     ret.disable_forwarding = true;
   }
   return ret;
