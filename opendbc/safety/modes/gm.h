@@ -158,6 +158,15 @@ static bool gm_tx_hook(const CANPacket_t *msg) {
 
     if (violation) {
       tx = false;
+#ifdef ALLOW_DEBUG
+      if (!controls_allowed) {
+        char buff[96];
+        snprintf(buff, sizeof(buff),
+                 "GM SAFETY block addr=0x%03X pedal_long=%d gas_interceptor=%d",
+                 msg->addr, gm_pedal_long, enable_gas_interceptor);
+        puts(buff);
+      }
+#endif
     }
   }
 
