@@ -120,9 +120,6 @@ static void gm_rx_hook(const CANPacket_t *msg) {
     if ((msg->addr == 0x3D1U) && (gm_pcm_cruise || !gm_non_acc || gm_has_interceptor)) {
       bool cruise_engaged = GET_BIT(msg, 39U);
       pcm_cruise_check(cruise_engaged);
-      if (gm_has_interceptor) {
-        controls_allowed = false;
-      }
     }
   }
 }
