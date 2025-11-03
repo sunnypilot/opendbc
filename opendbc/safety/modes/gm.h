@@ -158,15 +158,6 @@ static bool gm_tx_hook(const CANPacket_t *msg) {
 
     if (violation) {
       tx = false;
-#ifdef ALLOW_DEBUG
-      if (!controls_allowed) {
-        char buff[96];
-        snprintf(buff, sizeof(buff),
-                 "GM SAFETY block addr=0x%03X pedal_long=%d gas_interceptor=%d",
-                 msg->addr, gm_pedal_long, enable_gas_interceptor);
-        puts(buff);
-      }
-#endif
     }
   }
 
@@ -197,7 +188,7 @@ static safety_config gm_init(uint16_t param) {
     .max_brake = 400,
   };
 
-  static const CanMsg GM_ASCM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x409, 0, 7, .check_relay = false}, {0x40A, 0, 7, .check_relay = false}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = false},  // pt bus
+  static const CanMsg GM_ASCM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true}, {0x409, 0, 7, .check_relay = false}, {0x40A, 0, 7, .check_relay = false}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = false}, {0x200, 0, 6, .check_relay = false},  // pt bus
                                             {0xA1, 1, 7, .check_relay = false}, {0x306, 1, 8, .check_relay = false}, {0x308, 1, 7, .check_relay = false}, {0x310, 1, 2, .check_relay = false},   // obs bus
                                             {0x315, 2, 5, .check_relay = false}};  // ch bus
 
@@ -217,20 +208,19 @@ static safety_config gm_init(uint16_t param) {
 
 // Dedicated interceptor variants for each TX set
 static const CanMsg GM_ASCM_INTERCEPTOR_TX_MSGS[] = {
-  {0x180, 0, 4, .check_relay = true}, {0x409, 0, 7, .check_relay = false}, {0x40A, 0, 7, .check_relay = false}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = false}, {0x200, 0, 6, .check_relay = false},
-  {0xBD, 0, 7, .check_relay = false}, {0x1F5, 0, 8, .check_relay = false},  // pt bus
+  {0x180, 0, 4, .check_relay = true}, {0x409, 0, 7, .check_relay = false}, {0x40A, 0, 7, .check_relay = false}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = false}, {0x200, 0, 6, .check_relay = false},  // pt bus
   {0xA1, 1, 7, .check_relay = false}, {0x306, 1, 8, .check_relay = false}, {0x308, 1, 7, .check_relay = false}, {0x310, 1, 2, .check_relay = false},
   {0x315, 2, 5, .check_relay = false}
 };
 
 static const CanMsg GM_CAM_LONG_INTERCEPTOR_TX_MSGS[] = {
-  {0x180, 0, 4, .check_relay = true}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true}, {0x200, 0, 6, .check_relay = false}, {0xBD, 0, 7, .check_relay = false},
-  {0x1F5, 0, 8, .check_relay = false}, {0x1E1, 0, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}
+  {0x180, 0, 4, .check_relay = true}, {0x315, 0, 5, .check_relay = true}, {0x2CB, 0, 8, .check_relay = true}, {0x370, 0, 6, .check_relay = true}, {0x200, 0, 6, .check_relay = false}, {0x1E1, 0, 7, .check_relay = false},
+  {0x184, 2, 8, .check_relay = true}
 };
 
 static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
-  {0x180, 0, 4, .check_relay = true}, {0x200, 0, 6, .check_relay = false}, {0xBD, 0, 7, .check_relay = false}, {0x1F5, 0, 8, .check_relay = false},
-  {0x1E1, 0, 7, .check_relay = false}, {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}
+  {0x180, 0, 4, .check_relay = true}, {0x200, 0, 6, .check_relay = false}, {0x1E1, 0, 7, .check_relay = false},
+  {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}
 };
 
   static RxCheck gm_rx_checks[] = {
@@ -249,8 +239,6 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     GM_COMMON_RX_CHECKS
     GM_EV_COMMON_ADDR_CHECK
     GM_NON_ACC_ADDR_CHECK
-    {.msg = {{0xBD, 0, 7, 40U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
-    {.msg = {{0x1F5, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
     {.msg = {{0x201, 0, 6, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // pedal
   };
 
