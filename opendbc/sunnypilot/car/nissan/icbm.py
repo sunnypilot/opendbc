@@ -46,9 +46,10 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, self.send_button))
 
     if (self.frame - self.last_button_frame) * DT_CTRL >= 0.12:
+      manually_holding_button = (self.queue_button == self.send_button) and not CS.cruise_throttle_msg["NO_BUTTON_PRESSED"]
+      if self.send_button and not manually_holding_button:
+        self.last_button_frame = self.frame
       self.send_button = self.queue_button
       self.queue_button = None
-      if self.send_button:
-        self.last_button_frame = self.frame
 
     return can_sends
