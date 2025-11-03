@@ -68,7 +68,7 @@ class GasInterceptorCarController:
         )
       )
 
-    # While cruise is enabled, continuously send CANCEL to prevent stock ACC from taking over
+    # While cruise is enabled, send CANCEL to prevent stock ACC from taking over
     if self.CP.enableGasInterceptorDEPRECATED and CS.out.cruiseState.enabled:
       send_interval = (self.frame - self.last_button_frame) * DT_CTRL > 0.04
 
