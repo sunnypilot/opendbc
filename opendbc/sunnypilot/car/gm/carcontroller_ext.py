@@ -21,9 +21,6 @@ class GasInterceptorCarController:
     self.CP_SP = CP_SP
     self.frame = 0
     self.prev_op_enabled = False
-    self.cancel_guard_counter = 0
-    self.prev_op_enabled = False
-    self.cancel_guard_counter = 0
 
   @staticmethod
   def calc_pedal_command(accel: float, long_active: bool, v_ego: float) -> float:
@@ -71,20 +68,11 @@ class GasInterceptorCarController:
         )
       )
 
-    # Track engagement edges so we don't immediately spam cancel before panda can enable controls
-    if CC.enabled and not self.prev_op_enabled:
-      self.cancel_guard_counter = int(0.5 / DT_CTRL)
-    elif not CC.enabled:
-      self.cancel_guard_counter = 0
-
-    if self.cancel_guard_counter > 0:
-      self.cancel_guard_counter -= 1
-
     # While cruise is enabled, send CANCEL to prevent stock ACC from taking over
     if self.CP.enableGasInterceptorDEPRECATED and CS.out.cruiseState.enabled:
       send_interval = (self.frame - self.last_button_frame) * DT_CTRL > 0.04
 
-      if CC.enabled and self.prev_op_enabled and self.cancel_guard_counter == 0 and send_interval:
+      if CC.enabled and self.prev_op_enabled and send_interval:
         self.last_button_frame = self.frame
         can_sends.append(
           gmcan.create_buttons(
