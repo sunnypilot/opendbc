@@ -258,13 +258,20 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   };
 
   static RxCheck gm_cam_non_acc_rx_checks[] = {
-      GM_COMMON_RX_CHECKS
-      GM_ACC_RX_CHECKS
-      GM_NON_ACC_ADDR_CHECK
-    };
+    GM_COMMON_RX_CHECKS
+    GM_ACC_RX_CHECKS
+    GM_NON_ACC_ADDR_CHECK
+  };
 
-    static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true},  // pt bus
-                                              {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}};  // camera bus
+  static RxCheck gm_cam_ev_non_acc_rx_checks[] = {
+    GM_COMMON_RX_CHECKS
+    GM_ACC_RX_CHECKS
+    GM_EV_COMMON_ADDR_CHECK
+    GM_NON_ACC_ADDR_CHECK
+  };
+
+  static const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4, .check_relay = true},  // pt bus
+                                           {0x1E1, 2, 7, .check_relay = false}, {0x184, 2, 8, .check_relay = true}};  // camera bus
 
   gm_hw = GET_FLAG(param, GM_PARAM_HW_CAM) ? GM_CAM : GM_ASCM;
 
