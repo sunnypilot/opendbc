@@ -20,6 +20,7 @@ class GasInterceptorCarController:
     self.CP = CP
     self.CP_SP = CP_SP
     self.frame = 0
+    self.prev_op_enabled = False
 
   @staticmethod
   def calc_pedal_command(accel: float, long_active: bool, v_ego: float) -> float:
@@ -69,7 +70,9 @@ class GasInterceptorCarController:
 
     # While cruise is enabled, continuously send CANCEL to prevent stock ACC from taking over
     if self.CP.enableGasInterceptorDEPRECATED and CS.out.cruiseState.enabled:
-      if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
+      send_interval = (self.frame - self.last_button_frame) * DT_CTRL > 0.04
+
+      if CC.enabled and self.prev_op_enabled and send_interval:
         self.last_button_frame = self.frame
         can_sends.append(
           gmcan.create_buttons(
@@ -79,3 +82,15 @@ class GasInterceptorCarController:
             CruiseButtons.CANCEL,
           )
         )
+      elif (not CC.enabled) and self.prev_op_enabled and send_interval:
+        self.last_button_frame = self.frame
+        can_sends.append(
+          gmcan.create_buttons(
+            self.packer_pt,
+            CanBus.POWERTRAIN,
+            (CS.buttons_counter + 1) % 4,
+            CruiseButtons.CANCEL,
+          )
+        )
+
+    self.prev_op_enabled = CC.enabled
