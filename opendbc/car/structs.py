@@ -82,6 +82,7 @@ class CarParamsSP:
   def to_dict(self):
     return {k: str(v) for k, v in asdict(self).items()}
 
+
 @auto_dataclass
 class ModularAssistiveDrivingSystem:
   state: 'ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState' = field(
