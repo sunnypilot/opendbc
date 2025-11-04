@@ -32,20 +32,20 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     self.last_button_frame = last_button_frame
 
     # may add more buttons to this handler later
-    # does not need to queue manual button presses if icbm isn't sending because the non icbm behavior is forward all button presses
-    if CS.cruise_throttle_msg["FOLLOW_DISTANCE_BUTTON"] and self.ICBM.sendButton != SendButtonState.none:
+    # always need to queue manual button presses if icbm isn't sending because this is how we keep track of the timer resets
+    if CS.cruise_throttle_msg["FOLLOW_DISTANCE_BUTTON"]:
       self.queue_button = "FOLLOW_DISTANCE_BUTTON"
 
     if not self.queue_button and self.ICBM.sendButton != SendButtonState.none:
         self.queue_button = BUTTONS[self.ICBM.sendButton]
 
-    if (self.frame - self.last_button_frame) * DT_CTRL < 0.08:
+    if (self.frame - self.last_button_frame) * DT_CTRL < 0.07:
       can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, "NO_BUTTON_PRESSED"))
 
-    elif (self.frame - self.last_button_frame) * DT_CTRL <= 0.12:
+    elif (self.frame - self.last_button_frame) * DT_CTRL <= 0.11:
       can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, self.send_button))
 
-    if (self.frame - self.last_button_frame) * DT_CTRL >= 0.12:
+    if (self.frame - self.last_button_frame) * DT_CTRL >= 0.11:
       manually_holding_button = (self.queue_button == self.send_button) and not CS.cruise_throttle_msg["NO_BUTTON_PRESSED"]
       if self.send_button and not manually_holding_button:
         self.last_button_frame = self.frame
