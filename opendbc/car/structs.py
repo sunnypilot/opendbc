@@ -1,4 +1,4 @@
-from dataclasses import dataclass as _dataclass, field, is_dataclass
+from dataclasses import dataclass as _dataclass, field, is_dataclass, asdict
 from enum import Enum, StrEnum as _StrEnum, auto
 from typing import dataclass_transform, get_origin
 
@@ -79,6 +79,8 @@ class CarParamsSP:
       path: str = auto_field()
       name: str = auto_field()
 
+  def to_dict(self):
+    return {k: str(v) for k, v in asdict(self).items()}
 
 @auto_dataclass
 class ModularAssistiveDrivingSystem:
