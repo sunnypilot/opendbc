@@ -46,14 +46,14 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     # before button send state
     if self.__state == 1:
       can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, "NO_BUTTON_PRESSED"))
-      if (self.frame - self.last_button_frame) * DT_CTRL >= 0.07:
+      if (self.frame - self.last_button_frame) * DT_CTRL >= 0.06:
         self.__state = 2
         return can_sends # prevent sending 2 different messages in the same frame
 
     # during button send state
     if self.__state == 2:
       can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, self.__queued_buttons[0]))
-      if (self.frame - self.last_button_frame) * DT_CTRL >= 0.11:
+      if (self.frame - self.last_button_frame) * DT_CTRL >= 0.12:
         self.__queued_buttons.popleft()
         self.__state = 0
 
