@@ -63,7 +63,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       if self.__queued_buttons:
         self.__state = 1
       elif self.ICBM.sendButton != SendButtonState.none:
-        self.__queued_buttons.append(self.ICBM.sendButton)
+        self.__queued_buttons.append(BUTTONS[self.ICBM.sendButton])
         self.__state = 1
 
     return can_sends
