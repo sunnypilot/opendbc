@@ -47,7 +47,14 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     if self.__state == 1:
       can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, "NO_BUTTON_PRESSED"))
       if (self.frame - self.last_button_frame) * DT_CTRL >= 0.06:
-        self.__state = 2
+        if not self.__queued_buttons and self.ICBM.sendButton != SendButtonState.none:
+          self.__queued_buttons.append(BUTTONS[self.ICBM.sendButton])
+        # only check for icbm sends after giving the car time to adjust the set speed
+        if self.__queued_buttons:
+          self.__state = 2
+        else:
+          self.__state = 0
+
         return can_sends # prevent sending 2 different messages in the same frame
 
     # during button send state
@@ -56,14 +63,11 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       if (self.frame - self.last_button_frame) * DT_CTRL >= 0.12:
         self.__queued_buttons.popleft()
         self.__state = 0
+        self.last_button_frame = self.frame
 
     # idle state
     if self.__state == 0:
-      self.last_button_frame = self.frame
-      if self.__queued_buttons:
-        self.__state = 1
-      elif self.ICBM.sendButton != SendButtonState.none:
-        self.__queued_buttons.append(BUTTONS[self.ICBM.sendButton])
+      if self.__queued_buttons or self.ICBM.sendButton != SendButtonState.none:
         self.__state = 1
 
     return can_sends
