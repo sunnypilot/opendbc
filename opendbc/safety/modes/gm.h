@@ -116,9 +116,13 @@ static void gm_rx_hook(const CANPacket_t *msg) {
       acc_main_on = GET_BIT(msg, 29U);
     }
 
-    if ((msg->addr == 0x3D1U) && (!gm_pedal_long)) {
+    if ((msg->addr == 0x3D1U) && (!gm_pedal_long) && (!gm_non_acc)) {
       bool cruise_engaged = GET_BIT(msg, 39U);
       pcm_cruise_check(cruise_engaged);
+    }
+
+    if ((msg->addr == 0x3D1U) && gm_non_acc) {
+      cruise_engaged_prev = GET_BIT(msg, 39U);
     }
   }
 }
