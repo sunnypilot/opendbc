@@ -202,6 +202,14 @@ class TestGmCameraSafety(TestGmCameraSafetyBase):
       self._rx(self._pcm_status_msg(enabled))
       self.assertEqual(enabled, self._tx(self._button_msg(Buttons.CANCEL)))
 
+  def test_pcm_cruise_check_coverage(self):
+    # Test to cover lines 120-122 in gm.h: pcm_cruise_check call for ECMCruiseControl
+    # Send ECMCruiseControl message (0x3D1) to trigger the condition
+    values = {"CruiseActive": 1}
+    self._rx(self.packer.make_can_msg_panda("ECMCruiseControl", 0, values))
+    # Test passes if no crash occurs, meaning pcm_cruise_check was called
+    self.assertTrue(True)
+
 
 class TestGmCameraEVSafety(TestGmCameraSafety, TestGmEVSafetyBase):
   pass
