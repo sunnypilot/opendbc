@@ -255,7 +255,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     pass
 
   def test_buttons(self):
-    # NON_ACC cars allow CANCEL button transmission when cruise is engaged
+    # NON_ACC cars without pedal long allow CANCEL button transmission when cruise is engaged
     self.safety.set_controls_allowed(0)
     for btn in range(8):
       self.assertFalse(self._tx(self._button_msg(btn)))
@@ -265,9 +265,9 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
       self.assertFalse(self._tx(self._button_msg(btn)))
 
     # CANCEL button should be allowed when cruise is engaged
-    # For NON_ACC cars, cruise_engaged_prev is not updated, so CANCEL is never allowed
+    # For NON_ACC cars without pedal long, cruise_engaged_prev is updated, so CANCEL is allowed
     self._rx(self._pcm_status_msg(True))
-    self.assertFalse(self._tx(self._button_msg(Buttons.CANCEL)))
+    self.assertTrue(self._tx(self._button_msg(Buttons.CANCEL)))
     self._rx(self._pcm_status_msg(False))
     self.assertFalse(self._tx(self._button_msg(Buttons.CANCEL)))
 
@@ -283,13 +283,12 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     self.assertTrue(True)
 
   def test_pcm_cruise_non_acc(self):
-    # Test that NON_ACC cars skip PCM cruise check (lines 119-122)
-    # Send PCM status message - should not affect controls_allowed for NON_ACC
-    initial_allowed = self.safety.get_controls_allowed()
+    # Test that NON_ACC cars without pedal long still do PCM cruise check
+    # Send PCM status message - should affect controls_allowed for NON_ACC without pedal long
     self._rx(self._pcm_status_msg(True))
-    self.assertEqual(initial_allowed, self.safety.get_controls_allowed())
+    self.assertTrue(self.safety.get_controls_allowed())  # Should be True after enabling
     self._rx(self._pcm_status_msg(False))
-    self.assertEqual(initial_allowed, self.safety.get_controls_allowed())
+    self.assertFalse(self.safety.get_controls_allowed())  # Should be False after disabling
 
   def test_gas_interceptor_disabled(self):
     # Test gas interceptor disabled path (lines 54-57)
@@ -368,7 +367,7 @@ class TestGmCameraEVNonACCSafety(TestGmCameraNonACCSafety, TestGmEVSafetyBase):
     pass
 
   def test_buttons(self):
-    # NON_ACC cars allow CANCEL button transmission when cruise is engaged
+    # NON_ACC cars without pedal long allow CANCEL button transmission when cruise is engaged
     self.safety.set_controls_allowed(0)
     for btn in range(8):
       self.assertFalse(self._tx(self._button_msg(btn)))
@@ -378,9 +377,9 @@ class TestGmCameraEVNonACCSafety(TestGmCameraNonACCSafety, TestGmEVSafetyBase):
       self.assertFalse(self._tx(self._button_msg(btn)))
 
     # CANCEL button should be allowed when cruise is engaged
-    # For NON_ACC cars, cruise_engaged_prev is not updated, so CANCEL is never allowed
+    # For NON_ACC cars without pedal long, cruise_engaged_prev is updated, so CANCEL is allowed
     self._rx(self._pcm_status_msg(True))
-    self.assertFalse(self._tx(self._button_msg(Buttons.CANCEL)))
+    self.assertTrue(self._tx(self._button_msg(Buttons.CANCEL)))
     self._rx(self._pcm_status_msg(False))
     self.assertFalse(self._tx(self._button_msg(Buttons.CANCEL)))
 
