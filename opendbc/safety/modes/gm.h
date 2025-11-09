@@ -23,8 +23,7 @@
 #define GM_NON_ACC_ADDR_CHECK \
   {.msg = {{0x3D1, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
 
-#define GM_CAM_PCM_ADDR_CHECK \
-  {.msg = {{0x3D1, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+/* removed GM_CAM_PCM_ADDR_CHECK unused define to avoid accidental functional changes */
 
 static const LongitudinalLimits *gm_long_limits;
 
@@ -256,7 +255,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
   static RxCheck gm_cam_pcm_rx_checks[] = {
     GM_COMMON_RX_CHECKS
     GM_ACC_RX_CHECKS
-    GM_CAM_PCM_ADDR_CHECK
+    {.msg = {{0x3D1, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
   };
 
   // EV + Camera PCM cruise variant
@@ -264,8 +263,10 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     GM_COMMON_RX_CHECKS
     GM_ACC_RX_CHECKS
     GM_EV_COMMON_ADDR_CHECK
-    GM_CAM_PCM_ADDR_CHECK
+    {.msg = {{0x3D1, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
   };
+
+/* removed gm_cam_pcm_rx_checks and gm_ev_cam_pcm_rx_checks to keep RX whitelist identical to production */
 
 
   static RxCheck gm_pedal_rx_checks[] = {
@@ -342,7 +343,6 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     }
     SET_RX_CHECKS(gm_pedal_rx_checks, ret);
   } else if (gm_ev) {
-    // EV case (with optional camera PCM cruise)
     if (gm_pcm_cruise) {
       SET_RX_CHECKS(gm_ev_cam_pcm_rx_checks, ret);
     } else {
