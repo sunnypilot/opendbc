@@ -2,6 +2,9 @@
 from opendbc.car.structs import CarParams
 from opendbc.car.tesla.values import CAR
 
+from opendbc.sunnypilot.car.fingerprints_ext import merge_fw_versions
+from opendbc.sunnypilot.car.tesla.fingerprints_ext import FW_VERSIONS_EXT
+
 Ecu = CarParams.Ecu
 
 FW_VERSIONS = {
@@ -41,7 +44,8 @@ FW_VERSIONS = {
   CAR.TESLA_MODEL_X: {
     (Ecu.eps, 0x730, None): [
       b'TeM3_SP_XP002p2_0.0.0 (23),XPR003.6.0',
-      b'TeM3_SP_XP002p2_0.0.0 (36),XPR003.10.0',
     ],
   },
 }
+
+FW_VERSIONS = merge_fw_versions(FW_VERSIONS, FW_VERSIONS_EXT)

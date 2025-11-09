@@ -43,7 +43,7 @@ class CarInterface(CarInterfaceBase):
 
     stock_cp.enableBsm = True
 
-    if candidate in (CAR.TESLA_MODEL_X):
+    if candidate == CAR.TESLA_MODEL_X:
       stock_cp.dashcamOnly = False
 
     if 0x3DF in fingerprint[1]:
