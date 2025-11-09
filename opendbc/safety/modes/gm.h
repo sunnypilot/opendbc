@@ -118,10 +118,6 @@ static void gm_rx_hook(const CANPacket_t *msg) {
       acc_main_on = GET_BIT(msg, 29U);
     }
 
-    if ((msg->addr == 0x3D1U) && (!gm_pedal_long) && (!gm_non_acc)) {
-      bool cruise_engaged = GET_BIT(msg, 39U);
-      pcm_cruise_check(cruise_engaged);
-    }
 
     if ((msg->addr == 0x3D1U) && gm_non_acc) {
       cruise_engaged_prev = GET_BIT(msg, 39U);
@@ -251,20 +247,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     GM_EV_COMMON_ADDR_CHECK
   };
 
-  // Camera PCM cruise variant (adds ECMCruiseControl 0x3D1 only when needed)
-  static RxCheck gm_cam_pcm_rx_checks[] = {
-    GM_COMMON_RX_CHECKS
-    GM_ACC_RX_CHECKS
-    {.msg = {{0x3D1, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
-  };
-
-  // EV + Camera PCM cruise variant
-  static RxCheck gm_ev_cam_pcm_rx_checks[] = {
-    GM_COMMON_RX_CHECKS
-    GM_ACC_RX_CHECKS
-    GM_EV_COMMON_ADDR_CHECK
-    {.msg = {{0x3D1, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
-  };
+  // (No additional camera PCM RX whitelist; production behavior unchanged)
 
 /* removed gm_cam_pcm_rx_checks and gm_ev_cam_pcm_rx_checks to keep RX whitelist identical to production */
 
@@ -343,14 +326,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     }
     SET_RX_CHECKS(gm_pedal_rx_checks, ret);
   } else if (gm_ev) {
-    if (gm_pcm_cruise) {
-      SET_RX_CHECKS(gm_ev_cam_pcm_rx_checks, ret);
-    } else {
-      SET_RX_CHECKS(gm_ev_rx_checks, ret);
-    }
-  } else if (gm_pcm_cruise) {
-    // Camera PCM cruise case (non-EV)
-    SET_RX_CHECKS(gm_cam_pcm_rx_checks, ret);
+    SET_RX_CHECKS(gm_ev_rx_checks, ret);
   } else {
     // Default case - no additional setup needed
     (void)ret;  // Suppress unused variable warning
