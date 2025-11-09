@@ -361,6 +361,24 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # Should execute: gas_pressed = 549 > 550 = false
     self.assertTrue(True)
 
+  def test_gas_interceptor_bit_operations_verification(self):
+    values = {"INTERCEPTOR_GAS": 0x1234, "INTERCEPTOR_GAS2": 0x5678}
+    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self.assertTrue(self.safety.get_gas_pressed_prev())
+    values = {"INTERCEPTOR_GAS": 0xFF00, "INTERCEPTOR_GAS2": 0x00FF}
+    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self.assertTrue(self.safety.get_gas_pressed_prev())  # Should be true with |
+
+  def test_gas_interceptor_arithmetic_verification(self):
+    values = {"INTERCEPTOR_GAS": 1101, "INTERCEPTOR_GAS2": 1}
+    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self.assertTrue(self.safety.get_gas_pressed_prev())  # Should be true with +
+
+  def test_gas_interceptor_threshold_strict_inequality(self):
+    values = {"INTERCEPTOR_GAS": 1100, "INTERCEPTOR_GAS2": 0}
+    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self.assertFalse(self.safety.get_gas_pressed_prev())  # Should be false with >
+
   def test_pcm_cruise_non_acc(self):
     # Test that NON_ACC cars with gas interceptor do NOT do PCM cruise check
     # Send PCM status message - should NOT affect controls_allowed for NON_ACC with gas interceptor
