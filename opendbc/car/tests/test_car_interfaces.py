@@ -54,7 +54,7 @@ def get_fuzzy_car_interface(car_name: str, draw: DrawType) -> CarInterfaceBase:
   car_params = CarInterface.get_params(car_name, params['fingerprints'], params['car_fw'],
                                        alpha_long=params['alpha_long'], is_release=False, docs=False)
   car_params_sp = CarInterface.get_params_sp(car_params, car_name, params['fingerprints'], params['car_fw'],
-                                             alpha_long=params['alpha_long'], docs=False)
+                                             alpha_long=params['alpha_long'], is_release_sp=False, docs=False)
   return CarInterface(car_params, car_params_sp)
 
 
@@ -79,6 +79,10 @@ class TestCarInterfaces:
     # Longitudinal sanity checks
     assert len(car_params.longitudinalTuning.kpV) == len(car_params.longitudinalTuning.kpBP)
     assert len(car_params.longitudinalTuning.kiV) == len(car_params.longitudinalTuning.kiBP)
+
+    # If we're using the interceptor for gasPressed, we should be commanding gas with it
+    if car_params_sp.enableGasInterceptor:
+      assert car_params.openpilotLongitudinalControl
 
     # Lateral sanity checks
     if car_params.steerControlType != structs.CarParams.SteerControlType.angle:

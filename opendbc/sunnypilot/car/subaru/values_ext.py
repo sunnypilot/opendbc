@@ -8,5 +8,10 @@ See the LICENSE.md file in the root directory for more details.
 from enum import IntFlag
 
 
-class ChryslerFlagsSP(IntFlag):
-  NO_MIN_STEERING_SPEED = 1
+class SubaruSafetyFlagsSP:
+  STOP_AND_GO = 1
+
+
+class SubaruFlagsSP(IntFlag):
+  STOP_AND_GO = 1
+  STOP_AND_GO_MANUAL_PARKING_BRAKE = 2

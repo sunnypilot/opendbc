@@ -1,7 +1,8 @@
 from opendbc.car import CanBusBase
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.honda.values import (CAR, HondaFlags, HONDA_BOSCH, HONDA_BOSCH_ALT_RADAR, HONDA_BOSCH_RADARLESS,
+from opendbc.car.honda.values import (HondaFlags, HONDA_BOSCH, HONDA_BOSCH_ALT_RADAR, HONDA_BOSCH_RADARLESS,
                                       HONDA_BOSCH_CANFD, CarControllerParams)
+from opendbc.sunnypilot.car.honda.values_ext import HondaFlagsSP
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -46,7 +47,7 @@ class CanBus(CanBusBase):
     return self.offset
 
 
-def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
+def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake, CP_SP):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
@@ -66,7 +67,7 @@ def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_ca
     "AEB_STATUS": 0,
   }
 
-  if car_fingerprint == CAR.HONDA_CLARITY:
+  if CP_SP.flags & HondaFlagsSP.NIDEC_HYBRID:
     values["COMPUTER_BRAKE_HYBRID"] = apply_brake
     values["BRAKE_PUMP_REQUEST_HYBRID"] = apply_brake > 0
   else:
@@ -181,7 +182,7 @@ def create_lkas_hud(packer, bus, CP, hud_control, lat_active, steering_available
 
   if CP.carFingerprint in (HONDA_BOSCH_RADARLESS | HONDA_BOSCH_CANFD):
     lkas_hud_values['LANE_LINES'] = 3
-    lkas_hud_values['DASHED_LANES'] = dashed_lanes
+    lkas_hud_values['DASHED_LANES'] = lat_active
 
     # car likely needs to see LKAS_PROBLEM fall within a specific time frame, so forward from camera
     # TODO: needed for Bosch CAN FD?
@@ -195,7 +196,7 @@ def create_lkas_hud(packer, bus, CP, hud_control, lat_active, steering_available
   # New HUD concept for selected Bosch cars, overwrites some of the above
   # TODO: make global across all Honda if feedback is favorable
   if CP.carFingerprint in HONDA_BOSCH_ALT_RADAR:
-    lkas_hud_values['DASHED_LANES'] = steering_available and dashed_lanes
+    lkas_hud_values['DASHED_LANES'] = steering_available and lat_active
     lkas_hud_values['SOLID_LANES'] = lat_active
     lkas_hud_values['LKAS_PROBLEM'] = lat_active and reduced_steering
 
