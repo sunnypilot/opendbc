@@ -23,6 +23,9 @@
 #define GM_NON_ACC_ADDR_CHECK \
   {.msg = {{0x3D1, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
 
+#define GM_CAM_PCM_ADDR_CHECK \
+  {.msg = {{0x3D1, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+
 static const LongitudinalLimits *gm_long_limits;
 
 enum {
@@ -249,6 +252,21 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     GM_EV_COMMON_ADDR_CHECK
   };
 
+  // Camera PCM cruise variant (adds ECMCruiseControl 0x3D1 only when needed)
+  static RxCheck gm_cam_pcm_rx_checks[] = {
+    GM_COMMON_RX_CHECKS
+    GM_ACC_RX_CHECKS
+    GM_CAM_PCM_ADDR_CHECK
+  };
+
+  // EV + Camera PCM cruise variant
+  static RxCheck gm_ev_cam_pcm_rx_checks[] = {
+    GM_COMMON_RX_CHECKS
+    GM_ACC_RX_CHECKS
+    GM_EV_COMMON_ADDR_CHECK
+    GM_CAM_PCM_ADDR_CHECK
+  };
+
 
   static RxCheck gm_pedal_rx_checks[] = {
     GM_COMMON_RX_CHECKS
@@ -324,8 +342,15 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     }
     SET_RX_CHECKS(gm_pedal_rx_checks, ret);
   } else if (gm_ev) {
-    // EV ACC case
-    SET_RX_CHECKS(gm_ev_rx_checks, ret);
+    // EV case (with optional camera PCM cruise)
+    if (gm_pcm_cruise) {
+      SET_RX_CHECKS(gm_ev_cam_pcm_rx_checks, ret);
+    } else {
+      SET_RX_CHECKS(gm_ev_rx_checks, ret);
+    }
+  } else if (gm_pcm_cruise) {
+    // Camera PCM cruise case (non-EV)
+    SET_RX_CHECKS(gm_cam_pcm_rx_checks, ret);
   } else {
     // Default case - no additional setup needed
     (void)ret;  // Suppress unused variable warning
