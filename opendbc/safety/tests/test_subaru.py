@@ -120,13 +120,11 @@ class TestSubaruSafetyBase(common.PandaCarSafetyTest):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
         for mads_button_press in range(4):
           with self.subTest("mads_button_press", button_state=mads_button_press):
-            self._mads_states_cleanup()
             self.safety.set_mads_params(enable_mads, False, False)
 
             self._rx(self._lkas_button_msg(False, mads_button_press))
             self.assertEqual(enable_mads and mads_button_press in range(1, 4),
                              self.safety.get_controls_allowed_lat())
-    self._mads_states_cleanup()
 
 
 class TestSubaruStockLongitudinalSafetyBase(TestSubaruSafetyBase):
@@ -198,9 +196,9 @@ class TestSubaruGen2TorqueSafetyBase(TestSubaruTorqueSafetyBase):
   ALT_MAIN_BUS = SUBARU_ALT_BUS
   ALT_CAM_BUS = SUBARU_ALT_BUS
 
-  MAX_RATE_UP = 40
-  MAX_RATE_DOWN = 40
-  MAX_TORQUE_LOOKUP = [0], [1000]
+  MAX_RATE_UP = 35
+  MAX_RATE_DOWN = 50
+  MAX_TORQUE_LOOKUP = [0], [1500]
 
 
 class TestSubaruGen2TorqueStockLongitudinalSafety(TestSubaruStockLongitudinalSafetyBase, TestSubaruGen2TorqueSafetyBase):

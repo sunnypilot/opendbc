@@ -1,35 +1,46 @@
 #!/usr/bin/env python3
-import os
 from math import fabs, exp
+import numpy as np
 
 from opendbc.car import get_safety_config, structs
-from opendbc.car.common.basedir import BASEDIR
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.gm.carcontroller import CarController
 from opendbc.car.gm.carstate import CarState
 from opendbc.car.gm.radar_interface import RadarInterface, RADAR_HEADER_MSG, CAMERA_DATA_HEADER_MSG
 from opendbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags
-from opendbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, LatControlInputs, NanoFFModel
+from opendbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, LateralAccelFromTorqueCallbackType
+
+from opendbc.sunnypilot.car.gm.interface_ext import CarInterfaceExt
+from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP, GMSafetyFlagsSP
 
 TransmissionType = structs.CarParams.TransmissionType
 NetworkLocation = structs.CarParams.NetworkLocation
 
+# sunnypilot-specific torque parameters for Bolt cars that actually use the d parameter
+NON_LINEAR_TORQUE_PARAMS_SP = {
+  CAR.CHEVROLET_BOLT_NON_ACC: [2.24, 1.1, 0.28, -0.07],
+  CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN: [1.8, 1.1, 0.3, -0.045],
+}
+
 NON_LINEAR_TORQUE_PARAMS = {
   CAR.CHEVROLET_BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
   CAR.GMC_ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
-  CAR.CHEVROLET_SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
+  CAR.CHEVROLET_SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122],
+  **NON_LINEAR_TORQUE_PARAMS_SP,
 }
 
-NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'torque_data/neural_ff_weights.json')
 
-
-class CarInterface(CarInterfaceBase):
+class CarInterface(CarInterfaceBase, CarInterfaceExt):
   CarState = CarState
   CarController = CarController
   RadarInterface = RadarInterface
 
+  def __init__(self, CP, CP_SP):
+    CarInterfaceBase.__init__(self, CP, CP_SP)
+    CarInterfaceExt.__init__(self, CP, CarInterfaceBase)
+
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
+  def get_pid_accel_limits(CP, CP_SP, current_speed, cruise_speed):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   # Determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
@@ -45,41 +56,45 @@ class CarInterface(CarInterfaceBase):
     else:
       return CarInterfaceBase.get_steer_feedforward_default
 
-  def torque_from_lateral_accel_siglin(self, latcontrol_inputs: LatControlInputs, torque_params: structs.CarParams.LateralTorqueTuning,
-                                       gravity_adjusted: bool) -> float:
-    def sig(val):
-      # https://timvieira.github.io/blog/post/2014/02/11/exp-normalize-trick
-      if val >= 0:
-        return 1 / (1 + exp(-val)) - 0.5
-      else:
-        z = exp(val)
-        return z / (1 + z) - 0.5
+  def get_lataccel_torque_siglin(self) -> float:
 
-    # The "lat_accel vs torque" relationship is assumed to be the sum of "sigmoid + linear" curves
-    # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
-    # This has big effect on the stability about 0 (noise when going straight)
-    # ToDo: To generalize to other GMs, explore tanh function as the nonlinear
-    non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
-    assert non_linear_torque_params, "The params are not defined"
-    a, b, c, _ = non_linear_torque_params
-    steer_torque = (sig(latcontrol_inputs.lateral_acceleration * a) * b) + (latcontrol_inputs.lateral_acceleration * c)
-    return float(steer_torque)
+    def torque_from_lateral_accel_siglin_func(lateral_acceleration: float) -> float:
+      # The "lat_accel vs torque" relationship is assumed to be the sum of "sigmoid + linear" curves
+      # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
+      # This has big effect on the stability about 0 (noise when going straight)
+      non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
+      assert non_linear_torque_params, "The params are not defined"
+      a, b, c, d = non_linear_torque_params
+      d = d if NON_LINEAR_TORQUE_PARAMS_SP.get(self.CP.carFingerprint) else 0.0
+      sig_input = a * lateral_acceleration
+      sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
+      steer_torque = (sig * b) + (lateral_acceleration * c) + d
+      return float(steer_torque)
 
-  def torque_from_lateral_accel_neural(self, latcontrol_inputs: LatControlInputs, torque_params: structs.CarParams.LateralTorqueTuning,
-                                       gravity_adjusted: bool) -> float:
-    inputs = list(latcontrol_inputs)
-    if gravity_adjusted:
-      inputs[0] += inputs[1]
-    return float(self.neural_ff_model.predict(inputs))
+    lataccel_values = np.arange(-5.0, 5.0, 0.01)
+    torque_values = [torque_from_lateral_accel_siglin_func(x) for x in lataccel_values]
+    assert min(torque_values) < -1 and max(torque_values) > 1, "The torque values should cover the range [-1, 1]"
+    return torque_values, lataccel_values
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.carFingerprint == CAR.CHEVROLET_BOLT_EUV:
-      self.neural_ff_model = NanoFFModel(NEURAL_PARAMS_PATH, self.CP.carFingerprint)
-      return self.torque_from_lateral_accel_neural
-    elif self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
-      return self.torque_from_lateral_accel_siglin
+    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
+      torque_values, lataccel_values = self.get_lataccel_torque_siglin()
+
+      def torque_from_lateral_accel_siglin(lateral_acceleration: float, torque_params: structs.CarParams.LateralTorqueTuning):
+        return np.interp(lateral_acceleration, lataccel_values, torque_values)
+      return torque_from_lateral_accel_siglin
     else:
       return self.torque_from_lateral_accel_linear
+
+  def lateral_accel_from_torque(self) -> LateralAccelFromTorqueCallbackType:
+    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
+      torque_values, lataccel_values = self.get_lataccel_torque_siglin()
+
+      def lateral_accel_from_torque_siglin(torque: float, torque_params: structs.CarParams.LateralTorqueTuning):
+        return np.interp(torque, torque_values, lataccel_values)
+      return lateral_accel_from_torque_siglin
+    else:
+      return self.lateral_accel_from_torque_linear
 
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
@@ -216,5 +231,36 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.5
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.dashcamOnly = True  # Needs steerRatio, tireStiffness, and lat accel factor tuning
+
+    return ret
+
+  @staticmethod
+  def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
+    if candidate in (CAR.CHEVROLET_MALIBU_NON_ACC_9TH_GEN, CAR.CHEVROLET_BOLT_NON_ACC, CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN,
+                     CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN):
+      stock_cp.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
+
+    elif candidate in (CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN, ):
+      CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
+
+    # NON_ACC vehicles should use camera car speed thresholds
+    if ret.flags & GMFlagsSP.NON_ACC:
+      stock_cp.dashcamOnly = False
+      stock_cp.alphaLongitudinalAvailable = False
+      stock_cp.networkLocation = NetworkLocation.fwdCamera
+      stock_cp.openpilotLongitudinalControl = False
+      stock_cp.pcmCruise = True
+      stock_cp.safetyConfigs[0].safetyParam |= GMSafetyFlags.HW_CAM.value
+      ret.safetyParam |= GMSafetyFlagsSP.NON_ACC
+      stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
+      stock_cp.minSteerSpeed = 3.0   # ~6 mph
+
+    # dashcamOnly platforms: untested platforms, need user validations
+    if candidate in (CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN,
+                     CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN,
+                     CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
+      stock_cp.dashcamOnly = True
 
     return ret

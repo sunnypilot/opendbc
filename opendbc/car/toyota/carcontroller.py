@@ -14,6 +14,7 @@ from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, T
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can import CANPacker
 
+from opendbc.sunnypilot.car.toyota.gas_interceptor import GasInterceptorCarController
 from opendbc.sunnypilot.car.toyota.secoc_long import SecOCLongCarController
 
 Ecu = structs.CarParams.Ecu
@@ -26,6 +27,8 @@ VisualAlert = structs.CarControl.HUDControl.VisualAlert
 ACCEL_WINDUP_LIMIT = 4.0 * DT_CTRL * 3  # m/s^2 / frame
 ACCEL_WINDDOWN_LIMIT = -4.0 * DT_CTRL * 3  # m/s^2 / frame
 ACCEL_PID_UNWIND = 0.03 * DT_CTRL * 3  # m/s^2 / frame
+
+MAX_PITCH_COMPENSATION = 1.5  # m/s^2
 
 # LKA limits
 # EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
@@ -49,10 +52,11 @@ def get_long_tune(CP, params):
                        rate=1 / (DT_CTRL * 3))
 
 
-class CarController(CarControllerBase, SecOCLongCarController):
+class CarController(CarControllerBase, SecOCLongCarController, GasInterceptorCarController):
   def __init__(self, dbc_names, CP, CP_SP):
-    super().__init__(dbc_names, CP, CP_SP)
+    CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     SecOCLongCarController.__init__(self, CP)
+    GasInterceptorCarController.__init__(self, CP, CP_SP)
     self.params = CarControllerParams(self.CP)
     self.last_torque = 0
     self.last_angle = 0
@@ -66,7 +70,8 @@ class CarController(CarControllerBase, SecOCLongCarController):
     # *** start long control state ***
     self.long_pid = get_long_tune(self.CP, self.params)
     self.aego = FirstOrderFilter(0.0, 0.25, DT_CTRL * 3)
-    self.pitch = FirstOrderFilter(0, 0.5, DT_CTRL)
+    self.pitch = FirstOrderFilter(0, 0.25, DT_CTRL)
+    self.pitch_slow = FirstOrderFilter(0, 1.5, DT_CTRL)
 
     self.accel = 0
     self.prev_accel = 0
@@ -87,6 +92,7 @@ class CarController(CarControllerBase, SecOCLongCarController):
 
     if len(CC.orientationNED) == 3:
       self.pitch.update(CC.orientationNED[1])
+      self.pitch_slow.update(CC.orientationNED[1])
 
     # *** control msgs ***
     can_sends = []
@@ -171,7 +177,7 @@ class CarController(CarControllerBase, SecOCLongCarController):
     # *** gas and brake ***
 
     # on entering standstill, send standstill request
-    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR):
+    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP_SP.enableGasInterceptor):
       self.standstill_req = True
     if CS.pcm_acc_status != 8:
       # pcm entered standstill or it's disabled
@@ -225,6 +231,15 @@ class CarController(CarControllerBase, SecOCLongCarController):
           self.long_pid.i -= ACCEL_PID_UNWIND * float(np.sign(self.long_pid.i))
 
           error_future = pcm_accel_cmd - a_ego_future
+
+          if not stopping:
+            # Toyota's PCM slowly responds to changes in pitch. On change, we amplify our
+            # acceleration request to compensate for the undershoot and following overshoot
+            high_pass_pitch = self.pitch.x - self.pitch_slow.x
+            pitch_compensation = float(np.clip(math.sin(high_pass_pitch) * ACCELERATION_DUE_TO_GRAVITY,
+                                               -MAX_PITCH_COMPENSATION, MAX_PITCH_COMPENSATION))
+            pcm_accel_cmd += pitch_compensation
+
           pcm_accel_cmd = self.long_pid.update(error_future,
                                                speed=CS.out.vEgo,
                                                feedforward=pcm_accel_cmd,
@@ -240,6 +255,7 @@ class CarController(CarControllerBase, SecOCLongCarController):
         elif net_acceleration_request_min > 0.3:
           self.permit_braking = False
 
+        pcm_accel_cmd = pcm_accel_cmd if self.CP.carFingerprint in TSS2_CAR else actuators.accel
         pcm_accel_cmd = float(np.clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX))
 
         can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.permit_braking, self.standstill_req, lead,
@@ -254,6 +270,8 @@ class CarController(CarControllerBase, SecOCLongCarController):
         else:
           can_sends.append(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, True, False, lead, CS.acc_type, False, self.distance_button,
                                                           self.SECOC_LONG))
+
+    can_sends.extend(GasInterceptorCarController.create_gas_command(self, CC, CS, actuators, self.packer, self.frame))
 
     # *** hud ui ***
     if self.CP.carFingerprint != CAR.TOYOTA_PRIUS_V:
@@ -292,6 +310,7 @@ class CarController(CarControllerBase, SecOCLongCarController):
     new_actuators.torqueOutputCan = apply_torque
     new_actuators.steeringAngleDeg = self.last_angle
     new_actuators.accel = self.accel
+    new_actuators.gas = self.gas
 
     self.frame += 1
     return new_actuators, can_sends

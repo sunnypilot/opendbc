@@ -24,6 +24,14 @@ class CarStateExt:
     speed_limit = cp_cam.vl["CAMERA_MESSAGES"]["SPEED_LIMIT_SIGN"]
     ret_sp.speedLimit = (speed_limit - 96.0) * 5.0 * CV.MPH_TO_MS if (speed_limit > 96 and speed_limit < 125) else 0.0
 
-    if self.CP_SP.flags & HondaFlagsSP.CLARITY:
-      ret.accFaulted = bool(cp.vl["BRAKE_ERROR"]["BRAKE_ERROR_1"] or cp.vl["BRAKE_ERROR"]["BRAKE_ERROR_2"])
-      ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE_ALT"] > 1e-5)
+    if self.CP_SP.flags & HondaFlagsSP.NIDEC_HYBRID:
+      ret.accFaulted = bool(cp.vl["HYBRID_BRAKE_ERROR"]["BRAKE_ERROR_1"] or cp.vl["HYBRID_BRAKE_ERROR"]["BRAKE_ERROR_2"])
+      ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE_HYBRID"] > 1e-5)
+
+    if self.CP_SP.flags & HondaFlagsSP.HYBRID_ALT_BRAKEHOLD:
+      ret.brakeHoldActive = cp.vl["BRAKE_HOLD_HYBRID_ALT"]["BRAKE_HOLD_ACTIVE"] == 1
+
+    if self.CP_SP.enableGasInterceptor:
+      # Same threshold as panda, equivalent to 1e-5 with previous DBC scaling
+      gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
+      ret.gasPressed = gas > 492

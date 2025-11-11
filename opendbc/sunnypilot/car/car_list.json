@@ -21,6 +21,16 @@
     ],
     "package": "All"
   },
+  "Acura MDX 2025": {
+    "platform": "ACURA_MDX_4G_MMR",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "MDX",
+    "year": [
+      "2025"
+    ],
+    "package": "All except Type S"
+  },
   "Acura RDX 2016-18": {
     "platform": "ACURA_RDX",
     "make": "Acura",
@@ -192,6 +202,29 @@
     ],
     "package": "2LT Trim with Adaptive Cruise Control Package"
   },
+  "Chevrolet Bolt EV Non-ACC 2017": {
+    "platform": "CHEVROLET_BOLT_NON_ACC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV Non-ACC",
+    "year": [
+      "2017"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Chevrolet Bolt EV Non-ACC 2018-21": {
+    "platform": "CHEVROLET_BOLT_NON_ACC_1ST_GEN",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV Non-ACC",
+    "year": [
+      "2018",
+      "2019",
+      "2020",
+      "2021"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
   "Chevrolet Equinox 2019-22": {
     "platform": "CHEVROLET_EQUINOX",
     "make": "Chevrolet",
@@ -202,6 +235,23 @@
       "2020",
       "2021",
       "2022"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Chevrolet Malibu Non-ACC 2016-23": {
+    "platform": "CHEVROLET_MALIBU_NON_ACC_9TH_GEN",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Malibu Non-ACC",
+    "year": [
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023"
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
@@ -842,13 +892,15 @@
     ],
     "package": "All"
   },
-  "Honda Accord 2023": {
+  "Honda Accord 2023-25": {
     "platform": "HONDA_ACCORD_11G",
     "make": "Honda",
     "brand": "honda",
     "model": "Accord",
     "year": [
-      "2023"
+      "2023",
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -863,6 +915,28 @@
       "2020",
       "2021",
       "2022"
+    ],
+    "package": "All"
+  },
+  "Honda Accord Hybrid 2023-25": {
+    "platform": "HONDA_ACCORD_11G",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Accord Hybrid",
+    "year": [
+      "2023",
+      "2024",
+      "2025"
+    ],
+    "package": "All"
+  },
+  "Honda City (Brazil only) 2023": {
+    "platform": "HONDA_CITY_7G",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "City (Brazil only)",
+    "year": [
+      "2023"
     ],
     "package": "All"
   },
@@ -902,19 +976,28 @@
     ],
     "package": "All"
   },
-  "Honda Civic Hatchback 2017-21": {
+  "Honda Civic Hatchback 2017-18": {
     "platform": "HONDA_CIVIC_BOSCH",
     "make": "Honda",
     "brand": "honda",
     "model": "Civic Hatchback",
     "year": [
       "2017",
-      "2018",
+      "2018"
+    ],
+    "package": "Honda Sensing"
+  },
+  "Honda Civic Hatchback 2019-21": {
+    "platform": "HONDA_CIVIC_BOSCH",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Civic Hatchback",
+    "year": [
       "2019",
       "2020",
       "2021"
     ],
-    "package": "Honda Sensing"
+    "package": "All"
   },
   "Honda Civic Hatchback 2022-24": {
     "platform": "HONDA_CIVIC_2022",
@@ -928,13 +1011,14 @@
     ],
     "package": "All"
   },
-  "Honda Civic Hatchback Hybrid 2025": {
+  "Honda Civic Hatchback Hybrid 2025-26": {
     "platform": "HONDA_CIVIC_2022",
     "make": "Honda",
     "brand": "honda",
     "model": "Civic Hatchback Hybrid",
     "year": [
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "All"
   },
@@ -997,6 +1081,18 @@
     ],
     "package": "Honda Sensing"
   },
+  "Honda CR-V 2023-25": {
+    "platform": "HONDA_CRV_6G",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "CR-V",
+    "year": [
+      "2023",
+      "2024",
+      "2025"
+    ],
+    "package": "All"
+  },
   "Honda CR-V Hybrid 2017-22": {
     "platform": "HONDA_CRV_HYBRID",
     "make": "Honda",
@@ -1011,6 +1107,18 @@
       "2022"
     ],
     "package": "Honda Sensing"
+  },
+  "Honda CR-V Hybrid 2023-25": {
+    "platform": "HONDA_CRV_6G",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "CR-V Hybrid",
+    "year": [
+      "2023",
+      "2024",
+      "2025"
+    ],
+    "package": "All"
   },
   "Honda e 2020": {
     "platform": "HONDA_E",
@@ -1092,6 +1200,16 @@
     ],
     "package": "All"
   },
+  "Honda N-Box 2018": {
+    "platform": "HONDA_NBOX_2G",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "N-Box",
+    "year": [
+      "2018"
+    ],
+    "package": "All"
+  },
   "Honda Odyssey 2018-20": {
     "platform": "HONDA_ODYSSEY",
     "make": "Honda",
@@ -1103,6 +1221,20 @@
       "2020"
     ],
     "package": "Honda Sensing"
+  },
+  "Honda Odyssey 2021-25": {
+    "platform": "HONDA_ODYSSEY_5G_MMR",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Odyssey",
+    "year": [
+      "2021",
+      "2022",
+      "2023",
+      "2024",
+      "2025"
+    ],
+    "package": "All"
   },
   "Honda Passport 2019-25": {
     "platform": "HONDA_PILOT",
@@ -1135,6 +1267,18 @@
       "2022"
     ],
     "package": "Honda Sensing"
+  },
+  "Honda Pilot 2023-25": {
+    "platform": "HONDA_PILOT_4G",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Pilot",
+    "year": [
+      "2023",
+      "2024",
+      "2025"
+    ],
+    "package": "All"
   },
   "Honda Ridgeline 2017-25": {
     "platform": "HONDA_RIDGELINE",
@@ -1408,13 +1552,14 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Hyundai Kona 2022": {
+  "Hyundai Kona 2022-23": {
     "platform": "HYUNDAI_KONA_2022",
     "make": "Hyundai",
     "brand": "hyundai",
     "model": "Kona",
     "year": [
-      "2022"
+      "2022",
+      "2023"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
@@ -1808,6 +1953,16 @@
       "2023"
     ],
     "package": "Smart Cruise Control (SCC)"
+  },
+  "Kia Forte Non-SCC 2019": {
+    "platform": "KIA_FORTE_2019_NON_SCC",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Forte Non-SCC",
+    "year": [
+      "2019"
+    ],
+    "package": "No Smart Cruise Control (Non-SCC)"
   },
   "Kia K5 2021-24": {
     "platform": "KIA_K5_2021",
@@ -2951,13 +3106,14 @@
     ],
     "package": "All"
   },
-  "Tesla Model Y (with HW4) 2024": {
+  "Tesla Model Y (with HW4) 2024-25": {
     "platform": "TESLA_MODEL_Y",
     "make": "Tesla",
     "brand": "tesla",
     "model": "Model Y (with HW4)",
     "year": [
-      "2024"
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -3505,12 +3661,13 @@
     ],
     "package": "All"
   },
-  "Toyota Yaris (Non-US only) 2023": {
+  "Toyota Yaris (Non-US only) 2020, 2023": {
     "platform": "TOYOTA_YARIS",
     "make": "Toyota",
     "brand": "toyota",
     "model": "Yaris (Non-US only)",
     "year": [
+      "2020",
       "2023"
     ],
     "package": "All"
