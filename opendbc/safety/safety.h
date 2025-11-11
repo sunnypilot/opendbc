@@ -41,6 +41,8 @@ const int MAX_WRONG_COUNTERS = 5;
 // This can be set by the safety hooks
 bool controls_allowed = false;
 bool relay_malfunction = false;
+bool enable_gas_interceptor = false;
+int gas_interceptor_prev = 0;
 bool gas_pressed = false;
 bool gas_pressed_prev = false;
 bool brake_pressed = false;
@@ -55,8 +57,6 @@ bool vehicle_moving = false;
 bool acc_main_on = false;  // referred to as "ACC off" in ISO 15622:2018
 int cruise_button_prev = 0;
 bool safety_rx_checks_invalid = false;
-bool enable_gas_interceptor = false;
-int gas_interceptor_prev = 0;
 
 // for safety modes with torque steering control
 int desired_torque_last = 0;       // last desired steer torque
