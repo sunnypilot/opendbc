@@ -233,8 +233,8 @@ class TestGmCameraLongitudinalEVSafety(TestGmCameraLongitudinalSafety, TestGmEVS
 class TestGmCameraNonACCSafety(TestGmCameraSafety):
 
   def setUp(self):
-    self.packer = CANPackerPanda("gm_global_a_powertrain_generated")
-    self.packer_chassis = CANPackerPanda("gm_global_a_chassis")
+    self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
+    self.packer_chassis = CANPackerSafety("gm_global_a_chassis")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
     self.safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | self.EXTRA_SAFETY_PARAM)

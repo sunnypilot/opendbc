@@ -392,7 +392,7 @@ class TestHondaNidecGasInterceptorSafety(GasInterceptorSafetyTest, HondaButtonEn
   INTERCEPTOR_THRESHOLD = 492
 
   def setUp(self):
-    self.packer = CANPackerPanda("honda_civic_touring_2016_can_generated")
+    self.packer = CANPackerSafety("honda_civic_touring_2016_can_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(HondaSafetyFlagsSP.GAS_INTERCEPTOR)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hondaNidec, 0)
@@ -430,7 +430,7 @@ class TestHondaNidecAltGasInterceptorSafety(GasInterceptorSafetyTest, HondaButto
   INTERCEPTOR_THRESHOLD = 492
 
   def setUp(self):
-    self.packer = CANPackerPanda("acura_ilx_2016_can_generated")
+    self.packer = CANPackerSafety("acura_ilx_2016_can_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(HondaSafetyFlagsSP.GAS_INTERCEPTOR)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hondaNidec, HondaSafetyFlags.NIDEC_ALT)
@@ -694,7 +694,7 @@ class TestHondaNidecHybridSafety(TestHondaNidecPcmSafety):
   BRAKE_SIG = "COMPUTER_BRAKE_HYBRID"
 
   def setUp(self):
-    self.packer = CANPackerPanda("honda_clarity_hybrid_2018_can_generated")
+    self.packer = CANPackerSafety("honda_clarity_hybrid_2018_can_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(HondaSafetyFlagsSP.NIDEC_HYBRID)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hondaNidec, 0)

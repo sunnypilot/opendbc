@@ -457,7 +457,7 @@ class TestTeslaVehicleBusSafety(TestTeslaSafetyBase):
   def setUp(self):
     super().setUp()
     self.safety = libsafety_py.libsafety
-    self.packer_adas = CANPackerPanda("tesla_model3_vehicle")
+    self.packer_adas = CANPackerSafety("tesla_model3_vehicle")
     self.safety.set_current_safety_param_sp(TeslaSafetyFlagsSP.HAS_VEHICLE_BUS)
     self.safety.set_safety_hooks(CarParams.SafetyModel.tesla, 0)
     self.safety.init_tests()

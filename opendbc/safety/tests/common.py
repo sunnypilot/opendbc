@@ -946,7 +946,7 @@ class SafetyTest(SafetyTestBase):
 
 
 @add_regen_tests
-class PandaCarSafetyTest(SafetyTest, MadsSafetyTestBase):
+class CarSafetyTest(SafetyTest, MadsSafetyTestBase):
   STANDSTILL_THRESHOLD: float = 0.0
   GAS_PRESSED_THRESHOLD = 0
   RELAY_MALFUNCTION_ADDRS: dict[int, tuple[int, ...]] | None = None

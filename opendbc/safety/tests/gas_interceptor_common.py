@@ -8,17 +8,17 @@ See the LICENSE.md file in the root directory for more details.
 import numpy as np
 import unittest
 
-from opendbc.safety.tests.common import CANPackerPanda, PandaSafetyTestBase
+from opendbc.safety.tests.common import CANPackerSafety, CarSafetyTest
 
 
-class GasInterceptorSafetyTest(PandaSafetyTestBase):
+class GasInterceptorSafetyTest(CarSafetyTest):
 
   INTERCEPTOR_THRESHOLD = 0
 
   cnt_gas_cmd = 0
   cnt_user_gas = 0
 
-  packer: CANPackerPanda
+  packer: CANPackerSafety
 
   @classmethod
   def setUpClass(cls):
