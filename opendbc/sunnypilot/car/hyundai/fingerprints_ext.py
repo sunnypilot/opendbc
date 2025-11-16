@@ -37,6 +37,14 @@ FW_VERSIONS_EXT = {
       b'\xf1\x00IK  MFC  MT USA LHD 1.00 1.01 95740-G9000 170920',
     ],
   },
+  CAR.GENESIS_G90_2ND_GEN: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00RS4_ RDR -----      1.00 1.00 99110-T4300         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00RS4 MFC  AT USA LHD 1.00 1.03 99211-T4000 220315',
+    ],
+  },
   CAR.HYUNDAI_KONA_NON_SCC: {
     # (Ecu.abs, 0x7d1, None): [
     #   b'\xf1\x816V5RAJ00040.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
