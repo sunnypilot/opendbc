@@ -247,7 +247,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     GM_EV_COMMON_ADDR_CHECK
   };
 
-  // (No additional camera PCM RX whitelist; production behavior unchanged)
+  // No additional camera PCM RX whitelist; production behavior unchanged
 
 /* removed gm_cam_pcm_rx_checks and gm_ev_cam_pcm_rx_checks to keep RX whitelist identical to production */
 
