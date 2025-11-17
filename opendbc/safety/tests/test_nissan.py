@@ -6,15 +6,15 @@ from opendbc.sunnypilot.car.nissan.values import NissanSafetyFlagsSP
 from opendbc.car.structs import CarParams
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
-from opendbc.safety.tests.common import CANPackerSafety
+from opendbc.safety.tests.common import CANPackerPanda
 
 
-class TestNissanSafety(common.CarSafetyTest, common.AngleSteeringSafetyTest):
+class TestNissanSafety(common.PandaCarSafetyTest, common.AngleSteeringSafetyTest):
 
-  TX_MSGS = [[0x169, 0], [0x2b1, 0], [0x4cc, 0], [0x20b, 2], [0x280, 2]]
+  TX_MSGS = [[0x169, 0], [0x2b1, 0], [0x4cc, 0], [0x20b, 2]]
   GAS_PRESSED_THRESHOLD = 3
-  RELAY_MALFUNCTION_ADDRS = {0: (0x169, 0x2b1, 0x4cc), 2: (0x280,)}
-  FWD_BLACKLISTED_ADDRS = {0: [0x280], 2: [0x169, 0x2b1, 0x4cc]}
+  RELAY_MALFUNCTION_ADDRS = {0: (0x169, 0x2b1, 0x4cc), 2: (0x20b,)}
+  FWD_BLACKLISTED_ADDRS = {0: [0x20b], 2: [0x169, 0x2b1, 0x4cc]}
 
   EPS_BUS = 0
   CRUISE_BUS = 2
@@ -29,54 +29,54 @@ class TestNissanSafety(common.CarSafetyTest, common.AngleSteeringSafetyTest):
   ANGLE_RATE_DOWN = [5., 3.5, .4]  # unwind limit
 
   def setUp(self):
-    self.packer = CANPackerSafety("nissan_x_trail_2017_generated")
+    self.packer = CANPackerPanda("nissan_x_trail_2017_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.nissan, 0)
     self.safety.init_tests()
 
   def _angle_cmd_msg(self, angle: float, enabled: bool):
     values = {"DESIRED_ANGLE": angle, "LKA_ACTIVE": 1 if enabled else 0}
-    return self.packer.make_can_msg_safety("LKAS", 0, values)
+    return self.packer.make_can_msg_panda("LKAS", 0, values)
 
   def _angle_meas_msg(self, angle: float):
     values = {"STEER_ANGLE": angle}
-    return self.packer.make_can_msg_safety("STEER_ANGLE_SENSOR", self.EPS_BUS, values)
+    return self.packer.make_can_msg_panda("STEER_ANGLE_SENSOR", self.EPS_BUS, values)
 
   def _pcm_status_msg(self, enable):
     values = {"CRUISE_ENABLED": enable}
-    return self.packer.make_can_msg_safety("CRUISE_STATE", self.CRUISE_BUS, values)
+    return self.packer.make_can_msg_panda("CRUISE_STATE", self.CRUISE_BUS, values)
 
   def _speed_msg(self, speed):
     values = {"WHEEL_SPEED_%s" % s: speed * 3.6 for s in ["RR", "RL"]}
-    return self.packer.make_can_msg_safety("WHEEL_SPEEDS_REAR", self.EPS_BUS, values)
+    return self.packer.make_can_msg_panda("WHEEL_SPEEDS_REAR", self.EPS_BUS, values)
 
   def _user_brake_msg(self, brake):
     values = {"USER_BRAKE_PRESSED": brake}
-    return self.packer.make_can_msg_safety("DOORS_LIGHTS", self.EPS_BUS, values)
+    return self.packer.make_can_msg_panda("DOORS_LIGHTS", self.EPS_BUS, values)
 
   def _user_gas_msg(self, gas):
     values = {"GAS_PEDAL": gas}
-    return self.packer.make_can_msg_safety("GAS_PEDAL", self.EPS_BUS, values)
+    return self.packer.make_can_msg_panda("GAS_PEDAL", self.EPS_BUS, values)
 
   def _acc_state_msg(self, main_on):
     values = {"CRUISE_ON": main_on}
-    return self.packer.make_can_msg_safety("PRO_PILOT", self.ACC_MAIN_BUS, values)
+    return self.packer.make_can_msg_panda("PRO_PILOT", self.ACC_MAIN_BUS, values)
 
   def _acc_button_cmd(self, cancel=0, propilot=0, flw_dist=0, _set=0, res=0):
     no_button = not any([cancel, propilot, flw_dist, _set, res])
     values = {"CANCEL_BUTTON": cancel, "PROPILOT_BUTTON": propilot,
               "FOLLOW_DISTANCE_BUTTON": flw_dist, "SET_BUTTON": _set,
               "RES_BUTTON": res, "NO_BUTTON_PRESSED": no_button}
-    return self.packer.make_can_msg_safety("CRUISE_THROTTLE", 2, values)
+    return self.packer.make_can_msg_panda("CRUISE_THROTTLE", self.CRUISE_BUS, values)
 
   def test_acc_buttons(self):
     btns = [
       ("cancel", True),
-      ("propilot", False),
-      ("flw_dist", False),
-      ("_set", False),
-      ("res", False),
-      (None, False),
+      ("propilot", True),
+      ("flw_dist", True),
+      ("_set", True),
+      ("res", True),
+      (None, True),
     ]
     for controls_allowed in (True, False):
       for btn, should_tx in btns:
@@ -93,8 +93,12 @@ class TestNissanSafetyAltEpsBus(TestNissanSafety):
   CRUISE_BUS = 1
   ACC_MAIN_BUS = 2
 
+  TX_MSGS = [[0x169, 0], [0x2b1, 0], [0x4cc, 0], [0x20b, 2]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x169, 0x2b1, 0x4cc)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x169, 0x2b1, 0x4cc]}
+
   def setUp(self):
-    self.packer = CANPackerSafety("nissan_x_trail_2017_generated")
+    self.packer = CANPackerPanda("nissan_x_trail_2017_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.nissan, NissanSafetyFlags.ALT_EPS_BUS)
     self.safety.init_tests()
@@ -102,8 +106,12 @@ class TestNissanSafetyAltEpsBus(TestNissanSafety):
 
 class TestNissanLeafSafety(TestNissanSafety):
 
+  TX_MSGS = [[0x169, 0], [0x2b1, 0], [0x4cc, 0], [0x239, 2]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x169, 0x2b1, 0x4cc), 2: (0x239,)}
+  FWD_BLACKLISTED_ADDRS = {0: [0x239], 2: [0x169, 0x2b1, 0x4cc]}
+
   def setUp(self):
-    self.packer = CANPackerSafety("nissan_leaf_2018_generated")
+    self.packer = CANPackerPanda("nissan_leaf_2018_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(NissanSafetyFlagsSP.LEAF)
     self.safety.set_safety_hooks(CarParams.SafetyModel.nissan, 0)
@@ -111,19 +119,15 @@ class TestNissanLeafSafety(TestNissanSafety):
 
   def _user_brake_msg(self, brake):
     values = {"USER_BRAKE_PRESSED": brake}
-    return self.packer.make_can_msg_safety("CRUISE_THROTTLE", 0, values)
+    return self.packer.make_can_msg_panda("CRUISE_THROTTLE", 0, values)
 
   def _user_gas_msg(self, gas):
     values = {"GAS_PEDAL": gas}
-    return self.packer.make_can_msg_safety("CRUISE_THROTTLE", 0, values)
+    return self.packer.make_can_msg_panda("CRUISE_THROTTLE", 0, values)
 
   def _acc_state_msg(self, main_on):
     values = {"CRUISE_AVAILABLE": main_on}
-    return self.packer.make_can_msg_safety("CRUISE_THROTTLE", 0, values)
-
-  # TODO: leaf should use its own safety param
-  def test_acc_buttons(self):
-    pass
+    return self.packer.make_can_msg_panda("CRUISE_THROTTLE", 0, values)
 
 
 if __name__ == "__main__":
