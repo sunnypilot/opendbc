@@ -11,10 +11,10 @@ from opendbc.safety.tests.common import CANPackerSafety
 
 class TestNissanSafety(common.CarSafetyTest, common.AngleSteeringSafetyTest):
 
-  TX_MSGS = [[0x169, 0], [0x2b1, 0], [0x4cc, 0], [0x20b, 2], [0x280, 2]]
+  TX_MSGS = [[0x169, 0], [0x2b1, 0], [0x4cc, 0], [0x20b, 2]]
   GAS_PRESSED_THRESHOLD = 3
-  RELAY_MALFUNCTION_ADDRS = {0: (0x169, 0x2b1, 0x4cc), 2: (0x280,)}
-  FWD_BLACKLISTED_ADDRS = {0: [0x280], 2: [0x169, 0x2b1, 0x4cc]}
+  RELAY_MALFUNCTION_ADDRS = {0: (0x169, 0x2b1, 0x4cc), 2: (0x20b,)}
+  FWD_BLACKLISTED_ADDRS = {0: [0x20b], 2: [0x169, 0x2b1, 0x4cc]}
 
   EPS_BUS = 0
   CRUISE_BUS = 2
@@ -67,16 +67,16 @@ class TestNissanSafety(common.CarSafetyTest, common.AngleSteeringSafetyTest):
     values = {"CANCEL_BUTTON": cancel, "PROPILOT_BUTTON": propilot,
               "FOLLOW_DISTANCE_BUTTON": flw_dist, "SET_BUTTON": _set,
               "RES_BUTTON": res, "NO_BUTTON_PRESSED": no_button}
-    return self.packer.make_can_msg_safety("CRUISE_THROTTLE", 2, values)
+    return self.packer.make_can_msg_panda("CRUISE_THROTTLE", self.CRUISE_BUS, values)
 
   def test_acc_buttons(self):
     btns = [
       ("cancel", True),
-      ("propilot", False),
-      ("flw_dist", False),
-      ("_set", False),
-      ("res", False),
-      (None, False),
+      ("propilot", True),
+      ("flw_dist", True),
+      ("_set", True),
+      ("res", True),
+      (None, True),
     ]
     for controls_allowed in (True, False):
       for btn, should_tx in btns:
@@ -93,6 +93,10 @@ class TestNissanSafetyAltEpsBus(TestNissanSafety):
   CRUISE_BUS = 1
   ACC_MAIN_BUS = 2
 
+  TX_MSGS = [[0x169, 0], [0x2b1, 0], [0x4cc, 0], [0x20b, 2]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x169, 0x2b1, 0x4cc)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x169, 0x2b1, 0x4cc]}
+
   def setUp(self):
     self.packer = CANPackerSafety("nissan_x_trail_2017_generated")
     self.safety = libsafety_py.libsafety
@@ -101,6 +105,10 @@ class TestNissanSafetyAltEpsBus(TestNissanSafety):
 
 
 class TestNissanLeafSafety(TestNissanSafety):
+
+  TX_MSGS = [[0x169, 0], [0x2b1, 0], [0x4cc, 0], [0x239, 2]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x169, 0x2b1, 0x4cc), 2: (0x239,)}
+  FWD_BLACKLISTED_ADDRS = {0: [0x239], 2: [0x169, 0x2b1, 0x4cc]}
 
   def setUp(self):
     self.packer = CANPackerSafety("nissan_leaf_2018_generated")
@@ -120,10 +128,6 @@ class TestNissanLeafSafety(TestNissanSafety):
   def _acc_state_msg(self, main_on):
     values = {"CRUISE_AVAILABLE": main_on}
     return self.packer.make_can_msg_safety("CRUISE_THROTTLE", 0, values)
-
-  # TODO: leaf should use its own safety param
-  def test_acc_buttons(self):
-    pass
 
 
 if __name__ == "__main__":
