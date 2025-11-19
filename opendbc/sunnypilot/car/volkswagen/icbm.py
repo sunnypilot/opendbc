@@ -17,10 +17,22 @@ SendButtonState = structs.IntelligentCruiseButtonManagement.SendButtonState
 COARSE_METRICAL = 10 # km/h
 COARSE_IMPERIAL = 5 # mp/h
 
+COARSE_FINGERPRINTS = [
+  "SEAT_ATECA_MK1",
+  "VOLKSWAGEN_GOLF_MK7"
+]
+
 class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManagementInterfaceBase):
   def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
-    self.vw_can = pqcan if self.CP.flags & VolkswagenFlags.PQ else mqbcan
+
+    if CP.flags & VolkswagenFlags.PQ:
+      self.vw_can = pqcan
+    else:
+      self.vw_can = mqbcan
+
+    # Coarse handling only for certain fingerprints
+    self.useCoarseHandling = CP.carFingerprint in COARSE_FINGERPRINTS
 
   def update(self, CS, CC_SP, packer, frame, CAN) -> list[CanData]:
     can_sends = []
@@ -28,22 +40,29 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     self.ICBM = CC_SP.intelligentCruiseButtonManagement
     self.frame = frame
 
-    # ICBM wants to send a Button != NONE
     if self.ICBM.sendButton != SendButtonState.none and (self.frame - self.last_button_frame) * DT_CTRL > 0.2:
-
-      # Check coarse
-      coarse = abs(self.ICBM.vError) >= COARSE_METRICAL # TODO check when to use coarse
 
       # Create Args for VW GRA ACC Controller
       accArgs = {
         "packer": packer,
         "bus": CAN,
-        "gra_stock_values": CS.gra_stock_values,
-        "increase": (self.ICBM.sendButton == SendButtonState.increase) and (coarse),
-        "decrease": (self.ICBM.sendButton == SendButtonState.decrease) and (coarse),
-        "resume"  : (self.ICBM.sendButton == SendButtonState.increase) and (not coarse),
-        "_set"    : (self.ICBM.sendButton == SendButtonState.decrease) and (not coarse)
+        "gra_stock_values": CS.gra_stock_values
       }
+
+      if self.useCoarseHandling:
+        coarseStep = COARSE_METRICAL if CS.is_metric else COARSE_IMPERIAL
+        coarse = (self.ICBM.vTarget % coarseStep == 0) or (abs(self.ICBM.vTarget) >= coarseStep)
+        accArgs.update({
+          "increase": (self.ICBM.sendButton == SendButtonState.increase) and (coarse),
+          "decrease": (self.ICBM.sendButton == SendButtonState.decrease) and (coarse),
+          "resume"  : (self.ICBM.sendButton == SendButtonState.increase) and (not coarse),
+          "_set"    : (self.ICBM.sendButton == SendButtonState.decrease) and (not coarse)
+        })
+      else:
+        accArgs.update({
+          "increase": self.ICBM.sendButton == SendButtonState.increase,
+          "decrease": self.ICBM.sendButton == SendButtonState.decrease,
+        })
 
       # Create Command
       can_sends.append(self.vw_can.create_acc_buttons_control(**accArgs))
