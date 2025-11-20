@@ -206,7 +206,7 @@ class TestGmCameraSafety(TestGmCameraSafetyBase):
     # Test to cover lines 120-122 in gm.h: pcm_cruise_check call for ECMCruiseControl
     # Send ECMCruiseControl message (0x3D1) to trigger the condition
     values = {"CruiseActive": 1}
-    self._rx(self.packer.make_can_msg_panda("ECMCruiseControl", 0, values))
+    self._rx(self.packer.make_can_msg_safety("ECMCruiseControl", 0, values))
     # Test passes if no crash occurs, meaning pcm_cruise_check was called
     self.assertTrue(True)
 
@@ -274,17 +274,17 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
   def test_gas_pressed_prev_update(self):
     # Test that gas_pressed_prev is updated when gas interceptor is enabled
     # This covers the line: gas_pressed_prev = gas_pressed;
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, {"INTERCEPTOR_GAS": 0, "INTERCEPTOR_GAS2": 0}))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, {"INTERCEPTOR_GAS": 0, "INTERCEPTOR_GAS2": 0}))
     self.assertFalse(self.safety.get_gas_pressed_prev())
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, {"INTERCEPTOR_GAS": 700, "INTERCEPTOR_GAS2": 800}))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, {"INTERCEPTOR_GAS": 700, "INTERCEPTOR_GAS2": 800}))
     # After gas press, gas_pressed_prev should be updated
     self.assertTrue(self.safety.get_gas_pressed_prev())
 
   def test_no_disengage_on_gas(self):
     # For NON_ACC cars with gas interceptor, gas pressed comes from interceptor
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, {"INTERCEPTOR_GAS": 0, "INTERCEPTOR_GAS2": 0}))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, {"INTERCEPTOR_GAS": 0, "INTERCEPTOR_GAS2": 0}))
     self.safety.set_controls_allowed(True)
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, {"INTERCEPTOR_GAS": 700, "INTERCEPTOR_GAS2": 800}))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, {"INTERCEPTOR_GAS": 700, "INTERCEPTOR_GAS2": 800}))
     # Test we allow lateral, but not longitudinal
     self.assertTrue(self.safety.get_controls_allowed())
     self.assertFalse(self.safety.get_longitudinal_allowed())
@@ -313,7 +313,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # We can't directly test gas_pressed since that's computed from gas_interceptor_prev
     # but we can verify the message processing doesn't crash
     values = {"INTERCEPTOR_GAS": 600, "INTERCEPTOR_GAS2": 500}
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     # Message should be processed without errors - this covers lines 49-54
     self.assertTrue(True)
 
@@ -321,7 +321,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # Test that gas interceptor logic only runs for 0x201 messages
     # Send a different message to ensure the condition is properly checked
     # Send a message with a different address - should not trigger gas interceptor logic
-    self._rx(self.packer.make_can_msg_panda("PSCMStatus", 0, {}))
+    self._rx(self.packer.make_can_msg_safety("PSCMStatus", 0, {}))
     # Should not crash and should not execute gas interceptor code
     self.assertTrue(True)
 
@@ -330,7 +330,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # This ensures the arithmetic operations are executed
     # Use values that will result in gas_pressed = true
     values = {"INTERCEPTOR_GAS": 700, "INTERCEPTOR_GAS2": 800}  # Average = 750 > 550 threshold
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     # Should not crash and should execute the calculation
     self.assertTrue(True)
 
@@ -338,7 +338,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # Test bit operations in gas interceptor calculation (lines 50-51)
     # Use specific values to test bit shifting and OR operations
     values = {"INTERCEPTOR_GAS": 0xABCD, "INTERCEPTOR_GAS2": 0x1234}
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     # Should execute: gas_track_1 = (0xAB << 8) | 0xCD = 0xABCD
     # Should execute: gas_track_2 = (0x12 << 8) | 0x34 = 0x1234
     # Should execute: gas_interceptor = (0xABCD + 0x1234) / 2 = 0xBE00 / 2 = 0x5F00
@@ -348,7 +348,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # Test the gas interceptor calculation with low values (lines 49-54)
     # Use values that will result in gas_pressed = false
     values = {"INTERCEPTOR_GAS": 400, "INTERCEPTOR_GAS2": 300}  # Average = 350 < 550 threshold
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     # Should not crash and should execute the calculation
     self.assertTrue(True)
 
@@ -356,21 +356,21 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # Test the threshold comparison in gas interceptor (line 54)
     # Use values that will result in gas_pressed = false (below threshold)
     values = {"INTERCEPTOR_GAS": 549, "INTERCEPTOR_GAS2": 549}  # Average = 549 < 550 threshold
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     # Should execute: gas_pressed = 549 > 550 = false
     self.assertTrue(True)
 
   def test_gas_interceptor_bit_operations_verification(self):
     values = {"INTERCEPTOR_GAS": 0x1234, "INTERCEPTOR_GAS2": 0x5678}
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     self.assertTrue(self.safety.get_gas_pressed_prev())
     values = {"INTERCEPTOR_GAS": 0xFF00, "INTERCEPTOR_GAS2": 0x00FF}
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     self.assertTrue(self.safety.get_gas_pressed_prev())  # Should be true with |
 
   def test_gas_interceptor_arithmetic_verification(self):
     values = {"INTERCEPTOR_GAS": 1101, "INTERCEPTOR_GAS2": 1}
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     self.assertTrue(self.safety.get_gas_pressed_prev())  # Should be true with +
 
   def test_gas_interceptor_threshold_strict_inequality(self):
@@ -389,7 +389,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # Test gas interceptor disabled path (lines 54-57)
     # Send gas sensor message when interceptor is disabled
     values = {"INTERCEPTOR_GAS": 600, "INTERCEPTOR_GAS2": 500}
-    self._rx(self.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     # Should not crash - covers the else branch
     self.assertTrue(True)
 
@@ -397,7 +397,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # Test NON_ACC PCM cruise else path (lines 125-129)
     # Send 0x3D1 message to NON_ACC car - should not call pcm_cruise_check
     values = {"CruiseActive": 1}
-    self._rx(self.packer.make_can_msg_panda("ECMCruiseControl", 0, values))
+    self._rx(self.packer.make_can_msg_safety("ECMCruiseControl", 0, values))
     # Should not crash - covers the else branch for NON_ACC PCM cruise
     self.assertTrue(True)
 
@@ -408,7 +408,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     test_instance = TestGmCameraNonACCSafety()
     test_instance.setUp()
     values = {"INTERCEPTOR_GAS": 600, "INTERCEPTOR_GAS2": 500}
-    test_instance._rx(test_instance.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    test_instance._rx(test_instance.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     # Should not crash - covers the if branch with gas interceptor enabled
     self.assertTrue(True)
 
@@ -419,7 +419,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     test_instance = TestGmCameraSafety()
     test_instance.setUp()
     values = {"CruiseActive": 1}
-    test_instance._rx(test_instance.packer.make_can_msg_panda("ECMCruiseControl", 0, values))
+    test_instance._rx(test_instance.packer.make_can_msg_safety("ECMCruiseControl", 0, values))
     # Should not crash - covers the if branch for ACC PCM cruise
     self.assertTrue(True)
 
@@ -431,7 +431,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # Verify the conditions: gm_hw should be GM_CAM, gm_pedal_long should be false, gm_non_acc should be false
     # This should trigger the pcm_cruise_check call on line 121
     values = {"CruiseActive": 1}
-    test_instance._rx(test_instance.packer.make_can_msg_panda("ECMCruiseControl", 0, values))
+    test_instance._rx(test_instance.packer.make_can_msg_safety("ECMCruiseControl", 0, values))
     # Should not crash - covers the pcm_cruise_check execution
     self.assertTrue(True)
 
@@ -442,7 +442,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     test_instance.setUp()
     # Send ECMCruiseControl message - this should execute lines 120-122
     values = {"CruiseActive": 1}
-    test_instance._rx(test_instance.packer.make_can_msg_panda("ECMCruiseControl", 0, values))
+    test_instance._rx(test_instance.packer.make_can_msg_safety("ECMCruiseControl", 0, values))
     # The test passes if no crash occurs, meaning pcm_cruise_check was called
     self.assertTrue(True)
 
@@ -455,7 +455,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     test_instance.setUp()
     # This should trigger the if condition on line 119 and execute lines 120-122
     values = {"CruiseActive": 1}
-    test_instance._rx(test_instance.packer.make_can_msg_panda("ECMCruiseControl", 0, values))
+    test_instance._rx(test_instance.packer.make_can_msg_safety("ECMCruiseControl", 0, values))
     # If we get here without crashing, the lines were executed
     self.assertTrue(True)
 
@@ -467,7 +467,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # Send ECMCruiseControl message - this should execute lines 120-122
     # because TestGmCameraSafety has gm_pedal_long = false and gm_non_acc = false
     values = {"CruiseActive": 1}
-    test_instance._rx(test_instance.packer.make_can_msg_panda("ECMCruiseControl", 0, values))
+    test_instance._rx(test_instance.packer.make_can_msg_safety("ECMCruiseControl", 0, values))
     # Test passes if no exception is thrown, meaning pcm_cruise_check was called
     self.assertTrue(True)
 
@@ -478,7 +478,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     test_instance.setUp()
     # This should trigger the if condition on line 136 and execute lines 137-138
     values = {"CruiseActive": 1}
-    test_instance._rx(test_instance.packer.make_can_msg_panda("ECMCruiseControl", 0, values))
+    test_instance._rx(test_instance.packer.make_can_msg_safety("ECMCruiseControl", 0, values))
     # If we get here without crashing, the lines were executed
     self.assertTrue(True)
 
@@ -488,7 +488,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     test_instance = TestGmCameraSafety()
     test_instance.setUp()
     values = {"INTERCEPTOR_GAS": 600, "INTERCEPTOR_GAS2": 500}
-    test_instance._rx(test_instance.packer.make_can_msg_panda("GAS_SENSOR", 0, values))
+    test_instance._rx(test_instance.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     # Should not crash - covers the else branch when gas interceptor disabled
     self.assertTrue(True)
 
@@ -498,7 +498,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     test_instance = TestGmCameraNonACCSafety()
     test_instance.setUp()
     values = {"CruiseActive": 1}
-    test_instance._rx(test_instance.packer.make_can_msg_panda("ECMCruiseControl", 0, values))
+    test_instance._rx(test_instance.packer.make_can_msg_safety("ECMCruiseControl", 0, values))
     # Should not crash - covers the else branch for NON_ACC PCM cruise
     self.assertTrue(True)
 
