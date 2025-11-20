@@ -1,25 +1,25 @@
 #pragma once
 
-#include "opendbc/safety/declarations.h"
+#include "opendbc/safety/safety_declarations.h"
 
 // GCOV_EXCL_START
 // Unreachable by design (doesn't define any rx msgs)
 void default_rx_hook(const CANPacket_t *msg) {
-  SAFETY_UNUSED(msg);
+  UNUSED(msg);
 }
 // GCOV_EXCL_STOP
 
 // *** no output safety mode ***
 
 static safety_config nooutput_init(uint16_t param) {
-  SAFETY_UNUSED(param);
+  UNUSED(param);
   return (safety_config){NULL, 0, NULL, 0, true}; // NOLINT(readability/braces)
 }
 
 // GCOV_EXCL_START
 // Unreachable by design (doesn't define any tx msgs)
 static bool nooutput_tx_hook(const CANPacket_t *msg) {
-  SAFETY_UNUSED(msg);
+  UNUSED(msg);
   return false;
 }
 // GCOV_EXCL_STOP
@@ -40,7 +40,7 @@ static safety_config alloutput_init(uint16_t param) {
 }
 
 static bool alloutput_tx_hook(const CANPacket_t *msg) {
-  SAFETY_UNUSED(msg);
+  UNUSED(msg);
   return true;
 }
 

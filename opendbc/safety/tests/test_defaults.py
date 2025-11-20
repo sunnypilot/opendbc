@@ -6,7 +6,7 @@ from opendbc.car.structs import CarParams
 from opendbc.safety.tests.libsafety import libsafety_py
 
 
-class TestDefaultRxHookBase(common.SafetyTest):
+class TestDefaultRxHookBase(common.PandaSafetyTest):
   FWD_BUS_LOOKUP = {}
 
   def test_rx_hook(self):
@@ -36,7 +36,7 @@ class TestSilent(TestNoOutput):
 
 class TestAllOutput(TestDefaultRxHookBase):
   # Allow all messages
-  TX_MSGS = [[addr, bus] for addr in common.SafetyTest.SCANNED_ADDRS
+  TX_MSGS = [[addr, bus] for addr in common.PandaSafetyTest.SCANNED_ADDRS
              for bus in range(4)]
 
   def setUp(self):

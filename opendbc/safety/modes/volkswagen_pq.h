@@ -1,6 +1,6 @@
 #pragma once
 
-#include "opendbc/safety/declarations.h"
+#include "opendbc/safety/safety_declarations.h"
 #include "opendbc/safety/modes/volkswagen_common.h"
 
 #define MSG_LENKHILFE_3         0x0D0U   // RX from EPS, for steering angle and driver steering torque
@@ -63,12 +63,13 @@ static safety_config volkswagen_pq_init(uint16_t param) {
     {.msg = {{MSG_GRA_NEU, 0, 4, 30U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
   };
 
-  volkswagen_common_init();
+  UNUSED(param);
+
+  volkswagen_set_button_prev = false;
+  volkswagen_resume_button_prev = false;
 
 #ifdef ALLOW_DEBUG
   volkswagen_longitudinal = GET_FLAG(param, FLAG_VOLKSWAGEN_LONG_CONTROL);
-#else
-  SAFETY_UNUSED(param);
 #endif
   return volkswagen_longitudinal ? BUILD_SAFETY_CFG(volkswagen_pq_rx_checks, VOLKSWAGEN_PQ_LONG_TX_MSGS) : \
                                    BUILD_SAFETY_CFG(volkswagen_pq_rx_checks, VOLKSWAGEN_PQ_STOCK_TX_MSGS);
@@ -77,7 +78,7 @@ static safety_config volkswagen_pq_init(uint16_t param) {
 static void volkswagen_pq_rx_hook(const CANPacket_t *msg) {
   if (msg->bus == 0U) {
     // Update in-motion state from speed value.
-    // Signal: Bremse_1.BR1_Rad_kmh
+    // Signal: Bremse_1.Geschwindigkeit_neu__Bremse_1_
     if (msg->addr == MSG_BREMSE_1) {
       int speed = ((msg->data[2] & 0xFEU) >> 1) | (msg->data[3] << 7);
       vehicle_moving = speed > 0;
@@ -98,7 +99,7 @@ static void volkswagen_pq_rx_hook(const CANPacket_t *msg) {
     if (volkswagen_longitudinal) {
       if (msg->addr == MSG_MOTOR_5) {
         // ACC main switch on is a prerequisite to enter controls, exit controls immediately on main switch off
-        // Signal: Motor_5.MO5_GRA_Hauptsch
+        // Signal: Motor_5.GRA_Hauptschalter
         acc_main_on = GET_BIT(msg, 50U);
         if (!acc_main_on) {
           controls_allowed = false;
@@ -125,19 +126,19 @@ static void volkswagen_pq_rx_hook(const CANPacket_t *msg) {
     } else {
       if (msg->addr == MSG_MOTOR_2) {
         // Enter controls on rising edge of stock ACC, exit controls if stock ACC disengages
-        // Signal: Motor_2.MO2_Sta_GRA
+        // Signal: Motor_2.GRA_Status
         int acc_status = (msg->data[2] & 0xC0U) >> 6;
         bool cruise_engaged = (acc_status == 1) || (acc_status == 2);
         pcm_cruise_check(cruise_engaged);
       }
     }
 
-    // Signal: Motor_3.MO3_Pedalwert
+    // Signal: Motor_3.Fahrpedal_Rohsignal
     if (msg->addr == MSG_MOTOR_3) {
       gas_pressed = (msg->data[2]);
     }
 
-    // Signal: Motor_2.MO2_BLS
+    // Signal: Motor_2.Bremslichtschalter
     if (msg->addr == MSG_MOTOR_2) {
       brake_pressed = (msg->data[2] & 0x1U);
     }

@@ -1,7 +1,6 @@
-import os
-from pathlib import Path
+Import("env")
 
-env = Environment(ENV=os.environ)
+from pathlib import Path
 
 generator = File("generator/generator.py")
 
