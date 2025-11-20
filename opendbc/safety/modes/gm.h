@@ -1,6 +1,6 @@
 #pragma once
 
-#include "opendbc/safety/safety_declarations.h"
+#include "opendbc/safety/declarations.h"
 
 // TODO: do checksum and counter checks. Add correct timestep, 0.1s for now.
 #define GM_GAS_INTERCEPTOR_THRESHOLD 550
