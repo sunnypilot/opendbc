@@ -248,7 +248,7 @@ class CarInterface(CarInterfaceBase):
       # Pedal interceptor tuning
       ret.longitudinalTuning.kiBP = [0., 3., 6., 35.]
       ret.longitudinalTuning.kiV = [0.125, 0.175, 0.225, 0.33]
-      ret.longitudinalTuning.kfDeprecated = 0.25
+      ret.longitudinalTuning.kfDEPRECATED = 0.25
       ret.stoppingDecelRate = 0.8
 
     return ret
