@@ -94,6 +94,13 @@ static bool toyota_get_quality_flag_valid(const CANPacket_t *msg) {
   return valid;
 }
 
+static int toyota_get_longitudinal_desired_accel_tx(const CANPacket_t *msg) {
+  int desired_accel = (msg->data[0] << 8) | msg->data[1];
+  desired_accel = to_signed(desired_accel, 16);
+
+  return desired_accel;
+}
+
 static int TOYOTA_GET_INTERCEPTOR(const CANPacket_t *msg) {
   uint16_t val1 = (uint16_t)((uint16_t)msg->data[0] << 8U) | (uint16_t)msg->data[1];
   uint16_t val2 = (uint16_t)((uint16_t)msg->data[2] << 8U) | (uint16_t)msg->data[3];
@@ -250,8 +257,7 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
   if (msg->bus == 0U) {
     // ACCEL: safety check on byte 1-2
     if (msg->addr == 0x343U) {
-      int desired_accel = (msg->data[0] << 8) | msg->data[1];
-      desired_accel = to_signed(desired_accel, 16);
+      int desired_accel = toyota_get_longitudinal_desired_accel_tx(msg);
 
       bool violation = false;
       if (toyota_secoc) {
@@ -266,6 +272,10 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
         if (!cancel_req) {
           violation = true;
         }
+      }
+
+      // block ACC messages when openpilot is not controlling longitudinal or is a SecOC car
+      if (toyota_stock_longitudinal || toyota_secoc) {
         if (desired_accel != TOYOTA_LONG_LIMITS.inactive_accel) {
           violation = true;
         }

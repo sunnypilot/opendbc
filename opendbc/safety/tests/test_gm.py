@@ -245,8 +245,8 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
   PCM_CRUISE = False  # NON_ACC cars don't use PCM cruise for control enablement
 
   def setUp(self):
-    self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
-    self.packer_chassis = CANPackerSafety("gm_global_a_chassis")
+    self.packer = CANPackerPanda("gm_global_a_powertrain_generated")
+    self.packer_chassis = CANPackerPanda("gm_global_a_chassis")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC | GMSafetyFlagsSP.GAS_INTERCEPTOR | GMSafetyFlagsSP.PEDAL_LONG)
     self.safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | self.EXTRA_SAFETY_PARAM)
@@ -505,7 +505,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
 
   def _pcm_status_msg(self, enable):
     values = {"CruiseActive": enable}
-    return self.packer.make_can_msg_safety("ECMCruiseControl", 0, values)
+    return self.packer.make_can_msg_panda("ECMCruiseControl", 0, values)
 
 
 class TestGmCameraEVNonACCSafety(TestGmCameraNonACCSafety, TestGmEVSafetyBase):

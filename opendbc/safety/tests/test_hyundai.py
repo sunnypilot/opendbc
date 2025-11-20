@@ -69,7 +69,6 @@ def checksum(msg):
   return addr, ret, bus
 
 
-@parameterized_class(LDA_BUTTON)
 class TestHyundaiSafety(HyundaiButtonBase, common.CarSafetyTest, common.DriverTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):
   TX_MSGS = [[0x340, 0], [0x4F1, 0], [0x485, 0]]
   STANDSTILL_THRESHOLD = 12  # 0.375 kph
@@ -143,18 +142,8 @@ class TestHyundaiSafety(HyundaiButtonBase, common.CarSafetyTest, common.DriverTo
 
   def _torque_cmd_msg(self, torque, steer_req=1):
     values = {"CR_Lkas_StrToqReq": torque, "CF_Lkas_ActToi": steer_req}
-    return self.packer.make_can_msg_safety("LKAS11", 0, values)
+    return self.packer.make_can_msg_panda("LKAS11", 0, values)
 
-  def _acc_state_msg(self, enable):
-    values = {"MainMode_ACC": enable}
-    return self.packer.make_can_msg_safety("SCC11", self.SCC_BUS, values)
-
-  def _lkas_button_msg(self, enabled):
-    if self.SAFETY_PARAM_SP & HyundaiSafetyFlagsSP.HAS_LDA_BUTTON:
-      values = {"LDA_BTN": enabled}
-      return self.packer.make_can_msg_safety("BCM_PO_11", 0, values)
-    else:
-      raise NotImplementedError
 
 class TestHyundaiSafetyAltLimits(TestHyundaiSafety):
   MAX_RATE_UP = 2
@@ -318,11 +307,7 @@ class TestHyundaiLongitudinalSafety(HyundaiLongitudinalBase, TestHyundaiSafety):
       "CF_VSM_DecCmdAct": int(vsm_aeb_req),
       "FCA_CmdAct": int(fca_aeb_req),
     }
-    return self.packer.make_can_msg_safety("FCA11", 0, values)
-
-  def _tx_acc_state_msg(self, enable):
-    values = {"MainMode_ACC": enable}
-    return self.packer.make_can_msg_safety("SCC11", 0, values)
+    return self.packer.make_can_msg_panda("FCA11", 0, values)
 
   def test_no_aeb_fca11(self):
     self.assertTrue(self._tx(self._fca11_msg()))
@@ -356,11 +341,7 @@ class TestHyundaiLongitudinalSafetyCameraSCC(HyundaiLongitudinalBase, TestHyunda
       "AEB_CmdAct": int(aeb_req),
       "CR_VSM_DecCmd": aeb_decel,
     }
-    return self.packer.make_can_msg_safety("SCC12", self.SCC_BUS, values)
-
-  def _tx_acc_state_msg(self, enable):
-    values = {"MainMode_ACC": enable}
-    return self.packer.make_can_msg_safety("SCC11", self.SCC_BUS, values)
+    return self.packer.make_can_msg_panda("SCC12", self.SCC_BUS, values)
 
   def test_no_aeb_scc12(self):
     self.assertTrue(self._tx(self._accel_msg(0)))
@@ -404,7 +385,7 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
       raise unittest.SkipTest
 
   def setUp(self):
-    self.packer = CANPackerSafety("hyundai_kia_generic")
+    self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(HyundaiSafetyFlagsSP.ESCC | self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, HyundaiSafetyFlags.LONG)
@@ -415,11 +396,11 @@ class TestHyundaiLongitudinalESCCSafety(HyundaiLongitudinalBase, TestHyundaiSafe
       "aReqRaw": accel,
       "aReqValue": accel,
     }
-    return self.packer.make_can_msg_safety("SCC12", self.SCC_BUS, values)
+    return self.packer.make_can_msg_panda("SCC12", self.SCC_BUS, values)
 
   def _tx_acc_state_msg(self, enable):
     values = {"MainMode_ACC": enable}
-    return self.packer.make_can_msg_safety("SCC11", 0, values)
+    return self.packer.make_can_msg_panda("SCC11", 0, values)
 
   def test_tester_present_allowed(self):
     pass
@@ -438,7 +419,7 @@ class TestHyundaiNonSCCSafety(TestHyundaiSafety):
       raise unittest.SkipTest
 
   def setUp(self):
-    self.packer = CANPackerSafety("hyundai_kia_generic")
+    self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(HyundaiSafetyFlagsSP.NON_SCC | self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, 0)
@@ -447,17 +428,17 @@ class TestHyundaiNonSCCSafety(TestHyundaiSafety):
   def _pcm_status_msg(self, enable):
     values = {"CRUISE_LAMP_S": enable, "AliveCounter": self.cnt_gas % 4}
     self.__class__.cnt_gas += 1
-    return self.packer.make_can_msg_safety("EMS16", 0, values, fix_checksum=checksum)
+    return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
 
   def _acc_state_msg(self, enable):
     values = {"CRUISE_LAMP_M": enable, "AliveCounter": self.cnt_gas % 4}
     self.__class__.cnt_gas += 1
-    return self.packer.make_can_msg_safety("EMS16", 0, values, fix_checksum=checksum)
+    return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
 
   def _user_gas_msg(self, gas: float, controls_allowed: bool = True):
     values = {"CF_Ems_AclAct": gas, "CRUISE_LAMP_M": 1, "CRUISE_LAMP_S": controls_allowed, "AliveCounter": self.cnt_gas % 4}
     self.__class__.cnt_gas += 1
-    return self.packer.make_can_msg_safety("EMS16", 0, values, fix_checksum=checksum)
+    return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
 
   def test_allow_engage_with_gas_pressed(self):
     self._rx(self._user_gas_msg(1, self.safety.get_controls_allowed()))
@@ -494,7 +475,7 @@ class TestHyundaiNonSCCSafety_HEV_EV(TestHyundaiSafety):
       raise unittest.SkipTest
 
   def setUp(self):
-    self.packer = CANPackerSafety("hyundai_kia_generic")
+    self.packer = CANPackerPanda("hyundai_kia_generic")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(HyundaiSafetyFlagsSP.NON_SCC | self.SAFETY_PARAM_SP)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, self.SAFETY_PARAM)
@@ -502,15 +483,15 @@ class TestHyundaiNonSCCSafety_HEV_EV(TestHyundaiSafety):
 
   def _pcm_status_msg(self, enable):
     values = {self.PCM_STATUS_MSG[1]: enable}
-    return self.packer.make_can_msg_safety(self.PCM_STATUS_MSG[0], 0, values)
+    return self.packer.make_can_msg_panda(self.PCM_STATUS_MSG[0], 0, values)
 
   def _acc_state_msg(self, enable):
     values = {self.ACC_STATE_MSG[1]: enable}
-    return self.packer.make_can_msg_safety(self.ACC_STATE_MSG[0], 0, values)
+    return self.packer.make_can_msg_panda(self.ACC_STATE_MSG[0], 0, values)
 
   def _user_gas_msg(self, gas):
     values = {self.GAS_MSG[1]: gas}
-    return self.packer.make_can_msg_safety(self.GAS_MSG[0], 0, values, fix_checksum=checksum)
+    return self.packer.make_can_msg_panda(self.GAS_MSG[0], 0, values, fix_checksum=checksum)
 
 
 if __name__ == "__main__":

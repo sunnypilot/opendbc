@@ -1,4 +1,3 @@
-#include "opendbc/safety/sunnypilot/mads.h"
 #include "opendbc/safety/declarations.h"
 
 // ISO 11270
@@ -350,7 +349,7 @@ bool steer_angle_cmd_checks_vm(int desired_angle, bool steer_control_enabled, co
   }
 
   // reset to current angle if either controls is not allowed or there's a violation
-  if (violation || !is_lat_active()) {
+  if (violation || !controls_allowed) {
     desired_angle_last = SAFETY_CLAMP(angle_meas.values[0], -limits.max_angle, limits.max_angle);
   }
 

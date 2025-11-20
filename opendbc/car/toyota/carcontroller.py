@@ -15,6 +15,7 @@ from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, T
 from opendbc.can import CANPacker
 
 from opendbc.sunnypilot.car.toyota.gas_interceptor import GasInterceptorCarController
+from opendbc.sunnypilot.car.toyota.secoc_long import SecOCLongCarController
 
 Ecu = structs.CarParams.Ecu
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -51,9 +52,10 @@ def get_long_tune(CP, params):
                        rate=1 / (DT_CTRL * 3))
 
 
-class CarController(CarControllerBase, GasInterceptorCarController):
+class CarController(CarControllerBase, SecOCLongCarController, GasInterceptorCarController):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
+    SecOCLongCarController.__init__(self, CP)
     GasInterceptorCarController.__init__(self, CP, CP_SP)
     self.params = CarControllerParams(self.CP)
     self.last_torque = 0
@@ -95,6 +97,8 @@ class CarController(CarControllerBase, GasInterceptorCarController):
 
     # *** control msgs ***
     can_sends = []
+
+    SecOCLongCarController.update(self, CS, can_sends, self.secoc_prev_reset_counter)
 
     # *** handle secoc reset counter increase ***
     if self.CP.flags & ToyotaFlags.SECOC.value:
@@ -276,7 +280,8 @@ class CarController(CarControllerBase, GasInterceptorCarController):
         if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
           can_sends.append(toyotacan.create_acc_cancel_command(self.packer))
         else:
-          can_sends.append(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, True, False, lead, CS.acc_type, False, self.distance_button))
+          can_sends.append(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, True, False, lead, CS.acc_type, False, self.distance_button,
+                                                          self.SECOC_LONG))
 
     can_sends.extend(GasInterceptorCarController.create_gas_command(self, CC, CS, actuators, self.packer, self.frame))
 

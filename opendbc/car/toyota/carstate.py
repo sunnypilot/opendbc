@@ -8,8 +8,6 @@ from opendbc.car.interfaces import CarStateBase
 from opendbc.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, \
                                                   TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR, \
                                                   SECOC_CAR
-from opendbc.sunnypilot.car.toyota.carstate_ext import CarStateExt
-from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
 SteerControlType = structs.CarParams.SteerControlType

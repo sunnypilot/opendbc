@@ -1,7 +1,6 @@
 #pragma once
 
 #include "opendbc/safety/declarations.h"
-#include "opendbc/safety/modes/subaru_common.h"
 
 // Preglobal platform
 // 0x161 is ES_CruiseThrottle

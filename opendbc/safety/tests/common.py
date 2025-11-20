@@ -897,10 +897,6 @@ class SafetyTest(SafetyTestBase):
               continue
             if {attr, current_test}.issubset({'TestHyundaiLongitudinalSafety', 'TestHyundaiLongitudinalSafetyCameraSCC', 'TestHyundaiSafetyFCEVLong'}):
               continue
-            base_tests = {'TestHyundaiLongitudinalSafety', 'TestHyundaiLongitudinalSafetyCameraSCC', 'TestHyundaiSafetyFCEVLong',
-                          'TestHyundaiLongitudinalESCCSafety'}
-            if any(attr.startswith(test) for test in base_tests) and any(current_test.startswith(test) for test in base_tests):
-              continue
             volkswagen_shared = ('TestVolkswagenMqb', 'TestVolkswagenMlb')
             if attr.startswith(volkswagen_shared) and current_test.startswith(volkswagen_shared):
               continue
@@ -945,7 +941,7 @@ class SafetyTest(SafetyTestBase):
 
 
 @add_regen_tests
-class CarSafetyTest(SafetyTest, MadsSafetyTestBase):
+class CarSafetyTest(SafetyTest):
   STANDSTILL_THRESHOLD: float = 0.0
   GAS_PRESSED_THRESHOLD = 0
   RELAY_MALFUNCTION_ADDRS: dict[int, tuple[int, ...]] | None = None

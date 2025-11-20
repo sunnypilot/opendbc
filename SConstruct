@@ -8,8 +8,4 @@ AddOption('--ubsan',
           action='store_true',
           help='turn on UBSan')
 
-AddOption('--coverage',
-          action='store_true',
-          help='build with test coverage options')
-
 SConscript(['SConscript'])

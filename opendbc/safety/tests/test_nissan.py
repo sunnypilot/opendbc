@@ -60,7 +60,7 @@ class TestNissanSafety(common.CarSafetyTest, common.AngleSteeringSafetyTest):
 
   def _acc_state_msg(self, main_on):
     values = {"CRUISE_ON": main_on}
-    return self.packer.make_can_msg_safety("PRO_PILOT", self.ACC_MAIN_BUS, values)
+    return self.packer.make_can_msg_panda("PRO_PILOT", self.ACC_MAIN_BUS, values)
 
   def _acc_button_cmd(self, cancel=0, propilot=0, flw_dist=0, _set=0, res=0):
     no_button = not any([cancel, propilot, flw_dist, _set, res])
@@ -119,7 +119,7 @@ class TestNissanLeafSafety(TestNissanSafety):
 
   def _acc_state_msg(self, main_on):
     values = {"CRUISE_AVAILABLE": main_on}
-    return self.packer.make_can_msg_safety("CRUISE_THROTTLE", 0, values)
+    return self.packer.make_can_msg_panda("CRUISE_THROTTLE", 0, values)
 
   # TODO: leaf should use its own safety param
   def test_acc_buttons(self):

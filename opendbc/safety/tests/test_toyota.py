@@ -8,10 +8,10 @@ import itertools
 from opendbc.car.toyota.values import ToyotaSafetyFlags
 from opendbc.sunnypilot.car.toyota.values import ToyotaSafetyFlagsSP
 from opendbc.car.structs import CarParams
+from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.common import CANPackerSafety
-from opendbc.safety.tests.gas_interceptor_common import GasInterceptorSafetyTest
 
 TOYOTA_COMMON_TX_MSGS = [[0x2E4, 0], [0x191, 0], [0x412, 0], [0x343, 0], [0x1D2, 0]]  # LKAS + LTA + ACC & PCM cancel cmds
 TOYOTA_SECOC_TX_MSGS = [[0x131, 0], [0x183, 0]] + TOYOTA_COMMON_TX_MSGS
@@ -34,10 +34,8 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
   FWD_BLACKLISTED_ADDRS = {2: [0x2E4, 0x412, 0x191, 0x343]}
   EPS_SCALE = 73
 
-  SAFETY_PARAM_SP: int = 0
-
-  packer: CANPackerSafety
-  safety: libsafety_py.LibSafety
+  packer: CANPackerPanda
+  safety: libsafety_py.Panda
 
   def _torque_meas_msg(self, torque: int, driver_torque: int | None = None):
     values = {"STEER_TORQUE_EPS": (torque / self.EPS_SCALE) * 100.}
@@ -86,11 +84,6 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
   def _pcm_status_msg(self, enable):
     values = {"CRUISE_ACTIVE": enable}
     return self.packer.make_can_msg_safety("PCM_CRUISE", 0, values)
-
-  def _acc_state_msg(self, enabled):
-    msg = "DSU_CRUISE" if self.SAFETY_PARAM_SP & ToyotaSafetyFlagsSP.UNSUPPORTED_DSU else "PCM_CRUISE_2"
-    values = {"MAIN_ON": enabled}
-    return self.packer.make_can_msg_safety(msg, 0, values)
 
   def test_diagnostics(self, stock_longitudinal: bool = False, ecu_disabled: bool = True):
     for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present
@@ -333,7 +326,7 @@ class TestToyotaAltBrakeSafety(TestToyotaSafetyTorque):
 
   def _user_brake_msg(self, brake):
     values = {"BRAKE_PRESSED": brake}
-    return self.packer.make_can_msg_safety("BRAKE_MODULE", 0, values)
+    return self.packer.make_can_msg_panda("BRAKE_MODULE", 0, values)
 
   # No LTA message in the DBC
   def test_lta_steer_cmd(self):
