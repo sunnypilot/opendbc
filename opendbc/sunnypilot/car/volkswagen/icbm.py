@@ -10,6 +10,7 @@ from opendbc.car.can_definitions import CanData
 from opendbc.car.volkswagen.values import VolkswagenFlags
 from opendbc.sunnypilot.car.volkswagen import mqbcan_ext as mqbcan
 from opendbc.sunnypilot.car.volkswagen import pqcan_ext as pqcan
+from openpilot.common.params import Params
 from opendbc.sunnypilot.car.intelligent_cruise_button_management_interface_base import IntelligentCruiseButtonManagementInterfaceBase
 
 SendButtonState = structs.IntelligentCruiseButtonManagement.SendButtonState
@@ -34,6 +35,11 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     # Coarse handling only for certain fingerprints
     self.useCoarseHandling = CP.carFingerprint in COARSE_FINGERPRINTS
 
+    # Get Paramter IsMetric for coarseStep
+    self.params = Params()
+    self.is_metric = self.params.get_bool("IsMetric")
+    self.coarseStep = COARSE_METRICAL if self.is_metric else COARSE_IMPERIAL
+
   def update(self, CS, CC_SP, packer, frame, CAN) -> list[CanData]:
     can_sends = []
     self.CC_SP = CC_SP
@@ -50,8 +56,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       }
 
       if self.useCoarseHandling:
-        coarseStep = COARSE_METRICAL if CS.is_metric else COARSE_IMPERIAL
-        coarse = (self.ICBM.vTarget % coarseStep == 0) or (abs(self.ICBM.vTarget) >= coarseStep)
+        coarse = (self.ICBM.vTarget % self.coarseStep == 0) or (abs(self.ICBM.vError) >= self.coarseStep)
         accArgs.update({
           "increase": (self.ICBM.sendButton == SendButtonState.increase) and (coarse),
           "decrease": (self.ICBM.sendButton == SendButtonState.decrease) and (coarse),
