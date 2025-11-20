@@ -31,7 +31,7 @@ non_tested_cars = [
   HONDA.HONDA_NBOX_2G,
   HONDA.ACURA_MDX_4G_MMR,
   HONDA.HONDA_CITY_7G,
-  VOLKSWAGEN.PORSCHE_MACAN_MK1  # placeholder, replace after merge
+  VOLKSWAGEN.PORSCHE_MACAN_MK1,  # placeholder, replace after merge
 
   # port extensions
   HYUNDAI.KIA_CEED_PHEV_2022_NON_SCC,
