@@ -9,9 +9,9 @@ from opendbc.safety.tests.common import CANPackerSafety
 
 
 class TestChryslerSafety(common.CarSafetyTest, common.MotorTorqueSteeringSafetyTest):
-  TX_MSGS = [[0x23B, 0], [0x292, 0], [0x2A6, 0]]
-  RELAY_MALFUNCTION_ADDRS = {0: (0x292, 0x2A6)}
-  FWD_BLACKLISTED_ADDRS = {2: [0x292, 0x2A6]}
+  TX_MSGS = [[0x23B, 0], [0x292, 0], [0x2A6, 0], [0x2D9, 0]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x292, 0x2A6, 0x2D9)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x292, 0x2A6, 0x2D9]}
 
   MAX_RATE_UP = 3
   MAX_RATE_DOWN = 3
@@ -29,8 +29,8 @@ class TestChryslerSafety(common.CarSafetyTest, common.MotorTorqueSteeringSafetyT
     self.safety.set_safety_hooks(CarParams.SafetyModel.chrysler, 0)
     self.safety.init_tests()
 
-  def _button_msg(self, cancel=False, resume=False):
-    values = {"ACC_Cancel": cancel, "ACC_Resume": resume}
+  def _button_msg(self, cancel=False, resume=False, accel=False, decel=False):
+    values = {"ACC_Cancel": cancel, "ACC_Resume": resume, "ACC_Accel": accel, "ACC_Decel": decel}
     return self.packer.make_can_msg_safety("CRUISE_BUTTONS", self.DAS_BUS, values)
 
   def _pcm_status_msg(self, enable):
@@ -95,7 +95,7 @@ class TestChryslerSafety(common.CarSafetyTest, common.MotorTorqueSteeringSafetyT
 
   def _lkas_button_msg(self, enabled):
     values = {"TOGGLE_LKAS": enabled}
-    return self.packer.make_can_msg_panda("TRACTION_BUTTON", 0, values)
+    return self.packer.make_can_msg_safety("TRACTION_BUTTON", 0, values)
 
 
 class TestChryslerRamDTSafety(TestChryslerSafety):
@@ -119,7 +119,11 @@ class TestChryslerRamDTSafety(TestChryslerSafety):
 
   def _speed_msg(self, speed):
     values = {"Vehicle_Speed": speed}
-    return self.packer.make_can_msg_panda("ESP_8", 0, values)
+    return self.packer.make_can_msg_safety("ESP_8", 0, values)
+
+  def _lkas_button_msg(self, enabled):
+    values = {"LKAS_Button": enabled}
+    return self.packer.make_can_msg_safety("Center_Stack_2", 0, values)
 
 
 class TestChryslerRamHDSafety(TestChryslerSafety):
@@ -144,7 +148,11 @@ class TestChryslerRamHDSafety(TestChryslerSafety):
 
   def _speed_msg(self, speed):
     values = {"Vehicle_Speed": speed}
-    return self.packer.make_can_msg_panda("ESP_8", 0, values)
+    return self.packer.make_can_msg_safety("ESP_8", 0, values)
+
+  def _lkas_button_msg(self, enabled):
+    values = {"LKAS_Button": enabled}
+    return self.packer.make_can_msg_safety("Center_Stack_2", 0, values)
 
 
 if __name__ == "__main__":

@@ -113,7 +113,7 @@ class TestSubaruSafetyBase(common.CarSafetyTest):
 
   def _lkas_button_msg(self, lkas_pressed=False, lkas_hud=0):
     values = {"LKAS_Dash_State": 2 if lkas_pressed else lkas_hud}
-    return self.packer.make_can_msg_panda("ES_LKAS_State", SUBARU_CAM_BUS, values)
+    return self.packer.make_can_msg_safety("ES_LKAS_State", SUBARU_CAM_BUS, values)
 
   def test_enable_control_allowed_with_mads_button(self):
     for enable_mads in (True, False):
@@ -196,9 +196,9 @@ class TestSubaruGen2TorqueSafetyBase(TestSubaruTorqueSafetyBase):
   ALT_MAIN_BUS = SUBARU_ALT_BUS
   ALT_CAM_BUS = SUBARU_ALT_BUS
 
-  MAX_RATE_UP = 40
-  MAX_RATE_DOWN = 40
-  MAX_TORQUE_LOOKUP = [0], [1000]
+  MAX_RATE_UP = 35
+  MAX_RATE_DOWN = 50
+  MAX_TORQUE_LOOKUP = [0], [1500]
 
 
 class TestSubaruGen2TorqueStockLongitudinalSafety(TestSubaruStockLongitudinalSafetyBase, TestSubaruGen2TorqueSafetyBase):

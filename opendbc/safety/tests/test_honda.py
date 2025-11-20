@@ -7,6 +7,9 @@ from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
 from opendbc.car.structs import CarParams
 from opendbc.safety.tests.common import CANPackerSafety, MAX_WRONG_COUNTERS
+from opendbc.safety.tests.gas_interceptor_common import GasInterceptorSafetyTest
+
+from opendbc.sunnypilot.car.honda.values_ext import HondaSafetyFlagsSP
 
 HONDA_N_COMMON_TX_MSGS = [[0xE4, 0], [0x194, 0], [0x1FA, 0], [0x30C, 0], [0x33D, 0]]
 
@@ -242,7 +245,7 @@ class HondaBase(common.CarSafetyTest):
   def _lkas_button_msg(self, lkas_button=False, setting_btn=0):
     values = {"CRUISE_SETTING": 1 if lkas_button else setting_btn, "COUNTER": self.cnt_button % 4}
     self.__class__.cnt_button += 1
-    return self.packer.make_can_msg_panda("SCM_BUTTONS", self.PT_BUS, values)
+    return self.packer.make_can_msg_safety("SCM_BUTTONS", self.PT_BUS, values)
 
   def test_enable_control_allowed_with_mads_button(self):
     """Tests MADS button state transitions and internal button press state."""
@@ -301,7 +304,7 @@ class TestHondaNidecSafetyBase(HondaBase):
     self.safety.init_tests()
 
   def _send_brake_msg(self, brake, aeb_req=0, bus=0):
-    values = {"COMPUTER_BRAKE": brake, "AEB_REQ_1": aeb_req}
+    values = {self.BRAKE_SIG: brake, "AEB_REQ_1": aeb_req}
     return self.packer.make_can_msg_safety("BRAKE_COMMAND", bus, values)
 
   def _rx_brake_msg(self, brake, aeb_req=0):
@@ -389,7 +392,7 @@ class TestHondaNidecGasInterceptorSafety(GasInterceptorSafetyTest, HondaButtonEn
   INTERCEPTOR_THRESHOLD = 492
 
   def setUp(self):
-    self.packer = CANPackerPanda("honda_civic_touring_2016_can_generated")
+    self.packer = CANPackerSafety("honda_civic_touring_2016_can_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_current_safety_param_sp(HondaSafetyFlagsSP.GAS_INTERCEPTOR)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hondaNidec, 0)
@@ -683,14 +686,17 @@ class TestHondaBoschCANFDAltBrakeSafety(HondaPcmEnableBase, TestHondaBoschCANFDS
     self.safety.init_tests()
 
 
-class TestHondaNidecClaritySafety(TestHondaNidecPcmSafety):
+class TestHondaNidecHybridSafety(TestHondaNidecPcmSafety):
+  """
+    Covers the Honda Nidec safety mode with hybrid brake
+  """
 
   BRAKE_SIG = "COMPUTER_BRAKE_HYBRID"
 
   def setUp(self):
-    self.packer = CANPackerPanda("honda_clarity_hybrid_2018_can_generated")
+    self.packer = CANPackerSafety("honda_clarity_hybrid_2018_can_generated")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_sp(HondaSafetyFlagsSP.CLARITY)
+    self.safety.set_current_safety_param_sp(HondaSafetyFlagsSP.NIDEC_HYBRID)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hondaNidec, 0)
     self.safety.init_tests()
 

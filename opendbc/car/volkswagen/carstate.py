@@ -234,6 +234,7 @@ class CarState(CarStateBase):
 
   def update_mlb(self, pt_cp, cam_cp, ext_cp) -> structs.CarState:
     ret = structs.CarState()
+    ret_sp = structs.CarStateSP()
 
     self.parse_wheel_speeds(ret,
       pt_cp.vl["ESP_03"]["ESP_VL_Radgeschw"],
@@ -285,7 +286,7 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw == 0
 
     self.frame += 1
-    return ret
+    return ret, ret_sp
 
   def update_low_speed_alert(self, v_ego: float) -> bool:
     # Low speed steer alert hysteresis logic
