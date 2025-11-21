@@ -67,7 +67,7 @@ class TestNissanSafety(common.CarSafetyTest, common.AngleSteeringSafetyTest):
     values = {"CANCEL_BUTTON": cancel, "PROPILOT_BUTTON": propilot,
               "FOLLOW_DISTANCE_BUTTON": flw_dist, "SET_BUTTON": _set,
               "RES_BUTTON": res, "NO_BUTTON_PRESSED": no_button}
-    return self.packer.make_can_msg_panda("CRUISE_THROTTLE", self.CRUISE_BUS, values)
+    return self.packer.make_can_msg_safety("CRUISE_THROTTLE", self.CRUISE_BUS, values)
 
   def test_acc_buttons(self):
     btns = [
