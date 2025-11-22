@@ -27,7 +27,7 @@ class GasInterceptorCarController:
     if not long_active:
       return 0.
 
-    if accel < -0.5:
+    if accel < -2.0:
       pedal_gas = 0.
     else:
       pedaloffset = np.interp(v_ego, [0., 3., 6., 30.], [0.10, 0.175, 0.240, 0.240])
