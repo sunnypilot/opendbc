@@ -116,14 +116,13 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
 
     # **** Stock ACC Button Controls **************************************** #
 
-    stockUsed = False
     gra_send_ready = self.CP.pcmCruise and CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last
     if gra_send_ready and (CC.cruiseControl.cancel or CC.cruiseControl.resume):
-      can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.CAN.ext, CS.gra_stock_values, cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
-      stockUsed = True
+      can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.CAN.ext, CS.gra_stock_values,
+                                                           cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
 
     # **** Intelligent Cruise Button Management ***************************** #
-    if gra_send_ready and not stockUsed:
+    if gra_send_ready:
       can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer_pt, self.frame, self.CAN.ext))
 
     new_actuators = actuators.as_builder()
