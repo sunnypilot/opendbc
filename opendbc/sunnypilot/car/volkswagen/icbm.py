@@ -11,6 +11,7 @@ from opendbc.car.volkswagen.values import VolkswagenFlags
 from opendbc.sunnypilot.car.volkswagen import mqbcan_ext as mqbcan
 from opendbc.sunnypilot.car.volkswagen import pqcan_ext as pqcan
 from openpilot.common.params import Params
+from openpilot.common.constants import CV
 from opendbc.sunnypilot.car.intelligent_cruise_button_management_interface_base import IntelligentCruiseButtonManagementInterfaceBase
 
 SendButtonState = structs.IntelligentCruiseButtonManagement.SendButtonState
@@ -35,10 +36,10 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     # Coarse handling only for certain fingerprints
     self.useCoarseHandling = CP.carFingerprint in COARSE_FINGERPRINTS
 
-    # Get Paramter IsMetric for coarseStep
     self.params = Params()
     self.is_metric = self.params.get_bool("IsMetric")
     self.coarseStep = COARSE_METRICAL if self.is_metric else COARSE_IMPERIAL
+    self.speedConv = CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH
 
   def update(self, CS, CC_SP, packer, frame, CAN) -> list[CanData]:
     can_sends = []
@@ -48,7 +49,6 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
 
     if self.ICBM.sendButton != SendButtonState.none and (self.frame - self.last_button_frame) * DT_CTRL > 0.2:
 
-      # Create Args for VW GRA ACC Controller
       accArgs = {
         "packer": packer,
         "bus": CAN,
@@ -56,7 +56,11 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       }
 
       if self.useCoarseHandling:
-        coarse = (self.ICBM.vTarget % self.coarseStep == 0) or (abs(self.ICBM.vError) >= self.coarseStep)
+        # Use coarse step if:
+        # - The target speed is a multiple of 10km/h or 5mp/h
+        # - The absolute difference from the set speed and the ICBM target >= 10km/h or 5mp/h
+        vCruiseCluster = round(CS.cruiseState.speedCluster * self.speedConv)
+        coarse = (self.ICBM.vTarget % self.coarseStep == 0) or (abs(vCruiseCluster - self.ICBM.vTarget) >= self.coarseStep)
         accArgs.update({
           "increase": (self.ICBM.sendButton == SendButtonState.increase) and (coarse),
           "decrease": (self.ICBM.sendButton == SendButtonState.decrease) and (coarse),
@@ -69,10 +73,8 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
           "decrease": self.ICBM.sendButton == SendButtonState.decrease,
         })
 
-      # Create Command
       can_sends.append(self.vw_can.create_acc_buttons_control(**accArgs))
 
-      # Update Button Frame
       self.last_button_frame = self.frame
 
     return can_sends

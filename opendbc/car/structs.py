@@ -106,7 +106,6 @@ class IntelligentCruiseButtonManagement:
     default_factory=lambda: IntelligentCruiseButtonManagement.SendButtonState.none
   )
   vTarget: float = auto_field()
-  vError: float = auto_field()
 
   class IntelligentCruiseButtonManagementState(StrEnum):
     inactive = auto()
