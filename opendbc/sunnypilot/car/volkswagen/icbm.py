@@ -59,7 +59,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
         # Use coarse step if:
         # - The target speed is a multiple of 10km/h or 5mp/h
         # - The absolute difference from the set speed and the ICBM target >= 10km/h or 5mp/h
-        vCruiseCluster = round(CS.cruiseState.speedCluster * self.speedConv)
+        vCruiseCluster = round(CS.out.cruiseState.speedCluster * self.speedConv)
         coarse = (self.ICBM.vTarget % self.coarseStep == 0) or (abs(vCruiseCluster - self.ICBM.vTarget) >= self.coarseStep)
         accArgs.update({
           "increase": (self.ICBM.sendButton == SendButtonState.increase) and (coarse),
