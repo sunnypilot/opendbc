@@ -29,17 +29,17 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     super().__init__(CP, CP_SP)
 
     if CP.flags & VolkswagenFlags.PQ:
-      self.vw_can = pqcan
+      self.CCS = pqcan
     else:
-      self.vw_can = mqbcan
+      self.CCS = mqbcan
 
     # Coarse handling only for certain fingerprints
     self.useCoarseHandling = CP.carFingerprint in COARSE_FINGERPRINTS
 
     self.params = Params()
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.coarseStep = COARSE_METRICAL if self.is_metric else COARSE_IMPERIAL
-    self.speedConv = CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH
+    self.isMetric = self.params.get_bool("IsMetric")
+    self.coarseStep = COARSE_METRICAL if self.isMetric else COARSE_IMPERIAL
+    self.speedConv = CV.MS_TO_KPH if self.isMetric else CV.MS_TO_MPH
 
   def update(self, CS, CC_SP, packer, frame, CAN) -> list[CanData]:
     can_sends = []
@@ -56,11 +56,9 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       }
 
       if self.useCoarseHandling:
-        # Use coarse step if:
-        # - The target speed is a multiple of 10km/h or 5mp/h
-        # - The set speed and the ICBM target are in a different step range (10km/h or 5mp/h)
+        # Check if the next coarse cruise speed would overshoot the target. If not: use coarse.
         vCruiseCluster = round(CS.out.cruiseState.speedCluster * self.speedConv)
-        coarse = (self.ICBM.vTarget % self.coarseStep == 0) or (self.ICBM.vTarget // self.coarseStep != vCruiseCluster // self.coarseStep)
+        coarse = self.nextCoarse(vCruiseCluster) <= self.ICBM.vTarget
         accArgs.update({
           "increase": (self.ICBM.sendButton == SendButtonState.increase) and (coarse),
           "decrease": (self.ICBM.sendButton == SendButtonState.decrease) and (coarse),
@@ -73,8 +71,17 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
           "decrease": self.ICBM.sendButton == SendButtonState.decrease,
         })
 
-      can_sends.append(self.vw_can.create_acc_buttons_control(**accArgs))
-
+      can_sends.append(self.CCS.create_acc_buttons_control(**accArgs))
       self.last_button_frame = self.frame
 
     return can_sends
+
+  def nextCoarse(self, currentCruise):
+    if self.ICBM.sendButton == SendButtonState.increase:
+        coarseTarget = (currentCruise // self.coarseStep + 1) * self.coarseStep
+    else:
+        coarseTarget = (currentCruise // self.coarseStep) * self.coarseStep
+        if currentCruise % self.coarseStep == 0:
+            coarseTarget -= self.coarseStep
+
+    return coarseTarget
