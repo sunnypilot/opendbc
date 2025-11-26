@@ -29,9 +29,9 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     super().__init__(CP, CP_SP)
 
     if CP.flags & VolkswagenFlags.PQ:
-      self.CCS = pqcan
+      self.CCS_EXT = pqcan
     else:
-      self.CCS = mqbcan
+      self.CCS_EXT = mqbcan
 
     # Coarse handling only for certain fingerprints
     self.useCoarseHandling = CP.carFingerprint in COARSE_FINGERPRINTS
@@ -71,7 +71,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
           "decrease": self.ICBM.sendButton == SendButtonState.decrease,
         })
 
-      can_sends.append(self.CCS.create_acc_buttons_control(**accArgs))
+      can_sends.append(self.CCS_EXT.create_acc_buttons_control(**accArgs))
       self.last_button_frame = self.frame
 
     return can_sends
