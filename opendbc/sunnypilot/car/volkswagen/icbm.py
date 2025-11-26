@@ -58,7 +58,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       if self.useCoarseHandling:
         # Check if the next coarse cruise speed would overshoot the target. If not: use coarse.
         vCruiseCluster = round(CS.out.cruiseState.speedCluster * self.speedConv)
-        coarse = self.nextCoarse(vCruiseCluster) <= self.ICBM.vTarget
+        coarse = self.useCoarse(vCruiseCluster)
         accArgs.update({
           "increase": (self.ICBM.sendButton == SendButtonState.increase) and (coarse),
           "decrease": (self.ICBM.sendButton == SendButtonState.decrease) and (coarse),
@@ -76,12 +76,12 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
 
     return can_sends
 
-  def nextCoarse(self, currentCruise):
+  def useCoarse(self, currentCruise):
     if self.ICBM.sendButton == SendButtonState.increase:
         coarseTarget = (currentCruise // self.coarseStep + 1) * self.coarseStep
+        return coarseTarget <= self.ICBM.vTarget
     else:
         coarseTarget = (currentCruise // self.coarseStep) * self.coarseStep
         if currentCruise % self.coarseStep == 0:
             coarseTarget -= self.coarseStep
-
-    return coarseTarget
+        return coarseTarget >= self.ICBM.vTarget
