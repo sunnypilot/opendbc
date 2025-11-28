@@ -10,6 +10,7 @@ from opendbc.car.can_definitions import CanData
 from opendbc.car.volkswagen.values import VolkswagenFlags
 from opendbc.sunnypilot.car.volkswagen import mqbcan_ext as mqbcan
 from opendbc.sunnypilot.car.volkswagen import pqcan_ext as pqcan
+from opendbc.sunnypilot.car.volkswagen import mlbcan_ext as mlbcan
 from openpilot.common.params import Params
 from openpilot.common.constants import CV
 from opendbc.sunnypilot.car.intelligent_cruise_button_management_interface_base import IntelligentCruiseButtonManagementInterfaceBase
@@ -30,6 +31,8 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
 
     if CP.flags & VolkswagenFlags.PQ:
       self.CCS_EXT = pqcan
+    elif CP.flags & VolkswagenFlags.MLB:
+      self.CCS_EXT = mlbcan
     else:
       self.CCS_EXT = mqbcan
 
