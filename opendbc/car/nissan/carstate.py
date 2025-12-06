@@ -25,9 +25,6 @@ class CarState(CarStateBase, CarStateExt):
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
     self.distance_button = 0
-    self.set_button = 0
-    self.res_button = 0
-    self.cancel_button = 0
 
   def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     cp = can_parsers[Bus.pt]
@@ -39,12 +36,6 @@ class CarState(CarStateBase, CarStateExt):
 
     prev_distance_button = self.distance_button
     self.distance_button = cp.vl["CRUISE_THROTTLE"]["FOLLOW_DISTANCE_BUTTON"]
-
-    prev_set_button = self.set_button
-    self.set_button = cp.vl["CRUISE_THROTTLE"]["SET_BUTTON"]
-
-    prev_res_button = self.res_button
-    self.res_button = cp.vl["CRUISE_THROTTLE"]["RES_BUTTON"]
 
     if self.CP.carFingerprint in (CAR.NISSAN_ROGUE, CAR.NISSAN_XTRAIL, CAR.NISSAN_ALTIMA):
       ret.gasPressed = bool(cp.vl["GAS_PEDAL"]["GAS_PEDAL"] > 3)
@@ -141,9 +132,6 @@ class CarState(CarStateBase, CarStateExt):
     CarStateExt.update(self, ret, ret_sp, can_parsers)
 
     ret.buttonEvents = [
-      *create_button_events(self.set_button, prev_set_button, {1: ButtonType.decelCruise}),
-      *create_button_events(self.res_button, prev_res_button, {1: ButtonType.accelCruise}),
-      *create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise}),
       *self.button_events,
     ]
 
