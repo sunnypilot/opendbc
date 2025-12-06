@@ -1,7 +1,8 @@
 from opendbc.car import CanBusBase
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.honda.values import (CAR, HondaFlags, HONDA_BOSCH, HONDA_BOSCH_ALT_RADAR, HONDA_BOSCH_RADARLESS,
+from opendbc.car.honda.values import (HondaFlags, HONDA_BOSCH, HONDA_BOSCH_ALT_RADAR, HONDA_BOSCH_RADARLESS,
                                       HONDA_BOSCH_CANFD, CarControllerParams)
+from opendbc.sunnypilot.car.honda.values_ext import HondaFlagsSP
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -46,7 +47,7 @@ class CanBus(CanBusBase):
     return self.offset
 
 
-def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
+def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake, CP_SP):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
@@ -66,7 +67,7 @@ def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_ca
     "AEB_STATUS": 0,
   }
 
-  if car_fingerprint == CAR.HONDA_CLARITY:
+  if CP_SP.flags & HondaFlagsSP.NIDEC_HYBRID:
     values["COMPUTER_BRAKE_HYBRID"] = apply_brake
     values["BRAKE_PUMP_REQUEST_HYBRID"] = apply_brake > 0
   else:
@@ -120,11 +121,15 @@ def create_acc_commands(packer, CAN, enabled, active, accel, gas, stopping_count
   return commands
 
 
-def create_steering_control(packer, CAN, apply_torque, lkas_active):
+def create_steering_control(packer, CAN, apply_torque, lkas_active, tja_control):
   values = {
     "STEER_TORQUE": apply_torque if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
   }
+
+  if tja_control:
+    values["STEER_DOWN_TO_ZERO"] = lkas_active
+
   return packer.make_can_msg("STEERING_CONTROL", CAN.lkas, values)
 
 
