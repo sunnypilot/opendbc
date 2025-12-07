@@ -132,6 +132,7 @@ class CarState(CarStateBase, CarStateExt):
     CarStateExt.update(self, ret, ret_sp, can_parsers)
 
     ret.buttonEvents = [
+      *create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise}),
       *self.button_events,
     ]
 
