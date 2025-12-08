@@ -21,6 +21,4 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 BUTTONS = [
   Button(ButtonType.accelCruise, "CRUISE_THROTTLE", "RES_BUTTON", [1]),
   Button(ButtonType.decelCruise, "CRUISE_THROTTLE", "SET_BUTTON", [1]),
-  Button(ButtonType.cancel, "CRUISE_THROTTLE", "CANCEL_BUTTON", [1]),
-  Button(ButtonType.resumeCruise, "CRUISE_THROTTLE", "RES_BUTTON", [1]),
 ]
