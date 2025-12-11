@@ -237,7 +237,7 @@ class LongitudinalController:
     if self.stopping:
       self.desired_accel = 0.0
     else:
-      self.desired_accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+      self.desired_accel = float(np.clip(self.accel_cmd, -3.0, CarControllerParams.ACCEL_MAX))
 
     # Apply jerk-limited integration to get smooth acceleration
     self.actual_accel = jerk_limited_integrator(self.desired_accel, self.accel_last, self.jerk_upper, self.jerk_lower)
@@ -251,8 +251,8 @@ class LongitudinalController:
       return
 
     accel = CS.out.aEgo
-    accel_vals = [0.0, 0.3, 0.6, 0.9, 1.2, 1.5]
-    decel_vals = [-3.0, -2.0, -1.5, -1.0, -0.5, -0.05]
+    accel_vals = [0.0, 0.25, 0.5, 1.0, 1.5, 2.0]
+    decel_vals = [-3.5, -2.5, -1.5, -0.75, -0.25, -0.05]
     comfort_band_vals = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]
 
     self.comfort_band_upper = float(np.interp(accel, accel_vals, comfort_band_vals))
