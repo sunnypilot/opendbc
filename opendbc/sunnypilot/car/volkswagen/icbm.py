@@ -13,9 +13,14 @@ from opendbc.sunnypilot.car.volkswagen import pqcan_ext as pqcan
 from opendbc.sunnypilot.car.volkswagen import mlbcan_ext as mlbcan
 from openpilot.common.params import Params
 from openpilot.common.constants import CV
+from enum import Enum, auto
 from opendbc.sunnypilot.car.intelligent_cruise_button_management_interface_base import IntelligentCruiseButtonManagementInterfaceBase
 
 SendButtonState = structs.IntelligentCruiseButtonManagement.SendButtonState
+ButtonType = structs.CarState.ButtonEvent.Type
+
+SEND_REPETITIONS = 2
+COOLDOWN_TIME = 0.2
 
 COARSE_METRICAL = 10 # km/h
 COARSE_IMPERIAL = 5 # mp/h
@@ -24,6 +29,18 @@ COARSE_FINGERPRINTS = [
   "SEAT_ATECA_MK1",
   "VOLKSWAGEN_GOLF_MK7"
 ]
+
+class VWICBMState(Enum):
+  IDLE = auto()
+  SPAM = auto()
+  COOLDOWN = auto()
+
+class VWICBMHelper:
+  def __init__(self):
+    self.state = VWICBMState.IDLE
+    self.button = None
+    self.baseCounter = None
+    self.repetition = None
 
 class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManagementInterfaceBase):
   def __init__(self, CP, CP_SP):
@@ -43,48 +60,83 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     self.isMetric = self.params.get_bool("IsMetric")
     self.coarseStep = COARSE_METRICAL if self.isMetric else COARSE_IMPERIAL
     self.speedConv = CV.MS_TO_KPH if self.isMetric else CV.MS_TO_MPH
+    self.icbmHelper = VWICBMHelper()
 
-  def update(self, CS, CC_SP, packer, frame, CAN) -> list[CanData]:
+  def update(self, CS, CC_SP, packer, CAN, frame, recievedGRA) -> list[CanData]:
     can_sends = []
     self.CC_SP = CC_SP
     self.ICBM = CC_SP.intelligentCruiseButtonManagement
     self.frame = frame
 
-    if self.ICBM.sendButton != SendButtonState.none and (self.frame - self.last_button_frame) * DT_CTRL > 0.2:
+    def getButtonToPress():
+      # Check if the next coarse cruise speed would overshoot the target. If not: use coarse.
+      if self.useCoarseHandling:
+        vCruiseCluster = round(CS.out.cruiseState.speedCluster * self.speedConv)
+        if self.ICBM.sendButton == SendButtonState.increase:
+            coarseTarget = (vCruiseCluster // self.coarseStep + 1) * self.coarseStep
+            coarse = coarseTarget <= self.ICBM.vTarget
+            return ButtonType.accelCruise if coarse else ButtonType.resumeCruise
+        else:
+            coarseTarget = (vCruiseCluster // self.coarseStep) * self.coarseStep
+            if vCruiseCluster % self.coarseStep == 0:
+                coarseTarget -= self.coarseStep
+            coarse = coarseTarget >= self.ICBM.vTarget
+            return ButtonType.decelCruise if coarse else ButtonType.setCruise
+      # No coarse handling
+      else:
+        return ButtonType.accelCruise if self.ICBM.sendButton == SendButtonState.increase else ButtonType.decelCruise
 
+    def getAccArgs():
       accArgs = {
         "packer": packer,
         "bus": CAN,
-        "gra_stock_values": CS.gra_stock_values
+        "gra_stock_values": CS.gra_stock_values,
+        "increase": self.icbmHelper.button == ButtonType.accelCruise,
+        "decrease": self.icbmHelper.button == ButtonType.decelCruise,
+        "resume"  : self.icbmHelper.button == ButtonType.resumeCruise,
+        "_set"    : self.icbmHelper.button == ButtonType.setCruise
       }
 
-      if self.useCoarseHandling:
-        # Check if the next coarse cruise speed would overshoot the target. If not: use coarse.
-        vCruiseCluster = round(CS.out.cruiseState.speedCluster * self.speedConv)
-        coarse = self.useCoarse(vCruiseCluster)
-        accArgs.update({
-          "increase": (self.ICBM.sendButton == SendButtonState.increase) and (coarse),
-          "decrease": (self.ICBM.sendButton == SendButtonState.decrease) and (coarse),
-          "resume"  : (self.ICBM.sendButton == SendButtonState.increase) and (not coarse),
-          "_set"    : (self.ICBM.sendButton == SendButtonState.decrease) and (not coarse)
-        })
-      else:
-        accArgs.update({
-          "increase": self.ICBM.sendButton == SendButtonState.increase,
-          "decrease": self.ICBM.sendButton == SendButtonState.decrease,
-        })
+      # Patch counter
+      accArgs["gra_stock_values"].update({
+        "COUNTER": self.icbmHelper.baseCounter + self.icbmHelper.repetition
+      })
 
-      can_sends.append(self.CCS_EXT.create_acc_buttons_control(**accArgs))
-      self.last_button_frame = self.frame
+      return accArgs
+
+    # IDLE
+    if self.icbmHelper.state == VWICBMState.IDLE:
+
+      # ICBM wants to send and we just received a GRA message
+      if self.ICBM.sendButton != SendButtonState.none and recievedGRA:
+
+        # Prepare stuff for spamming
+        self.icbmHelper.button = getButtonToPress()
+        self.icbmHelper.state = VWICBMState.SPAM
+        self.icbmHelper.repetition = 0
+        self.icbmHelper.baseCounter = CS.gra_stock_values["COUNTER"]
+
+        # Send first frame
+        self.last_button_frame = frame
+        can_sends.append(self.CCS_EXT.create_acc_buttons_control(**getAccArgs()))
+
+    # SPAM
+    elif self.icbmHelper.state == VWICBMState.SPAM:
+
+      self.icbmHelper.repetition += 1
+
+      # GRA just sent a new frame or we reached the limit: Abort the spam
+      if recievedGRA or self.icbmHelper.repetition > SEND_REPETITIONS:
+        self.icbmHelper.state = VWICBMState.COOLDOWN
+
+      # Spam once more
+      else:
+        self.last_button_frame = frame
+        can_sends.append(self.CCS_EXT.create_acc_buttons_control(**getAccArgs()))
+
+    # COOLDOWN
+    elif self.icbmHelper.state == VWICBMState.COOLDOWN:
+      self.icbmHelper.state = VWICBMState.IDLE if (self.frame - self.last_button_frame) * DT_CTRL > COOLDOWN_TIME else VWICBMState.COOLDOWN
 
     return can_sends
-
-  def useCoarse(self, currentCruise):
-    if self.ICBM.sendButton == SendButtonState.increase:
-        coarseTarget = (currentCruise // self.coarseStep + 1) * self.coarseStep
-        return coarseTarget <= self.ICBM.vTarget
-    else:
-        coarseTarget = (currentCruise // self.coarseStep) * self.coarseStep
-        if currentCruise % self.coarseStep == 0:
-            coarseTarget -= self.coarseStep
-        return coarseTarget >= self.ICBM.vTarget
+  

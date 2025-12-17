@@ -126,10 +126,10 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
     if gra_send_ready and (CC.cruiseControl.cancel or CC.cruiseControl.resume):
       can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.CAN.ext, CS.gra_stock_values,
                                                            cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
+      gra_send_ready = False
 
     # **** Intelligent Cruise Button Management ***************************** #
-    if gra_send_ready:
-      can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer_pt, self.frame, self.CAN.ext))
+    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer_pt, self.CAN.ext, self.frame, gra_send_ready))
 
     new_actuators = actuators.as_builder()
     new_actuators.torque = self.apply_torque_last / self.CCP.STEER_MAX
