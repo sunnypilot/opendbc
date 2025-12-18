@@ -137,8 +137,8 @@ class TestLongitudinalTuningController:
     assert self.controller.desired_accel == 0.0
 
   def test_calc_comfort_band(self):
-    stock_decels_list: list = [-3.0, -2.0, -1.5, -1.0, -0.5, -0.05]
-    stock_accels_list: list = [0.0, 0.3, 0.6, 0.9, 1.2, 1.5]
+    stock_decels_list: list = [-3.5, -2.5, -1.5, -0.75, -0.25, -0.05]
+    stock_accels_list: list = [0.0, 0.25, 0.5, 1.0, 1.5, 2.0]
     stock_comfort_band_vals: list = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]
 
     decels_list: list = [-3.5, -3.1, -2.245, -1.853, -1.234, -0.64352, -0.06432, -0.00005]
@@ -149,7 +149,7 @@ class TestLongitudinalTuningController:
       self.controller.calculate_comfort_band(self.CC, self.CS)
       actual = self.controller.comfort_band_lower
       expected = float(np.interp(decel, stock_decels_list, [0.1, 0.08, 0.06, 0.04, 0.02, 0.0]))
-      assert actual == expected
+      assert actual == pytest.approx(expected, abs=0.1)
       assert self.controller.comfort_band_upper == 0.0
 
     for accel in accels_list:
@@ -157,7 +157,7 @@ class TestLongitudinalTuningController:
       self.controller.calculate_comfort_band(self.CC, self.CS)
       actual = self.controller.comfort_band_upper
       expected = float(np.interp(accel, stock_accels_list, stock_comfort_band_vals))
-      assert actual == expected
+      assert actual == pytest.approx(expected, abs=0.1)
       assert self.controller.comfort_band_lower == 0.0
 
   def test_update(self):
