@@ -216,6 +216,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.intelligentCruiseButtonManagementAvailable = not (stock_cp.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
 
+    # port extensions - disable for TICI
+    if ret.flags & HyundaiFlagsSP.NON_SCC:
+      stock_cp.dashcamOnly = True
+
     return ret
 
   @staticmethod

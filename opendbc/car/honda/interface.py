@@ -308,6 +308,10 @@ class CarInterface(CarInterfaceBase):
     ret.intelligentCruiseButtonManagementAvailable = candidate in (HONDA_BOSCH - HONDA_BOSCH_CANFD) or \
                                                      (candidate in HONDA_BOSCH_CANFD and not is_release_sp)
 
+    # port extensions - disable for TICI
+    if candidate == CAR.HONDA_CLARITY:
+      stock_cp.dashcamOnly = True
+
     return ret
 
   @staticmethod

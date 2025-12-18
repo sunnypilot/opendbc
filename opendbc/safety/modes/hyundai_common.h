@@ -21,7 +21,7 @@ enum {
   HYUNDAI_PARAM_SP_ESCC = 1,
   HYUNDAI_PARAM_SP_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE = 2,
   HYUNDAI_PARAM_SP_HAS_LDA_BUTTON = 4,
-  HYUNDAI_PARAM_SP_NON_SCC = 8,
+  // HYUNDAI_PARAM_SP_NON_SCC = 8,
 };
 
 // common state
@@ -59,8 +59,8 @@ bool hyundai_longitudinal_main_cruise_toggleable = false;
 extern bool hyundai_has_lda_button;
 bool hyundai_has_lda_button = false;
 
-extern bool hyundai_non_scc;
-bool hyundai_non_scc = false;
+// extern bool hyundai_non_scc;
+// bool hyundai_non_scc = false;
 
 static uint8_t hyundai_last_button_interaction;  // button messages since the user pressed an enable button
 
@@ -89,7 +89,7 @@ void hyundai_common_init(uint16_t param) {
   hyundai_escc = GET_FLAG(current_safety_param_sp, HYUNDAI_PARAM_SP_ESCC);
   hyundai_longitudinal_main_cruise_toggleable = GET_FLAG(current_safety_param_sp, HYUNDAI_PARAM_SP_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE);
   hyundai_has_lda_button = GET_FLAG(current_safety_param_sp, HYUNDAI_PARAM_SP_HAS_LDA_BUTTON);
-  hyundai_non_scc = GET_FLAG(current_safety_param_sp, HYUNDAI_PARAM_SP_NON_SCC);
+  // hyundai_non_scc = GET_FLAG(current_safety_param_sp, HYUNDAI_PARAM_SP_NON_SCC);
 
   hyundai_last_button_interaction = HYUNDAI_PREV_BUTTON_SAMPLES;
 
