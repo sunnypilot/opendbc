@@ -55,6 +55,16 @@
     ],
     "package": "All"
   },
+  "Acura TLX 2021": {
+    "platform": "ACURA_TLX_2G",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "TLX",
+    "year": [
+      "2021"
+    ],
+    "package": "All"
+  },
   "Audi A3 2014-19": {
     "platform": "AUDI_A3_MK3",
     "make": "Audi",
@@ -189,7 +199,7 @@
       "2022",
       "2023"
     ],
-    "package": "Premier or Premier Redline Trim without Super Cruise Package"
+    "package": "Premier or Premier Redline Trim, without Super Cruise Package"
   },
   "Chevrolet Bolt EV 2022-23": {
     "platform": "CHEVROLET_BOLT_EUV",
@@ -202,6 +212,29 @@
     ],
     "package": "2LT Trim with Adaptive Cruise Control Package"
   },
+  "Chevrolet Bolt EV Non-ACC 2017": {
+    "platform": "CHEVROLET_BOLT_NON_ACC",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV Non-ACC",
+    "year": [
+      "2017"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Chevrolet Bolt EV Non-ACC 2018-21": {
+    "platform": "CHEVROLET_BOLT_NON_ACC_1ST_GEN",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV Non-ACC",
+    "year": [
+      "2018",
+      "2019",
+      "2020",
+      "2021"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
   "Chevrolet Equinox 2019-22": {
     "platform": "CHEVROLET_EQUINOX",
     "make": "Chevrolet",
@@ -212,6 +245,23 @@
       "2020",
       "2021",
       "2022"
+    ],
+    "package": "Adaptive Cruise Control (ACC)"
+  },
+  "Chevrolet Malibu Non-ACC 2016-23": {
+    "platform": "CHEVROLET_MALIBU_NON_ACC_9TH_GEN",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Malibu Non-ACC",
+    "year": [
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023"
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
@@ -971,13 +1021,14 @@
     ],
     "package": "All"
   },
-  "Honda Civic Hatchback Hybrid 2025": {
+  "Honda Civic Hatchback Hybrid 2025-26": {
     "platform": "HONDA_CIVIC_2022",
     "make": "Honda",
     "brand": "honda",
     "model": "Civic Hatchback Hybrid",
     "year": [
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "All"
   },
@@ -991,13 +1042,14 @@
     ],
     "package": "All"
   },
-  "Honda Civic Hybrid 2025": {
+  "Honda Civic Hybrid 2025-26": {
     "platform": "HONDA_CIVIC_2022",
     "make": "Honda",
     "brand": "honda",
     "model": "Civic Hybrid",
     "year": [
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "All"
   },
@@ -1040,7 +1092,7 @@
     ],
     "package": "Honda Sensing"
   },
-  "Honda CR-V 2023-25": {
+  "Honda CR-V 2023-26": {
     "platform": "HONDA_CRV_6G",
     "make": "Honda",
     "brand": "honda",
@@ -1048,7 +1100,8 @@
     "year": [
       "2023",
       "2024",
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "All"
   },
@@ -1159,6 +1212,16 @@
     ],
     "package": "All"
   },
+  "Honda N-Box 2018": {
+    "platform": "HONDA_NBOX_2G",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "N-Box",
+    "year": [
+      "2018"
+    ],
+    "package": "All"
+  },
   "Honda Odyssey 2018-20": {
     "platform": "HONDA_ODYSSEY",
     "make": "Honda",
@@ -1170,6 +1233,21 @@
       "2020"
     ],
     "package": "Honda Sensing"
+  },
+  "Honda Odyssey 2021-26": {
+    "platform": "HONDA_ODYSSEY_5G_MMR",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Odyssey",
+    "year": [
+      "2021",
+      "2022",
+      "2023",
+      "2024",
+      "2025",
+      "2026"
+    ],
+    "package": "All"
   },
   "Honda Passport 2019-25": {
     "platform": "HONDA_PILOT",
@@ -1184,6 +1262,16 @@
       "2023",
       "2024",
       "2025"
+    ],
+    "package": "All"
+  },
+  "Honda Passport 2026": {
+    "platform": "HONDA_PASSPORT_4G",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Passport",
+    "year": [
+      "2026"
     ],
     "package": "All"
   },
@@ -1889,6 +1977,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Kia Forte Non-SCC 2019": {
+    "platform": "KIA_FORTE_2019_NON_SCC",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Forte Non-SCC",
+    "year": [
+      "2019"
+    ],
+    "package": "No Smart Cruise Control (Non-SCC)"
+  },
   "Kia K5 2021-24": {
     "platform": "KIA_K5_2021",
     "make": "Kia",
@@ -2562,14 +2660,15 @@
     ],
     "package": "All"
   },
-  "Nissan Altima 2019-20": {
+  "Nissan Altima 2019-20, 2024": {
     "platform": "NISSAN_ALTIMA",
     "make": "Nissan",
     "brand": "nissan",
     "model": "Altima",
     "year": [
       "2019",
-      "2020"
+      "2020",
+      "2024"
     ],
     "package": "ProPILOT Assist"
   },
@@ -3031,13 +3130,14 @@
     ],
     "package": "All"
   },
-  "Tesla Model Y (with HW4) 2024": {
+  "Tesla Model Y (with HW4) 2024-25": {
     "platform": "TESLA_MODEL_Y",
     "make": "Tesla",
     "brand": "tesla",
     "model": "Model Y (with HW4)",
     "year": [
-      "2024"
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -3582,16 +3682,6 @@
       "2021",
       "2022",
       "2023"
-    ],
-    "package": "All"
-  },
-  "Toyota Wildlander PHEV 2021": {
-    "platform": "TOYOTA_WILDLANDER",
-    "make": "Toyota",
-    "brand": "toyota",
-    "model": "Wildlander PHEV",
-    "year": [
-      "2021"
     ],
     "package": "All"
   },

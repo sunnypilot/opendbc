@@ -1,6 +1,6 @@
 #pragma once
 
-#include "opendbc/safety/safety_declarations.h"
+#include "opendbc/safety/declarations.h"
 
 #define NISSAN_COMMON_RX_CHECKS                                                                                                                 \
   {.msg = {{0x2, 0, 5, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                     \
@@ -148,9 +148,9 @@ static safety_config nissan_init(uint16_t param) {
   };
 
   // EPS Location. false = V-CAN, true = C-CAN
-  const int NISSAN_PARAM_ALT_EPS_BUS = 1;
+  const uint16_t NISSAN_PARAM_ALT_EPS_BUS = 1;
 
-  const int NISSAN_PARAM_SP_LEAF = 1;
+  const uint16_t NISSAN_PARAM_SP_LEAF = 1;
 
   nissan_alt_eps = GET_FLAG(param, NISSAN_PARAM_ALT_EPS_BUS);
   const bool nissan_leaf = GET_FLAG(current_safety_param_sp, NISSAN_PARAM_SP_LEAF);
