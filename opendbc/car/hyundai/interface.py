@@ -195,6 +195,10 @@ class CarInterface(CarInterfaceBase):
       stock_cp.minSteerSpeed = 0.0
       stock_cp.flags &= ~HyundaiFlags.MIN_STEER_32_MPH.value
 
+    # port extensions - disable for TICI
+    if ret.flags & HyundaiFlagsSP.NON_SCC:
+      stock_cp.dashcamOnly = True
+
     return ret
 
   @staticmethod

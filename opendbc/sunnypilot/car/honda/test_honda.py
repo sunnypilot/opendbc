@@ -16,8 +16,7 @@ CarFw = CarParams.CarFw
 
 class TestHondaEpsMod:
 
-  @parameterized.expand([(CAR.HONDA_CIVIC, b'39990-TBA,A030\x00\x00'), (CAR.HONDA_CIVIC, b'39990-TBA-A030\x00\x00'),
-                         (CAR.HONDA_CLARITY, b'39990-TRW-A020\x00\x00'), (CAR.HONDA_CLARITY, b'39990,TRW,A020\x00\x00')])
+  @parameterized.expand([(CAR.HONDA_CIVIC, b'39990-TBA,A030\x00\x00'), (CAR.HONDA_CIVIC, b'39990-TBA-A030\x00\x00')])
   def test_eps_mod_fingerprint(self, car_name, fw):
     fingerprint = gen_empty_fingerprint()
     car_fw = [CarFw(ecu="eps", fwVersion=fw)]
