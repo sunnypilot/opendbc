@@ -1,6 +1,6 @@
 #pragma once
 
-#include "opendbc/safety/safety_declarations.h"
+#include "opendbc/safety/declarations.h"
 
 // TODO: do checksum and counter checks. Add correct timestep, 0.1s for now.
 #define GM_COMMON_RX_CHECKS \
@@ -28,6 +28,7 @@ typedef enum {
 } GmHardware;
 static GmHardware gm_hw = GM_ASCM;
 static bool gm_pcm_cruise = false;
+// static bool gm_non_acc = false;
 
 static void gm_rx_hook(const CANPacket_t *msg) {
   const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
@@ -218,6 +219,9 @@ static safety_config gm_init(uint16_t param) {
   gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
 #endif
   gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long;
+
+  // const uint16_t GM_PARAM_SP_NON_ACC = 1;
+  // gm_non_acc = GET_FLAG(current_safety_param_sp, GM_PARAM_SP_NON_ACC);
 
   safety_config ret;
   if (gm_hw == GM_CAM) {

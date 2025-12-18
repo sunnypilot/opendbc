@@ -2,18 +2,21 @@ from opendbc.can import CANPacker
 from opendbc.car import Bus, DT_CTRL
 from opendbc.car.lateral import apply_meas_steer_torque_limits
 from opendbc.car.chrysler import chryslercan
-from opendbc.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
+from opendbc.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags, RAM_DT
 from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.chrysler.carcontroller_ext import CarControllerExt
+from opendbc.sunnypilot.car.chrysler.icbm import IntelligentCruiseButtonManagementInterface
 from opendbc.sunnypilot.car.chrysler.mads import MadsCarController
+from opendbc.sunnypilot.car.chrysler.values_ext import ChryslerFlagsSP
 
 
-class CarController(CarControllerBase, MadsCarController, CarControllerExt):
+class CarController(CarControllerBase, MadsCarController, CarControllerExt, IntelligentCruiseButtonManagementInterface):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     MadsCarController.__init__(self)
     CarControllerExt.__init__(self, CP, CP_SP)
+    IntelligentCruiseButtonManagementInterface.__init__(self, CP, CP_SP)
     self.apply_torque_last = 0
 
     self.hud_count = 0
@@ -56,7 +59,9 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt):
 
       # TODO: can we make this more sane? why is it different for all the cars?
       lkas_control_bit = self.lkas_control_bit_prev
-      if CS.out.vEgo > self.CP.minSteerSpeed:
+      if self.CP_SP.flags & ChryslerFlagsSP.NO_MIN_STEERING_SPEED or self.CP.carFingerprint in RAM_DT:
+        lkas_control_bit = CarControllerExt.get_lkas_control_bit(self, CS, CC, lkas_control_bit)
+      elif CS.out.vEgo > self.CP.minSteerSpeed:
         lkas_control_bit = True
       elif self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:
         if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
@@ -64,8 +69,6 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt):
       elif self.CP.carFingerprint in RAM_CARS:
         if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
           lkas_control_bit = False
-
-      lkas_control_bit = CarControllerExt.get_lkas_control_bit(self, CS, CC, lkas_control_bit, self.lkas_control_bit_prev)
 
       # EPS faults if LKAS re-enables too quickly
       lkas_control_bit = lkas_control_bit and (self.frame - self.last_lkas_falling_edge > 200)
@@ -85,6 +88,9 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt):
 
     if self.frame % 10 == 0 and self.CP.carFingerprint not in RAM_CARS:
       can_sends.append(MadsCarController.create_lkas_heartbit(self.packer, CS.lkas_heartbit, self.mads))
+
+    # Intelligent Cruise Button Management
+    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame))
 
     self.frame += 1
 

@@ -4,6 +4,8 @@ from opendbc.car.tesla.carcontroller import CarController
 from opendbc.car.tesla.carstate import CarState
 from opendbc.car.tesla.values import TeslaSafetyFlags, CAR
 
+from opendbc.sunnypilot.car.tesla.values import TeslaFlagsSP, TeslaSafetyFlagsSP
+
 
 class CarInterface(CarInterfaceBase):
   CarState = CarState
@@ -37,8 +39,12 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
-                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
 
     stock_cp.enableBsm = True
+
+    if 0x3DF in fingerprint[1]:
+      ret.flags |= TeslaFlagsSP.HAS_VEHICLE_BUS.value
+      ret.safetyParam |= TeslaSafetyFlagsSP.HAS_VEHICLE_BUS
 
     return ret

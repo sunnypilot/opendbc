@@ -1,6 +1,6 @@
 #pragma once
 
-#include "opendbc/safety/safety_declarations.h"
+#include "opendbc/safety/declarations.h"
 
 // Stock longitudinal
 #define TOYOTA_BASE_TX_MSGS \
@@ -14,7 +14,7 @@
 #define TOYOTA_COMMON_SECOC_TX_MSGS \
   TOYOTA_BASE_TX_MSGS \
   {0x2E4, 0, 8, .check_relay = true}, {0x131, 0, 8, .check_relay = true}, \
-  {0x343, 0, 8, .check_relay = false},  /* ACC cancel cmd */  \
+  {0x343, 0, 8, .check_relay = false},  /* ACC cancel cmd */ \
 
 #define TOYOTA_COMMON_LONG_TX_MSGS \
   TOYOTA_COMMON_TX_MSGS \
@@ -31,10 +31,10 @@
   /* ACC */                            \
   {0x343, 0, 8, .check_relay = true},  \
 
-#define TOYOTA_COMMON_SECOC_LONG_TX_MSGS                    \
-  TOYOTA_COMMON_SECOC_TX_MSGS                               \
-  {0x343, 0, 8, .check_relay = true},  /* ACC */            \
-  {0x183, 0, 8, .check_relay = true},  /* ACC_CONTROL_2 */  \
+#define TOYOTA_COMMON_SECOC_LONG_TX_MSGS \
+  TOYOTA_COMMON_SECOC_TX_MSGS \
+  {0x343, 0, 8, .check_relay = true}, \
+  {0x183, 0, 8, .check_relay = true},  /* ACC_CONTROL_2 */ \
 
 #define TOYOTA_COMMON_RX_CHECKS(lta)                                                                                                       \
   {.msg = {{ 0xaa, 0, 8, 83U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
@@ -61,6 +61,9 @@
 
 #define TOYOTA_DSU_CRUISE_ADDR_CHECK                                                                                                      \
   {.msg = {{0x365, 0, 7, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 5U}, { 0 }, { 0 }}},  \
+
+#define TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK                                                   \
+  {.msg = {{0x201, 0, 6, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
 
 static bool toyota_secoc = false;
 static bool toyota_alt_brake = false;
@@ -91,11 +94,12 @@ static bool toyota_get_quality_flag_valid(const CANPacket_t *msg) {
   return valid;
 }
 
-static int toyota_get_longitudinal_desired_accel_tx(const CANPacket_t *msg) {
-  int desired_accel = (msg->data[0] << 8) | msg->data[1];
-  desired_accel = to_signed(desired_accel, 16);
+static int TOYOTA_GET_INTERCEPTOR(const CANPacket_t *msg) {
+  uint16_t val1 = (uint16_t)((uint16_t)msg->data[0] << 8U) | (uint16_t)msg->data[1];
+  uint16_t val2 = (uint16_t)((uint16_t)msg->data[2] << 8U) | (uint16_t)msg->data[3];
+  uint16_t avg  = (uint16_t)((val1 + val2) / 2U);
 
-  return desired_accel;
+  return (int)avg;
 }
 
 static void toyota_rx_hook(const CANPacket_t *msg) {
@@ -149,7 +153,10 @@ static void toyota_rx_hook(const CANPacket_t *msg) {
       if (msg->addr == 0x1D2U) {
         bool cruise_engaged = GET_BIT(msg, 5U);  // PCM_CRUISE.CRUISE_ACTIVE
         pcm_cruise_check(cruise_engaged);
-        gas_pressed = !GET_BIT(msg, 4U);  // PCM_CRUISE.GAS_RELEASED
+
+        if (!enable_gas_interceptor) {
+          gas_pressed = !GET_BIT(msg, 4U);  // PCM_CRUISE.GAS_RELEASED
+        }
       }
       if (!toyota_alt_brake && (msg->addr == 0x226U)) {
         brake_pressed = GET_BIT(msg, 37U);  // BRAKE_MODULE.BRAKE_PRESSED (toyota_nodsu_pt_generated.dbc)
@@ -179,6 +186,19 @@ static void toyota_rx_hook(const CANPacket_t *msg) {
 
     if (msg->addr == 0x365U) {
       acc_main_on = GET_BIT(msg, 0U);
+    }
+
+    // sample gas interceptor
+    if (msg->addr == 0x201U) {
+      // panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
+      // If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
+      // Threshold calculated from DBC gains: round((((15 + 75.555) / 0.159375) + ((15 + 151.111) / 0.159375)) / 2) = 805
+      const int toyota_gas_interceptor_thrsld = 805;
+
+      int gas_interceptor = TOYOTA_GET_INTERCEPTOR(msg);
+      gas_pressed = gas_interceptor > toyota_gas_interceptor_thrsld;
+
+      gas_interceptor_prev = gas_interceptor;
     }
   }
 }
@@ -230,9 +250,14 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
   if (msg->bus == 0U) {
     // ACCEL: safety check on byte 1-2
     if (msg->addr == 0x343U) {
-      int desired_accel = toyota_get_longitudinal_desired_accel_tx(msg);
+      int desired_accel = (msg->data[0] << 8) | msg->data[1];
+      desired_accel = to_signed(desired_accel, 16);
 
       bool violation = false;
+      if (toyota_secoc) {
+        // SecOC cars move accel to 0x183. Only allow inactive accel on 0x343 to match stock behavior
+        violation = desired_accel != TOYOTA_LONG_LIMITS.inactive_accel;
+      }
       violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
 
       // only ACC messages that cancel are allowed when openpilot is not controlling longitudinal
@@ -241,10 +266,6 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
         if (!cancel_req) {
           violation = true;
         }
-      }
-
-      // block ACC messages when openpilot is not controlling longitudinal or is a SecOC car
-      if (toyota_stock_longitudinal || toyota_secoc) {
         if (desired_accel != TOYOTA_LONG_LIMITS.inactive_accel) {
           violation = true;
         }
@@ -255,16 +276,11 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
       }
     }
 
-    // ACCEL: safety check on byte 1-2 for SecOC car
     if (msg->addr == 0x183U) {
-      int desired_accel = toyota_get_longitudinal_desired_accel_tx(msg);
+      int desired_accel = (msg->data[0] << 8) | msg->data[1];
+      desired_accel = to_signed(desired_accel, 16);
 
-      bool violation = false;
-      violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
-
-      if (violation) {
-        tx = false;
-      }
+      tx = !longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
     }
 
     // AEB: block all actuation. only used when DSU is unplugged
@@ -312,12 +328,12 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
         }
 
         // check if we should wind down torque
-        int driver_torque = MIN(ABS(torque_driver.min), ABS(torque_driver.max));
+        int driver_torque = SAFETY_MIN(SAFETY_ABS(torque_driver.min), SAFETY_ABS(torque_driver.max));
         if ((driver_torque > TOYOTA_LTA_MAX_DRIVER_TORQUE) && (torque_wind_down != 0)) {
           tx = false;
         }
 
-        int eps_torque = MIN(ABS(torque_meas.min), ABS(torque_meas.max));
+        int eps_torque = SAFETY_MIN(SAFETY_ABS(torque_meas.min), SAFETY_ABS(torque_meas.max));
         if ((eps_torque > TOYOTA_LTA_MAX_MEAS_TORQUE) && (torque_wind_down != 0)) {
           tx = false;
         }
@@ -354,6 +370,13 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
         }
       }
     }
+
+    // GAS PEDAL: safety check
+    if (msg->addr == 0x200U) {
+      if (longitudinal_interceptor_checks(msg)) {
+        tx = false;
+      }
+    }
   }
 
   // UDS: Only tester present ("\x0F\x02\x3E\x00\x00\x00\x00\x00") allowed on diagnostics address
@@ -385,6 +408,11 @@ static safety_config toyota_init(uint16_t param) {
     TOYOTA_COMMON_SECOC_LONG_TX_MSGS
   };
 
+  static const CanMsg TOYOTA_INTERCEPTOR_TX_MSGS[] = {
+    TOYOTA_COMMON_LONG_TX_MSGS
+    {0x200, 0, 6, .check_relay = false},  // gas interceptor
+  };
+
   // safety param flags
   // first byte is for EPS factor, second is for flags
   const uint32_t TOYOTA_PARAM_OFFSET = 8U;
@@ -393,7 +421,8 @@ static safety_config toyota_init(uint16_t param) {
   const uint32_t TOYOTA_PARAM_STOCK_LONGITUDINAL = 2UL << TOYOTA_PARAM_OFFSET;
   const uint32_t TOYOTA_PARAM_LTA = 4UL << TOYOTA_PARAM_OFFSET;
 
-  const int TOYOTA_PARAM_SP_UNSUPPORTED_DSU = 1;
+  const uint16_t TOYOTA_PARAM_SP_UNSUPPORTED_DSU = 1;
+  const uint16_t TOYTOA_PARAM_SP_GAS_INTERCEPTOR = 2;
 
 #ifdef ALLOW_DEBUG
   const uint32_t TOYOTA_PARAM_SECOC = 8UL << TOYOTA_PARAM_OFFSET;
@@ -406,6 +435,12 @@ static safety_config toyota_init(uint16_t param) {
   toyota_dbc_eps_torque_factor = param & TOYOTA_EPS_FACTOR;
 
   const bool toyota_unsupported_dsu = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_UNSUPPORTED_DSU);
+  enable_gas_interceptor = GET_FLAG(current_safety_param_sp, TOYTOA_PARAM_SP_GAS_INTERCEPTOR);
+
+  // gas interceptor should not be used if openpilot is not controlling longitudinal or is a TSK car
+  if (toyota_stock_longitudinal || toyota_secoc) {
+    enable_gas_interceptor = false;
+  }
 
   safety_config ret;
   if (toyota_secoc) {
@@ -466,6 +501,55 @@ static safety_config toyota_init(uint16_t param) {
         SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_rx_checks, ret);
       } else {
         SET_RX_CHECKS(toyota_lka_alt_brake_rx_checks, ret);
+      }
+    }
+  }
+
+  if (enable_gas_interceptor) {
+    SET_TX_MSGS(TOYOTA_INTERCEPTOR_TX_MSGS, ret);
+
+    if (toyota_lta) {
+      static RxCheck toyota_lta_interceptor_rx_checks[] = {
+        TOYOTA_RX_CHECKS(true)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+
+      SET_RX_CHECKS(toyota_lta_interceptor_rx_checks, ret);
+    } else {
+      static RxCheck toyota_lka_interceptor_rx_checks[] = {
+        TOYOTA_RX_CHECKS(false)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+      static RxCheck toyota_lka_alt_brake_interceptor_rx_checks[] = {
+        TOYOTA_ALT_BRAKE_RX_CHECKS(false)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+      static RxCheck toyota_lka_unsupported_dsu_interceptor_rx_checks[] = {
+        TOYOTA_RX_CHECKS(false)
+        TOYOTA_DSU_CRUISE_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+      static RxCheck toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks[] = {
+        TOYOTA_ALT_BRAKE_RX_CHECKS(false)
+        TOYOTA_DSU_CRUISE_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+
+      if (!toyota_alt_brake) {
+        if (toyota_unsupported_dsu) {
+          SET_RX_CHECKS(toyota_lka_unsupported_dsu_interceptor_rx_checks, ret);
+        } else {
+          SET_RX_CHECKS(toyota_lka_interceptor_rx_checks, ret);
+        }
+      } else {
+        if (toyota_unsupported_dsu) {
+          SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks, ret);
+        } else {
+          SET_RX_CHECKS(toyota_lka_alt_brake_interceptor_rx_checks, ret);
+        }
       }
     }
   }
