@@ -170,4 +170,4 @@ def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, fric
 
 
 def get_friction_threshold(v_ego: float) -> float:
-  return float(np.interp(v_ego,[0, 10, 20],[0.56666, 0.43333, 0.3]))
+  return float(np.interp(v_ego,[0, 10, 20, 30],[0.56666, 0.43333, 0.3, 0.2]))
