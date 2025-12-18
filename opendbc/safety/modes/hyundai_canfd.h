@@ -203,7 +203,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
       .steer_ratio = 13.7,
       .wheelbase = 2.756,
     };
-  
+
 
   bool tx = true;
 
@@ -284,9 +284,9 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
 }
 
 static safety_config hyundai_canfd_init(uint16_t param) {
-  const int HYUNDAI_PARAM_CANFD_LKA_STEERING_ALT = 128;
-  const int HYUNDAI_PARAM_CANFD_ALT_BUTTONS = 32;
-  const int HYUNDAI_PARAM_CANFD_ANGLE_STEERING = 1024;
+  const uint16_t HYUNDAI_PARAM_CANFD_LKA_STEERING_ALT = 128;
+  const uint16_t HYUNDAI_PARAM_CANFD_ALT_BUTTONS = 32;
+  const uint16_t HYUNDAI_PARAM_CANFD_ANGLE_STEERING = 1024;
 
   static const CanMsg HYUNDAI_CANFD_LKA_STEERING_TX_MSGS[] = {
     HYUNDAI_CANFD_LKA_STEERING_COMMON_TX_MSGS(0, 1)
