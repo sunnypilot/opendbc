@@ -14,6 +14,9 @@ class ToyotaFlagsSP(IntFlag):
   ZSS = 4
   STOCK_LONGITUDINAL = 8
   STOP_AND_GO_HACK = 16
+  SP_ENHANCED_BSM = 32
+  SP_NEED_DEBUG_BSM = 64
+  SP_AUTO_BRAKE_HOLD = 128
 
 
 class ToyotaSafetyFlagsSP:
