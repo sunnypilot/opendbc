@@ -302,7 +302,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     enable_gas_interceptor = true;
   }
 
-  gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long && !gm_pedal_long && !gm_sp_gas_interceptor;
+  gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long && !gm_pedal_long && !gm_sp_gas_interceptor && !gm_non_acc;
 
   safety_config ret;
   if (gm_hw == GM_ASCM) {
