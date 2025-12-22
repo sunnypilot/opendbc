@@ -255,6 +255,10 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     values = {"ENABLE": 1, "PEDAL_COUNTER": 0}
     self.assertFalse(self._tx(self.packer.make_can_msg_safety("GAS_COMMAND", 0, values)))
 
+  def _pcm_status_msg(self, enable):
+    values = {"CruiseActive": enable}
+    return self.packer.make_can_msg_safety("ECMCruiseControl", 0, values)
+
 
 class TestGmCameraNonACCPedalSafety(TestGmCameraSafety):
   TX_MSGS = [[0x180, 0], [0x200, 0], [0xBD, 0], [0x1F5, 0], [0x1E1, 0], [0x1E1, 2], [0x184, 2]]
@@ -335,6 +339,10 @@ class TestGmCameraNonACCPedalSafety(TestGmCameraSafety):
     self._rx(self.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
     # Message should be processed without errors - this covers lines 49-54
     self.assertTrue(True)
+
+  def _pcm_status_msg(self, enable):
+    values = {"CruiseActive": enable}
+    return self.packer.make_can_msg_safety("ECMCruiseControl", 0, values)
 
   def test_gas_interceptor_addr_check(self):
     # Test that gas interceptor logic only runs for 0x201 messages

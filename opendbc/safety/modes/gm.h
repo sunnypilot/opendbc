@@ -176,10 +176,10 @@ static bool gm_tx_hook(const CANPacket_t *msg) {
   }
 
   // BUTTONS: used for resume spamming and cruise cancellation with stock longitudinal
-  if ((msg->addr == 0x1E1U) && (gm_pcm_cruise || gm_pedal_long)) {
+  if ((msg->addr == 0x1E1U) && (gm_pcm_cruise || gm_pedal_long || gm_non_acc)) {
     int button = (msg->data[5] >> 4) & 0x7U;
 
-    bool allowed_cancel = (button == 6) && cruise_engaged_prev;
+    bool allowed_cancel = (gm_pcm_cruise || gm_pedal_long) && (button == 6) && cruise_engaged_prev;
     if (!allowed_cancel) {
       tx = false;
     }
