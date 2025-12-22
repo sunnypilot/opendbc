@@ -7,7 +7,7 @@ See the LICENSE.md file in the root directory for more details.
 
 from enum import StrEnum
 
-from opendbc.car import Bus, structs
+from opendbc.car import Bus, structs, create_button_events
 from opendbc.can.parser import CANParser
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
@@ -19,6 +19,7 @@ class CarStateExt:
     self.CP_SP = CP_SP
 
     self.aBasis = 0.0
+    self.prev_custom_button = 0
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -84,3 +85,12 @@ class CarStateExt:
     self.aBasis = cp.vl["TCS"]["aBasis"]
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
+
+  def update_custom_button(self, ret: structs.CarState, cp) -> list:
+    events = []
+    if self.CP_SP.flags & HyundaiFlagsSP.HAS_CUSTOM_BUTTON:
+      prev_button = getattr(self, "prev_custom_button", 0)
+      curr_button = cp.vl["STEERING_WHEEL_MEDIA_BUTTONS"]["CUSTOM_BUTTON"]
+      self.prev_custom_button = curr_button
+      events = create_button_events(curr_button, prev_button, {1: structs.CarState.ButtonEvent.Type.altButton2})
+    return events
