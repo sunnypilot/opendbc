@@ -22,6 +22,9 @@ class GasInterceptorCarController:
     self.frame = 0
     self.prev_op_enabled = False
 
+  def pedal_interceptor_active(self) -> bool:
+    return self.CP_SP.enableGasInterceptor and bool(self.CP_SP.flags & GMFlagsSP.NON_ACC)
+
   @staticmethod
   def calc_pedal_command(accel: float, long_active: bool, v_ego: float) -> float:
     if not long_active:
@@ -35,6 +38,26 @@ class GasInterceptorCarController:
 
     return pedal_gas
 
+  def handle_gas_and_regen(self, can_sends, gas_regen_active: bool, at_full_stop: bool, idx: int) -> None:
+    """
+    Gate regen command when using a pedal interceptor.
+    This also ensures brake commands are suppressed for pedal-only long control.
+    """
+    if self.pedal_interceptor_active():
+      self.apply_brake = 0
+      return
+
+    can_sends.append(
+      gmcan.create_gas_regen_command(
+        self.packer_pt,
+        CanBus.POWERTRAIN,
+        self.apply_gas,
+        idx,
+        gas_regen_active,
+        at_full_stop,
+      )
+    )
+
   def extend_with_interceptor(self, CC, CS, actuators, can_sends):
     """
     Inject NON_ACC / pedal interceptor behavior.
@@ -42,7 +65,7 @@ class GasInterceptorCarController:
     """
 
     # Only run this path for NON_ACC (camera long / pedal cars) with a detected interceptor
-    if not (self.CP.enableGasInterceptorDEPRECATED and (self.CP_SP.flags & GMFlagsSP.NON_ACC)):
+    if not self.pedal_interceptor_active():
       return
 
     # Gas/regen/longitudinal pedal command @25Hz (every 4 frames)
@@ -69,7 +92,7 @@ class GasInterceptorCarController:
       )
 
     # While cruise is enabled, send CANCEL to prevent stock ACC from taking over
-    if self.CP.enableGasInterceptorDEPRECATED and CS.out.cruiseState.enabled:
+    if self.CP_SP.enableGasInterceptor and CS.out.cruiseState.enabled:
       send_interval = (self.frame - self.last_button_frame) * DT_CTRL > 0.04
 
       if CC.enabled and self.prev_op_enabled and send_interval:

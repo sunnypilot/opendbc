@@ -103,8 +103,6 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
     ret.enableBsm = 0x142 in fingerprint[CanBus.POWERTRAIN]
-    if PEDAL_MSG in fingerprint[0]:
-      ret.enableGasInterceptorDEPRECATED = True
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
@@ -235,26 +233,15 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.dashcamOnly = True  # Needs steerRatio, tireStiffness, and lat accel factor tuning
 
-    if ret.enableGasInterceptorDEPRECATED:
-      ret.networkLocation = NetworkLocation.fwdCamera
-      ret.alphaLongitudinalAvailable = True
-      ret.minEnableSpeed = -1
-      ret.pcmCruise = False
-      ret.openpilotLongitudinalControl = True
-      ret.autoResumeSng = True
-      ret.safetyConfigs[0].safetyParam |= GMSafetyFlagsSP.GAS_INTERCEPTOR.value
-      ret.safetyConfigs[0].safetyParam |= GMSafetyFlagsSP.PEDAL_LONG.value
-
-      # Pedal interceptor tuning
-      ret.longitudinalTuning.kiBP = [0., 3., 6., 35.]
-      ret.longitudinalTuning.kiV = [0.125, 0.175, 0.225, 0.33]
-      ret.stoppingDecelRate = 0.8
-
     return ret
 
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
+    # Check if pedal interceptor is present
+    has_pedal = PEDAL_MSG in fingerprint[0]
+    ret.enableGasInterceptor = has_pedal and bool(ret.flags & GMFlagsSP.NON_ACC)
+
     if ret.flags & GMFlagsSP.NON_ACC:
       stock_cp.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
@@ -271,17 +258,21 @@ class CarInterface(CarInterfaceBase):
       stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
       stock_cp.minSteerSpeed = 3.0   # ~6 mph
 
-      # Check if pedal interceptor is present
-      has_pedal = PEDAL_MSG in fingerprint[0]
-
-      if has_pedal:
+      if ret.enableGasInterceptor:
         # With pedal interceptor: enable alpha long, disable PCM cruise
         stock_cp.alphaLongitudinalAvailable = True
         stock_cp.openpilotLongitudinalControl = True
         stock_cp.pcmCruise = False
         stock_cp.minEnableSpeed = -1.
+        stock_cp.networkLocation = NetworkLocation.fwdCamera
+        stock_cp.autoResumeSng = True
         ret.safetyParam |= GMSafetyFlagsSP.GAS_INTERCEPTOR.value
         ret.safetyParam |= GMSafetyFlagsSP.PEDAL_LONG.value
+
+        # Pedal interceptor tuning
+        stock_cp.longitudinalTuning.kiBP = [0., 3., 6., 35.]
+        stock_cp.longitudinalTuning.kiV = [0.125, 0.175, 0.225, 0.33]
+        stock_cp.stoppingDecelRate = 0.8
       else:
         # Without pedal interceptor: disable longitudinal
         stock_cp.alphaLongitudinalAvailable = False

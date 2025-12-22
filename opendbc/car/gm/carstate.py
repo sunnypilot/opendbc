@@ -102,8 +102,6 @@ class CarState(CarStateBase, CarStateExt):
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
 
     ret.gasPressed = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254. > 1e-5
-    if self.CP.enableGasInterceptorDEPRECATED:
-      ret = CarStateExt.update_gas_pressed(self, ret, pt_cp)
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
     ret.steeringRateDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelRate"]
@@ -182,10 +180,8 @@ class CarState(CarStateBase, CarStateExt):
       ("ASCMLKASteeringCmd", float('nan')),
     ]
 
-    cam_messages = []
-
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
-      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, 2),
+      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 2),
       Bus.loopback: CANParser(DBC[CP.carFingerprint][Bus.pt], loopback_messages, 128),
     }

@@ -21,28 +21,27 @@ class CarStateExt:
 
   @staticmethod
   def extend_pt_can_messages(CP: structs.CarParams, CP_SP: structs.CarParamsSP, pt_messages: list[tuple[str, float]]) -> None:
-    if CP.enableGasInterceptorDEPRECATED:
+    if CP_SP.enableGasInterceptor:
       pt_messages.append(("GAS_SENSOR", 50))
 
   def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     pt_cp = can_parsers[Bus.pt]
+
+    if self.CP_SP.enableGasInterceptor:
+      self.update_gas_pressed(ret, pt_cp)
 
     if self.CP_SP.flags & GMFlagsSP.NON_ACC:
       ret.cruiseState.enabled = pt_cp.vl["ECMCruiseControl"]["CruiseActive"] != 0
       ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
       ret.accFaulted = False
 
-  def update_gas_pressed(self, ret: structs.CarState, pt_cp) -> structs.CarState:
+  def update_gas_pressed(self, ret: structs.CarState, pt_cp) -> None:
     """Update gas pressed for pedal interceptor vehicles"""
     from opendbc.car.gm.values import CAMERA_ACC_CAR
-    if self.CP.enableGasInterceptorDEPRECATED:
-      gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
-      # Panda 515 threshold = 10.88. Set lower to avoid panda blocking messages and GasInterceptor faulting.
-      threshold = 20 if (self.CP.carFingerprint in CAMERA_ACC_CAR or self.CP_SP.flags & GMFlagsSP.NON_ACC) else 4
-      ret.gasPressed = gas > threshold
-    else:
-      ret.gasPressed = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254. > 1e-5
-    return ret
+    gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
+    # Panda 515 threshold = 10.88. Set lower to avoid panda blocking messages and GasInterceptor faulting.
+    threshold = 20 if (self.CP.carFingerprint in CAMERA_ACC_CAR or self.CP_SP.flags & GMFlagsSP.NON_ACC) else 4
+    ret.gasPressed = gas > threshold
 
   def update_regen_braking(self, ret: structs.CarState, pt_cp) -> structs.CarState:
     """Update regen braking for pedal interceptor vehicles"""

@@ -238,6 +238,25 @@ class TestGmCameraLongitudinalEVSafety(TestGmCameraLongitudinalSafety, TestGmEVS
 
 
 class TestGmCameraNonACCSafety(TestGmCameraSafety):
+  TX_MSGS = [[0x180, 0], [0x1E1, 2], [0x184, 2]]
+  FWD_BLACKLISTED_ADDRS = {}
+  FWD_BUS_LOOKUP = {}
+  PCM_CRUISE = False  # NON_ACC cars don't use PCM cruise for control enablement
+
+  def setUp(self):
+    self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
+    self.packer_chassis = CANPackerSafety("gm_global_a_chassis")
+    self.safety = libsafety_py.libsafety
+    self.safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | self.EXTRA_SAFETY_PARAM)
+    self.safety.init_tests()
+
+  def test_no_pedal_tx(self):
+    values = {"ENABLE": 1, "PEDAL_COUNTER": 0}
+    self.assertFalse(self._tx(self.packer.make_can_msg_safety("GAS_COMMAND", 0, values)))
+
+
+class TestGmCameraNonACCPedalSafety(TestGmCameraSafety):
   TX_MSGS = [[0x180, 0], [0x200, 0], [0xBD, 0], [0x1F5, 0], [0x1E1, 0], [0x1E1, 2], [0x184, 2]]
   FWD_BLACKLISTED_ADDRS = {}
   FWD_BUS_LOOKUP = {}
@@ -405,7 +424,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     # Test gas interceptor enabled path (lines 49-53)
     # This should execute the gas interceptor calculation code
     # Use a different test class that has gas interceptor enabled
-    test_instance = TestGmCameraNonACCSafety()
+    test_instance = TestGmCameraNonACCPedalSafety()
     test_instance.setUp()
     values = {"INTERCEPTOR_GAS": 600, "INTERCEPTOR_GAS2": 500}
     test_instance._rx(test_instance.packer.make_can_msg_safety("GAS_SENSOR", 0, values))
@@ -507,7 +526,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     return self.packer.make_can_msg_safety("ECMCruiseControl", 0, values)
 
 
-class TestGmCameraEVNonACCSafety(TestGmCameraNonACCSafety, TestGmEVSafetyBase):
+class TestGmCameraEVNonACCPedalSafety(TestGmCameraNonACCPedalSafety, TestGmEVSafetyBase):
   PCM_CRUISE = False  # NON_ACC cars don't use PCM cruise for control enablement
 
   # NON_ACC cars use pedal interceptor, not PCM cruise for control enablement
