@@ -104,7 +104,7 @@ static void gm_rx_hook(const CANPacket_t *msg) {
       }
 
       // enter controls on rising edge of ACC, exit controls when ACC off
-      if (gm_pcm_cruise && !gm_non_acc) {
+      if (gm_pcm_cruise) {
         bool cruise_engaged = (msg->data[1] >> 5) != 0U;
         pcm_cruise_check(cruise_engaged);
       }
@@ -121,6 +121,9 @@ static void gm_rx_hook(const CANPacket_t *msg) {
 
     if ((msg->addr == 0x3D1U) && gm_non_acc) {
       cruise_engaged_prev = GET_BIT(msg, 39U);
+      if (!gm_pedal_long && !enable_gas_interceptor) {
+        pcm_cruise_check(cruise_engaged_prev);
+      }
     }
   }
 }
@@ -179,7 +182,7 @@ static bool gm_tx_hook(const CANPacket_t *msg) {
   if ((msg->addr == 0x1E1U) && (gm_pcm_cruise || gm_pedal_long || gm_non_acc)) {
     int button = (msg->data[5] >> 4) & 0x7U;
 
-    bool allowed_cancel = (gm_pcm_cruise || gm_pedal_long) && (button == 6) && cruise_engaged_prev;
+    bool allowed_cancel = (gm_pcm_cruise || gm_pedal_long || gm_non_acc) && (button == 6) && cruise_engaged_prev;
     if (!allowed_cancel) {
       tx = false;
     }
@@ -297,7 +300,7 @@ static const CanMsg GM_CAM_INTERCEPTOR_TX_MSGS[] = {
     enable_gas_interceptor = true;
   }
 
-  gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long && !gm_pedal_long && !gm_sp_gas_interceptor && !gm_non_acc;
+  gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long && !gm_pedal_long && !gm_sp_gas_interceptor;
 
   safety_config ret;
   if (gm_hw == GM_ASCM) {
