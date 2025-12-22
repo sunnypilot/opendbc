@@ -32,7 +32,6 @@ non_tested_cars = [
   HONDA.HONDA_NBOX_2G,
   HONDA.ACURA_MDX_4G_MMR,
   HONDA.HONDA_CITY_7G,
-  VOLKSWAGEN.PORSCHE_MACAN_MK1,  # placeholder, replace after merge
 
   # These had their DSUs unplugged, need new routes
   # TOYOTA.LEXUS_ES  # hybrid
