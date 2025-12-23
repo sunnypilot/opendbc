@@ -284,4 +284,7 @@ class CarInterface(CarInterfaceBase):
                      CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN, CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
       stock_cp.dashcamOnly = True
 
+    # Cast flags to primitives for capnp conversion
+    ret.flags = int(ret.flags)
+    ret.safetyParam = int(ret.safetyParam)
     return ret
