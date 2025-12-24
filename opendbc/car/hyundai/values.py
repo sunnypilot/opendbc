@@ -225,8 +225,7 @@ class CAR(Platforms):
   )
   HYUNDAI_AZERA_HEV_7TH_GEN = HyundaiCanFDPlatformConfig(
     [
-      HyundaiCarDocs("Hyundai AZERA Hybrid (with HDA II & LFA2) 2025", "Highway Driving 
-Assist II & Lane Follow Assist 2", car_parts=CarParts.common([CarHarness.hyundai_s])),
+      HyundaiCarDocs("Hyundai AZERA Hybrid (with HDA II & LFA2) 2025", "Highway Driving Assist II & Lane Follow Assist 2", car_parts=CarParts.common([CarHarness.hyundai_s])),
     ],
     CarSpecs(mass=1720, wheelbase=2.895, steerRatio=13.5),
     flags=HyundaiFlags.CANFD_ANGLE_STEERING,
