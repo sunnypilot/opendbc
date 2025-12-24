@@ -41,7 +41,7 @@ FW_VERSIONS = {
       b'\xf1\x00IGhe SCC FHCUP      1.00 1.02 99110-M9000         ',
     ],
   },
-  CAR.HYUNDAI_AZERA_7TH_GEN: {
+  CAR.HYUNDAI_AZERA_HEV_7TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00GN7HMFC  AT KOR LHD 1.00 1.01 99211-N1110 240423',
     ],
