@@ -230,17 +230,7 @@ Assist II & Lane Follow Assist 2", car_parts=CarParts.common([CarHarness.hyundai
     ],
     CarSpecs(mass=1720, wheelbase=2.895, steerRatio=13.5),
     flags=HyundaiFlags.CANFD_ANGLE_STEERING,
-  )
-    
-
-    
-          | HyundaiFlags.CANFD_ANGLE_STEERING  # LFA2의 핵심: 각도 제어 방식 사용
-          | HyundaiFlags.CANFD_CAMERA_SCC      # HDA2 차량은 주로 카메라가 SCC를 주도함
-          | HyundaiFlags.CANFD_ALT_BUTTONS     # 신형 스티어링 휠 버튼 신호 대응
-          | HyundaiFlags.CANFD_ALT_GEARS       # 컬럼식 기어(Shift-by-wire) 대응
-
-
-    
+  ) 
   HYUNDAI_ELANTRA = HyundaiPlatformConfig(
     [
       # TODO: 2017-18 could be Hyundai G
