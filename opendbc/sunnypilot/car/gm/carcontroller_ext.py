@@ -19,7 +19,6 @@ class GasInterceptorCarController:
     self.last_button_frame = 0
     self.CP = CP
     self.CP_SP = CP_SP
-    self.frame = 0
     self.prev_op_enabled = False
 
   def pedal_interceptor_active(self) -> bool:
