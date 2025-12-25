@@ -99,9 +99,9 @@ class CarState(CarStateBase):
 
       ret.stockFcw = bool(ext_cp.vl["ACC_10"]["AWV2_Freigabe"])
       ret.stockAeb = bool(ext_cp.vl["ACC_10"]["ANB_Teilbremsung_Freigabe"]) or bool(ext_cp.vl["ACC_10"]["ANB_Zielbremsung_Freigabe"])
-
       self.acc_type = ext_cp.vl["ACC_06"]["ACC_Typ"]
       self.esp_hold_confirmation = bool(pt_cp.vl["ESP_21"]["ESP_Haltebestaetigung"])
+
       acc_limiter_mode = ext_cp.vl["ACC_02"]["ACC_Gesetzte_Zeitluecke"] == 0
       speed_limiter_mode = bool(pt_cp.vl["TSK_06"]["TSK_Limiter_ausgewaehlt"])
 
