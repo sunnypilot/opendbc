@@ -238,10 +238,6 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
-    # Keep SP flags as primitives for downstream capnp conversion
-    ret.flags = int(ret.flags)
-    ret.safetyParam = int(ret.safetyParam)
-
     # Check if pedal interceptor is present
     has_pedal = PEDAL_MSG in fingerprint[0]
     ret.enableGasInterceptor = has_pedal and bool(ret.flags & GMFlagsSP.NON_ACC)
@@ -288,4 +284,7 @@ class CarInterface(CarInterfaceBase):
                      CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN, CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
       stock_cp.dashcamOnly = True
 
+    # Cast flags to primitives for capnp conversion
+    ret.flags = int(ret.flags)
+    ret.safetyParam = int(ret.safetyParam)
     return ret
