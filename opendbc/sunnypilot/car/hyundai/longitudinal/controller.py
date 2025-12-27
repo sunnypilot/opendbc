@@ -206,7 +206,7 @@ class LongitudinalController:
     if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_PREDICTIVE:
       self.jerk_lower = desired_jerk_lower
     else:
-      self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk)
+      self.jerk_lower = dynamic_desired_lower_jerk
 
     # Disable jerk when longitudinal control is inactive
     if not CC.longActive:
