@@ -131,6 +131,10 @@ class HyundaiFlags(IntFlag):
 
   CCNC = 2 ** 27
 
+  MRREVO14F_RADAR = 2 ** 28
+  MRR30_RADAR = 2 ** 29
+  MRR35_RADAR = 2 ** 30
+
 
 @dataclass
 class HyundaiCarDocs(CarDocs):
@@ -145,6 +149,9 @@ class HyundaiPlatformConfig(PlatformConfig):
     if self.flags & HyundaiFlags.MANDO_RADAR:
       self.dbc_dict = {Bus.pt: "hyundai_kia_generic", Bus.radar: 'hyundai_kia_mando_front_radar_generated'}
 
+    if self.flags & HyundaiFlags.MRREVO14F_RADAR:
+      self.dbc_dict = {Bus.pt: "hyundai_kia_generic", Bus.radar: 'hyundai_mrrevo14f_radar_generated'}
+
     if self.flags & HyundaiFlags.MIN_STEER_32_MPH:
       self.specs = self.specs.override(minSteerSpeed=32 * CV.MPH_TO_MS)
 
@@ -155,6 +162,12 @@ class HyundaiCanFDPlatformConfig(PlatformConfig):
 
   def init(self):
     self.flags |= HyundaiFlags.CANFD
+
+    if self.flags & HyundaiFlags.MRR30_RADAR:
+      self.dbc_dict = {Bus.pt: "hyundai_canfd_generated", Bus.radar: 'hyundai_mrr30_radar_generated'}
+
+    if self.flags & HyundaiFlags.MRR35_RADAR:
+      self.dbc_dict = {Bus.pt: "hyundai_canfd_generated", Bus.radar: 'hyundai_mrr35_radar_generated'}
 
 
 class CAR(Platforms):
@@ -267,7 +280,7 @@ class CAR(Platforms):
   HYUNDAI_KONA_EV_2022 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Kona Electric 2022-23", car_parts=CarParts.common([CarHarness.hyundai_o]))],
     CarSpecs(mass=1743, wheelbase=2.6, steerRatio=13.42, tireStiffnessFactor=0.385),
-    flags=HyundaiFlags.CAMERA_SCC | HyundaiFlags.EV | HyundaiFlags.ALT_LIMITS,
+    flags=HyundaiFlags.CAMERA_SCC | HyundaiFlags.EV | HyundaiFlags.ALT_LIMITS | HyundaiFlags.MRREVO14F_RADAR,
   )
   HYUNDAI_KONA_EV_2ND_GEN = HyundaiCanFDPlatformConfig(
     [
@@ -359,7 +372,7 @@ class CAR(Platforms):
   HYUNDAI_SONATA_HEV_2024 = HyundaiCanFDPlatformConfig(
     [HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_a]))],
     CarSpecs(mass=1616, wheelbase=2.84, steerRatio=13.27),
-    flags=HyundaiFlags.CCNC,
+    flags=HyundaiFlags.CCNC | HyundaiFlags.MRR35_RADAR,
   )
   HYUNDAI_IONIQ_5 = HyundaiCanFDPlatformConfig(
     [
@@ -568,7 +581,7 @@ class CAR(Platforms):
       HyundaiCarDocs("Kia EV6 (with HDA II) 2022-24", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))
     ],
     CarSpecs(mass=2055, wheelbase=2.9, steerRatio=16, tireStiffnessFactor=0.65),
-    flags=HyundaiFlags.EV,
+    flags=HyundaiFlags.EV | HyundaiFlags.MRR30_RADAR,
   )
   KIA_CARNIVAL_4TH_GEN = HyundaiCanFDPlatformConfig(
     [

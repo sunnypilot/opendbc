@@ -21,6 +21,12 @@ class LongitudinalTuningType:
   PREDICTIVE = 2
 
 
+class RadarType:
+  OFF = 0
+  LEAD_ONLY = 1
+  FULL_RADAR = 2
+
+
 def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
   # Get car type flags from specific configs or determine from car flags
   car_config = CAR_SPECIFIC_CONFIGS.get(CP.carFingerprint)
