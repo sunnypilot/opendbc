@@ -76,8 +76,18 @@
       "2018",
       "2019",
       "2020"
+      "2021"
     ],
     "package": "All"
+  },
+  "Acura TLX 2021": {
+    "platform": "ACURA_TLX_2G",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "TLX",
+    "year": [
+      "2021"
+    ],
   },
   "Audi A3 2014-19": {
     "platform": "AUDI_A3_MK3",
@@ -213,7 +223,7 @@
       "2022",
       "2023"
     ],
-    "package": "Premier or Premier Redline Trim without Super Cruise Package"
+    "package": "Premier or Premier Redline Trim, without Super Cruise Package"
   },
   "Chevrolet Bolt EV 2022-23": {
     "platform": "CHEVROLET_BOLT_EUV",
@@ -1056,13 +1066,14 @@
     ],
     "package": "All"
   },
-  "Honda Civic Hybrid 2025": {
+  "Honda Civic Hybrid 2025-26": {
     "platform": "HONDA_CIVIC_2022",
     "make": "Honda",
     "brand": "honda",
     "model": "Civic Hybrid",
     "year": [
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "All"
   },
@@ -1105,7 +1116,7 @@
     ],
     "package": "Honda Sensing"
   },
-  "Honda CR-V 2023-25": {
+  "Honda CR-V 2023-26": {
     "platform": "HONDA_CRV_6G",
     "make": "Honda",
     "brand": "honda",
@@ -1113,7 +1124,8 @@
     "year": [
       "2023",
       "2024",
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "All"
   },
@@ -1246,7 +1258,7 @@
     ],
     "package": "Honda Sensing"
   },
-  "Honda Odyssey 2021-25": {
+  "Honda Odyssey 2021-26": {
     "platform": "HONDA_ODYSSEY_5G_MMR",
     "make": "Honda",
     "brand": "honda",
@@ -1256,7 +1268,8 @@
       "2022",
       "2023",
       "2024",
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "All"
   },
@@ -1273,6 +1286,16 @@
       "2023",
       "2024",
       "2025"
+    ],
+    "package": "All"
+  },
+  "Honda Passport 2026": {
+    "platform": "HONDA_PASSPORT_4G",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Passport",
+    "year": [
+      "2026"
     ],
     "package": "All"
   },
@@ -2661,14 +2684,15 @@
     ],
     "package": "All"
   },
-  "Nissan Altima 2019-20": {
+  "Nissan Altima 2019-20, 2024": {
     "platform": "NISSAN_ALTIMA",
     "make": "Nissan",
     "brand": "nissan",
     "model": "Altima",
     "year": [
       "2019",
-      "2020"
+      "2020",
+      "2024"
     ],
     "package": "ProPILOT Assist"
   },
