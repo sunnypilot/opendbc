@@ -132,7 +132,7 @@ class TestHyundaiCanfdTorqueSteering(TestHyundaiCanfdBase, common.DriverTorqueSt
       raise unittest.SkipTest
 
   def setUp(self):
-    self.packer = CANPackerPanda("hyundai_canfd_generated")
+    self.packer = CANPackerSafety("hyundai_canfd_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, 0)
     self.safety.init_tests()
@@ -182,11 +182,11 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
       self.safety.set_timer(self.cnt_angle_cmd * int(1e6 / self.LATERAL_FREQUENCY))
       self.__class__.cnt_angle_cmd += 1
     values = {"ADAS_StrAnglReqVal": angle, "LKAS_ANGLE_ACTIVE": 2 if enabled else 1}
-    return self.packer.make_can_msg_panda(self.STEER_MSG, self.STEER_BUS, values)
+    return self.packer.make_can_msg_safety(self.STEER_MSG, self.STEER_BUS, values)
 
   def _angle_meas_msg(self, angle: float):
     values = {"MDPS_EstStrAnglVal": angle}
-    return self.packer.make_can_msg_panda("MDPS", self.PT_BUS, values)
+    return self.packer.make_can_msg_safety("MDPS", self.PT_BUS, values)
 
   def _get_steer_cmd_angle_max(self, speed):
     baseline_vm = self.get_vm(ANGLE_SAFETY_BASELINE_MODEL)
@@ -204,7 +204,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     return VehicleModel(CarInterface.get_non_essential_params(car_name))
 
   def setUp(self):
-    self.packer = CANPackerPanda("hyundai_canfd_generated")
+    self.packer = CANPackerSafety("hyundai_canfd_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.CANFD_ANGLE_STEERING)
     self.safety.init_tests()
@@ -488,7 +488,7 @@ class TestHyundaiCanfdLKASteeringAltEVBase(TestHyundaiCanfdBase):
 class TestHyundaiCanfdLKASteeringAltEVTorque(TestHyundaiCanfdLKASteeringAltEVBase, TestHyundaiCanfdTorqueSteering):
 
   def setUp(self):
-    self.packer = CANPackerPanda("hyundai_canfd_generated")
+    self.packer = CANPackerSafety("hyundai_canfd_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.CANFD_LKA_STEERING | HyundaiSafetyFlags.EV_GAS |
                                  HyundaiSafetyFlags.CANFD_LKA_STEERING_ALT)
@@ -498,7 +498,7 @@ class TestHyundaiCanfdLKASteeringAltEVTorque(TestHyundaiCanfdLKASteeringAltEVBas
 class TestHyundaiCanfdLKASteeringAltEVAngle(TestHyundaiCanfdLKASteeringAltEVBase, TestHyundaiCanfdAngleSteering):
 
   def setUp(self):
-    self.packer = CANPackerPanda("hyundai_canfd_generated")
+    self.packer = CANPackerSafety("hyundai_canfd_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.CANFD_LKA_STEERING | HyundaiSafetyFlags.EV_GAS |
                                  HyundaiSafetyFlags.CANFD_LKA_STEERING_ALT | HyundaiSafetyFlags.CANFD_ANGLE_STEERING)
