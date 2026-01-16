@@ -1,6 +1,6 @@
 #pragma once
 
-#include "opendbc/safety/safety_declarations.h"
+#include "opendbc/safety/declarations.h"
 
 extern uint16_t hyundai_canfd_crc_lut[256];
 uint16_t hyundai_canfd_crc_lut[256];
@@ -70,13 +70,13 @@ static bool acc_main_on_tx;
 static uint32_t acc_main_on_mismatches;
 
 void hyundai_common_init(uint16_t param) {
-  const int HYUNDAI_PARAM_EV_GAS = 1;
-  const int HYUNDAI_PARAM_HYBRID_GAS = 2;
-  const int HYUNDAI_PARAM_CAMERA_SCC = 8;
-  const int HYUNDAI_PARAM_CANFD_LKA_STEERING = 16;
-  const int HYUNDAI_PARAM_ALT_LIMITS = 64; // TODO: shift this down with the rest of the common flags
-  const int HYUNDAI_PARAM_FCEV_GAS = 256;
-  const int HYUNDAI_PARAM_ALT_LIMITS_2 = 512;
+  const uint16_t HYUNDAI_PARAM_EV_GAS = 1;
+  const uint16_t HYUNDAI_PARAM_HYBRID_GAS = 2;
+  const uint16_t HYUNDAI_PARAM_CAMERA_SCC = 8;
+  const uint16_t HYUNDAI_PARAM_CANFD_LKA_STEERING = 16;
+  const uint16_t HYUNDAI_PARAM_ALT_LIMITS = 64; // TODO: shift this down with the rest of the common flags
+  const uint16_t HYUNDAI_PARAM_FCEV_GAS = 256;
+  const uint16_t HYUNDAI_PARAM_ALT_LIMITS_2 = 512;
 
   hyundai_ev_gas_signal = GET_FLAG(param, HYUNDAI_PARAM_EV_GAS);
   hyundai_hybrid_gas_signal = !hyundai_ev_gas_signal && GET_FLAG(param, HYUNDAI_PARAM_HYBRID_GAS);
@@ -99,7 +99,7 @@ void hyundai_common_init(uint16_t param) {
   acc_main_on_mismatches = 0U;
 
 #ifdef ALLOW_DEBUG
-  const int HYUNDAI_PARAM_LONGITUDINAL = 4;
+  const uint16_t HYUNDAI_PARAM_LONGITUDINAL = 4;
   hyundai_longitudinal = GET_FLAG(param, HYUNDAI_PARAM_LONGITUDINAL);
 #else
   hyundai_longitudinal = false;
@@ -127,7 +127,7 @@ void hyundai_common_cruise_buttons_check(const int cruise_button, const bool mai
   if ((cruise_button == HYUNDAI_BTN_RESUME) || (cruise_button == HYUNDAI_BTN_SET) || (cruise_button == HYUNDAI_BTN_CANCEL) || main_button) {
     hyundai_last_button_interaction = 0U;
   } else {
-    hyundai_last_button_interaction = MIN(hyundai_last_button_interaction + 1U, HYUNDAI_PREV_BUTTON_SAMPLES);
+    hyundai_last_button_interaction = SAFETY_MIN(hyundai_last_button_interaction + 1U, HYUNDAI_PREV_BUTTON_SAMPLES);
   }
 
   if (hyundai_longitudinal) {
