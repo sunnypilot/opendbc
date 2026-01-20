@@ -366,4 +366,43 @@ class MadsSafetyTestBase(unittest.TestCase):
       self._rx(self._user_brake_msg(False))
       self.assertEqual(not disengage_on_brake, self.safety.get_controls_allowed_lat())
 
-  # TODO-SP: controls_allowed and controls_allowed_lat check for steering safety tests
+  def test_steering_controls_allowed_lat(self):
+    """Test that steering commands are respected based on controls_allowed_lat"""
+    is_torque = hasattr(self, '_torque_cmd_msg') and hasattr(self, '_set_prev_torque')
+    is_angle = hasattr(self, '_angle_cmd_msg') and hasattr(self, '_set_prev_desired_angle')
+
+    if not (is_torque or is_angle):
+      return
+
+    # Prepare dummy message function and set dummy speed to avoid limits
+    self._rx(self._speed_msg(20))
+
+    if is_torque:
+      max_val = getattr(self, 'MAX_TORQUE', 100)
+      test_val = int(max_val * 0.5)
+
+      def cmd_func(t):
+        return self._torque_cmd_msg(t)
+      set_prev_func = self._set_prev_torque
+    else:
+      max_val = getattr(self, 'STEER_ANGLE_MAX', 10)
+      test_val = max_val * 0.5
+
+      def cmd_func(a):
+        return self._angle_cmd_msg(a, True)
+      set_prev_func = self._set_prev_desired_angle
+
+    for enable_mads in (True, False):
+      self.safety.set_mads_params(enable_mads, False, False)
+
+      for lat_allowed in (True, False):
+        for long_allowed in (True, False):
+          self.safety.set_controls_allowed_lat(lat_allowed)
+          self.safety.set_controls_allowed(long_allowed)
+
+          # Update previous torque/angle to avoid rate limit failure in successful cases
+          set_prev_func(test_val)
+
+          should_tx = long_allowed or (enable_mads and lat_allowed)
+
+          self.assertEqual(should_tx, self._tx(cmd_func(test_val)))
