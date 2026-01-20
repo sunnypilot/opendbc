@@ -6,7 +6,6 @@ from opendbc.car.tesla.values import TeslaSafetyFlags, TeslaFlags, CAR, FSD_14_F
 
 from opendbc.sunnypilot.car.tesla.values import TeslaFlagsSP, TeslaSafetyFlagsSP
 
-
 class CarInterface(CarInterfaceBase):
   CarState = CarState
   CarController = CarController
