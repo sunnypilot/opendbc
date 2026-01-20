@@ -6,6 +6,7 @@ from opendbc.car.gm import gmcan
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
 from opendbc.car.interfaces import CarControllerBase
+from opendbc.sunnypilot.car.gm.carcontroller_ext import GasInterceptorCarController
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 NetworkLocation = structs.CarParams.NetworkLocation
@@ -17,7 +18,7 @@ CAMERA_CANCEL_DELAY_FRAMES = 10
 MIN_STEER_MSG_INTERVAL_MS = 15
 
 
-class CarController(CarControllerBase):
+class CarController(CarControllerBase, GasInterceptorCarController):
   def __init__(self, dbc_names, CP, CP_SP):
     super().__init__(dbc_names, CP, CP_SP)
     self.start_time = 0.
@@ -36,6 +37,8 @@ class CarController(CarControllerBase):
     self.packer_pt = CANPacker(DBC[self.CP.carFingerprint][Bus.pt])
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint][Bus.radar])
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint][Bus.chassis])
+
+    GasInterceptorCarController.__init__(self, CP, CP_SP)
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
@@ -108,8 +111,9 @@ class CarController(CarControllerBase):
           at_full_stop = at_full_stop and stopping
           friction_brake_bus = CanBus.POWERTRAIN
 
-        # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
-        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
+        # GasRegenCmdActive needs to reflect whether openpilot is actually commanding longitudinal torque
+        gas_regen_active = CC.longActive and CC.enabled
+        self.handle_gas_and_regen(can_sends, gas_regen_active, at_full_stop, idx)
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake,
                                                              idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
@@ -158,6 +162,9 @@ class CarController(CarControllerBase):
     new_actuators.torqueOutputCan = self.apply_torque_last
     new_actuators.gas = self.apply_gas
     new_actuators.brake = self.apply_brake
+
+    # sunnypilot gas interceptor / NON_ACC extensions
+    self.extend_with_interceptor(CC, CS, new_actuators, can_sends)
 
     self.frame += 1
     return new_actuators, can_sends
