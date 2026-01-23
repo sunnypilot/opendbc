@@ -86,12 +86,7 @@ static uint32_t toyota_get_checksum(const CANPacket_t *msg) {
 }
 
 static bool toyota_get_quality_flag_valid(const CANPacket_t *msg) {
-
-  bool valid = false;
-  if (msg->addr == 0x260U) {
-    valid = !GET_BIT(msg, 3U);  // STEER_ANGLE_INITIALIZING
-  }
-  return valid;
+  return !GET_BIT(msg, 3U);  // STEER_ANGLE_INITIALIZING
 }
 
 static int TOYOTA_GET_INTERCEPTOR(const CANPacket_t *msg) {
@@ -421,8 +416,8 @@ static safety_config toyota_init(uint16_t param) {
   const uint32_t TOYOTA_PARAM_STOCK_LONGITUDINAL = 2UL << TOYOTA_PARAM_OFFSET;
   const uint32_t TOYOTA_PARAM_LTA = 4UL << TOYOTA_PARAM_OFFSET;
 
-  const int TOYOTA_PARAM_SP_UNSUPPORTED_DSU = 1;
-  const int TOYTOA_PARAM_SP_GAS_INTERCEPTOR = 2;
+  const uint16_t TOYOTA_PARAM_SP_UNSUPPORTED_DSU = 1;
+  const uint16_t TOYTOA_PARAM_SP_GAS_INTERCEPTOR = 2;
 
 #ifdef ALLOW_DEBUG
   const uint32_t TOYOTA_PARAM_SECOC = 8UL << TOYOTA_PARAM_OFFSET;
