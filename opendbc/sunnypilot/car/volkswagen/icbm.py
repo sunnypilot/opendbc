@@ -90,7 +90,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       accArgs = {
         "packer": packer,
         "bus": CAN,
-        "gra_stock_values": CS.gra_stock_values,
+        "gra_stock_values": CS.gra_stock_values.copy(),
         "increase": self.icbmHelper.button == ButtonType.accelCruise,
         "decrease": self.icbmHelper.button == ButtonType.decelCruise,
         "resume"  : self.icbmHelper.button == ButtonType.resumeCruise,
