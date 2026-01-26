@@ -55,6 +55,7 @@ FW_VERSIONS_EXT = {
   CAR.KIA_FORTE_2019_NON_SCC: {
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\x00BD  MDPS C 1.00 1.04 56310/M6000 4BDDC104',
+      b'\xf1\x00BD  MDPS C 1.00 1.05 56310/M6000 4BDDC105',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00BD  LKAS AT USA LHD 1.00 1.02 95740-M6000 J31',
