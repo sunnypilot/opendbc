@@ -21,6 +21,16 @@
     ],
     "package": "All"
   },
+  "Acura MDX 2020": {
+    "platform": "ACURA_MDX_3G_MMR",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "MDX",
+    "year": [
+      "2020"
+    ],
+    "package": "All"
+  },
   "Acura MDX 2025-26": {
     "platform": "ACURA_MDX_4G_MMR",
     "make": "Acura",
@@ -31,6 +41,16 @@
       "2026"
     ],
     "package": "All except Type S"
+  },
+  "Acura MDX Hybrid 2020": {
+    "platform": "ACURA_MDX_3G_MMR",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "MDX Hybrid",
+    "year": [
+      "2020"
+    ],
+    "package": "All"
   },
   "Acura RDX 2016-18": {
     "platform": "ACURA_RDX",
