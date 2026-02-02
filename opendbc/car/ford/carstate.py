@@ -4,6 +4,13 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.ford.fordcan import CanBus
 from opendbc.car.ford.values import DBC, CarControllerParams, FordFlags
 from opendbc.car.interfaces import CarStateBase
+<<<<<<< ours
+=======
+from cereal import messaging
+from bluepilot.logger.bp_logger import debug, info, warning, error, critical
+from opendbc.sunnypilot.car.ford.mads import MadsCarState
+from opendbc.sunnypilot.car.ford.carstate_ext import CarStateExt
+>>>>>>> theirs
 
 from opendbc.sunnypilot.car.ford.mads import MadsCarState
 
@@ -12,10 +19,11 @@ GearShifter = structs.CarState.GearShifter
 TransmissionType = structs.CarParams.TransmissionType
 
 
-class CarState(CarStateBase, MadsCarState):
+class CarState(CarStateBase, MadsCarState, CarStateExt):
   def __init__(self, CP, CP_SP):
     CarStateBase.__init__(self, CP, CP_SP)
     MadsCarState.__init__(self, CP, CP_SP)
+    CarStateExt.__init__(self, CP, CP_SP)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["PowertrainData_10"]["TrnRng_D_Rq"]
@@ -113,10 +121,12 @@ class CarState(CarStateBase, MadsCarState):
     self.lkas_status_stock_values = cp_cam.vl["IPMA_Data"]
 
     MadsCarState.update_mads(self, ret, can_parsers)
+    CarStateExt.update(self, ret, ret_sp, can_parsers)
 
     ret.buttonEvents = [
       *create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise}),
       *create_button_events(self.lc_button, prev_lc_button, {1: ButtonType.lkas}),
+      *self.button_events,
     ]
     return ret, ret_sp
 
