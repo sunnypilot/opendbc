@@ -4,15 +4,9 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.ford.fordcan import CanBus
 from opendbc.car.ford.values import DBC, CarControllerParams, FordFlags
 from opendbc.car.interfaces import CarStateBase
-<<<<<<< ours
-=======
-from cereal import messaging
-from bluepilot.logger.bp_logger import debug, info, warning, error, critical
-from opendbc.sunnypilot.car.ford.mads import MadsCarState
-from opendbc.sunnypilot.car.ford.carstate_ext import CarStateExt
->>>>>>> theirs
 
 from opendbc.sunnypilot.car.ford.mads import MadsCarState
+from opendbc.sunnypilot.car.ford.carstate_ext import CarStateExt
 
 ButtonType = structs.CarState.ButtonEvent.Type
 GearShifter = structs.CarState.GearShifter
@@ -71,19 +65,13 @@ class CarState(CarStateBase, MadsCarState, CarStateExt):
     # cruise state
     is_metric = cp.vl["INSTRUMENT_PANEL"]["METRIC_UNITS"] == 1 if not self.CP.flags & FordFlags.CANFD else False
     ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * (CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS)
-<<<<<<< ours
-=======
     ret.cruiseState.speedCluster = ret.cruiseState.speed # ICBM needs speedCluster to read current cruise setpoint
->>>>>>> theirs
     ret.cruiseState.enabled = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (4, 5)
     ret.cruiseState.available = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (3, 4, 5)
     ret.cruiseState.nonAdaptive = cp.vl["Cluster_Info1_FD1"]["AccEnbl_B_RqDrv"] == 0
     ret.cruiseState.standstill = cp.vl["EngBrakeData"]["AccStopMde_D_Rq"] == 3
-<<<<<<< ours
-=======
     if(ret.cruiseState.speed == 0):
        ret.cruiseState.available = False
->>>>>>> theirs
     ret.accFaulted = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (1, 2)
     if not self.CP.openpilotLongitudinalControl:
       ret.accFaulted = ret.accFaulted or cp_cam.vl["ACCDATA"]["CmbbDeny_B_Actl"] == 1
