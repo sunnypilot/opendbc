@@ -1239,6 +1239,15 @@ FW_VERSIONS = {
       b'\xf1\x00KA4c SCC FHCUP      1.00 1.01 99110-I4000         ',
     ],
   },
+  CAR.KIA_CARNIVAL_HEV_4TH_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00KA4HMFC  AT USA LHD 1.00 1.05 99210-R0500 240305',
+      b'\xf1\x00KA4HMFC  AT USA LHD 1.00 1.00 99210-R0700 250324',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00KAhe RDR -----      1.00 1.01 99110-ES500         ',
+    ],
+  },
   CAR.KIA_K7_2017: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00YG  MFC  AT KOR LHD 1.00 1.01 95740-F6100 161129',
