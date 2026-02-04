@@ -231,7 +231,7 @@
     "year": [
       "2017"
     ],
-    "package": "Adaptive Cruise Control (ACC)"
+    "package": "No Adaptive Cruise Control (Non-ACC)"
   },
   "Chevrolet Bolt EV Non-ACC 2018-21": {
     "platform": "CHEVROLET_BOLT_NON_ACC_1ST_GEN",
@@ -244,7 +244,7 @@
       "2020",
       "2021"
     ],
-    "package": "Adaptive Cruise Control (ACC)"
+    "package": "No Adaptive Cruise Control (Non-ACC)"
   },
   "Chevrolet Equinox 2019-22": {
     "platform": "CHEVROLET_EQUINOX",
@@ -274,7 +274,7 @@
       "2022",
       "2023"
     ],
-    "package": "Adaptive Cruise Control (ACC)"
+    "package": "No Adaptive Cruise Control (Non-ACC)"
   },
   "Chevrolet Silverado 1500 2020-21": {
     "platform": "CHEVROLET_SILVERADO",
