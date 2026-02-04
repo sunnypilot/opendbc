@@ -1,6 +1,7 @@
+import re
 import json
 import os
-from natsort import natsorted
+import unicodedata
 
 from opendbc.car.common.basedir import BASEDIR
 from opendbc.car.docs import get_all_footnotes, get_params_for_docs
@@ -13,6 +14,12 @@ def get_car_list() -> dict[str, dict[str, list[str] | str]]:
   collected_footnote = get_all_footnotes()
   sorted_list: dict[str, dict[str, list[str] | str]] = build_sorted_car_list(PLATFORMS, collected_footnote)
   return sorted_list
+
+
+def _natural_sort_key(s):
+  # NFKD normalization ensures accented characters sort with their base letter (e.g., Š sorts with S)
+  normalized = unicodedata.normalize('NFKD', s)
+  return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', normalized) if t]
 
 
 def build_sorted_car_list(platforms, footnotes) -> dict[str, dict[str, list[str] | str]]:
@@ -49,7 +56,7 @@ def build_sorted_car_list(platforms, footnotes) -> dict[str, dict[str, list[str]
       }
 
   # Sort cars by make and model + year
-  sorted_cars = natsorted(cars.keys(), key=lambda car: car.lower())
+  sorted_cars = sorted(cars.keys(), key=lambda car: _natural_sort_key(car))
   sorted_car_list = {car: cars[car] for car in sorted_cars}
   return sorted_car_list
 
