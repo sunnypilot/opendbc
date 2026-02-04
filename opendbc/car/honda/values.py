@@ -3,7 +3,7 @@ from enum import Enum, IntFlag
 
 from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column
+from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, SupportType
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = structs.CarParams.Ecu
@@ -114,6 +114,8 @@ class HondaCarDocs(CarDocs):
     if CP.carFingerprint in (CAR.HONDA_CLARITY,):
       self.car_parts = CarParts.common([CarHarness.honda_clarity])
       self.car_parts.custom_parts_url = "https://shop.retropilot.org/product/honda-clarity-proxy-board-kit"
+      self.support_type: SupportType = SupportType.COMMUNITY
+      self.support_link: str = "community"
 
 
 class Footnote(Enum):

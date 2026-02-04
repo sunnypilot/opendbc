@@ -32,21 +32,21 @@
 |Audi|Q5 2017-24|All|[Not compatible](#flexray)|
 |Audi|RS3 2018|Adaptive Cruise Control (ACC) & Lane Assist|[Upstream](#upstream)|
 |Audi|S3 2015-17|Adaptive Cruise Control (ACC) & Lane Assist|[Upstream](#upstream)|
-|Cadillac|CT6 Non-ACC 2017-18|Adaptive Cruise Control (ACC)|[Dashcam mode](#dashcam)|
-|Cadillac|XT5 Non-ACC 2018|Adaptive Cruise Control (ACC)|[Dashcam mode](#dashcam)|
+|Cadillac|CT6 Non-ACC 2017-18|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
+|Cadillac|XT5 Non-ACC 2018|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
 |Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim, without Super Cruise Package|[Upstream](#upstream)|
-|Chevrolet|Bolt EUV LT Non-ACC 2022-23|Adaptive Cruise Control (ACC)|[Dashcam mode](#dashcam)|
+|Chevrolet|Bolt EUV LT Non-ACC 2022-23|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
 |Chevrolet|Bolt EV 2022-23|2LT Trim with Adaptive Cruise Control Package|[Upstream](#upstream)|
-|Chevrolet|Bolt EV LT Non-ACC 2022-23|Adaptive Cruise Control (ACC)|[Dashcam mode](#dashcam)|
-|Chevrolet|Bolt EV Non-ACC 2017|Adaptive Cruise Control (ACC)|[Upstream](#upstream)|
-|Chevrolet|Bolt EV Non-ACC 2018-21|Adaptive Cruise Control (ACC)|[Upstream](#upstream)|
+|Chevrolet|Bolt EV LT Non-ACC 2022-23|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
+|Chevrolet|Bolt EV Non-ACC 2017|No Adaptive Cruise Control (Non-ACC)|[Community](community)|
+|Chevrolet|Bolt EV Non-ACC 2018-21|No Adaptive Cruise Control (Non-ACC)|[Community](community)|
 |Chevrolet|Equinox 2019-22|Adaptive Cruise Control (ACC)|[Upstream](#upstream)|
-|Chevrolet|Equinox Non-ACC 2019-22|Adaptive Cruise Control (ACC)|[Dashcam mode](#dashcam)|
-|Chevrolet|Malibu Non-ACC 2016-23|Adaptive Cruise Control (ACC)|[Upstream](#upstream)|
+|Chevrolet|Equinox Non-ACC 2019-22|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
+|Chevrolet|Malibu Non-ACC 2016-23|No Adaptive Cruise Control (Non-ACC)|[Community](community)|
 |Chevrolet|Silverado 1500 2020-21|Safety Package II|[Upstream](#upstream)|
-|Chevrolet|Suburban Non-ACC 2016-20|Adaptive Cruise Control (ACC)|[Dashcam mode](#dashcam)|
+|Chevrolet|Suburban Non-ACC 2016-20|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
 |Chevrolet|Trailblazer 2021-22|Adaptive Cruise Control (ACC)|[Upstream](#upstream)|
-|Chevrolet|Trailblazer Non-ACC 2021-22|Adaptive Cruise Control (ACC)|[Dashcam mode](#dashcam)|
+|Chevrolet|Trailblazer Non-ACC 2021-22|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
 |Chrysler|Pacifica 2017-18|Adaptive Cruise Control (ACC)|[Upstream](#upstream)|
 |Chrysler|Pacifica 2019-20|Adaptive Cruise Control (ACC)|[Upstream](#upstream)|
 |Chrysler|Pacifica 2021-23|All|[Upstream](#upstream)|
@@ -113,7 +113,7 @@
 |Honda|Civic Hatchback Hybrid 2025-26|All|[Upstream](#upstream)|
 |Honda|Civic Hatchback Hybrid (Europe only) 2023|All|[Upstream](#upstream)|
 |Honda|Civic Hybrid 2025-26|All|[Upstream](#upstream)|
-|Honda|Clarity 2018-21|Honda Sensing|[Upstream](#upstream)|
+|Honda|Clarity 2018-21|Honda Sensing|[Community](community)|
 |Honda|Clarity 2018-21|All|[Community](#community)|
 |Honda|CR-V 2015-16|Touring Trim|[Upstream](#upstream)|
 |Honda|CR-V 2017-22|Honda Sensing|[Upstream](#upstream)|
@@ -147,7 +147,7 @@
 |Hyundai|Elantra 2021-23|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Elantra GT 2017-20|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Elantra Hybrid 2021-23|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Hyundai|Elantra Non-SCC 2022|No Smart Cruise Control (Non-SCC)|[Upstream](#upstream)|
+|Hyundai|Elantra Non-SCC 2022|No Smart Cruise Control (Non-SCC)|[Community](community)|
 |Hyundai|Genesis 2015-16|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|i30 2017-19|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Ioniq 5 (Southeast Asia and Europe only) 2022-24|All|[Upstream](#upstream)|
@@ -165,9 +165,9 @@
 |Hyundai|Kona Electric 2018-21|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Kona Electric 2022-23|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Kona Electric (with HDA II, Korea only) 2023|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Hyundai|Kona Electric Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Upstream](#upstream)|
+|Hyundai|Kona Electric Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Community](community)|
 |Hyundai|Kona Hybrid 2020|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Hyundai|Kona Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Upstream](#upstream)|
+|Hyundai|Kona Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Community](community)|
 |Hyundai|Nexo 2021|All|[Upstream](#upstream)|
 |Hyundai|Palisade 2020-22|All|[Upstream](#upstream)|
 |Hyundai|Palisade 2023-24|Highway Driving Assist II|[Community](#community)|
@@ -192,13 +192,13 @@
 |Kia|Carnival 2022-24|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Kia|Carnival (China only) 2023|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Kia|Ceed 2019-21|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Kia|Ceed Plug-in Hybrid Non-SCC 2022|No Smart Cruise Control (Non-SCC)|[Upstream](#upstream)|
+|Kia|Ceed Plug-in Hybrid Non-SCC 2022|No Smart Cruise Control (Non-SCC)|[Community](community)|
 |Kia|EV6 (Southeast Asia only) 2022-24|All|[Upstream](#upstream)|
 |Kia|EV6 (with HDA II) 2022-24|Highway Driving Assist II|[Upstream](#upstream)|
 |Kia|EV6 (without HDA II) 2022-24|Highway Driving Assist|[Upstream](#upstream)|
 |Kia|Forte 2019-21|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Kia|Forte 2022-23|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Kia|Forte Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Upstream](#upstream)|
+|Kia|Forte Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Community](community)|
 |Kia|Forte Non-SCC 2021|No Smart Cruise Control (Non-SCC)|[Dashcam mode](#dashcam)|
 |Kia|K5 2021-24|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Kia|K5 Hybrid 2020-22|Smart Cruise Control (SCC)|[Upstream](#upstream)|
