@@ -147,7 +147,7 @@
 |Hyundai|Elantra 2021-23|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Elantra GT 2017-20|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Elantra Hybrid 2021-23|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Hyundai|Elantra Non-SCC 2022|No Smart Cruise Control (Non-SCC)|[Upstream](#upstream)|
+|Hyundai|Elantra Non-SCC 2022|No Smart Cruise Control (Non-SCC)|[Community](community)|
 |Hyundai|Genesis 2015-16|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|i30 2017-19|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Ioniq 5 (Southeast Asia and Europe only) 2022-24|All|[Upstream](#upstream)|
@@ -165,9 +165,9 @@
 |Hyundai|Kona Electric 2018-21|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Kona Electric 2022-23|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Hyundai|Kona Electric (with HDA II, Korea only) 2023|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Hyundai|Kona Electric Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Upstream](#upstream)|
+|Hyundai|Kona Electric Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Community](community)|
 |Hyundai|Kona Hybrid 2020|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Hyundai|Kona Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Upstream](#upstream)|
+|Hyundai|Kona Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Community](community)|
 |Hyundai|Nexo 2021|All|[Upstream](#upstream)|
 |Hyundai|Palisade 2020-22|All|[Upstream](#upstream)|
 |Hyundai|Palisade 2023-24|Highway Driving Assist II|[Community](#community)|
@@ -192,13 +192,13 @@
 |Kia|Carnival 2022-24|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Kia|Carnival (China only) 2023|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Kia|Ceed 2019-21|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Kia|Ceed Plug-in Hybrid Non-SCC 2022|No Smart Cruise Control (Non-SCC)|[Upstream](#upstream)|
+|Kia|Ceed Plug-in Hybrid Non-SCC 2022|No Smart Cruise Control (Non-SCC)|[Community](community)|
 |Kia|EV6 (Southeast Asia only) 2022-24|All|[Upstream](#upstream)|
 |Kia|EV6 (with HDA II) 2022-24|Highway Driving Assist II|[Upstream](#upstream)|
 |Kia|EV6 (without HDA II) 2022-24|Highway Driving Assist|[Upstream](#upstream)|
 |Kia|Forte 2019-21|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Kia|Forte 2022-23|Smart Cruise Control (SCC)|[Upstream](#upstream)|
-|Kia|Forte Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Upstream](#upstream)|
+|Kia|Forte Non-SCC 2019|No Smart Cruise Control (Non-SCC)|[Community](community)|
 |Kia|Forte Non-SCC 2021|No Smart Cruise Control (Non-SCC)|[Dashcam mode](#dashcam)|
 |Kia|K5 2021-24|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Kia|K5 Hybrid 2020-22|Smart Cruise Control (SCC)|[Upstream](#upstream)|
