@@ -113,7 +113,7 @@
 |Honda|Civic Hatchback Hybrid 2025-26|All|[Upstream](#upstream)|
 |Honda|Civic Hatchback Hybrid (Europe only) 2023|All|[Upstream](#upstream)|
 |Honda|Civic Hybrid 2025-26|All|[Upstream](#upstream)|
-|Honda|Clarity 2018-21|Honda Sensing|[Upstream](#upstream)|
+|Honda|Clarity 2018-21|Honda Sensing|[Community](community)|
 |Honda|Clarity 2018-21|All|[Community](#community)|
 |Honda|CR-V 2015-16|Touring Trim|[Upstream](#upstream)|
 |Honda|CR-V 2017-22|Honda Sensing|[Upstream](#upstream)|
