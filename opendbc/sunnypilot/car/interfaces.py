@@ -75,7 +75,11 @@ class NanoFFModel:
 
 
 def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
-                     params_list: list[dict[str, str]], can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
+                     params_list: list[dict[str, str]] | None = None,
+                     can_recv: CanRecvCallable | None = None, can_send: CanSendCallable | None = None) -> None:
+  if params_list is None:
+    params_list = []
+
   params_dict = {k: v for param in params_list for k, v in param.items()}
 
   _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
@@ -90,7 +94,7 @@ def _initialize_custom_longitudinal_tuning(CI, CP: structs.CarParams, CP_SP: str
 
   # Hyundai Custom Longitudinal Tuning
   if CP.brand == 'hyundai':
-    hyundai_longitudinal_tuning = int(params_dict["HyundaiLongitudinalTuning"])
+    hyundai_longitudinal_tuning = int(params_dict.get("HyundaiLongitudinalTuning", 0))
     if hyundai_longitudinal_tuning == LongitudinalTuningType.DYNAMIC:
       CP_SP.flags |= HyundaiFlagsSP.LONG_TUNING_DYNAMIC.value
     if hyundai_longitudinal_tuning == LongitudinalTuningType.PREDICTIVE:
@@ -107,7 +111,8 @@ def _initialize_coop_steering(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
       CP_SP.flags |= TeslaFlagsSP.COOP_STEERING.value
 
 
-def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
+def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
+                             can_recv: CanRecvCallable | None = None, can_send: CanSendCallable | None = None) -> None:
   if CP.brand == 'hyundai':
     if CP.flags & HyundaiFlags.MANDO_RADAR and (CP.radarUnavailable or CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC):
       tracks_enabled = hyundai_enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
@@ -116,8 +121,8 @@ def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, 
 
 def _initialize_stop_and_go(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
   if CP.brand == 'subaru' and not CP.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID):
-    stop_and_go = int(params_dict["SubaruStopAndGo"]) == 1
-    stop_and_go_manual_parking_brake = int(params_dict["SubaruStopAndGoManualParkingBrake"]) == 1
+    stop_and_go = int(params_dict.get("SubaruStopAndGo", 0)) == 1
+    stop_and_go_manual_parking_brake = int(params_dict.get("SubaruStopAndGoManualParkingBrake", 0)) == 1
 
     if stop_and_go:
       CP_SP.flags |= SubaruFlagsSP.STOP_AND_GO.value
@@ -129,7 +134,7 @@ def _initialize_stop_and_go(CP: structs.CarParams, CP_SP: structs.CarParamsSP, p
 
 def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
   if CP.brand == 'toyota':
-    toyota_stock_long = int(params_dict["ToyotaEnforceStockLongitudinal"]) == 1
+    toyota_stock_long = int(params_dict.get("ToyotaEnforceStockLongitudinal", 0)) == 1
 
     if toyota_stock_long:
       CP_SP.flags |= ToyotaFlagsSP.STOCK_LONGITUDINAL.value
