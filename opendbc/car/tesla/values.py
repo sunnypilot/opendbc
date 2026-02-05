@@ -36,7 +36,6 @@ class TeslaCarDocsHW4(CarDocs):
 
 @dataclass
 class TeslaCarHW4ModelSXDocs(TeslaCarDocsHW4):
-  package: str = "All"
   support_type: SupportType = SupportType.COMMUNITY
   support_link: str = "community"
 
