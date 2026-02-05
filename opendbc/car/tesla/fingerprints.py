@@ -2,8 +2,6 @@
 from opendbc.car.structs import CarParams
 from opendbc.car.tesla.values import CAR
 
-from opendbc.sunnypilot.car.fingerprints_ext import merge_fw_versions
-
 Ecu = CarParams.Ecu
 
 FW_VERSIONS = {
