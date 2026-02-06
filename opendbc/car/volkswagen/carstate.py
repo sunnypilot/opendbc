@@ -3,7 +3,7 @@ from opendbc.car import Bus, structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.volkswagen.values import DBC, CanBus, NetworkLocation, TransmissionType, GearShifter, \
-                                                      CarControllerParams, VolkswagenFlags
+                                                      CarControllerParams, VolkswagenFlags, VolkswagenFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
@@ -97,17 +97,34 @@ class CarState(CarStateBase):
         ret.leftBlindspot = bool(ext_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]) or bool(ext_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])
         ret.rightBlindspot = bool(ext_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]) or bool(ext_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])
 
-      ret.stockFcw = bool(ext_cp.vl["ACC_10"]["AWV2_Freigabe"])
-      ret.stockAeb = bool(ext_cp.vl["ACC_10"]["ANB_Teilbremsung_Freigabe"]) or bool(ext_cp.vl["ACC_10"]["ANB_Zielbremsung_Freigabe"])
+      # Non-ACC cars don't have ACC_10, ACC_06, ACC_02 messages
+      # Check if this vehicle has ACC using the CC_ONLY flag set during fingerprinting
+      has_acc = not (self.CP.flags & VolkswagenFlagsSP.SP_CC_ONLY) and not (self.CP.flags & VolkswagenFlagsSP.SP_CC_ONLY_NO_RADAR)
+      has_radar = not (self.CP.flags & VolkswagenFlagsSP.SP_CC_ONLY_NO_RADAR)
 
-      self.acc_type = ext_cp.vl["ACC_06"]["ACC_Typ"]
+      # Check radar for FCW/AEB status
+      if has_radar:
+        ret.stockFcw = bool(ext_cp.vl["ACC_10"]["AWV2_Freigabe"])
+        ret.stockAeb = bool(ext_cp.vl["ACC_10"]["ANB_Teilbremsung_Freigabe"]) or bool(ext_cp.vl["ACC_10"]["ANB_Zielbremsung_Freigabe"])
+      else:
+        # No radar available - no forward collision warning or AEB from ACC system
+        ret.stockFcw = False
+        ret.stockAeb = False
+
+      # Check ACC status
+      if has_acc:
+        self.acc_type = ext_cp.vl["ACC_06"]["ACC_Typ"]
+        acc_limiter_mode = ext_cp.vl["ACC_02"]["ACC_Gesetzte_Zeitluecke"] == 0
+      else:
+        self.acc_type = 0
+        acc_limiter_mode = False
+
       self.esp_hold_confirmation = bool(pt_cp.vl["ESP_21"]["ESP_Haltebestaetigung"])
-      acc_limiter_mode = ext_cp.vl["ACC_02"]["ACC_Gesetzte_Zeitluecke"] == 0
       speed_limiter_mode = bool(pt_cp.vl["TSK_06"]["TSK_Limiter_ausgewaehlt"])
 
       ret.cruiseState.available = pt_cp.vl["TSK_06"]["TSK_Status"] in (2, 3, 4, 5)
       ret.cruiseState.enabled = pt_cp.vl["TSK_06"]["TSK_Status"] in (3, 4, 5)
-      ret.cruiseState.speed = ext_cp.vl["ACC_02"]["ACC_Wunschgeschw_02"] * CV.KPH_TO_MS if self.CP.pcmCruise else 0
+      ret.cruiseState.speed = ext_cp.vl["ACC_02"]["ACC_Wunschgeschw_02"] * CV.KPH_TO_MS if has_acc and self.CP.pcmCruise else 0
       ret.accFaulted = pt_cp.vl["TSK_06"]["TSK_Status"] in (6, 7)
 
       ret.leftBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Left"])

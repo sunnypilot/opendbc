@@ -13,7 +13,7 @@ Ecu = structs.CarParams.Ecu
 NetworkLocation = structs.CarParams.NetworkLocation
 TransmissionType = structs.CarParams.TransmissionType
 GearShifter = structs.CarState.GearShifter
-Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
+Button = namedtuple("Button", ["event_type", "can_addr", "can_msg", "values"])
 
 
 class CanBus(CanBusBase):
@@ -189,6 +189,9 @@ class VolkswagenFlags(IntFlag):
   PQ = 2
   MLB = 8
 
+class VolkswagenFlagsSP(IntFlag):
+  SP_CC_ONLY = 1 << 16                # Shift flags starting at 16 to avoid conflict with existing flags
+  SP_CC_ONLY_NO_RADAR = 1 << 17
 
 @dataclass
 class VolkswagenMLBPlatformConfig(PlatformConfig):
