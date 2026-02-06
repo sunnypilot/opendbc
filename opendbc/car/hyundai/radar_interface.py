@@ -86,7 +86,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
         if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
           msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
           for i in ("1", "2"):
-            track_key = f"{addr}_{i}"
+            track_key = addr * 2 + (int(i) - 1)
             dist = msg[f"{i}_DISTANCE"]
             if track_key not in self.pts:
               self.pts[track_key] = structs.RadarData.RadarPoint()
@@ -106,7 +106,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
         elif self.CP_flags & HyundaiFlags.MRR30_RADAR:
           msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
           for i in ("1", "2"):
-            track_key = f"{addr}_{i}"
+            track_key = addr * 2 + (int(i) - 1)
             if track_key not in self.pts:
               self.pts[track_key] = structs.RadarData.RadarPoint()
               self.pts[track_key].trackId = self.track_id
