@@ -1,0 +1,119 @@
+"""
+Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
+
+This file is part of sunnypilot and is licensed under the MIT License.
+See the LICENSE.md file in the root directory for more details.
+"""
+
+import numpy as np
+from opendbc.car import DT_CTRL
+from opendbc.car.gm import gmcan
+from opendbc.car.gm.values import CanBus, CruiseButtons
+from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP
+from opendbc.sunnypilot.car import create_gas_interceptor_command
+
+
+class GasInterceptorCarController:
+  def __init__(self, CP, CP_SP):
+    # last_button_frame is separate from main controller timing
+    self.last_button_frame = 0
+    self.CP = CP
+    self.CP_SP = CP_SP
+    self.frame = 0
+    self.prev_op_enabled = False
+
+  def pedal_interceptor_active(self) -> bool:
+    return self.CP_SP.enableGasInterceptor and bool(self.CP_SP.flags & GMFlagsSP.NON_ACC)
+
+  @staticmethod
+  def calc_pedal_command(accel: float, long_active: bool, v_ego: float) -> float:
+    if not long_active:
+      return 0.
+
+    if accel < -2.0:
+      pedal_gas = 0.
+    else:
+      pedaloffset = np.interp(v_ego, [0., 3., 6., 30.], [0.10, 0.175, 0.240, 0.240])
+      pedal_gas = np.clip((pedaloffset + accel * 0.15), 0.0, 1.0)
+
+    return pedal_gas
+
+  def handle_gas_and_regen(self, can_sends, gas_regen_active: bool, at_full_stop: bool, idx: int) -> None:
+    """
+    Gate regen command when using a pedal interceptor.
+    This also ensures brake commands are suppressed for pedal-only long control.
+    """
+    if self.pedal_interceptor_active():
+      self.apply_brake = 0
+      return
+
+    can_sends.append(
+      gmcan.create_gas_regen_command(
+        self.packer_pt,
+        CanBus.POWERTRAIN,
+        self.apply_gas,
+        idx,
+        gas_regen_active,
+        at_full_stop,
+      )
+    )
+
+  def extend_with_interceptor(self, CC, CS, actuators, can_sends):
+    """
+    Inject NON_ACC / pedal interceptor behavior.
+    This mutates can_sends in-place, and returns nothing.
+    """
+
+    # Only run this path for NON_ACC (camera long / pedal cars) with a detected interceptor
+    if not self.pedal_interceptor_active():
+      return
+
+    # Gas/regen/longitudinal pedal command @25Hz (every 4 frames)
+    if self.frame % 4 == 0:
+      interceptor_gas_cmd = 0.0
+
+      if CC.longActive:
+        # openpilot is responsible for longitudinal, so generate pedal command
+        interceptor_gas_cmd = self.calc_pedal_command(
+          actuators.accel,
+          CC.longActive,
+          CS.out.vEgo,
+        )
+
+      idx = (self.frame // 4) % 4
+
+      # Always send the pedal command to keep the interceptor alive
+      can_sends.append(
+        create_gas_interceptor_command(
+          self.packer_pt,
+          interceptor_gas_cmd,
+          idx,
+        )
+      )
+
+    # While cruise is enabled, send CANCEL to prevent stock ACC from taking over
+    if self.CP_SP.enableGasInterceptor and CS.out.cruiseState.enabled:
+      send_interval = (self.frame - self.last_button_frame) * DT_CTRL > 0.04
+
+      if CC.enabled and self.prev_op_enabled and send_interval:
+        self.last_button_frame = self.frame
+        can_sends.append(
+          gmcan.create_buttons(
+            self.packer_pt,
+            CanBus.POWERTRAIN,
+            (CS.buttons_counter + 1) % 4,
+            CruiseButtons.CANCEL,
+          )
+        )
+      elif (not CC.enabled) and self.prev_op_enabled and send_interval:
+        self.last_button_frame = self.frame
+        can_sends.append(
+          gmcan.create_buttons(
+            self.packer_pt,
+            CanBus.POWERTRAIN,
+            (CS.buttons_counter + 1) % 4,
+            CruiseButtons.CANCEL,
+          )
+        )
+
+    self.prev_op_enabled = CC.enabled
