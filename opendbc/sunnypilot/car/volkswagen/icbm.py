@@ -100,7 +100,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       # Patch counter
       accArgs["gra_stock_values"].update({
         "COUNTER": self.icbmHelper.baseCounter + self.icbmHelper.repetition
-      })Expand commentComment on lines R101 to R103Resolved
+      })
 
       return accArgs
 
