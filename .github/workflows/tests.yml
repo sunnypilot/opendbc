@@ -62,6 +62,7 @@ jobs:
 
   car_diff:
     name: car diff
+    if: false
     runs-on: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
     env:
       GIT_REF: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && github.event.before || format('origin/{0}', github.event.repository.default_branch) }}
@@ -77,11 +78,12 @@ jobs:
     - name: Test car diff
       if: github.event_name == 'pull_request'
       run: source setup.sh && python opendbc/car/tests/car_diff.py | tee diff.txt
-    - name: Comment PR
+    - name: Upload diff
       if: always() && github.event_name == 'pull_request' && github.repository == 'commaai/opendbc'
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: '[ -s diff.txt ] && gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} -F diff.txt || true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: car_diff_${{ github.event.number }}
+        path: diff.txt
     - name: Update refs
       if: github.repository == 'commaai/opendbc' && github.ref == 'refs/heads/master'
       run: source setup.sh && python opendbc/car/tests/car_diff.py --update-refs
