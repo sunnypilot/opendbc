@@ -59,7 +59,6 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
       if self.__res_button and not self.__prev_res_button:
         self.__queued_buttons.append("RES_BUTTON")
 
-
     # block button sends state
     if self.__state == 1:
       can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, "NO_BUTTON_PRESSED"))
