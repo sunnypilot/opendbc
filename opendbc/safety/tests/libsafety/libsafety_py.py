@@ -4,7 +4,7 @@ from cffi import FFI
 from opendbc.safety import LEN_TO_DLC
 
 libsafety_dir = os.path.dirname(os.path.abspath(__file__))
-libsafety_fn = os.path.join(libsafety_dir, "libsafety_mutation.so" if "MUTATION" in os.environ else "libsafety.so")
+libsafety_fn = os.path.join(libsafety_dir, "libsafety.so")
 
 ffi = FFI()
 
@@ -81,8 +81,8 @@ int get_honda_hw(void);
 bool get_lat_active(void);
 bool get_controls_allowed_lat(void);
 bool get_controls_requested_lat(void);
-void set_current_safety_param_sp(int param);
-int get_current_safety_param_sp(void);
+void set_current_safety_param_sp(uint16_t param);
+uint16_t get_current_safety_param_sp(void);
 bool get_enable_mads(void);
 bool get_disengage_lateral_on_brake(void);
 bool get_pause_lateral_on_brake(void);
