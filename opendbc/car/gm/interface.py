@@ -240,8 +240,9 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
-    # Keep pedal disabled in PR2; re-enable in PR3.
-    ret.enableGasInterceptor = False
+    # Check if pedal interceptor is present
+    has_pedal = PEDAL_MSG in fingerprint[0]
+    ret.enableGasInterceptor = has_pedal and bool(ret.flags & GMFlagsSP.NON_ACC)
 
     if ret.flags & GMFlagsSP.NON_ACC:
       stock_cp.steerActuatorDelay = 0.2
