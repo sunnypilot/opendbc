@@ -186,11 +186,11 @@ class CarInterfaceBase(ABC, CarInterfaceBaseSP):
     return ret
 
   @classmethod
-  def get_longitudinal_tuning_sp(cls, stock_cp: structs.CarParams, ret: structs.CarParamsSP) -> structs.CarParamsSP:
-    return cls._get_longitudinal_tuning_sp(stock_cp, ret)
+  def get_longitudinal_tuning_sp(cls, stock_cp: structs.CarParams, ret: structs.CarParamsSP, params_dict: dict[str, str] = None) -> structs.CarParamsSP:
+    return cls._get_longitudinal_tuning_sp(stock_cp, ret, params_dict)
 
   @staticmethod
-  def _get_longitudinal_tuning_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP) -> structs.CarParamsSP:
+  def _get_longitudinal_tuning_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, params_dict: dict[str, str] = None) -> structs.CarParamsSP:
     """Apply longitudinal tuning specific to the car's brand. """
     carlog.debug(f"Car {stock_cp.carFingerprint} does not have a _get_longitudinal_tuning_sp method, using defaults")
     return ret
