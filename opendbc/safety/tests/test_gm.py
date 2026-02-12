@@ -325,6 +325,12 @@ class TestGmCameraNonACCPedalSafety(GasInterceptorSafetyTest, TestGmCameraSafety
     values = {"CruiseActive": enable}
     return self.packer.make_can_msg_safety("ECMCruiseControl", 0, values)
 
+  def _interceptor_user_gas_split(self, gas_1: int, gas_2: int):
+    values = {"INTERCEPTOR_GAS": gas_1, "INTERCEPTOR_GAS2": gas_2,
+              "PEDAL_COUNTER": self.__class__.cnt_user_gas}
+    self.__class__.cnt_user_gas += 1
+    return self.packer.make_can_msg_safety("GAS_SENSOR", 0, values)
+
   def test_pcm_cruise_non_acc(self):
     # Test that NON_ACC cars with gas interceptor do NOT do PCM cruise check
     # Send PCM status message - should NOT affect controls_allowed for NON_ACC with gas interceptor
@@ -358,6 +364,18 @@ class TestGmCameraNonACCPedalSafety(GasInterceptorSafetyTest, TestGmCameraSafety
       for controls_allowed in [True, False]:
         self.safety.set_controls_allowed(controls_allowed)
         self.assertTrue(self._tx(self._interceptor_gas_cmd(gas)))
+
+  def test_gas_interceptor_split_tracks_mutation_guards(self):
+    self.safety.set_controls_allowed(True)
+
+    # Keep longitudinal enabled when averaged gas is below threshold.
+    self._rx(self._interceptor_user_gas_split(0, 0))
+    self.assertTrue(self.safety.get_longitudinal_allowed())
+
+    # This valid split pair maps to avg raw gas > threshold and should disable longitudinal.
+    # It catches arithmetic/comparison mutants in gm_rx_hook gas-interceptor handling.
+    self._rx(self._interceptor_user_gas_split(0, 49))
+    self.assertFalse(self.safety.get_longitudinal_allowed())
 
 
 class TestGmCameraEVNonACCPedalSafety(TestGmCameraNonACCPedalSafety, TestGmEVSafetyBase):

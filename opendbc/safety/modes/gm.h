@@ -52,7 +52,7 @@ static void gm_rx_hook(const CANPacket_t *msg) {
       int gas_track_2 = (msg->data[2] << 8) | msg->data[3];
       int gas_interceptor = (gas_track_1 + gas_track_2) / 2;
       gas_interceptor_prev = gas_interceptor;
-      gas_pressed = gas_interceptor > GM_GAS_INTERCEPTOR_THRESHOLD;
+      gas_pressed = gas_interceptor >= (GM_GAS_INTERCEPTOR_THRESHOLD + 1);
     }
 
     if (msg->addr == 0x184U) {
