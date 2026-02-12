@@ -9,6 +9,7 @@ import numpy as np
 
 from opendbc.car import structs
 from opendbc.car.can_definitions import CanData
+from opendbc.car.honda.values import CAR
 from opendbc.sunnypilot.car import create_gas_interceptor_command
 
 
@@ -25,8 +26,14 @@ class GasInterceptorCarController:
     can_sends = []
 
     if self.CP_SP.enableGasInterceptor:
-      # way too aggressive at low speed without this
-      gas_mult = np.interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
+      # TODO-SP: Test more Nidec cars and add them to the list
+      if self.CP.carFingerprint == CAR.HONDA_CLARITY:
+        # mike8643 Clarity Long Tune Interpolation applied to all tested vehicles
+        gas_mult = 1.0
+      else:
+        # gas multiplier to make pedal less touchy at low speed. The interceptor is
+        # way too aggressive at low speed without this on certain models.
+        gas_mult = np.interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
       # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
       # This prevents unexpected pedal range rescaling
       # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected
