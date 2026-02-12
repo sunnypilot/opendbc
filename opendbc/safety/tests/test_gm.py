@@ -145,6 +145,25 @@ class TestGmEVSafetyBase(TestGmSafetyBase):
     return self.packer.make_can_msg_safety("EBCMRegenPaddle", 0, values)
 
 
+def test_gm_non_acc_init_paths():
+  safety = libsafety_py.libsafety
+
+  # Exercise non-ACC init branches for ASCM/camera and EV/non-EV.
+  cases = (
+    (GMSafetyFlagsSP.NON_ACC | GMSafetyFlagsSP.GAS_INTERCEPTOR | GMSafetyFlagsSP.PEDAL_LONG, 0),
+    (GMSafetyFlagsSP.NON_ACC | GMSafetyFlagsSP.GAS_INTERCEPTOR | GMSafetyFlagsSP.PEDAL_LONG, GMSafetyFlags.HW_CAM),
+    (GMSafetyFlagsSP.NON_ACC | GMSafetyFlagsSP.GAS_INTERCEPTOR | GMSafetyFlagsSP.PEDAL_LONG, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG),
+    (GMSafetyFlagsSP.NON_ACC, GMSafetyFlags.HW_CAM),
+    (GMSafetyFlagsSP.NON_ACC, GMSafetyFlags.HW_CAM | GMSafetyFlags.EV),
+  )
+
+  for safety_param_sp, safety_param in cases:
+    safety.set_current_safety_param_sp(safety_param_sp)
+    assert safety.set_safety_hooks(CarParams.SafetyModel.gm, safety_param) == 0
+    safety.init_tests()
+    assert not safety.get_controls_allowed()
+
+
 class TestGmAscmSafety(GmLongitudinalBase, TestGmSafetyBase):
   TX_MSGS = [[0x180, 0], [0x409, 0], [0x40A, 0], [0x2CB, 0], [0x370, 0],  # pt bus
              [0xA1, 1], [0x306, 1], [0x308, 1], [0x310, 1],  # obs bus
