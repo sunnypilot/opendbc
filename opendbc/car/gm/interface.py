@@ -68,7 +68,6 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
       assert non_linear_torque_params, "The params are not defined"
       a, b, c, d = non_linear_torque_params
-      d = d if NON_LINEAR_TORQUE_PARAMS_SP.get(self.CP.carFingerprint) else 0.0
       sig_input = a * lateral_acceleration
       sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
       steer_torque = (sig * b) + (lateral_acceleration * c) + d
