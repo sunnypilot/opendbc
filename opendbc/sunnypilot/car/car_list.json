@@ -66,6 +66,16 @@
     ],
     "package": "All"
   },
+  "Acura TLX 2025": {
+    "platform": "ACURA_TLX_2G_MMR",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "TLX",
+    "year": [
+      "2025"
+    ],
+    "package": "All"
+  },
   "Audi A3 2014-19": {
     "platform": "AUDI_A3_MK3",
     "make": "Audi",
@@ -221,7 +231,7 @@
     "year": [
       "2017"
     ],
-    "package": "Adaptive Cruise Control (ACC)"
+    "package": "No Adaptive Cruise Control (Non-ACC)"
   },
   "Chevrolet Bolt EV Non-ACC 2018-21": {
     "platform": "CHEVROLET_BOLT_NON_ACC_1ST_GEN",
@@ -234,7 +244,7 @@
       "2020",
       "2021"
     ],
-    "package": "Adaptive Cruise Control (ACC)"
+    "package": "No Adaptive Cruise Control (Non-ACC)"
   },
   "Chevrolet Equinox 2019-22": {
     "platform": "CHEVROLET_EQUINOX",
@@ -264,7 +274,7 @@
       "2022",
       "2023"
     ],
-    "package": "Adaptive Cruise Control (ACC)"
+    "package": "No Adaptive Cruise Control (Non-ACC)"
   },
   "Chevrolet Silverado 1500 2020-21": {
     "platform": "CHEVROLET_SILVERADO",
@@ -1250,6 +1260,17 @@
       "2026"
     ],
     "package": "All"
+  },
+  "Honda Odyssey (Taiwan) 2018-19": {
+    "platform": "HONDA_ODYSSEY_TWN",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Odyssey (Taiwan)",
+    "year": [
+      "2018",
+      "2019"
+    ],
+    "package": "Honda Sensing"
   },
   "Honda Passport 2019-25": {
     "platform": "HONDA_PILOT",
@@ -3126,6 +3147,16 @@
     "year": [
       "2024",
       "2025"
+    ],
+    "package": "All"
+  },
+  "Tesla Model X (with HW4) 2024": {
+    "platform": "TESLA_MODEL_X",
+    "make": "Tesla",
+    "brand": "tesla",
+    "model": "Model X (with HW4)",
+    "year": [
+      "2024"
     ],
     "package": "All"
   },
