@@ -56,6 +56,30 @@
     ],
     "package": "All"
   },
+  "Acura TLX 2015-17": {
+    "platform": "ACURA_TLX_1G",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "TLX",
+    "year": [
+      "2015",
+      "2016",
+      "2017"
+    ],
+    "package": "Advance Package"
+  },
+  "Acura TLX 2018-20": {
+    "platform": "ACURA_TLX_1G",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "TLX",
+    "year": [
+      "2018",
+      "2019",
+      "2020"
+    ],
+    "package": "All"
+  },
   "Acura TLX 2021": {
     "platform": "ACURA_TLX_2G",
     "make": "Acura",
