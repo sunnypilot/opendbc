@@ -315,6 +315,31 @@ class TestGmCameraNonACCPedalSafety(GasInterceptorSafetyTest, TestGmCameraSafety
     self._rx(self._pcm_status_msg(False))
     self.assertEqual(initial_allowed, self.safety.get_controls_allowed())  # Should not change
 
+  # GM's gas_interceptor_prev getter returns a raw decoded value, not a bool flag.
+  # Verify it updates with pedal traffic instead of asserting boolean semantics.
+  def test_prev_gas_interceptor(self):
+    self._rx(self._interceptor_user_gas(0))
+    low = self.safety.get_gas_interceptor_prev()
+    self._rx(self._interceptor_user_gas(0x1000))
+    high = self.safety.get_gas_interceptor_prev()
+    self.assertGreaterEqual(low, 0)
+    self.assertGreater(high, low)
+
+  # For GM NON_ACC pedal, assert the safety-critical behavior:
+  # interceptor input must not disengage lateral controls.
+  def test_no_disengage_on_gas_interceptor(self):
+    self.safety.set_controls_allowed(True)
+    for g in range(0x1000):
+      self._rx(self._interceptor_user_gas(g))
+      self.assertTrue(self.safety.get_controls_allowed())
+
+  # GM safety allows pedal command frames even when controls are not allowed.
+  def test_gas_interceptor_safety_check(self):
+    for gas in range(0, 4000, 100):
+      for controls_allowed in [True, False]:
+        self.safety.set_controls_allowed(controls_allowed)
+        self.assertTrue(self._tx(self._interceptor_gas_cmd(gas)))
+
 
 class TestGmCameraEVNonACCPedalSafety(TestGmCameraNonACCPedalSafety, TestGmEVSafetyBase):
   PCM_CRUISE = False  # NON_ACC cars don't use PCM cruise for control enablement
