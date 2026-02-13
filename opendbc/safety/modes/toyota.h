@@ -86,12 +86,7 @@ static uint32_t toyota_get_checksum(const CANPacket_t *msg) {
 }
 
 static bool toyota_get_quality_flag_valid(const CANPacket_t *msg) {
-
-  bool valid = false;
-  if (msg->addr == 0x260U) {
-    valid = !GET_BIT(msg, 3U);  // STEER_ANGLE_INITIALIZING
-  }
-  return valid;
+  return !GET_BIT(msg, 3U);  // STEER_ANGLE_INITIALIZING
 }
 
 static int TOYOTA_GET_INTERCEPTOR(const CANPacket_t *msg) {
@@ -214,9 +209,9 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
 
     // the EPS faults when the steering angle rate is above a certain threshold for too long. to prevent this,
     // we allow setting STEER_REQUEST bit to 0 while maintaining the requested torque value for a single frame
-    .min_valid_request_frames = 18,
+    .min_valid_request_frames = 17,
     .max_invalid_request_frames = 1,
-    .min_valid_request_rt_interval = 171000,  // 171ms; a ~10% buffer on cutting every 19 frames
+    .min_valid_request_rt_interval = 162000,  // 162ms; a ~10% buffer on cutting every 18 frames
     .has_steer_req_tolerance = true,
   };
 
@@ -421,8 +416,8 @@ static safety_config toyota_init(uint16_t param) {
   const uint32_t TOYOTA_PARAM_STOCK_LONGITUDINAL = 2UL << TOYOTA_PARAM_OFFSET;
   const uint32_t TOYOTA_PARAM_LTA = 4UL << TOYOTA_PARAM_OFFSET;
 
-  const int TOYOTA_PARAM_SP_UNSUPPORTED_DSU = 1;
-  const int TOYTOA_PARAM_SP_GAS_INTERCEPTOR = 2;
+  const uint16_t TOYOTA_PARAM_SP_UNSUPPORTED_DSU = 1;
+  const uint16_t TOYTOA_PARAM_SP_GAS_INTERCEPTOR = 2;
 
 #ifdef ALLOW_DEBUG
   const uint32_t TOYOTA_PARAM_SECOC = 8UL << TOYOTA_PARAM_OFFSET;
