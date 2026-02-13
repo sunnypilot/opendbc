@@ -60,6 +60,9 @@ class CarInterface(CarInterfaceBase):
 
     stock_cp.enableBsm = True
 
+    if candidate == CAR.TESLA_MODEL_X:
+      stock_cp.dashcamOnly = False
+
     if 0x3DF in fingerprint[1]:
       ret.flags |= TeslaFlagsSP.HAS_VEHICLE_BUS.value
       ret.safetyParam |= TeslaSafetyFlagsSP.HAS_VEHICLE_BUS
