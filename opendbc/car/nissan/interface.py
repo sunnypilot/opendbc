@@ -5,16 +5,18 @@ from opendbc.car.nissan.carstate import CarState
 from opendbc.car.nissan.values import CAR, NissanSafetyFlags
 from opendbc.sunnypilot.car.nissan.values import NissanSafetyFlagsSP
 
-
 class CarInterface(CarInterfaceBase):
   CarState = CarState
   CarController = CarController
+
+  DRIVABLE_GEARS = (structs.CarState.GearShifter.brake,)
 
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
     ret.brand = "nissan"
     ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.nissan)]
     ret.autoResumeSng = False
+    ret.steerAtStandstill = True
 
     ret.steerLimitTimer = 1.0
 
@@ -31,7 +33,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
-                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
     if candidate in (CAR.NISSAN_LEAF, CAR.NISSAN_LEAF_IC):
       ret.safetyParam |= NissanSafetyFlagsSP.LEAF
 
