@@ -90,6 +90,7 @@ class CarStateExt:
         ret.stockAeb = aeb_warning and aeb_braking
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_conv
+    self.update_custom_button(ret, cp)
 
   def update_canfd_ext(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser],
                        speed_factor: float) -> None:
@@ -99,3 +100,4 @@ class CarStateExt:
     self.aBasis = cp.vl["TCS"]["aBasis"]
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
+    self.update_custom_button(ret, cp)
