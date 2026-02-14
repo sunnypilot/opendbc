@@ -7,7 +7,6 @@ from opendbc.car.tesla.radar_interface import RadarInterface, RADAR_START_ADDR
 
 from opendbc.sunnypilot.car.tesla.values import TeslaFlagsSP, TeslaSafetyFlagsSP
 
-
 class CarInterface(CarInterfaceBase):
   CarState = CarState
   CarController = CarController
