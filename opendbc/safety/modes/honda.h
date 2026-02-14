@@ -45,7 +45,6 @@ static bool honda_bosch_long = false;
 static bool honda_bosch_radarless = false;
 static bool honda_bosch_canfd = false;
 static bool honda_nidec_hybrid = false;
-static bool honda_stock_longitudinal = false;
 typedef enum {HONDA_NIDEC, HONDA_BOSCH} HondaHw;
 static HondaHw honda_hw = HONDA_NIDEC;
 
@@ -373,6 +372,7 @@ static safety_config honda_nidec_init(uint16_t param) {
   honda_bosch_long = false;
   honda_bosch_radarless = false;
   honda_bosch_canfd = false;
+  bool honda_stock_longitudinal = false;
 
   safety_config ret;
 
