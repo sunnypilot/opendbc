@@ -43,7 +43,7 @@ class CarStateExt:
     return speed_limit
 
   def update_custom_button(self, ret: structs.CarState, cp) -> None:
-    if not (self.CP_SP.flags & HyundaiFlagsSP.HAS_CUSTOM_BUTTON) or "STEERING_WHEEL_MEDIA_BUTTONS" not in cp.vl:
+    if not (self.CP_SP.flags & HyundaiFlagsSP.HAS_CUSTOM_BUTTON):
       return
 
     prev = self.custom_button
