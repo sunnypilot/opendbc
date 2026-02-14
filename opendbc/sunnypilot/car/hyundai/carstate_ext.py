@@ -19,6 +19,8 @@ class CarStateExt:
     self.CP_SP = CP_SP
 
     self.aBasis = 0.0
+    self.custom_button = 0
+    self.prev_custom_button = 0
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -40,6 +42,20 @@ class CarStateExt:
       speed_limit = 0
 
     return speed_limit
+
+  def update_custom_button(self, ret: structs.CarState, cp) -> None:
+    if not (self.CP_SP.flags & HyundaiFlagsSP.HAS_CUSTOM_BUTTON):
+      return
+
+    self.prev_custom_button = self.custom_button
+    self.custom_button = cp.vl["STEERING_WHEEL_MEDIA_BUTTONS"]["CUSTOM_BUTTON"]
+
+    if self.custom_button != self.prev_custom_button:
+      pressed = self.custom_button == 1
+      ret.buttonEvents.append(structs.CarState.ButtonEvent(
+        type=structs.CarState.ButtonEvent.Type.altButton2,
+        pressed=pressed
+      ))
 
   def update(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser], speed_conv: float) -> None:
     cp = can_parsers[Bus.pt]
