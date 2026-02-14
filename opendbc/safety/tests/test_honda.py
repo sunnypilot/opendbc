@@ -449,8 +449,10 @@ class TestHondaNidecAltGasInterceptorSafety(GasInterceptorSafetyTest, HondaButto
     return self.packer.make_can_msg_safety("SCM_BUTTONS", bus, values)
 
 
-class TestHondaNidecStockLongitudinalSafetyBase(TestHondaNidecSafetyBase):
+class TestHondaNidecStockLongitudinalSafety(HondaPcmEnableBase, TestHondaNidecSafetyBase):
   TX_MSGS = HONDA_N_COMMON_TX_MSGS
+  FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0x194, 0x33D]}
+  RELAY_MALFUNCTION_ADDRS = {0: (0xE4, 0x194, 0x33D)}
 
   def setUp(self):
     self.packer = CANPackerSafety("honda_civic_touring_2016_can_generated")
@@ -458,6 +460,10 @@ class TestHondaNidecStockLongitudinalSafetyBase(TestHondaNidecSafetyBase):
     self.safety.set_current_safety_param_sp(HondaSafetyFlagsSP.STOCK_LONGITUDINAL)
     self.safety.set_safety_hooks(CarParams.SafetyModel.hondaNidec, 0)
     self.safety.init_tests()
+
+  # Nidec doesn't disengage on falling edge of cruise. See comment in safety_honda.h
+  def test_disable_control_allowed_from_cruise(self):
+    pass
 
   def _send_brake_msg(self, brake, aeb_req=0, bus=0):
     pass
@@ -469,6 +475,9 @@ class TestHondaNidecStockLongitudinalSafetyBase(TestHondaNidecSafetyBase):
     pass
 
   def test_acc_hud_safety_check(self):
+    pass
+
+  def test_fwd_hook(self):
     pass
 
   def test_honda_fwd_brake_latching(self):
