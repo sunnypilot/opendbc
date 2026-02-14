@@ -368,5 +368,5 @@ routes = [
   CarTestRoute("bec2dcfde6a64235/2022-04-08--14-21-32", HONDA.HONDA_CRV_HYBRID, segment=22),
 
   # port extensions
-    CarTestRoute("21ea2d289932890b/00000001--8bffd57376", HONDA.HONDA_ACCORD_9G),  # with pedal interceptor
+    CarTestRoute("a241dc58a68843d1/0000082b--c9d9504bef", HONDA.HONDA_ACCORD_9G),
 ]
