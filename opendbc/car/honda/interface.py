@@ -324,6 +324,10 @@ class CarInterface(CarInterfaceBase):
     ret.intelligentCruiseButtonManagementAvailable = candidate in (HONDA_BOSCH - HONDA_BOSCH_CANFD) or \
                                                      (candidate in HONDA_BOSCH_CANFD and not is_release_sp)
 
+    if ret.flags & HondaFlagsSP.STOCK_LONGITUDINAL:
+      stock_cp.openpilotLongitudinalControl = False
+      ret.safetyParam |= HondaSafetyFlagsSP.STOCK_LONGITUDINAL
+
     return ret
 
   @staticmethod
