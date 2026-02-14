@@ -70,6 +70,17 @@ BO_ 1017 ECS12: 4 ECS
  SG_ Height_RL : 16|8@1+ (1.0,-128.0) [-128.0|127.0] "mm"  AFLS
  SG_ Height_RR : 24|8@1+ (1.0,-128.0) [-128.0|127.0] "mm"  AFLS
 
+BO_ 1096 STEERING_WHEEL_MEDIA_BUTTONS: 8 XXX
+ SG_ VOICE_BUTTON : 16|1@0+ (1,0) [0|1] "" XXX
+ SG_ PHONE_BUTTON : 18|1@0+ (1,0) [0|1] "" XXX
+ SG_ MODE_BUTTON : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ RIGHT_SCROLL_PRESS : 24|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEXT_BUTTON : 26|1@0+ (1,0) [0|1] "" XXX
+ SG_ PREVIOUS_BUTTON : 28|1@0+ (1,0) [0|1] "" XXX
+ SG_ MENU_BUTTON : 34|1@0+ (1,0) [0|1] "" XXX
+ SG_ LEFT_SCROLL_PRESS : 38|1@0+ (1,0) [0|1] "" XXX
+ SG_ CUSTOM_BUTTON : 44|1@0+ (1,0) [0|1] "" XXX
+
 BO_ 1268 SPAS12: 8 SPAS
  SG_ CF_Spas_HMI_Stat : 0|8@1+ (1.0,0.0) [0.0|255.0] ""  CLU
  SG_ CF_Spas_Disp : 8|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU,EMS

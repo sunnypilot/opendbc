@@ -34,3 +34,4 @@ class HyundaiFlagsSP(IntFlag):
   RADAR_OFF = 2 ** 11
   RADAR_LEAD_ONLY = 2 ** 12
   RADAR_FULL_RADAR = 2 ** 13
+  HAS_CUSTOM_BUTTON = 2 ** 14
