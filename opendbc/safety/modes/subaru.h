@@ -16,7 +16,7 @@
        the steering torque every 6 frames for 1 frame if the steering rate is high */ \
     .min_valid_request_frames = 6,                                                    \
     .max_invalid_request_frames = 1,                                                  \
-    .min_valid_request_rt_interval = 126000,  /* 10% tolerance */                     \
+    .min_valid_request_rt_interval = 108000,  /* 10% tolerance */                     \
     .has_steer_req_tolerance = true,                                                  \
   }
 

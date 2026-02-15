@@ -175,6 +175,7 @@ class TestSubaruTorqueSafetyBase(TestSubaruSafetyBase, common.DriverTorqueSteeri
 
   # Safety around steering req bit
   MIN_VALID_STEERING_FRAMES = 6
+  MIN_VALID_STEERING_RT_INTERVAL = 108000
   MAX_INVALID_STEERING_FRAMES = 1
   STEER_STEP = 2
 
