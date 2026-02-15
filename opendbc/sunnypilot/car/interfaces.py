@@ -141,8 +141,4 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
       CP_SP.flags |= ToyotaFlagsSP.STOCK_LONGITUDINAL.value
       CP.alphaLongitudinalAvailable = False
       CP.openpilotLongitudinalControl = False
-
-    if not CP.openpilotLongitudinalControl:
       CP.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
-    else:
-      CP.safetyConfigs[0].safetyParam &= ~ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
