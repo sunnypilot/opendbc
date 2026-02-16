@@ -21,6 +21,30 @@
     ],
     "package": "All"
   },
+  "Acura MDX 2014-16": {
+    "platform": "ACURA_MDX_3G",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "MDX",
+    "year": [
+      "2014",
+      "2015",
+      "2016"
+    ],
+    "package": "Advance Package"
+  },
+  "Acura MDX 2017-19": {
+    "platform": "ACURA_MDX_3G",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "MDX",
+    "year": [
+      "2017",
+      "2018",
+      "2019"
+    ],
+    "package": "All"
+  },
   "Acura MDX 2025-26": {
     "platform": "ACURA_MDX_4G_MMR",
     "make": "Acura",
@@ -31,6 +55,18 @@
       "2026"
     ],
     "package": "All except Type S"
+  },
+  "Acura MDX Hybrid 2017-19": {
+    "platform": "ACURA_MDX_3G",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "MDX Hybrid",
+    "year": [
+      "2017",
+      "2018",
+      "2019"
+    ],
+    "package": "All"
   },
   "Acura RDX 2016-18": {
     "platform": "ACURA_RDX",
