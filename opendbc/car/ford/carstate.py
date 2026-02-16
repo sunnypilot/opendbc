@@ -6,16 +6,18 @@ from opendbc.car.ford.values import DBC, CarControllerParams, FordFlags
 from opendbc.car.interfaces import CarStateBase
 
 from opendbc.sunnypilot.car.ford.mads import MadsCarState
+from opendbc.sunnypilot.car.ford.carstate_ext import CarStateExt
 
 ButtonType = structs.CarState.ButtonEvent.Type
 GearShifter = structs.CarState.GearShifter
 TransmissionType = structs.CarParams.TransmissionType
 
 
-class CarState(CarStateBase, MadsCarState):
+class CarState(CarStateBase, MadsCarState, CarStateExt):
   def __init__(self, CP, CP_SP):
     CarStateBase.__init__(self, CP, CP_SP)
     MadsCarState.__init__(self, CP, CP_SP)
+    CarStateExt.__init__(self, CP, CP_SP)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["PowertrainData_10"]["TrnRng_D_Rq"]
@@ -63,6 +65,7 @@ class CarState(CarStateBase, MadsCarState):
     # cruise state
     is_metric = cp.vl["INSTRUMENT_PANEL"]["METRIC_UNITS"] == 1 if not self.CP.flags & FordFlags.CANFD else False
     ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * (CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS)
+    ret.cruiseState.speedCluster = ret.cruiseState.speed # ICBM needs speedCluster to read current cruise setpoint
     ret.cruiseState.enabled = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (4, 5)
     ret.cruiseState.available = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (3, 4, 5)
     ret.cruiseState.nonAdaptive = cp.vl["Cluster_Info1_FD1"]["AccEnbl_B_RqDrv"] == 0
@@ -113,10 +116,12 @@ class CarState(CarStateBase, MadsCarState):
     self.lkas_status_stock_values = cp_cam.vl["IPMA_Data"]
 
     MadsCarState.update_mads(self, ret, can_parsers)
+    CarStateExt.update(self, ret, ret_sp, can_parsers)
 
     ret.buttonEvents = [
       *create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise}),
       *create_button_events(self.lc_button, prev_lc_button, {1: ButtonType.lkas}),
+      *self.button_events,
     ]
     return ret, ret_sp
 
