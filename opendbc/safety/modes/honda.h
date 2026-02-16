@@ -45,6 +45,7 @@ static bool honda_bosch_long = false;
 static bool honda_bosch_radarless = false;
 static bool honda_bosch_canfd = false;
 static bool honda_nidec_hybrid = false;
+static bool honda_stock_longitudinal = false;
 typedef enum {HONDA_NIDEC, HONDA_BOSCH} HondaHw;
 static HondaHw honda_hw = HONDA_NIDEC;
 
@@ -316,7 +317,7 @@ static bool honda_tx_hook(const CANPacket_t *msg) {
   // FORCE CANCEL: safety check only relevant when spamming the cancel button in Bosch HW
   // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
-  if ((msg->addr == 0x296U) && !controls_allowed && (msg->bus == bus_buttons)) {
+  if (((msg->addr == 0x1A6U) || (msg->addr == 0x296U)) && !controls_allowed && (msg->bus == bus_buttons)) {
     if (((msg->data[0] >> 5) & 0x7U) != 2U) {
       tx = false;
     }
@@ -346,16 +347,19 @@ static safety_config honda_nidec_init(uint16_t param) {
   static CanMsg HONDA_N_TX_MSGS[] = {
     HONDA_N_COMMON_TX_MSGS
     HONDA_N_COMMON_LONG_TX_MSGS
+    {0x1A6, 0, 8, .check_relay = false},
   };
 
   static CanMsg HONDA_N_STOCK_LONGITUDINAL_TX_MSGS[] = {
     HONDA_N_COMMON_TX_MSGS
+    {0x1A6, 0, 8, .check_relay = false},
   };
 
   static CanMsg HONDA_N_INTERCEPTOR_TX_MSGS[] = {
     HONDA_N_COMMON_TX_MSGS
     HONDA_N_COMMON_LONG_TX_MSGS
     {0x200, 0, 6, .check_relay = false},
+    {0x1A6, 0, 8, .check_relay = false},
   };
 
   const uint16_t HONDA_PARAM_NIDEC_ALT = 4;
@@ -372,7 +376,6 @@ static safety_config honda_nidec_init(uint16_t param) {
   honda_bosch_long = false;
   honda_bosch_radarless = false;
   honda_bosch_canfd = false;
-  bool honda_stock_longitudinal = false;
 
   safety_config ret;
 
@@ -478,6 +481,7 @@ static safety_config honda_bosch_init(uint16_t param) {
   honda_bosch_canfd = GET_FLAG(param, HONDA_PARAM_BOSCH_CANFD);
   // Checking for alternate brake override from safety parameter
   honda_alt_brake_msg = GET_FLAG(param, HONDA_PARAM_ALT_BRAKE);
+  honda_stock_longitudinal = false;
 
   // radar disabled so allow gas/brakes
 #ifdef ALLOW_DEBUG
