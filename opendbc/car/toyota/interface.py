@@ -198,6 +198,8 @@ class CarInterface(CarInterfaceBase):
 
     if not stock_cp.openpilotLongitudinalControl:
       stock_cp.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
+    else:
+      stock_cp.safetyConfigs[0].safetyParam &= ~ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
 
     return ret
 
