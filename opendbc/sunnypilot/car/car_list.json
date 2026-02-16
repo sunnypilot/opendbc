@@ -259,6 +259,19 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
+  "Chevrolet Equinox Non-ACC 2019-22": {
+    "platform": "CHEVROLET_EQUINOX_NON_ACC_3RD_GEN",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Equinox Non-ACC",
+    "year": [
+      "2019",
+      "2020",
+      "2021",
+      "2022"
+    ],
+    "package": "No Adaptive Cruise Control (Non-ACC)"
+  },
   "Chevrolet Malibu Non-ACC 2016-23": {
     "platform": "CHEVROLET_MALIBU_NON_ACC_9TH_GEN",
     "make": "Chevrolet",
