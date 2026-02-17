@@ -128,7 +128,11 @@ class LongitudinalController:
     j_ego_upper = accel_error / future_t_upper
     j_ego_lower = accel_error / future_t_lower
 
-    return j_ego_upper, j_ego_lower
+    jerk_limit = self.car_config.jerk_limits
+    j_ego_upper = np.clip(j_ego_upper, -jerk_limit, jerk_limit)
+    j_ego_lower = np.clip(j_ego_lower, -jerk_limit, jerk_limit)
+
+    return float(j_ego_upper), float(j_ego_lower)
 
   def _calculate_dynamic_lower_jerk(self, accel_error: float, velocity: float) -> float:
     """Calculate dynamic jerk for braking based on acceleration error.
@@ -206,7 +210,7 @@ class LongitudinalController:
     if self.CP_SP.flags & HyundaiFlagsSP.LONG_TUNING_PREDICTIVE:
       self.jerk_lower = desired_jerk_lower
     else:
-      self.jerk_lower = ramp_update(self.jerk_lower, dynamic_desired_lower_jerk)
+      self.jerk_lower = dynamic_desired_lower_jerk
 
     # Disable jerk when longitudinal control is inactive
     if not CC.longActive:
