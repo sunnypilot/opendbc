@@ -54,10 +54,3 @@ def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -
     val = jerk_lower * DT_CTRL * 5
 
   return rate_limit(desired_accel, last_accel, -val, val)
-
-
-def ramp_update(current, target):
-  error = target - current
-  if abs(error) > JERK_THRESHOLD:
-    return current + float(np.clip(error, -JERK_STEP, JERK_STEP))
-  return target

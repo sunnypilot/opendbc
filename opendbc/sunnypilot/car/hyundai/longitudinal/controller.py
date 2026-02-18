@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from opendbc.car import structs, DT_CTRL
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
-from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator, ramp_update
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -19,7 +19,7 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 MIN_JERK = 0.5
 
 DYNAMIC_LOWER_JERK_BP = [-2.0, -1.5, -1.0, -0.25, -0.1, -0.025, -0.01, -0.005]
-DYNAMIC_LOWER_JERK_V  = [3.3,  2.5,  2.0,   1.9,  1.8,   1.65,  1.15,    0.5]
+DYNAMIC_LOWER_JERK_V  = [3.3,  1.5,  1.0,   0.8,  0.7,   0.65,  0.55,    0.5]
 
 
 @dataclass
@@ -203,7 +203,7 @@ class LongitudinalController:
       dynamic_desired_lower_jerk = 5.0
 
     # Apply jerk limits based on tuning approach
-    self.jerk_upper = ramp_update(self.jerk_upper, desired_jerk_upper)
+    self.jerk_upper = desired_jerk_upper
 
     # Predictive tuning uses calculated desired jerk directly
     # Dynamic tuning applies a ramped approach for smoother transitions
@@ -255,8 +255,8 @@ class LongitudinalController:
       return
 
     accel = CS.out.aEgo
-    accel_vals = [0.0, 0.3, 0.6, 0.9, 1.2, 1.5]
-    decel_vals = [-3.0, -2.0, -1.5, -1.0, -0.5, -0.05]
+    accel_vals = [0.0, 0.3, 0.6, 0.9, 1.2, 2.0]
+    decel_vals = [-3.5, -2.5, -1.5, -1.0, -0.5, -0.05]
     comfort_band_vals = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]
 
     self.comfort_band_upper = float(np.interp(accel, accel_vals, comfort_band_vals))
