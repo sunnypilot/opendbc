@@ -81,7 +81,7 @@ class LongitudinalController:
       return
 
     # Keep track of time in stopping state (in control cycles)
-    if self.stopping_count > 1 / (DT_CTRL * 2):
+    if self.stopping_count > 1 / (DT_CTRL * 5):
       self.stopping = True
 
     self.stopping_count += 1

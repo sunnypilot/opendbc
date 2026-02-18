@@ -49,9 +49,9 @@ def get_longitudinal_tune(CP: structs.CarParams) -> None:
 
 def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -> float:
   if desired_accel >= last_accel:
-    val = jerk_upper * DT_CTRL * 2
+    val = jerk_upper * DT_CTRL * 5
   else:
-    val = jerk_lower * DT_CTRL * 2
+    val = jerk_lower * DT_CTRL * 5
 
   return rate_limit(desired_accel, last_accel, -val, val)
 
