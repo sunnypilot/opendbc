@@ -176,6 +176,7 @@ class CarInterface(CarInterfaceBase):
           stock_cp.flags |= ToyotaFlags.DISABLE_RADAR.value
       else:
         use_sdsu = use_sdsu and alpha_long
+        stock_cp.flags &= ~ToyotaFlags.DISABLE_RADAR.value
 
     # openpilot longitudinal enabled by default:
     #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
@@ -194,10 +195,6 @@ class CarInterface(CarInterfaceBase):
     if ret.enableGasInterceptor:
       ret.safetyParam |= ToyotaSafetyFlagsSP.GAS_INTERCEPTOR
       stock_cp.minEnableSpeed = -1.
-
-    if ret.flags & ToyotaFlagsSP.STOCK_LONGITUDINAL:
-      stock_cp.alphaLongitudinalAvailable = False
-      stock_cp.openpilotLongitudinalControl = False
 
     if not stock_cp.openpilotLongitudinalControl:
       stock_cp.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
