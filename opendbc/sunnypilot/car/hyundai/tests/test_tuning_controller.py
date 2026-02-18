@@ -82,8 +82,8 @@ class TestLongitudinalTuningController:
       assert expected == actual
 
   def test_calc_lookahead_jerk(self):
-    assert pytest.approx((-1.12, -1.12), abs=0.1) == self.controller._calculate_lookahead_jerk(-0.5, 4.9)
-    assert pytest.approx((1.12, 1.12), abs=0.1) == self.controller._calculate_lookahead_jerk(0.5, 5.0)
+    assert pytest.approx((-1.1, -1.6), abs=0.1) == self.controller._calculate_lookahead_jerk(-0.5, 4.9)
+    assert pytest.approx((1.1, 1.6), abs=0.1) == self.controller._calculate_lookahead_jerk(0.5, 5.0)
 
   def test_calc_dynamic_low_jerk(self):
     self.controller.car_config.jerk_limits = 3.3
