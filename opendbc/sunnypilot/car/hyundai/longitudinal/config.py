@@ -17,9 +17,9 @@ class CarTuningConfig:
   stopping_decel_rate: float = 0.40
   lookahead_jerk_bp: list[float] = field(default_factory=lambda: [2., 5., 20.])
   lookahead_jerk_upper_v: list[float] = field(default_factory=lambda: [0.3, 0.45, 0.6])
-  lookahead_jerk_lower_v: list[float] = field(default_factory=lambda: [0.2, 0.3, 0.5])
+  lookahead_jerk_lower_v: list[float] = field(default_factory=lambda: [0.3, 0.45, 0.6])
   longitudinal_actuator_delay: float = 0.50
-  jerk_limits: float = 5.0
+  jerk_limits: float = 4.0
 
 
 # Default configurations for different car types
@@ -50,5 +50,6 @@ CAR_SPECIFIC_CONFIGS = {
   ),
   CAR.KIA_NIRO_PHEV_2022: CarTuningConfig(
     stopping_decel_rate=0.8,
+    jerk_limits=5.0,
   ),
 }
