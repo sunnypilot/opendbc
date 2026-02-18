@@ -90,6 +90,14 @@ def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
   _initialize_toyota(CP, CP_SP, params_dict)
 
 
+def remap_fingerprint_candidate(candidate: str | None, can_recv: CanRecvCallable) -> str | None:
+  if candidate is None:
+    return candidate
+
+  from opendbc.sunnypilot.car.gm.fingerprint_ext import remap_candidate as gm_remap_candidate
+  return gm_remap_candidate(candidate, can_recv)
+
+
 def _initialize_custom_longitudinal_tuning(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
                                            params_dict: dict[str, str]) -> None:
 

@@ -7,41 +7,13 @@ from opendbc.car.carlog import carlog
 from opendbc.car.structs import CarParams, CarParamsT
 from opendbc.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from opendbc.car.fw_versions import ObdCallback, get_fw_versions_ordered, get_present_ecus, match_fw_to_car
-from opendbc.car.gm.values import CAR as GM
 from opendbc.car.mock.values import CAR as MOCK
 from opendbc.car.values import BRANDS
 from opendbc.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 
-from opendbc.sunnypilot.car.interfaces import setup_interfaces as sunnypilot_interfaces
+from opendbc.sunnypilot.car.interfaces import setup_interfaces as sunnypilot_interfaces, remap_fingerprint_candidate as sp_remap_fingerprint_candidate
 
 FRAME_FINGERPRINT = 100  # 1s
-
-
-def _classify_bolt_by_ascm_status(can_recv: CanRecvCallable) -> str:
-  # On some non-ACC Bolt EUV trims, 0x370 is present but always all-zero.
-  # ACC variants send non-zero fields (e.g. ACCGapLevel), so use this to split.
-  saw_ascm_status = False
-  frames = 0
-  max_frames = 40
-
-  while frames < max_frames:
-    can_packets = can_recv(wait_for_one=True)
-    if len(can_packets) == 0:
-      frames += 1
-      continue
-
-    for can_packet in can_packets:
-      for can in can_packet:
-        if can.src == 2 and can.address == 0x370:
-          saw_ascm_status = True
-          if any(can.dat):
-            return "acc"
-
-    frames += len(can_packets)
-
-  if saw_ascm_status:
-    return "non_acc_2nd_gen"
-  return "non_acc_1st_gen"
 
 
 def load_interfaces(brand_names):
@@ -168,18 +140,12 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
     source = CarParams.FingerprintSource.fw
     exact_match = exact_fw_match
 
-  if car_fingerprint == GM.CHEVROLET_BOLT_EUV:
-    bolt_variant = _classify_bolt_by_ascm_status(can_recv)
-    if bolt_variant == "non_acc_2nd_gen":
-      carlog.warning("Detected all-zero ASCMActiveCruiseControlStatus (0x370); selecting non-ACC Bolt fingerprint")
-      car_fingerprint = GM.CHEVROLET_BOLT_NON_ACC_2ND_GEN
-      source = CarParams.FingerprintSource.can
-      exact_match = False
-    elif bolt_variant == "non_acc_1st_gen":
-      carlog.warning("ASCMActiveCruiseControlStatus (0x370) not seen; selecting 1st-gen non-ACC Bolt fingerprint")
-      car_fingerprint = GM.CHEVROLET_BOLT_NON_ACC_1ST_GEN
-      source = CarParams.FingerprintSource.can
-      exact_match = False
+  sp_fingerprint = sp_remap_fingerprint_candidate(car_fingerprint, can_recv)
+  if sp_fingerprint != car_fingerprint:
+    carlog.warning(f"Sunnypilot remapped CAN fingerprint candidate: {car_fingerprint} -> {sp_fingerprint}")
+    car_fingerprint = sp_fingerprint
+    source = CarParams.FingerprintSource.can
+    exact_match = False
 
   if fixed_fingerprint:
     car_fingerprint = fixed_fingerprint
