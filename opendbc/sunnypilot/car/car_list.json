@@ -212,6 +212,17 @@
     ],
     "package": "Premier or Premier Redline Trim, without Super Cruise Package"
   },
+  "Chevrolet Bolt EUV LT Non-ACC 2022-23": {
+    "platform": "CHEVROLET_BOLT_NON_ACC_2ND_GEN",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EUV LT Non-ACC",
+    "year": [
+      "2022",
+      "2023"
+    ],
+    "package": "No Adaptive Cruise Control (Non-ACC)"
+  },
   "Chevrolet Bolt EV 2022-23": {
     "platform": "CHEVROLET_BOLT_EUV",
     "make": "Chevrolet",
@@ -222,6 +233,17 @@
       "2023"
     ],
     "package": "2LT Trim with Adaptive Cruise Control Package"
+  },
+  "Chevrolet Bolt EV LT Non-ACC 2022-23": {
+    "platform": "CHEVROLET_BOLT_NON_ACC_2ND_GEN",
+    "make": "Chevrolet",
+    "brand": "gm",
+    "model": "Bolt EV LT Non-ACC",
+    "year": [
+      "2022",
+      "2023"
+    ],
+    "package": "No Adaptive Cruise Control (Non-ACC)"
   },
   "Chevrolet Bolt EV Non-ACC 2017": {
     "platform": "CHEVROLET_BOLT_NON_ACC",
