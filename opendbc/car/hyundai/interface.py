@@ -218,6 +218,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.intelligentCruiseButtonManagementAvailable = not (stock_cp.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
 
+    # These cars have a custom star button on the steering wheel
+    if 0x448 in fingerprint[CAN.ECAN]:
+      ret.flags |= HyundaiFlagsSP.HAS_CUSTOM_BUTTON.value
+
     return ret
 
   @staticmethod
