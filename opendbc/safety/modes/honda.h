@@ -347,7 +347,6 @@ static safety_config honda_nidec_init(uint16_t param) {
   static CanMsg HONDA_N_TX_MSGS[] = {
     HONDA_N_COMMON_TX_MSGS
     HONDA_N_COMMON_LONG_TX_MSGS
-    {0x1A6, 0, 8, .check_relay = false},
   };
 
   static CanMsg HONDA_N_STOCK_LONGITUDINAL_TX_MSGS[] = {
@@ -359,7 +358,6 @@ static safety_config honda_nidec_init(uint16_t param) {
     HONDA_N_COMMON_TX_MSGS
     HONDA_N_COMMON_LONG_TX_MSGS
     {0x200, 0, 6, .check_relay = false},
-    {0x1A6, 0, 8, .check_relay = false},
   };
 
   const uint16_t HONDA_PARAM_NIDEC_ALT = 4;
