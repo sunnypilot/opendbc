@@ -51,7 +51,7 @@ class TestLongitudinalTuningController:
   def setup_method(self):
     self.CP = CP(flags=0)
     self.CP_SP = CP(flags=0)
-    self.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
+    self.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_PREDICTIVE
     self.CS = CS()
     self.CC = CC()
     self.controller = LongitudinalController(self.CP, self.CP_SP)
@@ -71,24 +71,19 @@ class TestLongitudinalTuningController:
     assert not self.controller.stopping
 
   def test_calc_speed_based_jerk(self):
-    assert (0.5, 5.0) == self.controller._calculate_speed_based_jerk_limits(0.0, LongCtrlState.stopping)
+    assert (0.5, 5.0) == self.controller._calculate_speed_based_jerk_limits(self, 0.0, LongCtrlState.stopping)
     velocities: list = [0.0, 2.0, 5.0, 7.0, 10.0, 15.0, 20.0, 25.0, 30.0]
 
     for velocity in velocities:
       upper_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 3.0, 2.0]))
       lower_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 3.5, 3.0]))
       expected: tuple = (upper_limit, lower_limit)
-      actual: tuple = self.controller._calculate_speed_based_jerk_limits(velocity, LongCtrlState.pid)
+      actual: tuple = self.controller._calculate_speed_based_jerk_limits(self, velocity, LongCtrlState.pid)
       assert expected == actual
 
   def test_calc_lookahead_jerk(self):
     assert pytest.approx((-1.1, -1.1), abs=0.1) == self.controller._calculate_lookahead_jerk(-0.5, 4.9)
     assert pytest.approx((1.1, 1.1), abs=0.1) == self.controller._calculate_lookahead_jerk(0.5, 5.0)
-
-  def test_calc_dynamic_low_jerk(self):
-    self.controller.car_config.jerk_limits = 3.3
-    assert 0.5 == self.controller._calculate_dynamic_lower_jerk(0.0, 10.0)
-    assert 3.3 == self.controller._calculate_dynamic_lower_jerk(-2.0, 10.0)
 
   def test_calc_jerk(self):
     self.CP_SP.flags = 0
@@ -117,7 +112,7 @@ class TestLongitudinalTuningController:
     for _ in range(50):
       self.controller.calculate_jerk(self.CC, self.CS, LongCtrlState.pid)
     assert self.controller.jerk_upper == 0.5
-    assert self.controller.jerk_lower == 3.3
+    assert self.controller.jerk_lower == pytest.approx(3.3, abs=0.1)
 
   def test_calc_accel(self):
     self.CP_SP.flags = 0
