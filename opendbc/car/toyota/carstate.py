@@ -1,5 +1,7 @@
 import copy
 
+from cereal import custom
+from openpilot.common.params import Params
 from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, DT_CTRL, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
@@ -13,6 +15,7 @@ from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
 SteerControlType = structs.CarParams.SteerControlType
+AccelPersonality = custom.LongitudinalPlanSP.AccelerationPersonality
 
 # These steering fault definitions seem to be common across LKA (torque) and LTA (angle):
 # - high steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
@@ -69,6 +72,12 @@ class CarState(CarStateBase, CarStateExt):
     if CP_SP.flags & ToyotaFlagsSP.SP_AUTO_BRAKE_HOLD:
       self.pre_collision_2 = {}
 
+    self.toyota_drive_mode = Params().get_bool('ToyotaDriveMode')
+    self._drive_mode_signals_checked = False
+    self._sport_signal_available = False
+    self._eco_signal_available = False
+    self._prev_accel_profile = None
+
     self.frame = 0
 
   def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
@@ -99,6 +108,36 @@ class CarState(CarStateBase, CarStateExt):
       can_gear = int(cp.vl["GEAR_PACKET"]["GEAR"])
       if not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
         ret.stockAeb = bool(cp_acc.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_acc.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
+
+    if self.toyota_drive_mode and not self.CP.flags & ToyotaFlags.SECOC.value:
+      sport_signal = 'SPORT_ON_2' if self.CP.carFingerprint in (CAR.TOYOTA_RAV4_TSS2, CAR.LEXUS_ES_TSS2,
+                                                                CAR.TOYOTA_HIGHLANDER_TSS2) else 'SPORT_ON'
+      if not self._drive_mode_signals_checked:
+        self._drive_mode_signals_checked = True
+        try:
+          cp.vl["GEAR_PACKET"][sport_signal]
+          self._sport_signal_available = True
+        except (KeyError, ValueError):
+          self._sport_signal_available = False
+        try:
+          cp.vl["GEAR_PACKET"]['ECON_ON']
+          self._eco_signal_available = True
+        except (KeyError, ValueError):
+          self._eco_signal_available = False
+
+      sport_mode = cp.vl["GEAR_PACKET"][sport_signal] if self._sport_signal_available else 0
+      eco_mode = cp.vl["GEAR_PACKET"]['ECON_ON'] if self._eco_signal_available else 0
+
+      if sport_mode == 1:
+        accel_profile = AccelPersonality.sport
+      elif eco_mode == 1:
+        accel_profile = AccelPersonality.eco
+      else:
+        accel_profile = AccelPersonality.normal
+
+      if accel_profile != self._prev_accel_profile:
+        Params().put_nonblocking('AccelPersonality', int(accel_profile))
+        self._prev_accel_profile = accel_profile
 
     self.parse_wheel_speeds(ret,
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
