@@ -71,14 +71,14 @@ class TestLongitudinalTuningController:
     assert not self.controller.stopping
 
   def test_calc_speed_based_jerk(self):
-    assert (0.5, 5.0) == self.controller._calculate_speed_based_jerk_limits(self, 0.0, LongCtrlState.stopping)
+    assert (0.5, 5.0) == self.controller._calculate_speed_based_jerk_limits(0.0, LongCtrlState.stopping)
     velocities: list = [0.0, 2.0, 5.0, 7.0, 10.0, 15.0, 20.0, 25.0, 30.0]
 
     for velocity in velocities:
       upper_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [2.0, 3.0, 2.0]))
       lower_limit = float(np.interp(velocity, [0.0, 5.0, 20.0], [5.0, 3.5, 3.0]))
       expected: tuple = (upper_limit, lower_limit)
-      actual: tuple = self.controller._calculate_speed_based_jerk_limits(self, velocity, LongCtrlState.pid)
+      actual: tuple = self.controller._calculate_speed_based_jerk_limits(velocity, LongCtrlState.pid)
       assert expected == actual
 
   def test_calc_lookahead_jerk(self):

@@ -83,7 +83,6 @@ class LongitudinalController:
 
     self.stopping_count += 1
 
-  @staticmethod
   def _calculate_speed_based_jerk_limits(self, velocity: float, long_control_state: LongCtrlState) -> tuple[float, float]:
     """Calculate jerk limits based on vehicle speed according to ISO 15622:2018.
 
@@ -152,7 +151,7 @@ class LongitudinalController:
     accel_error = self.accel_cmd - self.accel_last
 
     # Calculate jerk limits based on speed
-    upper_speed_factor, lower_speed_factor = self._calculate_speed_based_jerk_limits(self, velocity, long_control_state)
+    upper_speed_factor, lower_speed_factor = self._calculate_speed_based_jerk_limits(velocity, long_control_state)
 
     # Apply jerk limits based on tuning approach
     # Predictive tuning uses calculated desired jerk directly
