@@ -219,7 +219,7 @@ class LongitudinalController:
       self.comfort_band_lower = float(np.interp(accel, decel_vals, comfort_band_vals[::-1]))
     else:
       self.comfort_band_upper = float(np.interp(accel, [0.0, 2.0], [0.0, 0.04]))
-      self.comfort_band_lower = float(np.interp(accel, [-3.5, -0.05], [0.0, 0.04]))
+      self.comfort_band_lower = float(np.interp(accel, [-3.5, -0.05], [0.04, 0.0]))
 
   def get_tuning_state(self) -> None:
     """Update the tuning state object with current control values.
