@@ -25,8 +25,8 @@ GearShifter = structs.CarState.GearShifter
 
 # The up limit allows the brakes/gas to unwind quickly leaving a stop,
 # the down limit roughly matches the rate of ACCEL_NET, reducing PCM compensation windup
-ACCEL_WINDUP_LIMIT = 4.0 * DT_CTRL * 3  # m/s^2 / frame
-ACCEL_WINDDOWN_LIMIT = -4.0 * DT_CTRL * 3  # m/s^2 / frame
+ACCEL_WINDUP_LIMIT = 3.0 * DT_CTRL * 3  # m/s^2 / frame
+ACCEL_WINDDOWN_LIMIT = -3.0 * DT_CTRL * 3  # m/s^2 / frame
 ACCEL_PID_UNWIND = 0.03 * DT_CTRL * 3  # m/s^2 / frame
 
 MAX_PITCH_COMPENSATION = 1.5  # m/s^2
@@ -45,30 +45,8 @@ RIGHT_BLINDSPOT = b"\x42"
 def get_long_tune(CP, params):
   if CP.carFingerprint in TSS2_CAR:
     if Params().get_bool("ToyotaTSS2Long"):
-      if CP.carFingerprint == CAR.TOYOTA_RAV4_TSS2:
-        #optimal for rav4
-        kiBP = [1.5,  3.0,  5.0,  9.0,   14.]
-        kiV = [0.48,  0.47, 0.28, 0.257, 0.25]
-        #kiBP = [2.,  5.,   11.]
-        #kiV = [0.48, 0.28, 0.25]
-        #kiBP = [2., 9.,]
-        #kiV = [0.35, 0.22]
-      else:
-        #test
-        kiBP = [1.5,  3.0,  6.0,  14.]
-        kiV = [0.43,  0.40, 0.252, 0.24]
-        # optimal for corolla
-        # kiBP = [0.,  12.,   20.,   27.]
-        # kiV =  [0.35, 0.20, 0.168, 0.1]
-        # balanced
-        #kiBP = [1.,  2.,  4.,   7.,  12.,  27.]
-        #kiV =  [.35, .45, .42, .25, .20,  .11]
-        # conservative
-        # kiBP = [0.,  3.,  5.,  8., 12., 25.]
-        # kiV =  [0.38, 0.42, 0.35, 0.28, 0.25, 0.25]
-        # sportie
-        # kiBP = [0.,  3.,  5.,  8., 12., 25.]
-        # kiV =  [0.42, 0.46, 0.38, 0.30, 0.26, 0.26]
+      kiBP = [1.5,  3.0,  5.0,  9.0,  14.]
+      kiV =  [0.38, 0.36, 0.24, 0.22, 0.20]
     else:
       kiBP = [2., 5.]
       kiV = [0.5, 0.25]
