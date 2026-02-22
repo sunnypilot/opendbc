@@ -167,3 +167,17 @@ class TestLongitudinalTuningController:
     assert self.controller.comfort_band_lower == 0.0
     assert self.controller.comfort_band_upper == 0.10
     assert self.controller.desired_accel == 2.0
+
+  def test_minimal_dynamic_tuning(self):
+    self.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
+    self.CS.out.vEgo = 5.0
+
+    self.controller.accel_cmd = 1.0
+    self.controller.calculate_jerk(self.CC, self.CS, LongCtrlState.pid)
+    assert self.controller.jerk_upper == 3.0
+    assert self.controller.jerk_lower == 0.5
+
+    self.controller.accel_cmd = -1.0
+    self.controller.calculate_jerk(self.CC, self.CS, LongCtrlState.pid)
+    assert self.controller.jerk_upper == 0.5
+    assert self.controller.jerk_lower == 3.5
