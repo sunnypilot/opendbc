@@ -13,6 +13,7 @@ from opendbc.car import structs
 from opendbc.car.can_definitions import CanRecvCallable, CanSendCallable
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.car.subaru.values import SubaruFlags
+from opendbc.car.toyota.values import ToyotaSafetyFlags
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks as hyundai_enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
@@ -75,7 +76,8 @@ class NanoFFModel:
 
 
 def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
-                     params_list: list[dict[str, str]] | None = None, can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
+                     params_list: list[dict[str, str]] | None = None,
+                     can_recv: CanRecvCallable | None = None, can_send: CanSendCallable | None = None) -> None:
   if params_list is None:
     params_list = []
 
@@ -110,7 +112,8 @@ def _initialize_coop_steering(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
       CP_SP.flags |= TeslaFlagsSP.COOP_STEERING.value
 
 
-def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanRecvCallable = None, can_send: CanSendCallable = None) -> None:
+def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
+                             can_recv: CanRecvCallable | None = None, can_send: CanSendCallable | None = None) -> None:
   if CP.brand == 'hyundai':
     if CP.flags & HyundaiFlags.MANDO_RADAR and (CP.radarUnavailable or CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC):
       tracks_enabled = hyundai_enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
@@ -136,3 +139,6 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
 
     if toyota_stock_long:
       CP_SP.flags |= ToyotaFlagsSP.STOCK_LONGITUDINAL.value
+      CP.alphaLongitudinalAvailable = False
+      CP.openpilotLongitudinalControl = False
+      CP.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
