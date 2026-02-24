@@ -164,8 +164,8 @@ class LongitudinalController:
       self.jerk_upper = desired_jerk_upper
       self.jerk_lower = desired_jerk_lower if not self.CP.radarUnavailable else 5.0
     else:
-      self.jerk_upper = upper_speed_factor if self.accel_cmd > 0.0 else MIN_JERK
-      self.jerk_lower = lower_speed_factor if self.accel_cmd < 0.0 else MIN_JERK
+      self.jerk_upper = upper_speed_factor
+      self.jerk_lower = lower_speed_factor
 
     # Disable jerk when longitudinal control is inactive
     if not CC.longActive:
@@ -199,7 +199,10 @@ class LongitudinalController:
       self.desired_accel = float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
 
     # Apply jerk-limited integration to get smooth acceleration
-    self.actual_accel = jerk_limited_integrator(self.desired_accel, self.accel_last, self.jerk_upper, self.jerk_lower)
+    if not self.CP.radarUnavailable:
+      self.actual_accel = jerk_limited_integrator(self.desired_accel, self.accel_last, self.jerk_upper, self.jerk_lower)
+    else:
+      self.actual_accel = self.desired_accel
 
     self.accel_last = self.actual_accel
 
