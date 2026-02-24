@@ -377,6 +377,15 @@ class CAR(Platforms):
     radar_dbc_dict('honda_clarity_hybrid_2018_can_generated'),
     flags=HondaFlags.HAS_ALL_DOOR_STATES,
   )
+  HONDA_ACCORD_9G = HondaNidecPlatformConfig(
+    [
+      HondaCarDocs("Honda Accord 2016-17"),
+      HondaCarDocs("Honda Accord Hybrid 2017", "All"),
+    ],
+    CarSpecs(mass=1487, wheelbase=2.75, centerToFrontRatio=0.39, steerRatio=13.66, tireStiffnessFactor=0.8467),  # 13.37 is end-to-end spec
+    radar_dbc_dict('honda_accord_2017_can_ext_generated'),
+    flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
+  )
 
 
 HONDA_NIDEC_ALT_PCM_ACCEL = CAR.with_flags(HondaFlags.NIDEC_ALT_PCM_ACCEL)
@@ -402,6 +411,8 @@ STEER_THRESHOLD = {
   CAR.HONDA_CRV_6G: 600,
   CAR.HONDA_CITY_7G: 600,
   CAR.HONDA_NBOX_2G: 600,
+  # port extensions
+  CAR.HONDA_ACCORD_9G: 30,
 }
 
 
@@ -446,9 +457,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # Note that we still attempt to match with them when they are present
   # This is or'd with (ALL_ECUS - ESSENTIAL_ECUS) from fw_versions.py
   non_essential_ecus={
-    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_E, *HONDA_BOSCH_ALT_RADAR, *HONDA_BOSCH_RADARLESS, *HONDA_BOSCH_CANFD],
+    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_E, CAR.HONDA_ACCORD_9G, *HONDA_BOSCH_ALT_RADAR, *HONDA_BOSCH_RADARLESS,
+              *HONDA_BOSCH_CANFD],
     Ecu.vsa: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID,
-              CAR.HONDA_E, CAR.HONDA_INSIGHT, CAR.HONDA_NBOX_2G, *HONDA_BOSCH_ALT_RADAR, *HONDA_BOSCH_RADARLESS, *HONDA_BOSCH_CANFD],
+              CAR.HONDA_E, CAR.HONDA_INSIGHT, CAR.HONDA_NBOX_2G, CAR.HONDA_ACCORD_9G, *HONDA_BOSCH_ALT_RADAR, *HONDA_BOSCH_RADARLESS,
+              *HONDA_BOSCH_CANFD],
   },
   extra_ecus=[
     (Ecu.combinationMeter, 0x18da60f1, None),
