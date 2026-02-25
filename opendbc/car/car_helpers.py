@@ -11,7 +11,7 @@ from opendbc.car.mock.values import CAR as MOCK
 from opendbc.car.values import BRANDS
 from opendbc.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 
-from opendbc.sunnypilot.car.interfaces import setup_interfaces as sunnypilot_interfaces
+from opendbc.sunnypilot.car.interfaces import setup_interfaces as sunnypilot_interfaces, remap_fingerprint_candidate as sp_remap_fingerprint_candidate
 
 FRAME_FINGERPRINT = 100  # 1s
 
@@ -139,6 +139,13 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
     car_fingerprint = list(fw_candidates)[0]
     source = CarParams.FingerprintSource.fw
     exact_match = exact_fw_match
+
+  sp_fingerprint = sp_remap_fingerprint_candidate(car_fingerprint, can_recv)
+  if sp_fingerprint != car_fingerprint:
+    carlog.warning(f"Sunnypilot remapped CAN fingerprint candidate: {car_fingerprint} -> {sp_fingerprint}")
+    car_fingerprint = sp_fingerprint
+    source = CarParams.FingerprintSource.can
+    exact_match = False
 
   if fixed_fingerprint:
     car_fingerprint = fixed_fingerprint
