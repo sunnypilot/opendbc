@@ -99,6 +99,17 @@ FW_VERSIONS_EXT = {
       b'\xf1\x006V2B0_C2\x00\x006V2D4051\x00\x00CSP2N20KL1\x00\x00\x00\x00',
     ],
   },
+  CAR.HYUNDAI_ELANTRA_NON_SCC: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00ADP LKAS AT USA LHD 1.00 1.02 99211-F2000 X30',
+    ],
+    (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x00AD ESC \x11 11 \x18\x05\x05 58910-F2510',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x006T6K0_C2\x00\x006T6S1051\x00\x00TAD0N20NSB)S\xb2\x83',
+    ],
+  },
   CAR.HYUNDAI_ELANTRA_2022_NON_SCC: {
     (Ecu.eps, 0x7d4, None): [
       # b'\xf1\x8756310AA030\x00\xf1\x00CN7 MDPS C 1.00 1.06 56310AA030\x00 4CNDC106',

@@ -612,6 +612,11 @@ class CAR(Platforms):
     CarSpecs(mass=1150, wheelbase=2.58, steerRatio=13.27 * 1.15),
     flags=HyundaiFlags.CHECKSUM_CRC8,
   )
+  HYUNDAI_ELANTRA_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Hyundai Elantra Non-SCC 2019", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_g]))],
+    HYUNDAI_ELANTRA.specs,
+    flags=HyundaiFlags.LEGACY | HyundaiFlags.CLUSTER_GEARS | HyundaiFlags.MIN_STEER_32_MPH,
+  )
   HYUNDAI_ELANTRA_2022_NON_SCC = HyundaiNonSccPlatformConfig(
     [HyundaiNonSccCarDocs("Hyundai Elantra Non-SCC 2022", car_parts=CarParts.common([CarHarness.hyundai_k]))],
     HYUNDAI_ELANTRA_2021.specs,
