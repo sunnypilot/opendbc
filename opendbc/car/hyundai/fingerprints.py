@@ -625,6 +625,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CL4_ RDR -----      1.00 1.01 99110-GG000         ',
+      b'\xf1\x00CL4_ RDR -----      1.00 1.01 99110-GG100         ',
     ],
   },
   CAR.KIA_K5_2021: {

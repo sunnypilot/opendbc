@@ -2118,6 +2118,16 @@
     ],
     "package": "No Smart Cruise Control (Non-SCC)"
   },
+  "Kia K4 (with HDA II) 2025": {
+    "platform": "KIA_K4_2025",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "K4 (with HDA II)",
+    "year": [
+      "2025"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Kia K4 (without HDA II) 2025": {
     "platform": "KIA_K4_2025",
     "make": "Kia",
