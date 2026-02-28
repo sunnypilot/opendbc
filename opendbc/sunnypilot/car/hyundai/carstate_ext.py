@@ -62,6 +62,7 @@ class CarStateExt:
       ret.cruiseState.available = cp.vl[cruise_msg][cruise_available_sig] != 0
       ret.cruiseState.enabled = cp.vl[cruise_msg][cruise_enabled_sig] != 0
       # ret.cruiseState.speed = cp.vl[cruise_speed_msg][cruise_speed_sig] * speed_conv
+      ret.cruiseState.speed = 50
       ret.cruiseState.standstill = False
       ret.cruiseState.nonAdaptive = False
 
