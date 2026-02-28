@@ -108,6 +108,7 @@ FW_VERSIONS_EXT = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006T6K0_C2\x00\x006T6S1051\x00\x00TAD0N20NSB)S\xb2\x83',
+      b'\xf1\x006T6K0_C2\x00\x006T6S1051\x00\x00TAD0N20NSB\x00\x00\x00\x00',
     ],
   },
   CAR.HYUNDAI_ELANTRA_2022_NON_SCC: {
