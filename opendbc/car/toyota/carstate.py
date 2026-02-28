@@ -109,7 +109,7 @@ class CarState(CarStateBase, CarStateExt):
       if not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
         ret.stockAeb = bool(cp_acc.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_acc.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
 
-    if self.toyota_drive_mode and not self.CP.flags & ToyotaFlags.SECOC.value:
+    if self.toyota_drive_mode: # and not self.CP.flags & ToyotaFlags.SECOC.value:
       sport_signal = 'SPORT_ON_2' if self.CP.carFingerprint in (CAR.TOYOTA_RAV4_TSS2, CAR.LEXUS_ES_TSS2,
                                                                 CAR.TOYOTA_HIGHLANDER_TSS2) else 'SPORT_ON'
       if not self._drive_mode_signals_checked:
