@@ -53,15 +53,15 @@ class CarStateExt:
                    "EMS16"
       cruise_available_sig = "CC_React" if self.CP.flags & HyundaiFlags.EV else "CRUISE_LAMP_M"
       cruise_enabled_sig = "CC_ACT" if self.CP.flags & HyundaiFlags.EV else "CRUISE_LAMP_S"
-      cruise_speed_msg = "E_EMS11" if self.CP.flags & HyundaiFlags.EV else \
-                         "ELECT_GEAR" if self.CP.flags & HyundaiFlags.HYBRID else \
-                         "LVR12"
-      cruise_speed_sig = "Cruise_Limit_Target" if self.CP.flags & HyundaiFlags.EV else \
-                         "SLC_SET_SPEED" if self.CP.flags & HyundaiFlags.HYBRID else \
-                         "CF_Lvr_CruiseSet"
+      # cruise_speed_msg = "E_EMS11" if self.CP.flags & HyundaiFlags.EV else \
+      #                    "ELECT_GEAR" if self.CP.flags & HyundaiFlags.HYBRID else \
+      #                    "LVR12"
+      # cruise_speed_sig = "Cruise_Limit_Target" if self.CP.flags & HyundaiFlags.EV else \
+      #                    "SLC_SET_SPEED" if self.CP.flags & HyundaiFlags.HYBRID else \
+      #                    "CF_Lvr_CruiseSet"
       ret.cruiseState.available = cp.vl[cruise_msg][cruise_available_sig] != 0
       ret.cruiseState.enabled = cp.vl[cruise_msg][cruise_enabled_sig] != 0
-      ret.cruiseState.speed = cp.vl[cruise_speed_msg][cruise_speed_sig] * speed_conv
+      # ret.cruiseState.speed = cp.vl[cruise_speed_msg][cruise_speed_sig] * speed_conv
       ret.cruiseState.standstill = False
       ret.cruiseState.nonAdaptive = False
 
