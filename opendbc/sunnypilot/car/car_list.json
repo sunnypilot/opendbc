@@ -882,6 +882,16 @@
     ],
     "package": "All"
   },
+  "Genesis GV70 Electrified 2026": {
+    "platform": "GENESIS_GV70_ELECTRIFIED_2ND_GEN",
+    "make": "Genesis",
+    "brand": "hyundai",
+    "model": "GV70 Electrified",
+    "year": [
+      "2026"
+    ],
+    "package": "All"
+  },
   "Genesis GV70 Electrified (Australia Only) 2022": {
     "platform": "GENESIS_GV70_ELECTRIFIED_1ST_GEN",
     "make": "Genesis",
@@ -912,6 +922,26 @@
       "2023"
     ],
     "package": "All"
+  },
+  "Genesis GV80 (3.5T Prestige Trim, with HDA II & LFA2) 2025": {
+    "platform": "GENESIS_GV80_2025",
+    "make": "Genesis",
+    "brand": "hyundai",
+    "model": "GV80 (3.5T Prestige Trim, with HDA II & LFA2)",
+    "year": [
+      "2025"
+    ],
+    "package": "Highway Driving Assist II & Lane Follow Assist 2"
+  },
+  "Genesis GV80 Coupe (with HDA II & LFA2) 2025": {
+    "platform": "GENESIS_GV80_2025",
+    "make": "Genesis",
+    "brand": "hyundai",
+    "model": "GV80 Coupe (with HDA II & LFA2)",
+    "year": [
+      "2025"
+    ],
+    "package": "Highway Driving Assist II & Lane Follow Assist 2"
   },
   "GMC Acadia 2018": {
     "platform": "GMC_ACADIA",
@@ -1546,6 +1576,16 @@
     ],
     "package": "Highway Driving Assist"
   },
+  "Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025": {
+    "platform": "HYUNDAI_IONIQ_5_PE",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Ioniq 5 PE (with HDA II & LFA2)",
+    "year": [
+      "2025"
+    ],
+    "package": "Highway Driving Assist II & Lane Follow Assist 2"
+  },
   "Hyundai Ioniq 6 (with HDA II) 2023-24": {
     "platform": "HYUNDAI_IONIQ_6",
     "make": "Hyundai",
@@ -1776,6 +1816,17 @@
     ],
     "package": "All"
   },
+  "Hyundai Santa Fe Hybrid (with HDA II & LFA2) 2024-25": {
+    "platform": "HYUNDAI_SANTA_FE_HEV_5TH_GEN",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Santa Fe Hybrid (with HDA II & LFA2)",
+    "year": [
+      "2024",
+      "2025"
+    ],
+    "package": "Highway Driving Assist II & Lane Follow Assist 2"
+  },
   "Hyundai Santa Fe Plug-in Hybrid 2022-23": {
     "platform": "HYUNDAI_SANTA_FE_PHEV_2022",
     "make": "Hyundai",
@@ -1988,6 +2039,16 @@
     ],
     "package": "All"
   },
+  "Kia EV6 (with HDA I) 2025": {
+    "platform": "KIA_EV6_2025",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "EV6 (with HDA I)",
+    "year": [
+      "2025"
+    ],
+    "package": "Highway Driving Assist I"
+  },
   "Kia EV6 (with HDA II) 2022-24": {
     "platform": "KIA_EV6",
     "make": "Kia",
@@ -2011,6 +2072,17 @@
       "2024"
     ],
     "package": "Highway Driving Assist"
+  },
+  "Kia EV9 2025-26": {
+    "platform": "KIA_EV9",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "EV9",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Smart Cruise Control (SCC)"
   },
   "Kia Forte 2019-21": {
     "platform": "KIA_FORTE",
@@ -2347,6 +2419,16 @@
     "model": "Sportage Hybrid",
     "year": [
       "2023"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
+  "Kia Sportage Hybrid 2026": {
+    "platform": "KIA_SPORTAGE_HEV_2026",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Sportage Hybrid",
+    "year": [
+      "2026"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
