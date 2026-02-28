@@ -1477,6 +1477,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Hyundai Elantra Non-SCC 2019": {
+    "platform": "HYUNDAI_ELANTRA_NON_SCC",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Elantra Non-SCC",
+    "year": [
+      "2019"
+    ],
+    "package": "No Smart Cruise Control (Non-SCC)"
+  },
   "Hyundai Elantra Non-SCC 2022": {
     "platform": "HYUNDAI_ELANTRA_2022_NON_SCC",
     "make": "Hyundai",
