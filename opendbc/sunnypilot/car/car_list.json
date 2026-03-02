@@ -1928,6 +1928,17 @@
     ],
     "package": "All"
   },
+  "Hyundai Tucson (without HDA II) 2025-26": {
+    "platform": "HYUNDAI_TUCSON_2025",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Tucson (without HDA II)",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Hyundai Tucson Diesel 2019": {
     "platform": "HYUNDAI_TUCSON",
     "make": "Hyundai",
