@@ -13,8 +13,8 @@ from opendbc.car.toyota.values import CAR, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         CarControllerParams, ToyotaFlags, \
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can import CANPacker
-from opendbc.sunnypilot.car.toyota.ebsm import EnhancedBSMController
-from opendbc.sunnypilot.car.toyota.ebsm import EnhancedBSMController
+from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
+
 from opendbc.sunnypilot.car.toyota.gas_interceptor import GasInterceptorCarController
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
@@ -39,6 +39,9 @@ MAX_STEER_RATE_FRAMES = 17  # tx control frames needed before torque can be cut
 
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
+
+LEFT_BLINDSPOT = b"\x41"
+RIGHT_BLINDSPOT = b"\x42"
 
 def get_long_tune(CP, params):
   if CP.carFingerprint in TSS2_CAR:
@@ -88,7 +91,10 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     self.secoc_acc_message_counter = 0
     self.secoc_prev_reset_counter = 0
 
-    self.enhanced_bsm_controller = EnhancedBSMController(CP, CP_SP)
+    self.left_blindspot_debug_enabled = False
+    self.right_blindspot_debug_enabled = False
+    self.left_last_blindspot_frame = 0
+    self.right_last_blindspot_frame = 0
 
     self._auto_lock_speed = 0.0
 
@@ -342,8 +348,8 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     if self.frame % 20 == 0 and self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       can_sends.append(make_tester_present_msg(0x750, 0, 0xF))
 
-    if self.frame > 200:
-      can_sends.extend(self.enhanced_bsm_controller.create_messages(CS, self.frame, 20, True))
+    if self.CP_SP.flags & ToyotaFlagsSP.SP_ENHANCED_BSM and self.frame > 200:
+      can_sends.extend(self.create_enhanced_bsm_messages(CS, 20, True))
 
     new_actuators = actuators.as_builder()
     new_actuators.torque = apply_torque / self.params.STEER_MAX
@@ -354,6 +360,38 @@ class CarController(CarControllerBase, GasInterceptorCarController):
 
     self.frame += 1
     return new_actuators, can_sends
+
+  # Enhanced BSM (@arne182, @rav4kumar)
+  def create_enhanced_bsm_messages(self, CS: structs.CarState, e_bsm_rate: int = 20, always_on: bool = True):
+    can_sends = []
+
+    # left bsm
+    if not self.left_blindspot_debug_enabled:
+      if always_on or CS.out.vEgo > 6:  # eagle eye camera will stop working if left bsm is switched on under 6m/s
+        can_sends.append(toyotacan.create_set_bsm_debug_mode(LEFT_BLINDSPOT, True))
+        self.left_blindspot_debug_enabled = True
+    else:
+      if not always_on and self.frame - self.left_last_blindspot_frame > 50:
+        can_sends.append(toyotacan.create_set_bsm_debug_mode(LEFT_BLINDSPOT, False))
+        self.left_blindspot_debug_enabled = False
+      if self.frame % e_bsm_rate == 0:
+        can_sends.append(toyotacan.create_bsm_polling_status(LEFT_BLINDSPOT))
+        self.left_last_blindspot_frame = self.frame
+
+    # right bsm
+    if not self.right_blindspot_debug_enabled:
+      if always_on or CS.out.vEgo > 6:  # eagle eye camera will stop working if right bsm is switched on under 6m/s
+        can_sends.append(toyotacan.create_set_bsm_debug_mode(RIGHT_BLINDSPOT, True))
+        self.right_blindspot_debug_enabled = True
+    else:
+      if not always_on and self.frame - self.right_last_blindspot_frame > 50:
+        can_sends.append(toyotacan.create_set_bsm_debug_mode(RIGHT_BLINDSPOT, False))
+        self.right_blindspot_debug_enabled = False
+      if self.frame % e_bsm_rate == e_bsm_rate // 2:
+        can_sends.append(toyotacan.create_bsm_polling_status(RIGHT_BLINDSPOT))
+        self.right_last_blindspot_frame = self.frame
+
+    return can_sends
 
   # auto brake hold (https://github.com/AlexandreSato/)
   def create_auto_brake_hold_messages(self, CS: structs.CarState, brake_hold_allowed_timer: int = 100):
