@@ -35,6 +35,9 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
   CarController = CarController
   RadarInterface = RadarInterface
 
+  DRIVABLE_GEARS = (structs.CarState.GearShifter.sport, structs.CarState.GearShifter.low,
+                    structs.CarState.GearShifter.eco, structs.CarState.GearShifter.manumatic)
+
   def __init__(self, CP, CP_SP):
     CarInterfaceBase.__init__(self, CP, CP_SP)
     CarInterfaceExt.__init__(self, CP, CarInterfaceBase)
@@ -56,7 +59,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
     else:
       return CarInterfaceBase.get_steer_feedforward_default
 
-  def get_lataccel_torque_siglin(self) -> float:
+  def get_lataccel_torque_siglin(self) -> tuple[list[float], np.ndarray]:
 
     def torque_from_lateral_accel_siglin_func(lateral_acceleration: float) -> float:
       # The "lat_accel vs torque" relationship is assumed to be the sum of "sigmoid + linear" curves
@@ -65,7 +68,6 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
       assert non_linear_torque_params, "The params are not defined"
       a, b, c, d = non_linear_torque_params
-      d = d if NON_LINEAR_TORQUE_PARAMS_SP.get(self.CP.carFingerprint) else 0.0
       sig_input = a * lateral_acceleration
       sig = np.sign(sig_input) * (1 / (1 + exp(-fabs(sig_input))) - 0.5)
       steer_torque = (sig * b) + (lateral_acceleration * c) + d
@@ -258,9 +260,8 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       stock_cp.minSteerSpeed = 3.0   # ~6 mph
 
     # dashcamOnly platforms: untested platforms, need user validations
-    if candidate in (CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN,
-                     CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN,
-                     CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
+    if candidate in (CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN,
+                     CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN, CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
       stock_cp.dashcamOnly = True
 
     return ret
