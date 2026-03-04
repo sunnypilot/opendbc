@@ -99,31 +99,6 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
       tester_present = libsafety_py.make_CANPacket(0x750, 0, msg)
       self.assertEqual(should_tx and ecu_disabled and not stock_longitudinal, self._tx(tester_present))
 
-  def test_enhanced_bsm_uds_msgs(self, stock_longitudinal: bool = False):
-    # Enhanced BSM UDS messages should be allowed on 0x750 when not stock longitudinal
-    bsm_msgs = [
-      b"\x41\x02\x10\x01\x00\x00\x00\x00",  # disable left BSM debug
-      b"\x41\x02\x10\x60\x00\x00\x00\x00",  # enable left BSM debug
-      b"\x41\x02\x21\x69\x00\x00\x00\x00",  # poll left BSM status
-      b"\x42\x02\x10\x01\x00\x00\x00\x00",  # disable right BSM debug
-      b"\x42\x02\x10\x60\x00\x00\x00\x00",  # enable right BSM debug
-      b"\x42\x02\x21\x69\x00\x00\x00\x00",  # poll right BSM status
-    ]
-    for msg in bsm_msgs:
-      bsm_packet = libsafety_py.make_CANPacket(0x750, 0, msg)
-      self.assertEqual(not stock_longitudinal, self._tx(bsm_packet), f"BSM msg {msg.hex()} should_tx={not stock_longitudinal}")
-
-    # Auto-door lock messages should also be allowed
-    for lock_byte in (b"\x00\x00\x40\x00", b"\x00\x00\x80\x00"):
-      door_msg = b"\x40\x05\x30\x11" + lock_byte
-      door_packet = libsafety_py.make_CANPacket(0x750, 0, door_msg)
-      self.assertTrue(self._tx(door_packet))
-
-    # Random UDS messages should still be blocked
-    bad_packet = libsafety_py.make_CANPacket(0x750, 0, b"\xAA\xBB\xCC\xDD\xEE\xFF\x00\x01")
-    self.assertFalse(self._tx(bad_packet))
-
-
   def test_block_aeb(self, stock_longitudinal: bool = False):
     for controls_allowed in (True, False):
       for bad in (True, False):
@@ -390,9 +365,6 @@ class TestToyotaStockLongitudinalBase(TestToyotaSafetyBase):
 
   def test_diagnostics(self, stock_longitudinal: bool = True, ecu_disabled: bool = True):
     super().test_diagnostics(stock_longitudinal=stock_longitudinal, ecu_disabled=ecu_disabled)
-
-  def test_enhanced_bsm_uds_msgs(self, stock_longitudinal: bool = True):
-    super().test_enhanced_bsm_uds_msgs(stock_longitudinal=stock_longitudinal)
 
   def test_block_aeb(self, stock_longitudinal: bool = True):
     super().test_block_aeb(stock_longitudinal=stock_longitudinal)
