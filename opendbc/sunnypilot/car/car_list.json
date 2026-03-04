@@ -1597,6 +1597,17 @@
     ],
     "package": "Highway Driving Assist II"
   },
+  "Hyundai Ioniq 9 (with HDA II & LFA2) 2025-26": {
+    "platform": "HYUNDAI_IONIQ_9",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Ioniq 9 (with HDA II & LFA2)",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Highway Driving Assist II & Lane Follow Assist 2"
+  },
   "Hyundai Ioniq Electric 2019": {
     "platform": "HYUNDAI_IONIQ_EV_LTD",
     "make": "Hyundai",
