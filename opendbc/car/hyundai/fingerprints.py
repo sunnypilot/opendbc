@@ -1126,6 +1126,7 @@ FW_VERSIONS = {
       b'\xf1\x00MEev RDR -----      1.00 1.00 99110-GO000         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00ME  MFC  AT KOR LHD 1.00 1.00 99211-GO000 241007',
       b'\xf1\x00ME  MFC  AT KOR LHD 1.00 1.01 99211-GO000 250103',
     ],
   },
