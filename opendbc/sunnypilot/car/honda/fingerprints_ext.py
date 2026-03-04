@@ -62,11 +62,13 @@ FW_VERSIONS_EXT = {
     ],
     (Ecu.fwdRadar, 0x18DAB0F1, None): [
       b'36161-TZ4-A120\x00\x00',
+      b'36161-TZ4-A210\x00\x00',
       b'36161-TZ7-A520\x00\x00',
       b'36161-TZ7-A710\x00\x00',
     ],
     (Ecu.vsa, 0x18DA28F1, None): [
       b'57114-TZ4-A510\x00\x00',
+      b'57114-TZ4-A530\x00\x00',
       b'57114-TZ7-A730\x00\x00',
     ],
     (Ecu.transmission, 0x18DA1EF1, None): [
