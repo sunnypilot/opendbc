@@ -117,7 +117,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         repository: 'sunnypilot/sunnypilot'
-        ref: 'master'
+        ref: 'hkg-angle-steering-2025'
         submodules: true
     - run: rm -rf opendbc_repo/
     - uses: actions/checkout@v4
