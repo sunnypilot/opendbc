@@ -51,7 +51,7 @@ class TestLongitudinalTuningController:
   def setup_method(self):
     self.CP = CP(flags=0)
     self.CP_SP = CP(flags=0)
-    self.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
+    self.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_PREDICTIVE
     self.CS = CS()
     self.CC = CC()
     self.controller = LongitudinalController(self.CP, self.CP_SP)
@@ -85,11 +85,6 @@ class TestLongitudinalTuningController:
     assert pytest.approx((-1.1, -1.1), abs=0.1) == self.controller._calculate_lookahead_jerk(-0.5, 4.9)
     assert pytest.approx((1.1, 1.1), abs=0.1) == self.controller._calculate_lookahead_jerk(0.5, 5.0)
 
-  def test_calc_dynamic_low_jerk(self):
-    self.controller.car_config.jerk_limits = 3.3
-    assert 0.5 == self.controller._calculate_dynamic_lower_jerk(0.0, 10.0)
-    assert 3.3 == self.controller._calculate_dynamic_lower_jerk(-2.0, 10.0)
-
   def test_calc_jerk(self):
     self.CP_SP.flags = 0
     self.controller.calculate_jerk(self.CC, self.CS, LongCtrlState.pid)
@@ -116,8 +111,8 @@ class TestLongitudinalTuningController:
     self.controller.accel_last = -1.0
     for _ in range(50):
       self.controller.calculate_jerk(self.CC, self.CS, LongCtrlState.pid)
-    assert self.controller.jerk_upper == 0.5
-    assert self.controller.jerk_lower == 3.3
+    assert self.controller.jerk_upper == pytest.approx(2.6, abs=0.1)
+    assert self.controller.jerk_lower == pytest.approx(3.3, abs=0.1)
 
   def test_calc_accel(self):
     self.CP_SP.flags = 0
