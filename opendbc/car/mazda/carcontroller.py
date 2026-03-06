@@ -14,6 +14,7 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     IntelligentCruiseButtonManagementInterface.__init__(self, CP, CP_SP)
+    self.params = CarControllerParams(CP)
     self.apply_torque_last = 0
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.brake_counter = 0
@@ -25,9 +26,9 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
 
     if CC.latActive:
       # calculate steer and also set limits due to driver torque
-      new_torque = int(round(CC.actuators.torque * CarControllerParams.STEER_MAX))
+      new_torque = int(round(CC.actuators.torque * self.params.STEER_MAX))
       apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last,
-                                                      CS.out.steeringTorque, CarControllerParams)
+                                                      CS.out.steeringTorque, self.params)
 
     if CC.cruiseControl.cancel:
       # If brake is pressed, let us wait >70ms before trying to disable crz to avoid
@@ -64,7 +65,7 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
     can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CC_SP, CS, self.packer, self.frame, self.last_button_frame))
 
     new_actuators = CC.actuators.as_builder()
-    new_actuators.torque = apply_torque / CarControllerParams.STEER_MAX
+    new_actuators.torque = apply_torque / self.params.STEER_MAX
     new_actuators.torqueOutputCan = apply_torque
 
     self.frame += 1
