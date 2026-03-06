@@ -119,9 +119,14 @@ class CarInterface(CarInterfaceBase):
     if candidate in TSS2_CAR:
       ret.flags |= ToyotaFlags.RAISED_ACCEL_LIMIT.value
 
+      from openpilot.common.params import Params
+      if Params().get_bool("TSS2-Smooth"):
+        ret.stoppingDecelRate = 0.05
+      else:
+        ret.stoppingDecelRate = 0.3
+
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
-      ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
 
       # Hybrids have much quicker longitudinal actuator response
       if ret.flags & ToyotaFlags.HYBRID.value:
