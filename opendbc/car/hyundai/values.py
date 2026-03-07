@@ -631,8 +631,8 @@ class CAR(Platforms):
     HYUNDAI_KONA_EV.specs,
     flags=HyundaiFlags.EV | HyundaiFlags.ALT_LIMITS,
   )
-  HYUNDAI_SANTA_FE_2022_NON_SCC = HyundaiPlatformConfig(
-    [HyundaiCarDocs("Hyundai Santa Fe Non-SCC 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_l]))],
+  HYUNDAI_SANTA_FE_2022_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Hyundai Santa Fe Non-SCC 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_l]))],
     HYUNDAI_SANTA_FE.specs,
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8,
   )
