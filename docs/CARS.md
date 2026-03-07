@@ -35,13 +35,13 @@
 |Cadillac|CT6 Non-ACC 2017-18|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
 |Cadillac|XT5 Non-ACC 2018|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
 |Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim, without Super Cruise Package|[Upstream](#upstream)|
-|Chevrolet|Bolt EUV LT Non-ACC 2022-23|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
+|Chevrolet|Bolt EUV LT Non-ACC 2022-23|No Adaptive Cruise Control (Non-ACC)|[Community](community)|
 |Chevrolet|Bolt EV 2022-23|2LT Trim with Adaptive Cruise Control Package|[Upstream](#upstream)|
-|Chevrolet|Bolt EV LT Non-ACC 2022-23|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
+|Chevrolet|Bolt EV LT Non-ACC 2022-23|No Adaptive Cruise Control (Non-ACC)|[Community](community)|
 |Chevrolet|Bolt EV Non-ACC 2017|No Adaptive Cruise Control (Non-ACC)|[Community](community)|
 |Chevrolet|Bolt EV Non-ACC 2018-21|No Adaptive Cruise Control (Non-ACC)|[Community](community)|
 |Chevrolet|Equinox 2019-22|Adaptive Cruise Control (ACC)|[Upstream](#upstream)|
-|Chevrolet|Equinox Non-ACC 2019-22|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
+|Chevrolet|Equinox Non-ACC 2019-22|No Adaptive Cruise Control (Non-ACC)|[Community](community)|
 |Chevrolet|Malibu Non-ACC 2016-23|No Adaptive Cruise Control (Non-ACC)|[Community](community)|
 |Chevrolet|Silverado 1500 2020-21|Safety Package II|[Upstream](#upstream)|
 |Chevrolet|Suburban Non-ACC 2016-20|No Adaptive Cruise Control (Non-ACC)|[Dashcam mode](#dashcam)|
