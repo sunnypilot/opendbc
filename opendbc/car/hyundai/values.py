@@ -631,6 +631,11 @@ class CAR(Platforms):
     HYUNDAI_KONA_EV.specs,
     flags=HyundaiFlags.EV | HyundaiFlags.ALT_LIMITS,
   )
+  HYUNDAI_SANTA_FE_2022_NON_SCC = HyundaiPlatformConfig(
+    [HyundaiCarDocs("Hyundai Santa Fe Non-SCC 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_l]))],
+    HYUNDAI_SANTA_FE.specs,
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8,
+  )
   KIA_CEED_PHEV_2022_NON_SCC = HyundaiNonSccPlatformConfig(
     [HyundaiNonSccCarDocs("Kia Ceed Plug-in Hybrid Non-SCC 2022", car_parts=CarParts.common([CarHarness.hyundai_i]))],
     CarSpecs(mass=1650, wheelbase=2.65, steerRatio=13.75, tireStiffnessFactor=0.5),
