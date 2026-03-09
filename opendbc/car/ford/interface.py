@@ -17,8 +17,10 @@ class CarInterface(CarInterfaceBase):
   CarController = CarController
   RadarInterface = RadarInterface
 
+  DRIVABLE_GEARS = (structs.CarState.GearShifter.low, structs.CarState.GearShifter.manumatic)
+
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
+  def get_pid_accel_limits(CP, CP_SP, current_speed, cruise_speed):
     # PCM doesn't allow acceleration near cruise_speed,
     # so limit limits of pid to prevent windup
     ACCEL_MAX_VALS = [CarControllerParams.ACCEL_MAX, 0.2]
@@ -26,7 +28,7 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, np.interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
 
   @staticmethod
-  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, docs) -> structs.CarParams:
+  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
     ret.brand = "ford"
 
     ret.radarUnavailable = Bus.radar not in DBC[candidate]

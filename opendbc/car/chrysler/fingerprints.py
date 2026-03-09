@@ -1,7 +1,8 @@
+""" AUTO-FORMATTED USING opendbc/car/debug/format_fingerprints.py, EDIT STRUCTURE THERE."""
 from opendbc.car.structs import CarParams
 from opendbc.car.chrysler.values import CAR
 
-from opendbc.sunnypilot.car.fw_versions_ext import merge_fw_versions
+from opendbc.sunnypilot.car.fingerprints_ext import merge_fw_versions
 from opendbc.sunnypilot.car.chrysler.fingerprints_ext import FW_VERSIONS_EXT
 
 Ecu = CarParams.Ecu
@@ -133,6 +134,7 @@ FW_VERSIONS = {
       b'68496647AJ ',
       b'68496650AH ',
       b'68496650AI ',
+      b'68496650AL ',
       b'68496652AH ',
       b'68526752AD ',
       b'68526752AE ',
@@ -148,6 +150,7 @@ FW_VERSIONS = {
       b'68414275AC',
       b'68414275AD',
       b'68443154AB',
+      b'68443154AC',
       b'68443155AC',
       b'68443158AB',
       b'68501050AD',
@@ -209,6 +212,8 @@ FW_VERSIONS = {
       b'68529064AB',
       b'68594990AB',
       b'68594990AD',
+      b'68594990AE',
+      b'68594991AB',
     ],
     (Ecu.srs, 0x744, None): [
       b'68405567AB',
@@ -234,8 +239,11 @@ FW_VERSIONS = {
       b'68525339AA',
       b'68525339AB',
       b'68594341AB',
+      b'68594341AC',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'05190392AB ',
+      b'68416680AD ',
       b'68416680AE ',
       b'68416680AF ',
       b'68416680AG ',
@@ -265,10 +273,12 @@ FW_VERSIONS = {
       b'05190289AE',
       b'68540977AH',
       b'68540977AK',
+      b'68540977AL',
       b'68597647AE',
       b'68597647AF',
       b'68632416AB',
       b'68632416AC',
+      b'68676877AB',
     ],
   },
   CAR.JEEP_GRAND_CHEROKEE: {
@@ -344,6 +354,7 @@ FW_VERSIONS = {
       b'68402707AB',
       b'68402708AB',
       b'68402714AB',
+      b'68402736AB',
       b'68402971AD',
       b'68454144AD',
       b'68454145AB',
@@ -372,6 +383,7 @@ FW_VERSIONS = {
       b'68417279AA',
       b'68417280AA',
       b'68417281AA',
+      b'68417283AA',
       b'68453431AA',
       b'68453433AA',
       b'68453435AA',
@@ -384,7 +396,9 @@ FW_VERSIONS = {
       b'05035674AB ',
       b'68412635AE ',
       b'68412635AG ',
+      b'68412635AH ',
       b'68412660AD ',
+      b'68412660AF ',
       b'68422860AB',
       b'68449435AE ',
       b'68496223AA ',
@@ -396,6 +410,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'05035707AA',
       b'68419672AC',
+      b'68419675AC',
       b'68419678AB',
       b'68423905AB',
       b'68449258AC',
@@ -420,6 +435,7 @@ FW_VERSIONS = {
       b'68434847AC',
       b'68434849AC',
       b'68434850AC',
+      b'68434855AC',
       b'68434856AC',
       b'68434858AC',
       b'68434859AC',
@@ -472,6 +488,7 @@ FW_VERSIONS = {
     ],
     (Ecu.srs, 0x744, None): [
       b'68428609AB',
+      b'68441329AA',
       b'68441329AB',
       b'68473844AB',
       b'68490898AA',
@@ -497,6 +514,8 @@ FW_VERSIONS = {
       b'68548900AC',
       b'68586307AB',
       b'68586307AC',
+      b'68728724AA',
+      b'68728727AA',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672892AB',
@@ -528,6 +547,7 @@ FW_VERSIONS = {
       b'68466110AA',
       b'68466110AB',
       b'68466113AA',
+      b'68466116AA',
       b'68469901AA',
       b'68469904AA',
       b'68469907AA',
@@ -573,6 +593,7 @@ FW_VERSIONS = {
       b'05190346AD',
       b'68378695AI ',
       b'68378695AJ ',
+      b'68378695AK ',
       b'68378696AJ ',
       b'68378696AK ',
       b'68378701AI ',
@@ -594,6 +615,7 @@ FW_VERSIONS = {
       b'68455119AC ',
       b'68455137AC ',
       b'68455142AC ',
+      b'68455142AE ',
       b'68455145AC ',
       b'68455145AE ',
       b'68455146AC ',
@@ -605,11 +627,13 @@ FW_VERSIONS = {
       b'68467936AC ',
       b'68500630AD',
       b'68500630AE',
+      b'68500630AF',
       b'68500631AE',
       b'68502719AC ',
       b'68502722AC ',
       b'68502733AC ',
       b'68502734AF ',
+      b'68502737AF ',
       b'68502740AF ',
       b'68502741AF ',
       b'68502742AC ',
@@ -642,6 +666,7 @@ FW_VERSIONS = {
       b'68360081AN',
       b'68360085AH',
       b'68360085AJ',
+      b'68360085AK',
       b'68360085AL',
       b'68360085AO',
       b'68360086AH',

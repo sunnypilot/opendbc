@@ -32,11 +32,13 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
   safety.set_alternative_experience(alternative_experience)
 
   _enable_mads = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.ENABLE_MADS)
-  _disengage_lateral_on_brake = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.DISENGAGE_LATERAL_ON_BRAKE)
-  safety.set_mads_params(_enable_mads, _disengage_lateral_on_brake)
+  _disengage_lateral_on_brake = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.MADS_DISENGAGE_LATERAL_ON_BRAKE)
+  _pause_lateral_on_brake = bool(alternative_experience & ALTERNATIVE_EXPERIENCE.MADS_PAUSE_LATERAL_ON_BRAKE)
+  safety.set_mads_params(_enable_mads, _disengage_lateral_on_brake, _pause_lateral_on_brake)
   print("alternative experience:")
   print(f"  enable mads: {_enable_mads}")
   print(f"  disengage lateral on brake: {_disengage_lateral_on_brake}")
+  print(f"  pause lateral on brake: {_pause_lateral_on_brake}")
 
   init_segment(safety, msgs, safety_mode, param)
 
@@ -64,17 +66,16 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
 
     if msg.which() == 'sendcan':
       for canmsg in msg.sendcan:
-        to_send = package_can_msg(canmsg)
-        sent = safety.safety_tx_hook(to_send)
+        _msg = package_can_msg(canmsg)
+        sent = safety.safety_tx_hook(_msg)
 
         # mismatched
-        if (safety.get_controls_allowed() and not safety.get_controls_allowed_lat()):
+        if safety.get_controls_allowed() and not safety.get_controls_allowed_lat():
           mads_mismatch += 1
           print(f"controls allowed but not controls allowed lat [{mads_mismatch}]")
           print(f"msg:{canmsg.address} ({hex(canmsg.address)})")
           for var, getter in DEBUG_VARS.items():
             print(f"  {var}: {getter(safety)}")
-
         if not sent:
           tx_blocked += 1
           tx_controls_blocked += safety.get_controls_allowed()
@@ -111,8 +112,8 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
       # ignore msgs we sent
       for canmsg in filter(lambda m: m.src < 128, msg.can):
         safety.safety_fwd_hook(canmsg.src, canmsg.address)
-        to_push = package_can_msg(canmsg)
-        recv = safety.safety_rx_hook(to_push)
+        _msg = package_can_msg(canmsg)
+        recv = safety.safety_rx_hook(_msg)
         if not recv:
           rx_invalid += 1
           invalid_addrs.add(canmsg.address)
@@ -134,6 +135,7 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
   print("mads enabled:", safety.get_enable_mads())
 
   return tx_controls_blocked == 0 and tx_controls_lat_blocked == 0 and rx_invalid == 0 and not safety_tick_rx_invalid
+
 
 if __name__ == "__main__":
   from openpilot.tools.lib.logreader import LogReader
