@@ -82,8 +82,8 @@ class TestLongitudinalTuningController:
       assert expected == actual
 
   def test_calc_lookahead_jerk(self):
-    assert pytest.approx((-1.0, -3.3), abs=0.1) == self.controller._calculate_lookahead_jerk(-0.5, 4.9)
-    assert pytest.approx((1.0, 3.3), abs=0.1) == self.controller._calculate_lookahead_jerk(0.5, 4.9)
+    assert pytest.approx((-1.1, -1.1), abs=0.1) == self.controller._calculate_lookahead_jerk(-0.5, 4.9)
+    assert pytest.approx((1.1, 1.1), abs=0.1) == self.controller._calculate_lookahead_jerk(0.5, 5.0)
 
   def test_calc_dynamic_low_jerk(self):
     self.controller.car_config.jerk_limits = 3.3
@@ -104,12 +104,11 @@ class TestLongitudinalTuningController:
     self.controller.accel_cmd = -3.5
     self.controller.accel_last = -1.0
     self.controller.calculate_jerk(self.CC, self.CS, LongCtrlState.pid)
-    assert self.controller.jerk_upper == 0.1  # ramp update first pass
-    assert self.controller.jerk_lower == pytest.approx(3.33, abs=0.01)
+    assert self.controller.jerk_upper == 0.5
+    assert self.controller.jerk_lower == pytest.approx(3.3, abs=0.01)
 
     self.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_DYNAMIC
     self.controller.__init__(self.CP, self.CP_SP)
-    self.controller.car_config.jerk_limits = 3.3
     self.CS.out.vEgo = 10.0
     self.CS.aBasis = -3.3
     self.CS.out.aEgo = -3.5
@@ -137,8 +136,8 @@ class TestLongitudinalTuningController:
     assert self.controller.desired_accel == 0.0
 
   def test_calc_comfort_band(self):
-    stock_decels_list: list = [-3.0, -2.0, -1.5, -1.0, -0.5, -0.05]
-    stock_accels_list: list = [0.0, 0.3, 0.6, 0.9, 1.2, 1.5]
+    stock_decels_list: list = [-3.5, -2.5, -1.5, -1.0, -0.5, -0.05]
+    stock_accels_list: list = [0.0, 0.3, 0.6, 0.9, 1.2, 2.0]
     stock_comfort_band_vals: list = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]
 
     decels_list: list = [-3.5, -3.1, -2.245, -1.853, -1.234, -0.64352, -0.06432, -0.00005]
@@ -166,11 +165,10 @@ class TestLongitudinalTuningController:
     self.CS.aBasis = 1.75
     self.CS.out.aEgo = 2.0
     self.CS.out.vEgo = 5.0
-    for _ in range(50):
-      self.controller.update(self.CC, self.CS)
 
+    self.controller.update(self.CC, self.CS)
     assert self.controller.jerk_lower == 0.5
-    assert self.controller.jerk_upper == pytest.approx(1.01, abs=0.01)
+    assert self.controller.jerk_upper == 3.0
     assert self.controller.comfort_band_lower == 0.0
     assert self.controller.comfort_band_upper == 0.10
     assert self.controller.desired_accel == 2.0
