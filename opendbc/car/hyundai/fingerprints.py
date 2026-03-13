@@ -624,6 +624,7 @@ FW_VERSIONS = {
   },
   CAR.KIA_K4_2025: {
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00CL4 MFC  AT CAN LHD 1.00 1.02 99210-GG000 240708',
       b'\xf1\x00CL4 MFC  AT USA LHD 1.00 1.02 99210-GG000 240708',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
