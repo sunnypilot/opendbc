@@ -2,7 +2,8 @@ import re
 from dataclasses import dataclass, field
 from enum import IntFlag
 
-from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
+from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds, ACCELERATION_DUE_TO_GRAVITY
+from opendbc.car.lateral import AngleSteeringLimits, ISO_LATERAL_ACCEL
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarHarness, CarDocs, CarParts, SupportType
@@ -12,10 +13,58 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 Ecu = CarParams.Ecu
 
+# Add extra tolerance for average banked road since safety doesn't have the roll
+AVERAGE_ROAD_ROLL = 0.06  # ~0 degrees, 0% superelevation. higher actual roll lowers lateral acceleration (it's 0 for HKG to remove margin)
+
 
 class CarControllerParams:
   ACCEL_MIN = -3.5 # m/s
   ACCEL_MAX = 2.0 # m/s
+
+  ANGLE_LIMITS: AngleSteeringLimits = AngleSteeringLimits(
+    # Steering angle limits based on observed stock ADAS behavior:
+    # - LKAS max requested angle is 176.7°, but no fault occurs if higher values are requested.
+    # - LFA max stock value is 119.9°.
+    # The ADAS ECU clamps LKAS commands above 176.7° down to 176.7°,
+    # and clamps LFA commands above 119.9° down to 119.9°.
+    180,  # degrees (safe upper bound for command, allowing some margin)
+    # HKG uses a vehicle model instead, check carcontroller.py for details
+    ([], []),
+    ([], []),
+    MAX_LATERAL_ACCEL=(ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)),  # ~3.6 m/s^2
+    MAX_LATERAL_JERK=(3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL)),  # ~3.6 m/s^3,
+    MAX_ANGLE_RATE=5  # comfort rate limit for angle commands, in degrees per frame.
+  )
+
+  # Torque control parameters:
+  # The stock torque values we observed are:
+  # - 1.0 is the max we've observed during stock LFA.
+  # - 0.7 has been observed in some models as the max LKAS torque requested.
+  #
+  # Note: When using angle-based steering control, the Torque Reduction Gain
+  # does NOT directly affect lateral acceleration or jerk limits.
+  # Those limits are determined solely by the commanded steering angle and vehicle speed.
+  # In contrast, torque-based control systems do not use a Torque Reduction Gain,
+  # but instead rely directly on torque commands which directly influence these limits.
+  #
+  # The normalized torque command defines the maximum steering torque we allow the EPS to apply
+  # to reach the desired steering angle, effectively limiting the maximum assist torque.
+
+  ANGLE_MAX_TORQUE_REDUCTION_GAIN = 1.  # Maximum torque command applied to the steering actuator.
+  ANGLE_MIN_TORQUE_REDUCTION_GAIN = 0.1  # Minimum torque command allowed when the driver is overriding, to maintain steering feedback.
+  ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN = 0.6  # Torque command when the car is stopped, to prevent steering wheel from being too loose.
+
+  # Rate limits for changing steering torque commands:
+  ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE = 0.008  # Maximum rate at which torque can increase per control cycle.
+  ANGLE_RAMP_DOWN_TORQUE_REDUCTION_RATE = 0.0012  # Maximum rate at which torque can decrease per cycle
+
+  ANGLE_TORQUE_OVERRIDE_CYCLES = 17  # Number of control cycles over which torque ramps down to minimum after driver override is detected.
+
+  # More torque optimization
+  # The torque is calculated based on the curvature of the road and the speed of the car and it's a percentage of the maximum torque.
+  SMOOTHING_ANGLE_VEGO_MATRIX = [0, 8.5, 11, 13.8, 22.22]
+  SMOOTHING_ANGLE_ALPHA_MATRIX = [0.05, 0.1, 0.3, 0.6, 1]
+  SMOOTHING_ANGLE_MAX_VEGO = SMOOTHING_ANGLE_VEGO_MATRIX[-1]
 
   def __init__(self, CP):
     self.STEER_DELTA_UP = 3
@@ -33,6 +82,9 @@ class CarControllerParams:
       self.STEER_THRESHOLD = 250
       self.STEER_DELTA_UP = 2
       self.STEER_DELTA_DOWN = 3
+
+    if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+       self.STEER_THRESHOLD = 175
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.
@@ -68,6 +120,7 @@ class HyundaiSafetyFlags(IntFlag):
   CANFD_LKA_STEERING_ALT = 128
   FCEV_GAS = 256
   ALT_LIMITS_2 = 512
+  CANFD_ANGLE_STEERING = 1024
 
 
 class HyundaiFlags(IntFlag):
@@ -127,6 +180,8 @@ class HyundaiFlags(IntFlag):
   FCEV = 2 ** 25
 
   ALT_LIMITS_2 = 2 ** 26
+
+  CANFD_ANGLE_STEERING = 2 ** 27
 
 
 @dataclass
@@ -312,6 +367,14 @@ class CAR(Platforms):
     HYUNDAI_SANTA_FE.specs,
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.HYBRID,
   )
+  HYUNDAI_SANTA_FE_HEV_5TH_GEN = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Hyundai Santa Fe Hybrid (with HDA II & LFA2) 2024-25", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_p])),
+    ],
+    CarSpecs(mass=2035, wheelbase=2.81, steerRatio=13.72),
+    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+  )
   HYUNDAI_SONATA = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Sonata 2020-23", "All", video="https://www.youtube.com/watch?v=ix63r9kE3Fw",
                    car_parts=CarParts.common([CarHarness.hyundai_a]))],
@@ -361,6 +424,14 @@ class CAR(Platforms):
     ],
     CarSpecs(mass=1948, wheelbase=2.97, steerRatio=14.26, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.EV,
+  )
+  HYUNDAI_IONIQ_5_PE = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025-26", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_q]))
+    ],
+    HYUNDAI_IONIQ_5.specs,
+    flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
   )
   HYUNDAI_IONIQ_6 = HyundaiCanFDPlatformConfig(
     [HyundaiCarDocs("Hyundai Ioniq 6 (with HDA II) 2023-24", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))],
@@ -496,6 +567,13 @@ class CAR(Platforms):
     # weight from SX and above trims, average of FWD and AWD version, steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sportage/2023/specifications
     CarSpecs(mass=1725, wheelbase=2.756, steerRatio=13.6),
   )
+  KIA_SPORTAGE_HEV_2026 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia Sportage Hybrid 2026", car_parts=CarParts.common([CarHarness.hyundai_n])),
+    ],
+    CarSpecs(mass=1812, wheelbase=2.756, steerRatio=13.7),
+    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+  )
   KIA_SORENTO = HyundaiPlatformConfig(
     [
       HyundaiCarDocs("Kia Sorento 2018", "Advanced Smart Cruise Control & LKAS", video="https://www.youtube.com/watch?v=Fkh3s6WHJz8",
@@ -540,6 +618,20 @@ class CAR(Platforms):
     ],
     CarSpecs(mass=2055, wheelbase=2.9, steerRatio=16, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.EV,
+  )
+  KIA_EV6_2025 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia EV6 (with HDA I) 2025", "Highway Driving Assist I", car_parts=CarParts.common([CarHarness.hyundai_p]))
+    ],
+    CarSpecs(mass=2055, wheelbase=2.9, steerRatio=16, tireStiffnessFactor=0.65),
+    flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
+  )
+  KIA_EV9 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia EV9 2025-26", car_parts=CarParts.common([CarHarness.hyundai_r]))
+    ],
+    CarSpecs(mass=2664, wheelbase=3.1, steerRatio=16),
+    flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
   )
   KIA_CARNIVAL_4TH_GEN = HyundaiCanFDPlatformConfig(
     [
@@ -591,6 +683,13 @@ class CAR(Platforms):
     CarSpecs(mass=2260, wheelbase=2.87, steerRatio=17.1),
     flags=HyundaiFlags.EV,
   )
+  GENESIS_GV70_ELECTRIFIED_2ND_GEN = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Genesis GV70 Electrified 2026", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
+    ],
+    GENESIS_GV70_ELECTRIFIED_1ST_GEN.specs,
+    flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
+  )
   GENESIS_G80 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Genesis G80 2018-19", "All", car_parts=CarParts.common([CarHarness.hyundai_h]))],
     CarSpecs(mass=2060, wheelbase=3.01, steerRatio=16.5),
@@ -608,6 +707,16 @@ class CAR(Platforms):
     [HyundaiCarDocs("Genesis GV80 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_m]))],
     CarSpecs(mass=2258, wheelbase=2.95, steerRatio=14.14),
     flags=HyundaiFlags.RADAR_SCC,
+  )
+  GENESIS_GV80_2025 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Genesis GV80 (3.5T Prestige Trim, with HDA II & LFA2) 2025", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_q])),
+      HyundaiCarDocs("Genesis GV80 Coupe (with HDA II & LFA2) 2025", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_q])),
+    ],
+    GENESIS_GV80.specs,
+    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
   )
 
   # port extensions
