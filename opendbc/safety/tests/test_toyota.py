@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from parameterized import parameterized_class
+from opendbc.testing import parameterized_class
 import numpy as np
 import random
 import unittest
