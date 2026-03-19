@@ -320,7 +320,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.leftButtonBlinker = cp.vl["DRIVER_BUTTONS"]["RL_WINDOW"] == 1
     ret.rightButtonBlinker = cp.vl["DRIVER_BUTTONS"]["RR_WINDOW"] == 1
-    ret.enableButtonBlinker = cp.vl["DRIVER_BUTTONS"]["WINDOW_LOCK"] == 1
+    ret.enableButtonBlinker = cp.vl["DRIVER_BUTTONS"]["WINDOW_LOCK"] == 0
 
     return ret, ret_sp
 
