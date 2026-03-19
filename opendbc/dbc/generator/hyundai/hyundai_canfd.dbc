@@ -674,6 +674,21 @@ BO_ 1264 LOCAL_TIME: 8 XXX
  SG_ MINUTES : 21|6@0+ (1,0) [0|63] "" XXX
  SG_ SECONDS : 31|8@0+ (1,0) [0|59] "" XXX
 
+BO_ 1027 DRIVER_BUTTONS: 8 XXX
+ SG_ MEMORY_1 : 21|1@0+ (1,0) [0|1] "" XXX
+ SG_ MEMORY_2 : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ MEMORY_SET : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ FL_WINDOW : 24|3@1+ (1,0) [0|7] "" XXX
+ SG_ FR_WINDOW : 27|3@1+ (1,0) [0|7] "" XXX
+ SG_ LOCK : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ RL_WINDOW : 32|3@1+ (1,0) [0|7] "" XXX
+ SG_ RR_WINDOW : 35|3@1+ (1,0) [0|7] "" XXX
+ SG_ UNLOCK : 38|1@0+ (1,0) [0|1] "" XXX
+ SG_ WINDOW_LOCK : 40|1@0+ (1,0) [0|1] "" XXX
+
+VAL_ 1027 FL_WINDOW 1 "UP" 2 "DOWN" 3 "UP_AUTO" 4 "DOWN_AUTO";
+VAL_ 1027 FR_WINDOW 1 "UP" 2 "DOWN" 3 "UP_AUTO" 4 "DOWN_AUTO";
+
 CM_ SG_ 96 BRAKE_PRESSURE "User applied brake pedal pressure. Ramps from computer applied pressure on falling edge of cruise. Cruise cancels if !=0";
 CM_ SG_ 101 BRAKE_POSITION "User applied brake pedal position, max is ~700. Signed on some vehicles";
 CM_ SG_ 203 ADAS_ActvACISta "ADAS Active AngleControlInterface State";

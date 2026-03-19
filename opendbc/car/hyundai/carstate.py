@@ -318,6 +318,10 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.blockPcmEnable = not self.recent_button_interaction()
 
+    ret.leftButtonBlinker = cp.vl["DRIVER_BUTTONS"]["RL_WINDOW"] == 1
+    ret.rightButtonBlinker = cp.vl["DRIVER_BUTTONS"]["RR_WINDOW"] == 1
+    ret.enableButtonBlinker = cp.vl["DRIVER_BUTTONS"]["WINDOW_LOCK"] == 1
+
     return ret, ret_sp
 
   def get_can_parsers_canfd(self, CP):
