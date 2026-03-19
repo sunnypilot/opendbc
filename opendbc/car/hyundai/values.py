@@ -440,7 +440,7 @@ class CAR(Platforms):
   )
   HYUNDAI_IONIQ_9 = HyundaiCanFDPlatformConfig(
     [HyundaiCarDocs("Hyundai Ioniq 9 (with HDA II & LFA2) 2025-26", "Highway Driving Assist II & Lane Follow Assist 2", car_parts=CarParts.common([CarHarness.hyundai_m]))],
-    CarSpecs(mass=2700, wheelbase=3.13, steerRatio=16.02, tireStiffnessFactor=0.65),
+    CarSpecs(mass=2700, wheelbase=3.13, steerRatio=16.02),
     flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
   )
   HYUNDAI_TUCSON_4TH_GEN = HyundaiCanFDPlatformConfig(
