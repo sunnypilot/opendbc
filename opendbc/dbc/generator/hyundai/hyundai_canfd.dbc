@@ -341,8 +341,9 @@ BO_ 416 SCC_CONTROL: 32 ADRV
  SG_ StopReq : 184|1@0+ (1,0) [0|1] "" XXX
  SG_ ZEROS_3 : 191|7@0+ (1,0) [0|127] "" XXX
  SG_ NEW_SIGNAL_15 : 192|11@1+ (0.1,0) [0|204.7] "m" XXX
- SG_ ZEROS_2 : 207|5@0+ (1,0) [0|63] "" XXX
  SG_ ZEROS : 215|48@0+ (1,0) [0|281474976710655] "" XXX
+ SG_ ADAS_HzrdLmpReqVal : 204|2@1+ (1,0) [0|3] "" XXX
+ SG_ ADAS_DrUnlckReqSta : 206|2@1+ (1,0) [0|3] "" XXX
 
 BO_ 426 CRUISE_BUTTONS_ALT: 16 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
