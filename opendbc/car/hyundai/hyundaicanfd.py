@@ -123,7 +123,6 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
     "aReqRaw": 0.0,
     "aReqValue": 0.0,
   })
-  values["ADAS_HzrdLmpReqVal"] = 1
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
 
@@ -264,6 +263,7 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
   }
   if cruise_info:
     values.update({s: cruise_info[s] for s in ["ACC_ObjDist", "ACC_ObjRelSpd"]})
+  values["ADAS_HzrdLmpReqVal"] = 1
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
