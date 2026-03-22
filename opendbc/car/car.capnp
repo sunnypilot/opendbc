@@ -230,10 +230,9 @@ struct CarState {
   fuelGauge @41 :Float32; # battery or fuel tank level from [0.0, 1.0]
   charging @43 :Bool;
 
-  flWindow @61 :Bool;
-  frWindow @62 :Bool;
-  rlWindow @63 :Bool;
-  rrWindow @64 :Bool;
+  leftButtonBlinker @61 :Bool;
+  rightButtonBlinker @62 :Bool;
+  enableButtonBlinker @63 :Bool;
 
   struct WheelSpeeds {
     # optional wheel speeds
