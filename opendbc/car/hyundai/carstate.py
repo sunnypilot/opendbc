@@ -318,8 +318,10 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.blockPcmEnable = not self.recent_button_interaction()
 
-    ret.leftButtonBlinker = cp.vl["DRIVER_BUTTONS"]["RL_WINDOW"] == 1
-    ret.rightButtonBlinker = cp.vl["DRIVER_BUTTONS"]["RR_WINDOW"] == 1
+    ret.leftButtonBlinker = cp.vl["DRIVER_BUTTONS"]["FL_WINDOW"] == 1
+    ret.leftButtonBlinkerNudge = cp.vl["DRIVER_BUTTONS"]["FL_WINDOW"] == 3
+    ret.rightButtonBlinker = cp.vl["DRIVER_BUTTONS"]["FR_WINDOW"] == 1
+    ret.rightButtonBlinkerNudge = cp.vl["DRIVER_BUTTONS"]["FR_WINDOW"] == 3
     ret.enableButtonBlinker = cp.vl["DRIVER_BUTTONS_2"]["REAR_UNLOCKED"] == 1
 
     return ret, ret_sp

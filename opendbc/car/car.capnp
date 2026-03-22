@@ -233,6 +233,8 @@ struct CarState {
   leftButtonBlinker @61 :Bool;
   rightButtonBlinker @62 :Bool;
   enableButtonBlinker @63 :Bool;
+  leftButtonBlinkerNudge @64 :Bool;
+  rightButtonBlinkerNudge @65 :Bool;
 
   struct WheelSpeeds {
     # optional wheel speeds
