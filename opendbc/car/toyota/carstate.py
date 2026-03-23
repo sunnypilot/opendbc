@@ -77,6 +77,7 @@ class CarState(CarStateBase, CarStateExt):
     self._sport_signal_available = False
     self._eco_signal_available = False
     self._prev_accel_profile = None
+    self._accel_profile_init = False
 
     self.frame = 0
 
@@ -112,21 +113,24 @@ class CarState(CarStateBase, CarStateExt):
     if self.toyota_drive_mode: # and not self.CP.flags & ToyotaFlags.SECOC.value:
       sport_signal = 'SPORT_ON_2' if self.CP.carFingerprint in (CAR.TOYOTA_RAV4_TSS2, CAR.LEXUS_ES_TSS2,
                                                                 CAR.TOYOTA_HIGHLANDER_TSS2) else 'SPORT_ON'
+
       if not self._drive_mode_signals_checked:
         self._drive_mode_signals_checked = True
         try:
-          cp.vl["GEAR_PACKET"][sport_signal]
+          sport_mode = cp.vl["GEAR_PACKET"][sport_signal]
           self._sport_signal_available = True
-        except (KeyError, ValueError):
+        except KeyError:
+          sport_mode = 0
           self._sport_signal_available = False
         try:
-          cp.vl["GEAR_PACKET"]['ECON_ON']
+          eco_mode = cp.vl["GEAR_PACKET"]['ECON_ON']
           self._eco_signal_available = True
-        except (KeyError, ValueError):
+        except KeyError:
+          eco_mode = 0
           self._eco_signal_available = False
-
-      sport_mode = cp.vl["GEAR_PACKET"][sport_signal] if self._sport_signal_available else 0
-      eco_mode = cp.vl["GEAR_PACKET"]['ECON_ON'] if self._eco_signal_available else 0
+      else:
+        sport_mode = cp.vl["GEAR_PACKET"][sport_signal] if self._sport_signal_available else 0
+        eco_mode = cp.vl["GEAR_PACKET"]['ECON_ON'] if self._eco_signal_available else 0
 
       if sport_mode == 1:
         accel_profile = AccelPersonality.sport
@@ -135,8 +139,9 @@ class CarState(CarStateBase, CarStateExt):
       else:
         accel_profile = AccelPersonality.normal
 
-      if accel_profile != self._prev_accel_profile:
+      if not self._accel_profile_init or accel_profile != self._prev_accel_profile:
         Params().put_nonblocking('AccelPersonality', int(accel_profile))
+        self._accel_profile_init = True
         self._prev_accel_profile = accel_profile
 
     self.parse_wheel_speeds(ret,
