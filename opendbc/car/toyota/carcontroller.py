@@ -26,8 +26,8 @@ GearShifter = structs.CarState.GearShifter
 
 # The up limit allows the brakes/gas to unwind quickly leaving a stop,
 # the down limit roughly matches the rate of ACCEL_NET, reducing PCM compensation windup
-ACCEL_WINDUP_LIMIT = 3.0 * DT_CTRL * 3  # m/s^2 / frame
-ACCEL_WINDDOWN_LIMIT = -3.0 * DT_CTRL * 3  # m/s^2 / frame
+ACCEL_WINDUP_LIMIT = 4.0 * DT_CTRL * 3  # m/s^2 / frame
+ACCEL_WINDDOWN_LIMIT = -4.0 * DT_CTRL * 3  # m/s^2 / frame
 ACCEL_PID_UNWIND = 0.03 * DT_CTRL * 3  # m/s^2 / frame
 
 MAX_PITCH_COMPENSATION = 1.5  # m/s^2
@@ -47,7 +47,7 @@ def get_long_tune(CP, params):
   if CP.carFingerprint in TSS2_CAR:
     if Params().get_bool("ToyotaTSS2Long"):
       kiBP = [0.,   2.0,  9.0,  14.,  20.,  27.]
-      kiV =  [0.5001, 0.50, 0.24, 0.20, 0.20, 0.20]
+      kiV =  [0.40, 0.38, 0.20, 0.17, 0.16, 0.15]
     else:
       kiBP = [2., 5.]
       kiV = [0.5, 0.25]
