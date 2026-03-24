@@ -274,7 +274,7 @@ def create_spas_messages(packer, CAN, left_blink, right_blink, msg_16a):
   # }
   # ret.append(packer.make_can_msg("SPAS1", CAN.ECAN, values))
 
-  blink = 3
+  blink = 4
   if left_blink:
     blink = 3
   elif right_blink:
