@@ -285,7 +285,7 @@ def create_spas_messages(packer, CAN, left_blink, right_blink, msg_16a):
     "ZEROS_3",
     "ZEROS_4",
   ]}
-  values["COUNTER"] = msg_16a["COUNTER"] + 1
+  values["COUNTER"] = msg_16a["COUNTER"] + 2
   values["BLINKER_CONTROL"] = blink
   ret.append(packer.make_can_msg("SPAS2", CAN.ECAN, values))
 
