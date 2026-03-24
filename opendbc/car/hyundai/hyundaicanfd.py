@@ -233,7 +233,7 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
 
 
 def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed, hud_control,
-                       lead_data: CanFdLeadData, main_cruise_enabled, tuning, leftBlinker, rightBlinker, cruise_info=None):
+                       lead_data: CanFdLeadData, main_cruise_enabled, tuning, cruise_info=None):
   jerk = 5
   jn = jerk / 50
   if not enabled or gas_override:
@@ -263,8 +263,6 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
   }
   if cruise_info:
     values.update({s: cruise_info[s] for s in ["ACC_ObjDist", "ACC_ObjRelSpd"]})
-  if leftBlinker or rightBlinker:
-    values["ADAS_HzrdLmpReqVal"] = 1
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
