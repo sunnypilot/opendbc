@@ -118,7 +118,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
         can_sends.append(make_tester_present_msg(0x7b1, self.CAN.ECAN, suppress_response=True))
 
     if self.frame % 100 == 0:
-      if self.CP.flags & HyundaiFlags.CCNC and not lka_steering:
+      if self.CP.flags & HyundaiFlags.CCNC and not (self.CP.flags & HyundaiFlags.CANFD_LKA_STEERING):
         can_sends.append(make_tester_present_msg(0x7b1, self.CAN.ECAN, suppress_response=True))
 
     # *** CAN/CAN FD specific ***
