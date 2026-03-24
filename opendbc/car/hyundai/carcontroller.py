@@ -209,7 +209,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
 
     # blinkers
-    if lka_steering and self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
+    if (lka_steering and self.CP.flags & HyundaiFlags.ENABLE_BLINKERS) or ccnc_non_hda2:
       can_sends.extend(hyundaicanfd.create_spas_messages(self.packer, self.CAN, CC.leftBlinker, CC.rightBlinker))
 
     if self.CP.openpilotLongitudinalControl:
