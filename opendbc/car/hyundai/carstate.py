@@ -66,6 +66,12 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     self.cruise_info = {}
     self.msg_161, self.msg_162, self.msg_1b5, self.msg_16a = {}, {}, {}, {}
 
+    self.leftButtonBlinker = False
+    self.leftButtonBlinkerNudge = False
+    self.rightButtonBlinker = False
+    self.rightButtonBlinkerNudge = False
+    self.enableButtonBlinker = False
+
     # On some cars, CLU15->CF_Clu_VehicleSpeed can oscillate faster than the dash updates. Sample at 5 Hz
     self.cluster_speed = 0
     self.cluster_speed_counter = CLUSTER_SAMPLE_RATE
@@ -323,6 +329,12 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     ret.rightButtonBlinker = cp.vl["DRIVER_BUTTONS"]["FR_WINDOW"] == 1
     ret.rightButtonBlinkerNudge = cp.vl["DRIVER_BUTTONS"]["FR_WINDOW"] == 3
     ret.enableButtonBlinker = cp.vl["DRIVER_BUTTONS_2"]["REAR_LOCKED"] == 1
+
+    self.leftButtonBlinker = cp.vl["DRIVER_BUTTONS"]["FL_WINDOW"] == 1
+    self.leftButtonBlinkerNudge = cp.vl["DRIVER_BUTTONS"]["FL_WINDOW"] == 3
+    self.rightButtonBlinker = cp.vl["DRIVER_BUTTONS"]["FR_WINDOW"] == 1
+    self.rightButtonBlinkerNudge = cp.vl["DRIVER_BUTTONS"]["FR_WINDOW"] == 3
+    self.enableButtonBlinker = cp.vl["DRIVER_BUTTONS_2"]["REAR_LOCKED"] == 1
 
     return ret, ret_sp
 
