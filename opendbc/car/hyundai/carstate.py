@@ -263,7 +263,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     if self.CP.flags & HyundaiFlags.CCNC:
       alt = "_ALT"
       if not self.CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
-        self.msg_161, self.msg_162, self.msg_1b5, self.msg_16a = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"], cp_cam.vl["FR_CMR_03_50ms"], cp_cam.vl["SPAS2"]))
+        self.msg_161, self.msg_162, self.msg_1b5, self.msg_16a = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"], cp_cam.vl["FR_CMR_03_50ms"], cp.vl["SPAS2"]))
         self.cruise_info = copy.copy((cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp).vl["SCC_CONTROL"])
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"][f"LEFT_LAMP{alt}"],
                                                                       cp.vl["BLINKERS"][f"RIGHT_LAMP{alt}"])
