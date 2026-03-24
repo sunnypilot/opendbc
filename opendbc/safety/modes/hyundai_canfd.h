@@ -285,6 +285,8 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     {0x162, 0, 32, .check_relay = true}, /* CCNC_0x162 */ \
     {0x7C4, 2, 8, .check_relay = true}, /* 0x7C4 */ \
     {0xEA, 2, 24, .check_relay = true}, /* MDPS */ \
+    {0x165, 0, 32, .check_relay = false}, /* 0x165 */ \
+    {0x16A, 0, 32, .check_relay = false}, /* 0x16A */ \
 
   hyundai_common_init(param);
 
