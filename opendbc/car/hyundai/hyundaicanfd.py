@@ -270,9 +270,9 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
 def create_spas_messages(packer, CAN, left_blink, right_blink):
   ret = []
 
-  values = {
-  }
-  ret.append(packer.make_can_msg("SPAS1", CAN.ECAN, values))
+  # values = {
+  # }
+  # ret.append(packer.make_can_msg("SPAS1", CAN.ECAN, values))
 
   blink = 0
   if left_blink:
