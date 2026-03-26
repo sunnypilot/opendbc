@@ -1,4 +1,4 @@
-from parameterized import parameterized
+from opendbc.testing import parameterized
 
 from opendbc.car import CanData
 from opendbc.car.car_helpers import interfaces
@@ -44,7 +44,7 @@ class TestRadarInterfaceExt:
 
     return RD, CP, CP_SP
 
-  @parameterized.expand(ESCC_CARS)
+  @parameterized("car_name, escc_msg", ESCC_CARS)
   def test_escc_radar_interface(self, car_name, escc_msg):
     """Test radar interface for ESCC-enabled cars"""
     RD, CP, CP_SP = self._setup_platform(car_name, escc_msg=escc_msg)
@@ -64,7 +64,7 @@ class TestRadarInterfaceExt:
       rr = RD.update(cans)
       assert rr is None or len(rr.errors) > 0
 
-  @parameterized.expand(CAMERA_SCC_CARS)
+  @parameterized("car_name, flags, expected_trigger, msg_src", CAMERA_SCC_CARS)
   def test_camera_scc_radar_interface(self, car_name, flags, expected_trigger, msg_src):
     """Test radar interface for Camera SCC cars"""
     RD, CP, CP_SP = self._setup_platform(car_name, additional_flags=flags)
@@ -92,7 +92,7 @@ class TestRadarInterfaceExt:
       rr = RD.update(cans)
       assert rr is None or len(rr.errors) > 0
 
-  @parameterized.expand(STANDARD_RADAR_CARS)
+  @parameterized("car_name, flags", STANDARD_RADAR_CARS)
   def test_standard_radar_interface(self, car_name, flags):
     """Test radar interface for standard radar cars"""
     RD, CP, CP_SP = self._setup_platform(car_name, additional_flags=flags)
