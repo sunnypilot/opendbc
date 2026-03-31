@@ -2,6 +2,7 @@ import math
 import numpy as np
 from opendbc.car.carlog import carlog
 from opendbc.car.vehicle_model import VehicleModel
+from opendbc.car.common.filter_simple import FirstOrderFilter
 
 try:
   # TODO-SP: We shouldn't really import params from here, but it's the easiest way to get the params for
@@ -13,7 +14,7 @@ except ImportError:
   PARAMS_AVAILABLE = False
 
 from opendbc.can import CANPacker
-from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs
+from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs, apply_hysteresis
 from opendbc.car.lateral import apply_driver_steer_torque_limits, common_fault_avoidance, apply_steer_angle_limits_vm
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
@@ -92,6 +93,18 @@ def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: floa
     adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.))  # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
     return (apply_angle * adjusted_alpha_limited) + (apply_angle_last * (1 - adjusted_alpha_limited))
   return apply_angle
+
+
+def compute_torque_reduction_gain(steering_torque, v_ego_kph, lat_active, last_gain):
+  if lat_active:
+    ceiling = np.interp(v_ego_kph, [40, 120], [0.85, 1.0])
+    target = np.interp(abs(steering_torque), [140, 420], [ceiling, 0.19])
+  else:
+    target = 0.0
+  delta = target - last_gain
+  rate_dn = np.interp(abs(steering_torque), [0, 300, 700], [0.004, 0.01, 0.04])
+  gain = last_gain + max(-rate_dn, min(0.004, delta))
+  return round(gain / 0.004) * 0.004
 
 
 def process_hud_alert(enabled, fingerprint, hud_control):
@@ -184,6 +197,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       ramp_up_rate=self.params.ANGLE_RAMP_UP_TORQUE_REDUCTION_RATE,
       ramp_down_rate=self.params.ANGLE_RAMP_DOWN_TORQUE_REDUCTION_RATE
     )
+    self.fof = FirstOrderFilter(0.0, 0.1, 0.01)
+    self.angle_steady = 0
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
@@ -203,8 +218,67 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       new_torque = int(round(actuators.torque * self.params.STEER_MAX))
       apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
 
+      if not CC.latActive:
+        apply_torque = 0
+
+      # Hold torque with induced temporary fault when cutting the actuation bit
+      # FIXME: we don't use this with CAN FD?
+      torque_fault = CC.latActive and not apply_steer_req
+
     # angle control
     else:
+      # desired_angle = round(actuators.steeringAngleDeg, 1)
+      desired_angle = actuators.steeringAngleDeg
+
+      # Smooth micro-adjustments that cause EPS whine at low speed.
+      # The model produces ~0.2-0.4°/frame jitter vs stock's ~0.05°. The EPS PID
+      # overshoots tracking these rapid changes, causing motor direction reversals
+      # at audible frequencies. Smoothing reduces the jitter to stock levels.
+      # Skip smoothing for large angle changes (>1°) — those are real steering
+      # maneuvers, not jitter, and should execute immediately.
+      # delta = abs(desired_angle - self.apply_angle_last)
+      # if CC.latActive and 0.05 < delta < 1.0:
+      #   alpha = np.interp(abs(CS.out.vEgoRaw), [0, 2.8, 5.6, 8.3, 11.1, 13.9], [0.15, 0.20, 0.25, 0.35, 0.55, 1.0])
+      #   desired_angle = float(desired_angle * alpha + self.apply_angle_last * (1 - alpha))
+
+
+      if CC.latActive:
+        #print(apply_angle_last, self.apply_angle_last)
+        print(desired_angle, self.angle_steady)
+        deadzone = np.interp(CS.out.vEgo, [10, 15], [3, 0])
+        desired_angle = apply_hysteresis(desired_angle, self.angle_steady, deadzone)
+        #desired_angle = self.fof.update(desired_angle)
+        #print('after', apply_angle_last)
+        print('after', desired_angle)
+        self.angle_steady = desired_angle
+        #print()
+
+      self.apply_angle_last = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last,
+                                                          CS.out.vEgoRaw, CS.out.steeringAngleDeg,
+                                                          CC.latActive, self.params, self.VM)
+
+      # apply_torque = self.torque_reduction_gain_controller.update(
+      #   CS.out.steeringPressed, CC.latActive, CS.out.vEgoRaw)
+      # TODO: consider angle direction so you can override in direction and it doesn't reduce torque as much
+      # TODO: max_allowed_torque
+      # apply_torque = np.interp(abs(CS.out.steeringTorque), [0, 500], [1.0, 0.2]) if CC.latActive else 0.0
+      # apply_torque = rate_limit(apply_torque, self.apply_torque_last, -0.012, 0.002)  # try 0.004, that's stock
+      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, CS.out.vEgoRaw * CV.MS_TO_KPH,
+                                                   CC.latActive, self.apply_torque_last)
+      #self.apply_angle_last = apply_angle_last_tmp
+      #self.angle_steady = self.apply_angle_last
+
+      #self.apply
+
+      #self.angle_steady = self.apply_angle_last
+
+      apply_steer_req = CC.latActive
+      if not CC.latActive:
+        self.fof.x = CS.out.steeringAngleDeg
+        self.angle_steady = CS.out.steeringAngleDeg
+        self.apply_angle_last = CS.out.steeringAngleDeg
+
+    if False:
       v_ego_raw = CS.out.vEgoRaw
       desired_angle = np.clip(actuators.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX)
 
@@ -239,13 +313,6 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
       # After we've used the last angle wherever we needed it, we now update it.
       self.apply_angle_last = apply_angle
-
-    if not CC.latActive:
-      apply_torque = 0
-
-    # Hold torque with induced temporary fault when cutting the actuation bit
-    # FIXME: we don't use this with CAN FD?
-    torque_fault = CC.latActive and not apply_steer_req
 
     self.apply_torque_last = apply_torque
 
