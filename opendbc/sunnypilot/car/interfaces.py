@@ -4,6 +4,7 @@ Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
 This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
+import functools
 import json
 import numpy as np
 from typing import NamedTuple
@@ -32,6 +33,17 @@ class LatControlInputs(NamedTuple):
 TorqueFromLateralAccelCallbackTypeTorqueSpace = Callable[[LatControlInputs, structs.CarParams.LateralTorqueTuning, bool], float]
 
 
+@functools.cache
+def get_speed_dep_config():
+  """Load speed-dependent torque config from toml. Cached after first call."""
+  import tomllib
+  from pathlib import Path
+  from opendbc.car.common.basedir import BASEDIR
+  path = Path(BASEDIR) / 'torque_data/speed_dependent.toml'
+  with open(path, 'rb') as f:
+    return tomllib.load(f)
+
+
 class CarInterfaceBaseSP:
   @staticmethod
   def torque_from_lateral_accel_linear_in_torque_space(latcontrol_inputs: LatControlInputs, torque_params: structs.CarParams.LateralTorqueTuning,
@@ -41,7 +53,6 @@ class CarInterfaceBaseSP:
 
   def torque_from_lateral_accel_in_torque_space(self) -> TorqueFromLateralAccelCallbackTypeTorqueSpace:
     return self.torque_from_lateral_accel_linear_in_torque_space
-
 
 class NanoFFModel:
   def __init__(self, weights_loc: str, platform: str):
