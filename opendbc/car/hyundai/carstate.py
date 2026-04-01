@@ -274,9 +274,12 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
       left_blinker_sig, right_blinker_sig = "LEFT_LAMP_ALT", "RIGHT_LAMP_ALT"
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"][left_blinker_sig],
                                                                       cp.vl["BLINKERS"][right_blinker_sig])
-    if self.CP.enableBsm:
-      ret.leftBlindspot = bool(cp.vl["ADAS_CMD_50_50ms"]["BCW_LtIndSta"])
-      ret.rightBlindspot = bool(cp.vl["ADAS_CMD_50_50ms"]["BCW_RtIndSta"])
+    # TODO-SP: Fix this, it crashed because we changed the dbc definitions and the new definition doesnt have the old signal.
+    #  Not fixing it because I dont have much time right now and we had an "alt" logic check which we no longer have so we
+    #  need to validate.
+    # if self.CP.enableBsm:
+    #   ret.leftBlindspot = bool(cp.vl["ADAS_CMD_50_50ms"]["BCW_LtIndSta"])
+    #   ret.rightBlindspot = bool(cp.vl["ADAS_CMD_50_50ms"]["BCW_RtIndSta"])
 
     # cruise state
     # CAN FD cars enable on main button press, set available if no TCS faults preventing engagement
