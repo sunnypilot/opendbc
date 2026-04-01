@@ -210,8 +210,23 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     actuators = CC.actuators
     hud_control = CC.hudControl
 
+    # steering torque
+    if not self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+      self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_ANGLE, CC.latActive,
+                                                                         self.angle_limit_counter, MAX_ANGLE_FRAMES,
+                                                                         MAX_ANGLE_CONSECUTIVE_FRAMES)
+      new_torque = int(round(actuators.torque * self.params.STEER_MAX))
+      apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
+
+      if not CC.latActive:
+        apply_torque = 0
+
+      # Hold torque with induced temporary fault when cutting the actuation bit
+      # FIXME: we don't use this with CAN FD?
+      torque_fault = CC.latActive and not apply_steer_req
+
     # angle control
-    if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+    else:
       # desired_angle = round(actuators.steeringAngleDeg, 1)
       desired_angle = actuators.steeringAngleDeg
 
@@ -262,21 +277,6 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
         self.fof.x = CS.out.steeringAngleDeg
         self.angle_steady = CS.out.steeringAngleDeg
         self.apply_angle_last = CS.out.steeringAngleDeg
-
-    # steering torque
-    else:
-      self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_ANGLE, CC.latActive,
-                                                                         self.angle_limit_counter, MAX_ANGLE_FRAMES,
-                                                                         MAX_ANGLE_CONSECUTIVE_FRAMES)
-      new_torque = int(round(actuators.torque * self.params.STEER_MAX))
-      apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
-
-      if not CC.latActive:
-        apply_torque = 0
-
-      # Hold torque with induced temporary fault when cutting the actuation bit
-      # FIXME: we don't use this with CAN FD?
-      torque_fault = CC.latActive and not apply_steer_req
 
     if False:
       v_ego_raw = CS.out.vEgoRaw
