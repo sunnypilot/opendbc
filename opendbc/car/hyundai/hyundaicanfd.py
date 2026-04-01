@@ -38,7 +38,7 @@ class CanBus(CanBusBase):
     return self._cam
 
 
-def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon):
+def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon, damp_factor=100):
   common_values = {
     "LKA_MODE": 2,
     "LKA_ICON": lkas_icon,
@@ -48,7 +48,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     "STEER_MODE": 0,
     "HAS_LANE_SAFETY": 0,  # hide LKAS settings
     "NEW_SIGNAL_2": 0,
-    "DAMP_FACTOR": 100,  # can potentially tuned for better perf [3, 200]
+    "DAMP_FACTOR": damp_factor,  # can potentially tuned for better perf [3, 200]
   }
 
   lkas_values = copy.copy(common_values)
