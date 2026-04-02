@@ -384,6 +384,14 @@ class CAR(Platforms):
     CarSpecs(mass=1948, wheelbase=2.97, steerRatio=14.26, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.EV,
   )
+  HYUNDAI_IONIQ_5_PE = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025-26", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_q]))
+    ],
+    HYUNDAI_IONIQ_5.specs,
+    flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
+  )
   HYUNDAI_IONIQ_6 = HyundaiCanFDPlatformConfig(
     [HyundaiCarDocs("Hyundai Ioniq 6 (with HDA II) 2023-24", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))],
     HYUNDAI_IONIQ_5.specs,
