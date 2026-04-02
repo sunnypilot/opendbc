@@ -159,7 +159,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       if not CC.latActive:
         self.angle_filter.x = CS.out.steeringAngleDeg
         self.angle_steady = CS.out.steeringAngleDeg
-        self.apply_angle_last = CS.out.steeringAngleDeg
+        self.apply_angle_last = float(np.clip(CS.out.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX))
 
     # torque control
     else:
