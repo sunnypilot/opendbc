@@ -926,6 +926,39 @@
     ],
     "package": "All"
   },
+  "Genesis GV80 (2.5T, with HDA2 & LFA2) 2025-26": {
+    "platform": "GENESIS_GV80_2025",
+    "make": "Genesis",
+    "brand": "hyundai",
+    "model": "GV80 (2.5T, with HDA2 & LFA2)",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Highway Driving Assist 2 & Lane Follow Assist 2"
+  },
+  "Genesis GV80 (3.5T, with HDA2 & LFA2) 2025-26": {
+    "platform": "GENESIS_GV80_2025",
+    "make": "Genesis",
+    "brand": "hyundai",
+    "model": "GV80 (3.5T, with HDA2 & LFA2)",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Highway Driving Assist 2 & Lane Follow Assist 2"
+  },
+  "Genesis GV80 Coupe (3.5 T, with HDA2 & LFA2) 2025-26": {
+    "platform": "GENESIS_GV80_2025",
+    "make": "Genesis",
+    "brand": "hyundai",
+    "model": "GV80 Coupe (3.5 T, with HDA2 & LFA2)",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Highway Driving Assist 2 & Lane Follow Assist 2"
+  },
   "GMC Acadia 2018": {
     "platform": "GMC_ACADIA",
     "make": "GMC",
