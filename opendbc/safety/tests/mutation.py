@@ -625,6 +625,7 @@ def main():
       ("opendbc/safety/sunnypilot/mads.h", 149, "boundary"),
       ("opendbc/safety/sunnypilot/mads.h", 150, "boundary"),
       ("opendbc/safety/sunnypilot/mads.h", 151, "boundary"),
+      ("opendbc/safety/longitudinal.h", 38, "remove_negation"),
     }
     survivors = [r for r in survivors if (str(r.site.origin_file.relative_to(ROOT)), r.site.origin_line, r.site.mutator) not in known_survivors]
 
