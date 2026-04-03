@@ -254,10 +254,10 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEERING_RATE"]
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEERING_ANGLE"]
-    ret.steeringTorque = cp.vl["MDPS"]["STEERING_COL_TORQUE"]
-    ret.steeringTorqueEps = cp.vl["MDPS"]["STEERING_OUT_TORQUE"]
+    ret.steeringTorque = cp.vl["MDPS"]["MDPS_StrTqSnsrVal"]
+    ret.steeringTorqueEps = cp.vl["MDPS"]["MDPS_OutTqVal"]
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
-    ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
+    ret.steerFaultTemporary = cp.vl["MDPS"]["MDPS_LkaFailSta"] != 0
 
     alt = ""
     if self.CP.flags & HyundaiFlags.CCNC:
@@ -268,8 +268,8 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"][f"LEFT_LAMP{alt}"],
                                                                       cp.vl["BLINKERS"][f"RIGHT_LAMP{alt}"])
     if self.CP.enableBsm:
-      ret.leftBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"][f"FL_INDICATOR{alt}"] != 0
-      ret.rightBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"][f"FR_INDICATOR{alt}"] != 0
+      ret.leftBlindspot = bool(cp.vl["ADAS_CMD_50_50ms"]["BCW_LtIndSta"])
+      ret.rightBlindspot = bool(cp.vl["ADAS_CMD_50_50ms"]["BCW_RtIndSta"])
 
     # cruise state
     # CAN FD cars enable on main button press, set available if no TCS faults preventing engagement
