@@ -1,4 +1,6 @@
 CM_ "IMPORT _hyundai_canfd_common.dbc";
+CM_ "IMPORT _hyundai_canfd_ccnc.dbc";
+CM_ "IMPORT _hyundai_canfd_hda2_cam_unknown.dbc";
 
 BO_ 53 ACCELERATOR: 32 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -839,7 +841,9 @@ CM_ SG_ 282 FR_CMR_SCCEquipSta "This signal indicates equipment for SCC";
 CM_ SG_ 282 FR_CMR_ReqADASMapMsgVal "This signal indicates an ADAS map message request from FR_CMR to H_U. Each bit indicates the request messages as follows. - Bit 0 : H_U_NAVI_V2_STUB_E - Bit 1 : HU_NAVI_V2_PROSHORT_E_00 (곡률) - Bit 2 : HU_NAVI_V2_PROSHORT_E_00 (곡률 외 정보)";
 CM_ SG_ 282 FR_CMR_SwVer1Val "This signal indicates a major version of FR_CMR software. If FR_CMR software version is A.00, 'A' and '00' mean major and minor version respectively.";
 CM_ SG_ 282 FR_CMR_SwVer2Val "This signal indicates a minor version of FR_CMR software. If FR_CMR software version is A.00, 'A' and '00' mean major and minor version respectively.";
-CM_ BO_ 298 "This message controls steering and alerts regarding lateral control. Formerly known as LFA. Node is flagged as ADRV, but in reality this signal can be seen from either the FR_CMR (front camera) or the ADRV (adas ecu) for some trims.";
+CM_ BO_ 298 "This message controls steering and alerts regarding lateral control. Formerly known as LFA.
+
+Node is flagged as ADRV, but in reality this signal can be seen from either the FR_CMR (front camera) or the ADRV (adas ecu) for some trims.";
 CM_ SG_ 298 LKA_OptUsmSta "LKA_OptionUsmStatus ##2G##LDW_LKA - LKA11 - CF_LKA_Opt_USM";
 CM_ SG_ 298 LKA_RcgSta "LKA_RecognitionStatus ##2G##LDW_LKA - LKA11 - CF_LKA_LaneRecogState";
 CM_ SG_ 298 LKA_LHLnWrnSta "LKA_LHLaneWarningStatus ##2G##LDW_LKA - LKA11 - CF_LKA_LHWarning";
