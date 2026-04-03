@@ -165,7 +165,6 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
                                                           CS.out.vEgoRaw, CS.out.steeringAngleDeg,
                                                           CC.latActive, self.params, self.VM)
 
-
       # if we are not the baseline model, we use the baseline model for further limits to prevent a panda block since it is hardcoded for baseline model.
       if self.CP.carFingerprint != ANGLE_SAFETY_BASELINE_MODEL:
         apply_angle = apply_steer_angle_limits_vm(apply_angle or desired_angle, self.apply_angle_last, CS.out.vEgoRaw, CS.out.steeringAngleDeg, CC.latActive,
