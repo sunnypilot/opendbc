@@ -1,3 +1,5 @@
+import unittest
+
 from opendbc.testing import parameterized
 
 from opendbc.car import CanData
@@ -20,7 +22,7 @@ STANDARD_RADAR_CARS = [
 ]
 
 
-class TestRadarInterfaceExt:
+class TestRadarInterfaceExt(unittest.TestCase):
 
   @staticmethod
   def _setup_platform(car_name, additional_flags=0, escc_msg=None):
@@ -51,9 +53,9 @@ class TestRadarInterfaceExt:
 
     # Assert that ESCC features are present
     if hasattr(RD, 'use_escc'):
-      assert RD.use_escc, "ESCC car should have use_escc=True"
+      self.assertTrue(RD.use_escc, "ESCC car should have use_escc=True")
     if hasattr(RD, 'use_radar_interface_ext'):
-      assert RD.use_radar_interface_ext, "ESCC car should use radar interface ext"
+      self.assertTrue(RD.use_radar_interface_ext, "ESCC car should use radar interface ext")
 
     # Run radar interface once
     RD.update([])
@@ -62,7 +64,7 @@ class TestRadarInterfaceExt:
     if not CP.radarUnavailable and RD.rcp is not None:
       cans = [(0, [CanData(0, b'', 0) for _ in range(5)])]
       rr = RD.update(cans)
-      assert rr is None or len(rr.errors) > 0
+      self.assertTrue(rr is None or len(rr.errors) > 0)
 
   @parameterized("car_name, flags, expected_trigger, msg_src", CAMERA_SCC_CARS)
   def test_camera_scc_radar_interface(self, car_name, flags, expected_trigger, msg_src):
@@ -71,17 +73,17 @@ class TestRadarInterfaceExt:
 
     # Assert Camera SCC flag is set appropriately
     if flags & HyundaiFlags.CAMERA_SCC:
-      assert CP.flags & HyundaiFlags.CAMERA_SCC, "Car should have CAMERA_SCC flag"
+      self.assertTrue(CP.flags & HyundaiFlags.CAMERA_SCC, "Car should have CAMERA_SCC flag")
     if flags & HyundaiFlags.CANFD_CAMERA_SCC:
-      assert CP.flags & HyundaiFlags.CANFD_CAMERA_SCC, "Car should have CANFD_CAMERA_SCC flag"
+      self.assertTrue(CP.flags & HyundaiFlags.CANFD_CAMERA_SCC, "Car should have CANFD_CAMERA_SCC flag")
 
     # Check if using radar interface ext
     if hasattr(RD, 'use_radar_interface_ext'):
-      assert RD.use_radar_interface_ext, "Camera SCC car should use radar interface ext"
+      self.assertTrue(RD.use_radar_interface_ext, "Camera SCC car should use radar interface ext")
 
     # Verify trigger message
     if hasattr(RD, 'trigger_msg'):
-      assert RD.trigger_msg == expected_trigger, f"Expected trigger_msg {expected_trigger}, got {RD.trigger_msg}"
+      self.assertEqual(RD.trigger_msg, expected_trigger, f"Expected trigger_msg {expected_trigger}, got {RD.trigger_msg}")
 
     # Run radar interface once
     RD.update([])
@@ -90,7 +92,7 @@ class TestRadarInterfaceExt:
     if not CP.radarUnavailable and RD.rcp is not None:
       cans = [(0, [CanData(0, b'', 0) for _ in range(5)])]
       rr = RD.update(cans)
-      assert rr is None or len(rr.errors) > 0
+      self.assertTrue(rr is None or len(rr.errors) > 0)
 
   @parameterized("car_name, flags", STANDARD_RADAR_CARS)
   def test_standard_radar_interface(self, car_name, flags):
@@ -99,7 +101,7 @@ class TestRadarInterfaceExt:
 
     # Standard cars should not use radar interface ext
     if hasattr(RD, 'use_radar_interface_ext'):
-      assert not RD.use_radar_interface_ext, "Standard car should not use radar interface ext"
+      self.assertFalse(RD.use_radar_interface_ext, "Standard car should not use radar interface ext")
 
     # Run radar interface once
     RD.update([])
@@ -116,4 +118,4 @@ class TestRadarInterfaceExt:
     if not CP.radarUnavailable and RD.rcp is not None:
       cans = [(0, [CanData(0, b'', 0) for _ in range(5)])]
       rr = RD.update(cans)
-      assert rr is None or len(rr.errors) > 0
+      self.assertTrue(rr is None or len(rr.errors) > 0)
