@@ -46,6 +46,33 @@ def compute_torque_reduction_gain(steering_torque, v_ego_kph, lat_active, last_g
   return round(gain / 0.004) * 0.004
 
 
+def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: float) -> float:
+  """
+  Smooth the steering angle change based on vehicle speed and an optional smoothing offset.
+
+  This function helps prevent abrupt steering changes by blending the new desired angle (`apply_angle`)
+  with the previously applied angle (`apply_angle_last`). The blend factor (alpha) is dynamically calculated
+  based on the vehicle's current speed using a predefined lookup table.
+
+  Behavior:
+    - At low speeds, the smoothing is strong, keeping the steering more stable.
+    - At higher speeds, the smoothing is relaxed, allowing quicker responses.
+
+  Parameters:
+    v_ego_raw (float): Raw vehicle speed in m/s.
+    apply_angle (float): New target steering angle in degrees.
+    apply_angle_last (float): Previously applied steering angle in degrees.
+
+  Returns:
+    float: Smoothed steering angle.
+  """
+  if abs(apply_angle - apply_angle_last) > 0.1:
+    adjusted_alpha = np.interp(v_ego_raw, CarControllerParams.SMOOTHING_ANGLE_VEGO_MATRIX, CarControllerParams.SMOOTHING_ANGLE_ALPHA_MATRIX)
+    adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.))  # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
+    return (apply_angle * adjusted_alpha_limited) + (apply_angle_last * (1 - adjusted_alpha_limited))
+  return apply_angle_last
+
+
 def process_hud_alert(enabled, fingerprint, hud_control):
   sys_warning = (hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw))
 
@@ -130,18 +157,20 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
     # angle control
     else:
+      v_ego_raw = CS.out.vEgoRaw
       desired_angle = float(np.clip(actuators.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX))
 
-      apply_angle = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last,
-                                                          CS.out.vEgoRaw, CS.out.steeringAngleDeg,
-                                                          CC.latActive, self.params, self.VM)
+      if abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
+        desired_angle = sp_smooth_angle(v_ego_raw, desired_angle, self.apply_angle_last)
+
+      apply_angle = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params, self.VM)
 
       # if we are not the baseline model, we use the baseline model for further limits to prevent a panda block since it is hardcoded for baseline model.
       if self.CP.carFingerprint != ANGLE_SAFETY_BASELINE_MODEL:
-        apply_angle = apply_steer_angle_limits_vm(apply_angle or desired_angle, self.apply_angle_last, CS.out.vEgoRaw, CS.out.steeringAngleDeg, CC.latActive,
+        apply_angle = apply_steer_angle_limits_vm(apply_angle or desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive,
                                                   self.params, self.BASELINE_VM)
 
-      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, CS.out.vEgoRaw * CV.MS_TO_KPH,
+      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw * CV.MS_TO_KPH,
                                                    CC.latActive, self.apply_torque_last)
 
       apply_steer_req = CC.latActive and apply_torque != 0
