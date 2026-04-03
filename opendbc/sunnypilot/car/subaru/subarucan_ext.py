@@ -26,7 +26,7 @@ def create_throttle(packer, CP, throttle_msg, send_resume):
       "CHECKSUM",
       "Signal1",
       "Engine_RPM",
-      "Signal2",
+      "Neutral",
       "Throttle_Pedal",
       "Throttle_Cruise",
       "Throttle_Combo",
