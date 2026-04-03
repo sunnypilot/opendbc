@@ -1,15 +1,5 @@
 import numpy as np
-from opendbc.car.carlog import carlog
 from opendbc.car.vehicle_model import VehicleModel
-
-try:
-  # TODO-SP: We shouldn't really import params from here, but it's the easiest way to get the params for
-  #  live tuning temporarily while we understand the angle steering better
-  from openpilot.common.params import Params
-  PARAMS_AVAILABLE = True
-except ImportError:
-  carlog.warning("Unable to import Params from openpilot.common.params.")
-  PARAMS_AVAILABLE = False
 
 from opendbc.can import CANPacker
 from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs
@@ -119,24 +109,6 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     self.last_button_frame = 0
 
     self.apply_angle_last = 0
-    self.angle_torque_reduction_gain = 0
-
-    # For future parametrization / tuning
-    self.angle_enable_smoothing_factor = True
-
-    self._params = Params() if PARAMS_AVAILABLE else None
-    if PARAMS_AVAILABLE:
-      self.params.ANGLE_MIN_TORQUE_REDUCTION_GAIN = parse_tq_rdc_gain(
-        self._params.get("HkgTuningAngleMinTorqueReductionGain")) or self.params.ANGLE_MIN_TORQUE_REDUCTION_GAIN
-
-      self.params.ANGLE_MAX_TORQUE_REDUCTION_GAIN = parse_tq_rdc_gain(
-        self._params.get("HkgTuningAngleMaxTorqueReductionGain")) or self.params.ANGLE_MAX_TORQUE_REDUCTION_GAIN
-
-      self.params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN = parse_tq_rdc_gain(
-        self._params.get("HkgTuningAngleActiveTorqueReductionGain")) or self.params.ANGLE_ACTIVE_TORQUE_REDUCTION_GAIN
-
-      self.params.ANGLE_TORQUE_OVERRIDE_CYCLES = int(self._params.get("HkgTuningOverridingCycles") or self.params.ANGLE_TORQUE_OVERRIDE_CYCLES)
-      self.angle_enable_smoothing_factor = self._params.get_bool("EnableHkgTuningAngleSmoothingFactor")
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
