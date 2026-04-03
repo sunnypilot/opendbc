@@ -1,4 +1,3 @@
-import math
 import numpy as np
 from opendbc.car.carlog import carlog
 from opendbc.car.vehicle_model import VehicleModel
@@ -13,7 +12,7 @@ except ImportError:
   PARAMS_AVAILABLE = False
 
 from opendbc.can import CANPacker
-from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs, apply_hysteresis
+from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs
 from opendbc.car.lateral import apply_driver_steer_torque_limits, common_fault_avoidance, apply_steer_angle_limits_vm
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
