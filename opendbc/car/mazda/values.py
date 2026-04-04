@@ -13,16 +13,20 @@ Ecu = CarParams.Ecu
 # Steer torque limits
 
 class CarControllerParams:
-  STEER_MAX = 800                # theoretical max_steer 2047
-  STEER_DELTA_UP = 10             # torque increase per refresh
-  STEER_DELTA_DOWN = 25           # torque decrease per refresh
   STEER_DRIVER_ALLOWANCE = 15     # allowed driver torque before start limiting
   STEER_DRIVER_MULTIPLIER = 1     # weight driver torque
   STEER_DRIVER_FACTOR = 1         # from dbc
   STEER_STEP = 1  # 100 Hz
 
   def __init__(self, CP):
-    pass
+    if CP.carFingerprint == CAR.MAZDA_CX5_2022:
+      self.STEER_MAX = 1400        # theoretical max_steer 2047
+      self.STEER_DELTA_UP = 15
+      self.STEER_DELTA_DOWN = 38
+    else:
+      self.STEER_MAX = 800         # theoretical max_steer 2047
+      self.STEER_DELTA_UP = 10
+      self.STEER_DELTA_DOWN = 25
 
 
 @dataclass
@@ -36,6 +40,11 @@ class MazdaCarSpecs(CarSpecs):
   tireStiffnessFactor: float = 0.7  # not optimized yet
 
 
+@dataclass(frozen=True, kw_only=True)
+class MazdaCX5_2022CarSpecs(CarSpecs):
+  tireStiffnessFactor: float = 0.85  # 19" low-profile tires
+
+
 class MazdaFlags(IntFlag):
   # Static flags
   # Gen 1 hardware: same CAN messages and same camera
@@ -44,7 +53,7 @@ class MazdaFlags(IntFlag):
 
 @dataclass
 class MazdaPlatformConfig(PlatformConfig):
-  dbc_dict: DbcDict = field(default_factory=lambda: {Bus.pt: 'mazda_2017'})
+  dbc_dict: DbcDict = field(default_factory=lambda: {Bus.pt: 'mazda_2017', Bus.radar: 'mazda_2017'})
   flags: int = MazdaFlags.GEN1
 
 
@@ -71,7 +80,7 @@ class CAR(Platforms):
   )
   MAZDA_CX5_2022 = MazdaPlatformConfig(
     [MazdaCarDocs("Mazda CX-5 2022-25")],
-    MAZDA_CX5.specs,
+    MazdaCX5_2022CarSpecs(mass=3728 * CV.LB_TO_KG, wheelbase=2.698, steerRatio=15.5),
   )
 
 
