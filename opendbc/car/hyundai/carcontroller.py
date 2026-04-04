@@ -60,7 +60,7 @@ def process_hud_alert(enabled, fingerprint, hud_control):
 
 def compute_torque_reduction_gain(steering_torque, v_ego_kph, lat_active, last_gain, steering_error):
   if lat_active:
-    base_ceiling = np.interp(v_ego_kph, [0, 20, 40, 120], [0.4, 0.62, 0.85, 1.0])
+    base_ceiling = np.interp(v_ego_kph, [40, 120], [0.85, 1.0])
     # Error-based boost reduction gain: At 0 kph, ignore errors under 1.25 deg.
     error_start = np.interp(v_ego_kph, [0, 20, 40, 120], [1.25, 0.5, 0.3, 0.2])
     error_mult = np.interp(abs(steering_error), [error_start, error_start*2], [1.0, 2])
