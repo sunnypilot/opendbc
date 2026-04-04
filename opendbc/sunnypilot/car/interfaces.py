@@ -146,3 +146,8 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
 
     if toyota_stop_and_go_hack and CP.openpilotLongitudinalControl:
       CP_SP.flags |= ToyotaFlagsSP.STOP_AND_GO_HACK.value
+
+    tss2_smooth = int(params_dict.get("TSS2-Smooth", 0)) == 1
+    if tss2_smooth:
+      CP_SP.flags |= ToyotaFlagsSP.TSS2_SMOOTH.value
+      CP.stoppingDecelRate = 0.05
