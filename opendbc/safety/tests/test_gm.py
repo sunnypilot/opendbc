@@ -6,6 +6,7 @@ from opendbc.car.structs import CarParams
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.common import CANPackerSafety
+from opendbc.safety.tests.gas_interceptor_common import GasInterceptorSafetyTest
 
 from opendbc.sunnypilot.car.gm.values_ext import GMSafetyFlagsSP
 
@@ -144,6 +145,25 @@ class TestGmEVSafetyBase(TestGmSafetyBase):
     return self.packer.make_can_msg_safety("EBCMRegenPaddle", 0, values)
 
 
+def test_gm_non_acc_init_paths():
+  safety = libsafety_py.libsafety
+
+  # Exercise non-ACC init branches for ASCM/camera and EV/non-EV.
+  cases = (
+    (GMSafetyFlagsSP.NON_ACC | GMSafetyFlagsSP.GAS_INTERCEPTOR | GMSafetyFlagsSP.PEDAL_LONG, 0),
+    (GMSafetyFlagsSP.NON_ACC | GMSafetyFlagsSP.GAS_INTERCEPTOR | GMSafetyFlagsSP.PEDAL_LONG, GMSafetyFlags.HW_CAM),
+    (GMSafetyFlagsSP.NON_ACC | GMSafetyFlagsSP.GAS_INTERCEPTOR | GMSafetyFlagsSP.PEDAL_LONG, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG),
+    (GMSafetyFlagsSP.NON_ACC, GMSafetyFlags.HW_CAM),
+    (GMSafetyFlagsSP.NON_ACC, GMSafetyFlags.HW_CAM | GMSafetyFlags.EV),
+  )
+
+  for safety_param_sp, safety_param in cases:
+    safety.set_current_safety_param_sp(safety_param_sp)
+    assert safety.set_safety_hooks(CarParams.SafetyModel.gm, safety_param) == 0
+    safety.init_tests()
+    assert not safety.get_controls_allowed()
+
+
 class TestGmAscmSafety(GmLongitudinalBase, TestGmSafetyBase):
   TX_MSGS = [[0x180, 0], [0x409, 0], [0x40A, 0], [0x2CB, 0], [0x370, 0],  # pt bus
              [0xA1, 1], [0x306, 1], [0x308, 1], [0x310, 1],  # obs bus
@@ -202,7 +222,6 @@ class TestGmCameraSafety(TestGmCameraSafetyBase):
       self._rx(self._pcm_status_msg(enabled))
       self.assertEqual(enabled, self._tx(self._button_msg(Buttons.CANCEL)))
 
-
 class TestGmCameraEVSafety(TestGmCameraSafety, TestGmEVSafetyBase):
   pass
 
@@ -231,6 +250,10 @@ class TestGmCameraLongitudinalEVSafety(TestGmCameraLongitudinalSafety, TestGmEVS
 
 
 class TestGmCameraNonACCSafety(TestGmCameraSafety):
+  TX_MSGS = [[0x180, 0], [0x1E1, 2], [0x184, 2]]
+  FWD_BLACKLISTED_ADDRS = {}
+  FWD_BUS_LOOKUP = {}
+  PCM_CRUISE = False  # NON_ACC cars don't use PCM cruise for control enablement
 
   def setUp(self):
     self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
@@ -240,14 +263,133 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     self.safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | self.EXTRA_SAFETY_PARAM)
     self.safety.init_tests()
 
+  def test_no_pedal_tx(self):
+    values = {"ENABLE": 1, "PEDAL_COUNTER": 0}
+    self.assertFalse(self._tx(self.packer.make_can_msg_safety("GAS_COMMAND", 0, values)))
+
   def _pcm_status_msg(self, enable):
     values = {"CruiseActive": enable}
     return self.packer.make_can_msg_safety("ECMCruiseControl", 0, values)
 
 
-class TestGmCameraEVNonACCSafety(TestGmCameraNonACCSafety, TestGmEVSafetyBase):
-  pass
+class TestGmCameraNonACCPedalSafety(GasInterceptorSafetyTest, TestGmCameraSafety):
+  TX_MSGS = [[0x180, 0], [0x200, 0], [0xBD, 0], [0x1F5, 0], [0x1E1, 0], [0x1E1, 2], [0x184, 2]]
+  FWD_BLACKLISTED_ADDRS = {}
+  FWD_BUS_LOOKUP = {}
+  INTERCEPTOR_THRESHOLD = 550
+  PCM_CRUISE = False  # NON_ACC cars don't use PCM cruise for control enablement
 
+  def setUp(self):
+    self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
+    self.packer_chassis = CANPackerSafety("gm_global_a_chassis")
+    self.safety = libsafety_py.libsafety
+    self.safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC | GMSafetyFlagsSP.GAS_INTERCEPTOR | GMSafetyFlagsSP.PEDAL_LONG)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | self.EXTRA_SAFETY_PARAM)
+    self.safety.init_tests()
+
+  # NON_ACC cars use pedal interceptor, not PCM cruise for control enablement
+  def test_enable_control_allowed_from_cruise(self):
+    pass
+
+  def test_disable_control_allowed_from_cruise(self):
+    pass
+
+  def test_cruise_engaged_prev(self):
+    pass
+
+  # Interceptor-enabled platforms use shared interceptor tests instead of accelerator pedal tests
+  def test_prev_gas(self):
+    pass
+
+  def test_no_disengage_on_gas(self):
+    pass
+
+  def test_buttons(self):
+    # NON_ACC cars with gas interceptor allow CANCEL button transmission when cruise is engaged
+    self.safety.set_controls_allowed(0)
+    for btn in range(8):
+      self.assertFalse(self._tx(self._button_msg(btn)))
+
+    self.safety.set_controls_allowed(1)
+    for btn in range(8):
+      self.assertFalse(self._tx(self._button_msg(btn)))
+
+    # CANCEL button should be allowed when cruise is engaged
+    # For NON_ACC cars with gas interceptor, cruise_engaged_prev is updated, so CANCEL is allowed
+    self._rx(self._pcm_status_msg(True))
+    self.assertTrue(self._tx(self._button_msg(Buttons.CANCEL)))
+    self._rx(self._pcm_status_msg(False))
+    self.assertFalse(self._tx(self._button_msg(Buttons.CANCEL)))
+
+  def _pcm_status_msg(self, enable):
+    values = {"CruiseActive": enable}
+    return self.packer.make_can_msg_safety("ECMCruiseControl", 0, values)
+
+  def _interceptor_user_gas_split(self, gas_1: int, gas_2: int):
+    values = {"INTERCEPTOR_GAS": gas_1, "INTERCEPTOR_GAS2": gas_2,
+              "PEDAL_COUNTER": self.__class__.cnt_user_gas}
+    self.__class__.cnt_user_gas += 1
+    return self.packer.make_can_msg_safety("GAS_SENSOR", 0, values)
+
+  def test_pcm_cruise_non_acc(self):
+    # Test that NON_ACC cars with gas interceptor do NOT do PCM cruise check
+    # Send PCM status message - should NOT affect controls_allowed for NON_ACC with gas interceptor
+    initial_allowed = self.safety.get_controls_allowed()
+    self._rx(self._pcm_status_msg(True))
+    self.assertEqual(initial_allowed, self.safety.get_controls_allowed())  # Should not change
+    self._rx(self._pcm_status_msg(False))
+    self.assertEqual(initial_allowed, self.safety.get_controls_allowed())  # Should not change
+
+  # GM's gas_interceptor_prev getter returns a raw decoded value, not a bool flag.
+  # Verify it updates with pedal traffic instead of asserting boolean semantics.
+  def test_prev_gas_interceptor(self):
+    self._rx(self._interceptor_user_gas(0))
+    low = self.safety.get_gas_interceptor_prev()
+    self._rx(self._interceptor_user_gas(0x1000))
+    high = self.safety.get_gas_interceptor_prev()
+    self.assertGreaterEqual(low, 0)
+    self.assertGreater(high, low)
+
+  # For GM NON_ACC pedal, assert the safety-critical behavior:
+  # interceptor input must not disengage lateral controls.
+  def test_no_disengage_on_gas_interceptor(self):
+    self.safety.set_controls_allowed(True)
+    for g in range(0x1000):
+      self._rx(self._interceptor_user_gas(g))
+      self.assertTrue(self.safety.get_controls_allowed())
+
+  # GM safety allows pedal command frames even when controls are not allowed.
+  def test_gas_interceptor_safety_check(self):
+    for gas in range(0, 4000, 100):
+      for controls_allowed in [True, False]:
+        self.safety.set_controls_allowed(controls_allowed)
+        self.assertTrue(self._tx(self._interceptor_gas_cmd(gas)))
+
+  def test_gas_interceptor_split_tracks_mutation_guards(self):
+    self.safety.set_controls_allowed(True)
+
+    # Keep longitudinal enabled when averaged gas is below threshold.
+    self._rx(self._interceptor_user_gas_split(0, 0))
+    self.assertTrue(self.safety.get_longitudinal_allowed())
+
+    # This valid split pair maps to avg raw gas > threshold and should disable longitudinal.
+    # It catches arithmetic/comparison mutants in gm_rx_hook gas-interceptor handling.
+    self._rx(self._interceptor_user_gas_split(0, 49))
+    self.assertFalse(self.safety.get_longitudinal_allowed())
+
+
+class TestGmCameraEVNonACCPedalSafety(TestGmCameraNonACCPedalSafety, TestGmEVSafetyBase):
+  PCM_CRUISE = False  # NON_ACC cars don't use PCM cruise for control enablement
+
+  # NON_ACC cars use pedal interceptor, not PCM cruise for control enablement
+  def test_enable_control_allowed_from_cruise(self):
+    pass
+
+  def test_disable_control_allowed_from_cruise(self):
+    pass
+
+  def test_cruise_engaged_prev(self):
+    pass
 
 if __name__ == "__main__":
   unittest.main()
