@@ -197,6 +197,9 @@ class CarInterface(CarInterfaceBase):
     if stock_cp.flags & HyundaiFlags.ALT_LIMITS_2:
       stock_cp.dashcamOnly = False
 
+    if stock_cp.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+      stock_cp.dashcamOnly = stock_cp.carFingerprint != CAR.HYUNDAI_IONIQ_5_PE
+
     if ret.flags & HyundaiFlagsSP.NON_SCC:
       stock_cp.alphaLongitudinalAvailable = False
       stock_cp.openpilotLongitudinalControl = False
