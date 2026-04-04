@@ -74,6 +74,8 @@ class ToyotaFlags(IntFlag):
   # these cars can utilize 2.0 m/s^2
   RAISED_ACCEL_LIMIT = 1024
   SECOC = 2048
+  # BSM signals are swapped (L_ADJACENT/L_APPROACHING are actually right side and vice versa)
+  FLIPPED_BSM = 4096
 
   # deprecated flags
   # these cars are speculated to allow stop and go when the DSU is unplugged or disabled with sDSU
@@ -360,6 +362,7 @@ class CAR(Platforms):
   LEXUS_LC_TSS2 = ToyotaTSS2PlatformConfig(
     [ToyotaCarDocs("Lexus LC 2024-25")],
     CarSpecs(mass=4500. * CV.LB_TO_KG, wheelbase=2.87, steerRatio=13.0, tireStiffnessFactor=0.444),
+    flags=ToyotaFlags.FLIPPED_BSM,
   )
   LEXUS_RC = PlatformConfig(
     [ToyotaCarDocs("Lexus RC 2018-20")],
