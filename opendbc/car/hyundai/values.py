@@ -128,6 +128,9 @@ class HyundaiFlags(IntFlag):
 
   ALT_LIMITS_2 = 2 ** 26
 
+  # CAN FD Radar presents at bus1 ID 0x180 ~ 0x184
+  CANFD_RADAR = 2 ** 27
+
 
 @dataclass
 class HyundaiCarDocs(CarDocs):
