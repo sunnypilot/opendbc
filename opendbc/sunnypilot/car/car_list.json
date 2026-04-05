@@ -47,6 +47,10 @@
   },
   "Acura MDX 2022-24": {
     "platform": "ACURA_MDX_4G",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "MDX",
+    "year": [
       "2022",
       "2023",
       "2024"
