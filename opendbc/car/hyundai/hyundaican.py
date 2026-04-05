@@ -1,10 +1,10 @@
-import crcmod
+from opendbc.car.crc import CRC8J1850, mk_crc8_fun
 from opendbc.car.hyundai.values import CAR, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.escc import EnhancedSmartCruiseControl
 from opendbc.sunnypilot.car.hyundai.lead_data_ext import CanLeadData
 
-hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
+hyundai_checksum = mk_crc8_fun(CRC8J1850, init_crc=0xFD, xor_out=0xDF)
 
 
 def create_lkas11(packer, frame, CP, apply_torque, steer_req,
@@ -79,7 +79,7 @@ def create_lkas11(packer, frame, CP, apply_torque, steer_req,
     values["CF_Lkas_LdwsActivemode"] = 0
     values["CF_Lkas_FcwOpt_USM"] = 0
 
-  elif CP.carFingerprint == CAR.HYUNDAI_GENESIS:
+  elif CP.carFingerprint in (CAR.HYUNDAI_GENESIS, CAR.KIA_OPTIMA_H):
     # This field is actually LdwsActivemode
     # Genesis and Optima fault when forwarding while engaged
     values["CF_Lkas_LdwsActivemode"] = 2
@@ -133,7 +133,7 @@ def create_lfahda_mfc(packer, enabled, lfa_icon):
 
 def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_data: CanLeadData,
                         hud_control, set_speed, stopping, long_override, use_fca, CP,
-                        main_cruise_enabled, tuning, ESCC: EnhancedSmartCruiseControl = None):
+                        main_cruise_enabled, tuning, ESCC: EnhancedSmartCruiseControl | None = None):
   commands = []
 
   def get_scc11_values():
@@ -222,7 +222,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_data: CanL
   return commands
 
 
-def create_acc_opt(packer, CP, ESCC: EnhancedSmartCruiseControl = None):
+def create_acc_opt(packer, CP, ESCC: EnhancedSmartCruiseControl | None = None):
   """
     Creates SCC13 and FCA12. If ESCC is enabled, it will only create SCC13 since ESCC does not block FCA12.
     :param packer:
