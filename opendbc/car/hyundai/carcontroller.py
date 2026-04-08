@@ -1,8 +1,9 @@
 import numpy as np
 from opendbc.car.vehicle_model import VehicleModel
+from opendbc.car.common.filter_simple import FirstOrderFilter
 
 from opendbc.can import CANPacker
-from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs
+from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs, rate_limit
 from opendbc.car.lateral import apply_driver_steer_torque_limits, common_fault_avoidance, apply_steer_angle_limits_vm
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
@@ -34,45 +35,21 @@ def get_baseline_safety_cp():
   return CarInterface.get_non_essential_params(ANGLE_SAFETY_BASELINE_MODEL)
 
 
-def compute_torque_reduction_gain(steering_torque, v_ego_kph, lat_active, last_gain, steering_error):
+def compute_torque_reduction_gain(steering_torque, v_ego, lat_active, last_gain):
   if lat_active:
-    base_ceiling = np.interp(v_ego_kph, [0, 20, 40, 120], [0.4, 0.62, 0.85, 1.0])
-    # Error-based boost reduction gain: At 0 kph, ignore errors under 1.25 deg.
-    error_start = np.interp(v_ego_kph, [0, 20, 40, 120], [1.25, 0.5, 0.3, 0.2])
-    error_mult = np.interp(abs(steering_error), [error_start, error_start*2], [1.0, 2])
-    dynamic_ceiling = min(1.0, base_ceiling * error_mult)
-    target = np.interp(abs(steering_torque), [140, 420], [dynamic_ceiling, 0.19])
+    ceiling = np.interp(v_ego, [0.5, 1.5], [1.0, 0.85])
+    shelf = np.interp(v_ego, [2, 11], [0.45, 0.6])
+    floor = np.interp(v_ego, [2, 22], [0.1, 0.3])
+    bp1 = np.interp(v_ego, [2, 11], [75, 125])
+    bp2 = np.interp(v_ego, [2, 11], [125, 150])
+    bp3 = np.interp(v_ego, [2, 11], [175, 275])
+    bp4 = np.interp(v_ego, [2, 22], [400, 700])
+    target = np.interp(abs(steering_torque), [bp1, bp2, bp3, bp4], [ceiling, shelf, shelf, floor])
+
   else:
     target = 0.0
-  delta = target - last_gain
-  rate_dn = np.interp(abs(steering_torque), [0, 300, 700], [0.004, 0.01, 0.04])
-  gain = last_gain + max(-rate_dn, min(0.004, delta))
+  gain = rate_limit(target, last_gain, -0.014, 0.004)
   return round(gain / 0.004) * 0.004
-
-
-def sp_smooth_angle(v_ego_raw: float, apply_angle: float, apply_angle_last: float) -> float:
-  """
-  Smooth the steering angle change based on vehicle speed and an optional smoothing offset.
-
-  This function helps prevent abrupt steering changes by blending the new desired angle (`apply_angle`)
-  with the previously applied angle (`apply_angle_last`). The blend factor (alpha) is dynamically calculated
-  based on the vehicle's current speed using a predefined lookup table.
-
-  Behavior:
-    - At low speeds, the smoothing is strong, keeping the steering more stable.
-    - At higher speeds, the smoothing is relaxed, allowing quicker responses.
-
-  Parameters:
-    v_ego_raw (float): Raw vehicle speed in m/s.
-    apply_angle (float): New target steering angle in degrees.
-    apply_angle_last (float): Previously applied steering angle in degrees.
-
-  Returns:
-    float: Smoothed steering angle.
-  """
-  adjusted_alpha = np.interp(v_ego_raw, CarControllerParams.SMOOTHING_ANGLE_VEGO_MATRIX, CarControllerParams.SMOOTHING_ANGLE_ALPHA_MATRIX)
-  adjusted_alpha_limited = float(min(float(adjusted_alpha), 1.))  # Limit the smoothing factor to 1 if adjusted_alpha is greater than 1
-  return (apply_angle * adjusted_alpha_limited) + (apply_angle_last * (1 - adjusted_alpha_limited))
 
 
 def process_hud_alert(enabled, fingerprint, hud_control):
@@ -127,10 +104,12 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.angle_limit_counter = 0
+    self.angle_filter = FirstOrderFilter(0.0, 0.2, DT_CTRL)
 
     # Vehicle model used for lateral limiting
     self.VM = VehicleModel(CP)
     self.BASELINE_VM = VehicleModel(get_baseline_safety_cp())
+    self.apply_angle_last = 0
 
     self.accel_last = 0
     self.apply_torque_last = 0
@@ -162,8 +141,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       v_ego_raw = CS.out.vEgoRaw
       desired_angle = float(np.clip(actuators.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX))
 
-      if abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
-        desired_angle = sp_smooth_angle(v_ego_raw, desired_angle, self.apply_angle_last)
+      self.angle_filter.update_alpha(float(np.interp(CS.out.vEgo, [5, 10, 20], [0.2, 0.1, 0.0])))
+      desired_angle = self.angle_filter.update(desired_angle)
 
       apply_angle = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params, self.VM)
 
@@ -172,22 +151,15 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
         apply_angle = apply_steer_angle_limits_vm(apply_angle or desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive,
                                                   self.params, self.BASELINE_VM)
 
-      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw * CV.MS_TO_KPH,
-                                                   CC.latActive, self.apply_torque_last, self.apply_angle_last - CS.out.steeringAngleDeg)
-
+      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last)
       apply_steer_req = CC.latActive and apply_torque != 0
-
-      # Failsafe if we detected we'd violate safety
-      if apply_angle is None:
-        apply_torque = 0
-        apply_angle = CS.out.steeringAngleDeg
-        apply_steer_req = False
 
       # After we've used the last angle wherever we needed it, we now update it.
       self.apply_angle_last = apply_angle
 
       if not CC.latActive:
         self.apply_angle_last = float(np.clip(CS.out.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX))
+        self.angle_filter.x = self.apply_angle_last
 
     if not CC.latActive:
       apply_torque = 0
