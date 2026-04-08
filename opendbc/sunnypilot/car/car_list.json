@@ -2989,7 +2989,7 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
-  "Rivian R1S 2022-25": {
+  "Rivian R1S 2022-24": {
     "platform": "RIVIAN_R1",
     "make": "Rivian",
     "brand": "rivian",
@@ -2997,12 +2997,21 @@
     "year": [
       "2022",
       "2023",
-      "2024",
+      "2024"
+    ],
+    "package": "All"
+  },
+  "Rivian R1S 2025": {
+    "platform": "RIVIAN_R1",
+    "make": "Rivian",
+    "brand": "rivian",
+    "model": "R1S",
+    "year": [
       "2025"
     ],
     "package": "All"
   },
-  "Rivian R1T 2022-25": {
+  "Rivian R1T 2022-24": {
     "platform": "RIVIAN_R1",
     "make": "Rivian",
     "brand": "rivian",
@@ -3010,7 +3019,16 @@
     "year": [
       "2022",
       "2023",
-      "2024",
+      "2024"
+    ],
+    "package": "All"
+  },
+  "Rivian R1T 2025": {
+    "platform": "RIVIAN_R1",
+    "make": "Rivian",
+    "brand": "rivian",
+    "model": "R1T",
+    "year": [
       "2025"
     ],
     "package": "All"
