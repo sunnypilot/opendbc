@@ -140,57 +140,32 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
     # angle control
     if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
-      v_ego_raw = CS.out.vEgoRaw
-      # desired_angle = round(actuators.steeringAngleDeg, 1)
       desired_angle = actuators.steeringAngleDeg
 
-      # Smooth micro-adjustments that cause EPS whine at low speed.
-      # The model produces ~0.2-0.4°/frame jitter vs stock's ~0.05°. The EPS PID
-      # overshoots tracking these rapid changes, causing motor direction reversals
-      # at audible frequencies. Smoothing reduces the jitter to stock levels.
-      # Skip smoothing for large angle changes (>1°) — those are real steering
-      # maneuvers, not jitter, and should execute immediately.
-      # delta = abs(desired_angle - self.apply_angle_last)
-      # if CC.latActive and 0.05 < delta < 1.0:
-      #   alpha = np.interp(abs(CS.out.vEgoRaw), [0, 2.8, 5.6, 8.3, 11.1, 13.9], [0.15, 0.20, 0.25, 0.35, 0.55, 1.0])
-      #   desired_angle = float(desired_angle * alpha + self.apply_angle_last * (1 - alpha))
+      # EPS is sensitive to small jitter from model desired angle at low speed,
+      # so we apply speed-dependent smoothing to prevent this.
+      if CC.latActive:
+        # deadzone = np.interp(CS.out.vEgo, [10, 15], [2, 0])
+        # desired_angle = apply_hysteresis(desired_angle, self.angle_steady, deadzone)
+        # self.angle_steady = desired_angle
 
-      # if CC.latActive:
-      #   #print(apply_angle_last, self.apply_angle_last)
-      #   print(desired_angle, self.angle_steady)
-      #   deadzone = np.interp(CS.out.vEgo, [10, 15], [3, 0])
-      #   desired_angle = apply_hysteresis(desired_angle, self.angle_steady, deadzone)
-      #   #desired_angle = self.angle_filter.update(desired_angle)
-      #   #print('after', apply_angle_last)
-      #   print('after', desired_angle)
-      #   self.angle_steady = desired_angle
-      #   #print()
+        # self.angle_filter.update_alpha(float(np.interp(CS.out.vEgo, [15, 20], [0.25, 0.0])))
+        self.angle_filter.update_alpha(float(np.interp(CS.out.vEgo, [5, 10, 20], [0.2, 0.1, 0.0])))
+        desired_angle = self.angle_filter.update(desired_angle)
 
-      if abs(v_ego_raw) < CarControllerParams.SMOOTHING_ANGLE_MAX_VEGO:
-        desired_angle = sp_smooth_angle(v_ego_raw, desired_angle, self.apply_angle_last)
+      self.apply_angle_last = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last,
+                                                          CS.out.vEgoRaw, CS.out.steeringAngleDeg,
+                                                          CC.latActive, self.params, self.VM)
 
-      self.apply_angle_last = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params, self.VM)
-
-      # apply_torque = self.torque_reduction_gain_controller.update(
-      #   CS.out.steeringPressed, CC.latActive, CS.out.vEgoRaw)
       # TODO: consider angle direction so you can override in direction and it doesn't reduce torque as much
       # TODO: max_allowed_torque
-      # apply_torque = np.interp(abs(CS.out.steeringTorque), [0, 500], [1.0, 0.2]) if CC.latActive else 0.0
-      # apply_torque = rate_limit(apply_torque, self.apply_torque_last, -0.012, 0.002)  # try 0.004, that's stock
-      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw * CV.MS_TO_KPH,
-                                                   CC.latActive, self.apply_torque_last, self.apply_angle_last - CS.out.steeringAngleDeg)
-      #self.apply_angle_last = apply_angle_last_tmp
-      #self.angle_steady = self.apply_angle_last
-
-      #self.apply
-
-      #self.angle_steady = self.apply_angle_last
+      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, CS.out.vEgoRaw * CV.MS_TO_KPH,
+                                                   CC.latActive, self.apply_torque_last)
 
       apply_steer_req = CC.latActive
       if not CC.latActive:
-        self.angle_filter.x = CS.out.steeringAngleDeg
-        # self.angle_steady = CS.out.steeringAngleDeg
-        self.apply_angle_last = float(np.clip(CS.out.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX))
+        self.angle_filter.x = self.apply_angle_last
+        self.angle_steady = self.apply_angle_last
 
     # torque control
     else:
