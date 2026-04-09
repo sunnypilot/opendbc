@@ -2,7 +2,7 @@ import numpy as np
 from opendbc.car.vehicle_model import VehicleModel
 from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.can import CANPacker
-from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs, apply_hysteresis  # , rate_limit
+from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs, rate_limit, apply_hysteresis
 from opendbc.car.lateral import apply_driver_steer_torque_limits, common_fault_avoidance, apply_steer_angle_limits_vm
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
@@ -58,19 +58,30 @@ def process_hud_alert(enabled, fingerprint, hud_control):
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-def compute_torque_reduction_gain(steering_torque, v_ego_kph, lat_active, last_gain, steering_error):
+def compute_torque_reduction_gain(steering_torque, v_ego, lat_active, last_gain):
   if lat_active:
-    base_ceiling = np.interp(v_ego_kph, [40, 120], [0.85, 1.0])
-    # Error-based boost reduction gain: At 0 kph, ignore errors under 1.25 deg.
-    error_start = np.interp(v_ego_kph, [0, 20, 40, 120], [1.25, 0.5, 0.3, 0.2])
-    error_mult = np.interp(abs(steering_error), [error_start, error_start*2], [1.0, 2])
-    dynamic_ceiling = min(1.0, base_ceiling * error_mult)
-    target = np.interp(abs(steering_torque), [140, 420], [dynamic_ceiling, 0.19])
+    # full torque at near-stop
+    ceiling = np.interp(v_ego, [0.5, 1.5], [1.0, 0.85])
+    # # target = np.interp(abs(steering_torque), [75, 400], [ceiling, 0.2])
+    # # stock reduces gain earlier depending on speed
+    # start_bp = np.interp(v_ego, [2, 11], [75, 125])
+    # shelf_bp = start_bp + 25
+    # # shelf_bp = np.interp(v_ego, [2, 11], [])
+    #
+    # target = np.interp(abs(steering_torque), [start_bp, shelf_bp + 25, shelf_bp + 100, 400],
+    #                    [ceiling, 0.5, 0.5, 0.2])
+
+    shelf = np.interp(v_ego, [2, 11], [0.45, 0.6])
+    floor = np.interp(v_ego, [2, 22], [0.1, 0.3])
+    bp1 = np.interp(v_ego, [2, 11], [75, 125])
+    bp2 = np.interp(v_ego, [2, 11], [125, 150])
+    bp3 = np.interp(v_ego, [2, 11], [175, 275])
+    bp4 = np.interp(v_ego, [2, 22], [400, 700])
+    target = np.interp(abs(steering_torque), [bp1, bp2, bp3, bp4], [ceiling, shelf, shelf, floor])
+
   else:
     target = 0.0
-  delta = target - last_gain
-  rate_dn = np.interp(abs(steering_torque), [0, 300, 700], [0.004, 0.01, 0.04])
-  gain = last_gain + max(-rate_dn, min(0.004, delta))
+  gain = rate_limit(target, last_gain, -0.014, 0.004)
   return round(gain / 0.004) * 0.004
 
 
@@ -151,7 +162,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
         # self.angle_filter.update_alpha(float(np.interp(CS.out.vEgo, [15, 20], [0.25, 0.0])))
         self.angle_filter.update_alpha(float(np.interp(CS.out.vEgo, [5, 10, 20], [0.2, 0.1, 0.0])))
-        desired_angle = self.angle_filter.update(desired_angle)
+        # desired_angle = self.angle_filter.update(desired_angle)
 
       self.apply_angle_last = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last,
                                                           CS.out.vEgoRaw, CS.out.steeringAngleDeg,
@@ -159,7 +170,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
       # TODO: consider angle direction so you can override in direction and it doesn't reduce torque as much
       # TODO: max_allowed_torque
-      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, CS.out.vEgoRaw * CV.MS_TO_KPH,
+      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, CS.out.vEgoRaw,
                                                    CC.latActive, self.apply_torque_last)
 
       apply_steer_req = CC.latActive
