@@ -159,6 +159,8 @@ class CarController(CarControllerBase, GasInterceptorCarController):
         self.last_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgoRaw,
                                                        CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
                                                        CC.latActive, self.params.ANGLE_LIMITS)
+    else:
+      self.last_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
     self.last_torque = apply_torque
 
