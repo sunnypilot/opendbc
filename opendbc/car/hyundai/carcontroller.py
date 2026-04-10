@@ -34,11 +34,11 @@ def get_baseline_safety_cp():
   return CarInterface.get_non_essential_params(ANGLE_SAFETY_BASELINE_MODEL)
 
 
-def compute_torque_reduction_gain(steering_torque, v_ego_kph, lat_active, last_gain, steering_error):
+def compute_torque_reduction_gain(steering_torque, v_ego, lat_active, last_gain, steering_error):
   if lat_active:
-    base_ceiling = np.interp(v_ego_kph, [0, 20, 40, 120], [0.4, 0.62, 0.85, 1.0])
-    # Error-based boost reduction gain: At 0 kph, ignore errors under 1.25 deg.
-    error_start = np.interp(v_ego_kph, [0, 20, 40, 120], [1.25, 0.5, 0.3, 0.2])
+    base_ceiling = np.interp(v_ego, [0.0, 5.5, 11, 33], [0.4, 0.62, 0.85, 1.0])
+    # Error-based boost reduction gain: At 0 m/s, ignore errors under 1.25 deg.
+    error_start = np.interp(v_ego, [0.0, 5.5, 11, 33], [1.25, 0.5, 0.3, 0.2])
     error_mult = np.interp(abs(steering_error), [error_start, error_start*2], [1.0, 2])
     dynamic_ceiling = min(1.0, base_ceiling * error_mult)
     target = np.interp(abs(steering_torque), [140, 420], [dynamic_ceiling, 0.19])
@@ -172,9 +172,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
         apply_angle = apply_steer_angle_limits_vm(apply_angle or desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive,
                                                   self.params, self.BASELINE_VM)
 
-      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw * CV.MS_TO_KPH,
-                                                   CC.latActive, self.apply_torque_last, self.apply_angle_last - CS.out.steeringAngleDeg)
-
+      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last, self.apply_angle_last - CS.out.steeringAngleDeg)
       apply_steer_req = CC.latActive and apply_torque != 0
 
       # Failsafe if we detected we'd violate safety
