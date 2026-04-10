@@ -172,7 +172,9 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
         apply_angle = apply_steer_angle_limits_vm(apply_angle or desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive,
                                                   self.params, self.BASELINE_VM)
 
-      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last, self.apply_angle_last - CS.out.steeringAngleDeg)
+      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last,
+                                                   self.apply_angle_last - CS.out.steeringAngleDeg)
+
       apply_steer_req = CC.latActive and apply_torque != 0
 
       # Failsafe if we detected we'd violate safety
