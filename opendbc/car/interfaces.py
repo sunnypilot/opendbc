@@ -160,6 +160,11 @@ class CarInterfaceBase(ABC):
     raise NotImplementedError
 
   @staticmethod
+  def apply_post_relay_detection(CP: structs.CarParams, post_relay_fingerprint: dict[int, dict[int, int]]):
+    """Override in brand interfaces to apply bus-origin-dependent detection using post-relay fingerprint data.
+    Called after get_params() with relay engaged (bus 0 and 2 physically separated)."""
+
+  @staticmethod
   def init(CP: structs.CarParams, can_recv: CanRecvCallable, can_send: CanSendCallable):
     """Used to disable longitudinal ECUs as needed"""
 

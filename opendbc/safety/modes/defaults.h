@@ -30,6 +30,22 @@ const safety_hooks nooutput_hooks = {
   .tx = nooutput_tx_hook,
 };
 
+// *** no output passthrough safety mode ***
+// Used for bus origin detection during fingerprinting: relay is engaged (bus 0 and 2
+// physically separated), bus 0<->2 forwarding is enabled (car and camera keep talking
+// via software forwarding), and all panda-originated TX is blocked (passive observation).
+
+static safety_config nooutput_passthrough_init(uint16_t param) {
+  SAFETY_UNUSED(param);
+  return (safety_config){NULL, 0, NULL, 0, false}; // NOLINT(readability/braces)
+}
+
+const safety_hooks nooutput_passthrough_hooks = {
+  .init = nooutput_passthrough_init,
+  .rx = default_rx_hook,
+  .tx = nooutput_tx_hook,
+};
+
 // *** all output safety mode ***
 static safety_config alloutput_init(uint16_t param) {
   // Enables passthrough mode where relay is open and bus 0 gets forwarded to bus 2 and vice versa

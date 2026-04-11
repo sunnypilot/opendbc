@@ -219,6 +219,40 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert results == {(b"LX2-S8100", b"220222"), (b"LX2-S8100", b"211103"),
                                (b"ON-S9100", b"190405"), (b"ON-S9100", b"190720")}
 
+  def test_post_relay_detection_canfd_camera_scc(self):
+    """CAN-FD: set CANFD_CAMERA_SCC when SCC_CONTROL (0x1A0) is on the camera bus"""
+    CP = CarInterface.get_params(CAR.KIA_EV6, gen_empty_fingerprint(), [], False, False, False)
+    post_relay_fp = gen_empty_fingerprint()
+    post_relay_fp[CanBus(None, post_relay_fp).CAM][0x1A0] = 32
+
+    CarInterface.apply_post_relay_detection(CP, post_relay_fp)
+    assert CP.flags & HyundaiFlags.CANFD_CAMERA_SCC
+    assert CP.safetyConfigs[-1].safetyParam & HyundaiSafetyFlags.CAMERA_SCC
+
+  def test_post_relay_detection_can_camera_scc(self):
+    """Classic CAN: set CAMERA_SCC when SCC11 (0x420) is on bus 2"""
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, gen_empty_fingerprint(), [], False, False, False)
+    post_relay_fp = gen_empty_fingerprint()
+    post_relay_fp[2][0x420] = 8
+
+    CarInterface.apply_post_relay_detection(CP, post_relay_fp)
+    assert CP.flags & HyundaiFlags.CAMERA_SCC
+    assert CP.safetyConfigs[-1].safetyParam & HyundaiSafetyFlags.CAMERA_SCC
+
+  def test_post_relay_detection_no_scc_on_cam_bus(self):
+    """No CAMERA_SCC set when SCC messages are absent from the camera bus"""
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, gen_empty_fingerprint(), [], False, False, False)
+    original_flags = CP.flags
+    original_param = CP.safetyConfigs[-1].safetyParam
+
+    # SCC on bus 0 only (radar side) — camera bus has no SCC
+    post_relay_fp = gen_empty_fingerprint()
+    post_relay_fp[0][0x420] = 8
+
+    CarInterface.apply_post_relay_detection(CP, post_relay_fp)
+    assert CP.flags == original_flags
+    assert CP.safetyConfigs[-1].safetyParam == original_param
+
   def test_fuzzy_excluded_platforms(self):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
     # This list can be shrunk as we combine platforms and detect features
