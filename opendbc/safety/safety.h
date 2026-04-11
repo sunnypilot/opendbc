@@ -397,6 +397,7 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
     {SAFETY_VOLKSWAGEN_MQB, &volkswagen_mqb_hooks},
     {SAFETY_NISSAN, &nissan_hooks},
     {SAFETY_NOOUTPUT, &nooutput_hooks},
+    {SAFETY_NOOUTPUT_PASSTHROUGH, &nooutput_passthrough_hooks},
     {SAFETY_HYUNDAI_LEGACY, &hyundai_legacy_hooks},
     {SAFETY_MAZDA, &mazda_hooks},
     {SAFETY_BODY, &body_hooks},

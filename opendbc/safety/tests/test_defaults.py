@@ -34,6 +34,19 @@ class TestSilent(TestNoOutput):
     self.safety.init_tests()
 
 
+class TestNoOutputPassthrough(TestDefaultRxHookBase):
+  """noOutputPassthrough mode: relay engaged, bus 0<->2 forwarding enabled, all TX blocked.
+  Used during fingerprinting for bus origin detection."""
+  TX_MSGS = []
+  FWD_BLACKLISTED_ADDRS = {}
+  FWD_BUS_LOOKUP = {0: 2, 2: 0}
+
+  def setUp(self):
+    self.safety = libsafety_py.libsafety
+    self.safety.set_safety_hooks(CarParams.SafetyModel.noOutputPassthrough, 0)
+    self.safety.init_tests()
+
+
 class TestAllOutput(TestDefaultRxHookBase):
   # Allow all messages
   TX_MSGS = [[addr, bus] for addr in common.SafetyTest.SCANNED_ADDRS

@@ -159,6 +159,18 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
+  def apply_post_relay_detection(CP, post_relay_fingerprint):
+    # Camera SCC: detected when SCC messages originate from the camera bus
+    # (with relay engaged, bus 0 and bus 2 are physically separated)
+    if CP.flags & HyundaiFlags.CANFD:
+      if 0x1A0 in post_relay_fingerprint[CanBus(None, post_relay_fingerprint).CAM]:
+        CP.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
+        CP.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CAMERA_SCC.value
+    elif 0x420 in post_relay_fingerprint[2]:
+      CP.flags |= HyundaiFlags.CAMERA_SCC.value
+      CP.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CAMERA_SCC.value
+
+  @staticmethod
   def init(CP, can_recv, can_send, communication_control=None):
     # 0x80 silences response
     if communication_control is None:

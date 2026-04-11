@@ -1,5 +1,6 @@
 import os
 import time
+from collections.abc import Callable
 
 from opendbc.car import gen_empty_fingerprint
 from opendbc.car.can_definitions import CanRecvCallable, CanSendCallable
@@ -10,6 +11,8 @@ from opendbc.car.fw_versions import ObdCallback, get_fw_versions_ordered, get_pr
 from opendbc.car.mock.values import CAR as MOCK
 from opendbc.car.values import BRANDS
 from opendbc.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
+
+BusDetectionCallback = Callable[[bool], None]
 
 FRAME_FINGERPRINT = 100  # 1s
 
@@ -148,8 +151,29 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
+def collect_post_relay_fingerprint(can_recv: CanRecvCallable, duration_s: float = 1.0) -> dict[int, dict[int, int]]:
+  """Collect CAN fingerprint with relay engaged (bus 0 and bus 2 physically separated).
+  This allows detecting which bus a CAN message originates from.
+
+  Uses wall-clock time (not frame count) to guarantee coverage of slow periodic messages.
+  1s captures >=1 frame of any message at >=1Hz. Dict semantics naturally deduplicate
+  repeated messages, so we only store 1 entry per (bus, addr) pair regardless of rate."""
+  finger = gen_empty_fingerprint()
+  start = time.monotonic()
+  while time.monotonic() - start < duration_s:
+    can_packets = can_recv(wait_for_one=True)
+    for can_packet in can_packets:
+      for can in can_packet:
+        if can.src < 128:
+          if can.src not in finger:
+            finger[can.src] = {}
+          finger[can.src][can.address] = len(can.dat)
+  return finger
+
+
 def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, alpha_long_allowed: bool,
-            is_release: bool, cached_params: CarParamsT | None = None):
+            is_release: bool, cached_params: CarParamsT | None = None,
+            set_bus_detection: BusDetectionCallback | None = None):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(can_recv, can_send, set_obd_multiplexing, cached_params)
 
   if candidate is None:
@@ -158,6 +182,18 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
 
   CarInterface = interfaces[candidate]
   CP: CarParams = CarInterface.get_params(candidate, fingerprints, car_fw, alpha_long_allowed, is_release, docs=False)
+
+  # Collect post-relay fingerprint for bus-origin detection (e.g., camera vs radar SCC)
+  if set_bus_detection is not None:
+    carlog.warning("Starting bus detection (relay engaged)")
+    set_bus_detection(True)
+    can_recv()  # drain stale CAN data from before relay engagement
+    post_relay_fingerprint = collect_post_relay_fingerprint(can_recv)
+    set_bus_detection(False)
+    carlog.warning("Bus detection complete: %s", repr(post_relay_fingerprint))
+
+    CarInterface.apply_post_relay_detection(CP, post_relay_fingerprint)
+
   CP.carVin = vin
   CP.carFw = car_fw
   CP.fingerprintSource = source

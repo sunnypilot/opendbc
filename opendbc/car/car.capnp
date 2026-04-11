@@ -635,6 +635,7 @@ struct CarParams {
     fcaGiorgio @32;
     rivian @33;
     volkswagenMeb @34;
+    noOutputPassthrough @35;  # like noOutput but relay engaged and bus 0<->2 forwarding on (used for bus origin detection during fingerprinting)
   }
 
   enum SteerControlType {
