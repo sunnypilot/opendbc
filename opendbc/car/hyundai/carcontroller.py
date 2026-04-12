@@ -25,7 +25,7 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 MAX_ANGLE = 85
 MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
-T_LOOKAHEAD = .3
+T_LOOKAHEAD = .1
 
 MAX_ANGLE_RATE = 5
 ANGLE_SAFETY_BASELINE_MODEL = "KIA_SPORTAGE_HEV_2026"
@@ -173,7 +173,6 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
         self.apply_angle_last = float(np.clip(CS.out.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX))
         self.angle_filter.x = self.apply_angle_last
         apply_steer_req = False
-        apply_torque = 0
 
     if not CC.latActive:
       apply_torque = 0
