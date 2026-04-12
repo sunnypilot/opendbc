@@ -120,6 +120,13 @@ def apply_steer_angle_limits_vm(apply_angle: float, apply_angle_last: float, v_e
   max_angle = get_max_angle_vm(v_ego_raw, VM, limits)
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
 
+  # Check if lateral acceleration limits comply with max delta limits
+  safety_violation = lat_active and new_apply_angle != rate_limit(new_apply_angle, apply_angle_last, -max_angle_delta, max_angle_delta)
+
+  # Shouldn't give any angle, since there's no good choice. We are vatiolating either way.
+  if safety_violation:
+    return None
+
   # angle is current angle when inactive
   if not lat_active:
     new_apply_angle = steering_angle
