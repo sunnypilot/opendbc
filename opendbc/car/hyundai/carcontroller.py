@@ -25,6 +25,7 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 MAX_ANGLE = 85
 MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
+T_LOOKAHEAD = .3
 
 MAX_ANGLE_RATE = 5
 ANGLE_SAFETY_BASELINE_MODEL = "KIA_SPORTAGE_HEV_2026"
@@ -139,26 +140,35 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     # angle control
     else:
       v_ego_raw = CS.out.vEgoRaw
+      a_ego = CS.out.aEgo
+      v_ego_future = v_ego_raw + (max(a_ego, 0.0) * T_LOOKAHEAD)  # Predict speed 0.5 seconds in the future (only if accelerating)
       desired_angle = float(np.clip(actuators.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX))
 
       self.angle_filter.update_alpha(float(np.interp(CS.out.vEgo, [5, 10, 20], [0.2, 0.1, 0.0])))
       desired_angle = self.angle_filter.update(desired_angle)
 
       apply_angle = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params, self.VM)
+      apply_angle_future = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last, v_ego_future, CS.out.steeringAngleDeg, CC.latActive,
+                                                       self.params, self.VM)
 
       # if we are not the baseline model, we use the baseline model for further limits to prevent a panda block since it is hardcoded for baseline model.
       if self.CP.carFingerprint != ANGLE_SAFETY_BASELINE_MODEL:
         apply_angle = apply_steer_angle_limits_vm(apply_angle or desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive,
                                                   self.params, self.BASELINE_VM)
+        apply_angle_future = apply_steer_angle_limits_vm(apply_angle or desired_angle, self.apply_angle_last, v_ego_future, CS.out.steeringAngleDeg, 
+                                                         CC.latActive, self.params, self.BASELINE_VM)
 
-      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last)
+      # We are predicting an imminent safety violation, so we preemptively cut torque to give
+      # the driver a better chance to react and avoid the violation. We should also make sure alarm is sent!
+      imminent_violation = apply_angle_future is None
+
+      # The desired torque would reduce to 0 if we have imminent violation, lowering the torque before the violation happens.
+      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive and not imminent_violation, self.apply_torque_last)
       apply_steer_req = CC.latActive and apply_torque != 0
 
-      # Failsafe if we detected we'd violate safety
+      # If we enter below, it means we are violating safety on this frame
       if apply_angle is None:
-        apply_torque = 0
         apply_angle = CS.out.steeringAngleDeg
-        apply_steer_req = False
 
       # After we've used the last angle wherever we needed it, we now update it.
       self.apply_angle_last = apply_angle
