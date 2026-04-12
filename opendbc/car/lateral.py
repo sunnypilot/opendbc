@@ -105,7 +105,7 @@ def get_max_angle_vm(v_ego_raw: float, VM: VehicleModel, limits):
 
 
 def apply_steer_angle_limits_vm(apply_angle: float, apply_angle_last: float, v_ego_raw: float, steering_angle: float,
-                                lat_active: bool, limits, VM: VehicleModel) -> float | None:
+                                lat_active: bool, limits, VM: VehicleModel) -> tuple[float, bool]:
   """Apply jerk, accel, and safety limit constraints to steering angle."""
   v_ego_raw = max(v_ego_raw, 1)
 
@@ -120,19 +120,17 @@ def apply_steer_angle_limits_vm(apply_angle: float, apply_angle_last: float, v_e
   max_angle = get_max_angle_vm(v_ego_raw, VM, limits)
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
 
-  # Check if lateral acceleration limits comply with max delta limits
-  safety_violation = lat_active and new_apply_angle != rate_limit(new_apply_angle, apply_angle_last, -max_angle_delta, max_angle_delta)
-
-  # Shouldn't give any angle, since there's no good choice. We are vatiolating either way.
-  if safety_violation:
-    return None
+  # Check if we are approaching the inevitable conflict point where no compliant solution exists.
+  # We transition to stand-by state a bit earlier (margin of 0.9 * max_angle_delta) to warn driver.
+  conflict_dist = abs(apply_angle_last) - max_angle
+  safety_violation = lat_active and conflict_dist > max_angle_delta * 0.9
 
   # angle is current angle when inactive
   if not lat_active:
     new_apply_angle = steering_angle
 
   # prevent fault
-  return float(np.clip(new_apply_angle, -limits.ANGLE_LIMITS.STEER_ANGLE_MAX, limits.ANGLE_LIMITS.STEER_ANGLE_MAX))
+  return float(np.clip(new_apply_angle, -limits.ANGLE_LIMITS.STEER_ANGLE_MAX, limits.ANGLE_LIMITS.STEER_ANGLE_MAX)), safety_violation
 
 
 def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_frames: int,
