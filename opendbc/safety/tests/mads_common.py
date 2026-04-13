@@ -440,4 +440,196 @@ class MadsSafetyTestBase(unittest.TestCase):
         self.assertEqual(enable and disengage, self.safety.get_disengage_lateral_on_brake())
         self.assertEqual(enable and pause, self.safety.get_pause_lateral_on_brake())
 
-  # TODO-SP: controls_allowed and controls_allowed_lat check for steering safety tests
+  def test_lat_active_only_with_mads_enabled(self):
+    """lat_active reflects MADS lateral state only when MADS is enabled"""
+    for enable_mads in (True, False):
+      with self.subTest(enable_mads=enable_mads):
+        self.safety.set_mads_params(enable_mads, False, False)
+        self.safety.set_controls_allowed(False)
+
+        # Engage via ACC main
+        self.safety.set_acc_main_on(True)
+        self._rx(self._speed_msg(0))
+
+        self.assertEqual(enable_mads, self.safety.get_controls_allowed_lat())
+        self.assertEqual(enable_mads, self.safety.get_lat_active())
+        self.assertFalse(self.safety.get_longitudinal_allowed())
+
+  def test_longitudinal_allowed_independent_of_mads(self):
+    """longitudinal_allowed depends only on controls_allowed, not MADS"""
+    for enable_mads in (True, False):
+      with self.subTest(enable_mads=enable_mads):
+        self.safety.set_mads_params(enable_mads, False, False)
+
+        self.safety.set_controls_allowed(True)
+        self.assertTrue(self.safety.get_longitudinal_allowed())
+
+        self.safety.set_controls_allowed(False)
+        self.assertFalse(self.safety.get_longitudinal_allowed())
+
+  def test_lat_active_with_controls_allowed_and_mads(self):
+    """lat_active is True when either controls_allowed or MADS lat is active"""
+    self.safety.set_mads_params(True, False, False)
+    self.safety.set_controls_allowed(False)
+
+    # MADS lat only
+    self.safety.set_acc_main_on(True)
+    self._rx(self._speed_msg(0))
+    self.assertTrue(self.safety.get_lat_active())
+    self.assertFalse(self.safety.get_controls_allowed())
+
+    # controls_allowed only (disable MADS lat)
+    self.safety.set_acc_main_on(False)
+    self._rx(self._speed_msg(0))
+    self.safety.set_controls_allowed(True)
+    self.assertTrue(self.safety.get_lat_active())
+    self.assertFalse(self.safety.get_controls_allowed_lat())
+
+    # Both active
+    self.safety.set_acc_main_on(True)
+    self._rx(self._speed_msg(0))
+    self.assertTrue(self.safety.get_lat_active())
+    self.assertTrue(self.safety.get_controls_allowed())
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+
+  def test_lat_active_false_when_mads_disabled_and_controls_not_allowed(self):
+    """lat_active is False when both MADS and controls_allowed are off"""
+    self.safety.set_mads_params(False, False, False)
+    self.safety.set_controls_allowed(False)
+    self.assertFalse(self.safety.get_lat_active())
+    self.assertFalse(self.safety.get_longitudinal_allowed())
+
+  def test_mads_lateral_only_controls_split(self):
+    """Verify lat/long control states are independent in MADS lateral-only mode.
+    When MADS lat is active but controls_allowed is off, only lateral should be active."""
+    self.safety.set_mads_params(True, False, False)
+    self.safety.set_controls_allowed(False)
+
+    # Engage MADS lateral via ACC main
+    self.safety.set_acc_main_on(True)
+    self._rx(self._speed_msg(0))
+
+    # Lateral active, longitudinal not
+    self.assertTrue(self.safety.get_lat_active())
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+    self.assertFalse(self.safety.get_controls_allowed())
+    self.assertFalse(self.safety.get_longitudinal_allowed())
+
+    # Engage cruise (controls_allowed) — both active
+    self.safety.set_controls_allowed(True)
+    self.assertTrue(self.safety.get_lat_active())
+    self.assertTrue(self.safety.get_longitudinal_allowed())
+
+    # Disengage cruise — back to lateral only
+    self.safety.set_controls_allowed(False)
+    self.assertTrue(self.safety.get_lat_active())
+    self.assertFalse(self.safety.get_longitudinal_allowed())
+
+    # Disengage MADS lateral — nothing active
+    self.safety.set_acc_main_on(False)
+    self._rx(self._speed_msg(0))
+    self.assertFalse(self.safety.get_lat_active())
+    self.assertFalse(self.safety.get_longitudinal_allowed())
+
+  def test_mads_brake_disengage_lateral_only_mode(self):
+    """In MADS lateral-only mode with disengage-on-brake, brake kills lateral while long stays off."""
+    self.safety.set_mads_params(True, True, False)  # disengage lateral on brake
+
+    # MADS lateral only (cruise not engaged)
+    self.safety.set_acc_main_on(True)
+    self._rx(self._speed_msg(0))
+    self.assertFalse(self.safety.get_controls_allowed())
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+    self.assertTrue(self.safety.get_lat_active())
+    self.assertFalse(self.safety.get_longitudinal_allowed())
+
+    # Brake: MADS lateral disengages, controls_allowed stays off
+    self._rx(self._user_brake_msg(True))
+    self.assertFalse(self.safety.get_controls_allowed_lat())
+    self.assertFalse(self.safety.get_controls_allowed())
+    self.assertFalse(self.safety.get_lat_active())
+    self.assertFalse(self.safety.get_longitudinal_allowed())
+
+  def test_lateral_defaults_false_on_safety_init(self):
+    """controlsAllowedLateral must be false after safety init, even with MADS system enabled."""
+    self.safety.set_mads_params(True, False, False)
+    # After init, system_enabled is True but controls_allowed_lat must be False
+    self.assertFalse(self.safety.get_controls_allowed_lat())
+    self.assertFalse(self.safety.get_lat_active())
+    self.assertFalse(self.safety.get_controls_allowed())
+    # Requires explicit user action to enable
+    self.safety.set_acc_main_on(True)
+    self._rx(self._speed_msg(0))
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+    self.assertTrue(self.safety.get_lat_active())
+
+  def test_safety_tick_clears_lateral(self):
+    """Message lag via safety_tick clears controls_allowed_lat, causing is_lat_active to go false."""
+    self.safety.set_mads_params(True, False, False)
+    self.safety.set_acc_main_on(True)
+    self._rx(self._speed_msg(0))
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+    self.assertTrue(self.safety.get_lat_active())
+
+    # Simulate message lag — safety_tick clears both controls_allowed and controls_allowed_lat
+    self.safety.set_timer(int(2e6))
+    self.safety.safety_tick_current_safety_config()
+    self.assertFalse(self.safety.get_controls_allowed_lat())
+    self.assertFalse(self.safety.get_lat_active())
+    self.assertFalse(self.safety.get_controls_allowed())
+
+  def test_heartbeat_agreement_disengage_on_brake(self):
+    """With disengage-on-brake, after brake the Python side sends enabled=False.
+    Verify no heartbeat mismatch since both sides agree lateral is off."""
+    self.safety.set_mads_params(True, True, False)  # disengage lateral on brake
+
+    self._rx(self._user_brake_msg(False))
+    self.safety.set_controls_allowed_lat(True)
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+
+    # Heartbeat matches — both active
+    self.safety.set_heartbeat_engaged_mads(True)
+    self.safety.mads_heartbeat_engaged_check()
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+
+    # Brake: safety clears controls_allowed_lat
+    self._rx(self._user_brake_msg(True))
+    self.assertFalse(self.safety.get_controls_allowed_lat())
+
+    # Python side: disengage mode → state=disabled → enabled=False → heartbeat sends False
+    self.safety.set_heartbeat_engaged_mads(False)
+    for _ in range(4):
+      self.safety.mads_heartbeat_engaged_check()
+    # No mismatch: controls_allowed_lat=False, so check doesn't trigger
+    self.assertFalse(self.safety.get_controls_allowed_lat())
+
+  def test_heartbeat_agreement_pause_on_brake(self):
+    """With pause-on-brake, after brake the Python side sends enabled=True (paused is enabled).
+    Verify no heartbeat mismatch and re-enable on brake release."""
+    self.safety.set_mads_params(True, False, True)  # pause lateral on brake
+
+    self._rx(self._user_brake_msg(False))
+    self.safety.set_controls_requested_lat(True)
+    self.safety.set_controls_allowed_lat(True)
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+
+    # Brake: safety pauses — controls_allowed_lat goes False
+    self._rx(self._user_brake_msg(True))
+    self.assertFalse(self.safety.get_controls_allowed_lat())
+
+    # Python side: pause mode → state=paused → enabled=True → heartbeat sends True
+    self.safety.set_heartbeat_engaged_mads(True)
+    for _ in range(4):
+      self.safety.mads_heartbeat_engaged_check()
+    # No mismatch: controls_allowed_lat=False, check condition (lat && !hb) = False
+    self.assertFalse(self.safety.get_controls_allowed_lat())
+
+    # Brake release: safety re-enables lateral
+    self._rx(self._user_brake_msg(False))
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+    # Heartbeat still True (Python side: paused→enabled, enabled=True)
+    self.safety.set_heartbeat_engaged_mads(True)
+    for _ in range(4):
+      self.safety.mads_heartbeat_engaged_check()
+    # No mismatch: both agree lateral is active
+    self.assertTrue(self.safety.get_controls_allowed_lat())
