@@ -47,7 +47,9 @@ class MadsCarState(MadsCarStateBase):
     if self.CP.flags & SubaruFlags.PREGLOBAL:
       # Pre-global Subarus don't have ES_LKAS_State. The LKAS button
       # state is in ES_DashStatus byte4 bit6 as a latching toggle (0/1).
-      lkas_state = int(cp_cam.vl["ES_DashStatus"]["LKAS_State"])
+      # LKAS_State is currently only defined in the Forester pre-global DBC.
+      # Fall back to 0 for other pre-global models until verified.
+      lkas_state = int(cp_cam.vl["ES_DashStatus"].get("LKAS_State", 0))
       if self._prev_lkas_raw is None:
         # First read: record state, wait for cruise to be available
         self._prev_lkas_raw = lkas_state
