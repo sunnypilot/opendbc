@@ -251,7 +251,7 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
 
-      if self.sp_angle_steering and lta_active
+      if self.sp_angle_steering and lta_active:
         self.torque_wind_down = compute_torque_wind_down(
           self.torque_wind_down, CS.out.vEgoRaw, lta_active,
           CS.out.steeringTorque, CS.out.steeringTorqueEps,
