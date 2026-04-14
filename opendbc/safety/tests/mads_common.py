@@ -638,11 +638,11 @@ class MadsSafetyTestBase(unittest.TestCase):
     self.safety.set_mads_params(True, False, False)
 
     self.safety.set_mads_button_press(0)
-    self._rx(self._speed_msg(0))
+    self.safety.tick_mads_state(False, False, False, False, False)
     self.assertFalse(self.safety.get_controls_allowed_lateral())
 
     self.safety.set_mads_button_press(1)
-    self._rx(self._speed_msg(0))
+    self.safety.tick_mads_state(False, False, False, False, False)
     self.assertTrue(self.safety.get_controls_allowed_lateral())
 
   def test_alt_exp_bit_discrimination(self):

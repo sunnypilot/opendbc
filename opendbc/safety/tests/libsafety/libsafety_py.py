@@ -130,6 +130,7 @@ int get_temp_debug(void);
 uint32_t get_acc_main_on_mismatches(void);
 void set_mads_params(bool enable_mads, bool disengage_lateral_on_brake, bool pause_lateral_on_brake);
 void mads_apply_alternative_experience(int mode);
+void tick_mads_state(bool vm, bool acc_main, bool op_allowed, bool braking, bool steering_disengage);
 void set_heartbeat_engaged_mads(bool c);
 void mads_heartbeat_engaged_check(void);
 void set_steering_disengage(bool c);

@@ -45,6 +45,10 @@ void mads_apply_alternative_experience(int mode){
   mads_set_alternative_experience(&mode);
 }
 
+void tick_mads_state(bool vm, bool acc_main, bool op_allowed, bool braking, bool steering_disengage){
+  mads_state_update(vm, acc_main, op_allowed, braking, steering_disengage);
+}
+
 void set_relay_malfunction(bool c){
   relay_malfunction = c;
 }
