@@ -5,8 +5,10 @@ from enum import IntFlag
 from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.structs import CarParams
-from opendbc.car.docs_definitions import CarHarness, CarDocs, CarParts
+from opendbc.car.docs_definitions import CarHarness, CarDocs, CarParts, SupportType
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, p16
+
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 Ecu = CarParams.Ecu
 
@@ -157,6 +159,13 @@ class HyundaiCarDocs(CarDocs):
 
 
 @dataclass
+class HyundaiNonSccCarDocs(CarDocs):
+  package: str = "No Smart Cruise Control (Non-SCC)"
+  support_type: SupportType = SupportType.COMMUNITY
+  support_link: str = "community"
+
+
+@dataclass
 class HyundaiPlatformConfigBase(PlatformConfig):
   def init(self):
     if self.flags & HyundaiFlags.MANDO_RADAR:
@@ -177,6 +186,17 @@ class HyundaiRefreshPlatformConfig(HyundaiPlatformConfigBase):
 
   def init(self):
     self.flags |= HyundaiFlags.CAN_REFRESH_MSGS
+
+
+@dataclass
+class HyundaiNonSccPlatformConfig(PlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: {Bus.pt: "hyundai_kia_generic"})
+
+  def init(self):
+    self.sp_flags |= HyundaiFlagsSP.NON_SCC
+
+    if self.flags & HyundaiFlags.MIN_STEER_32_MPH:
+      self.specs = self.specs.override(minSteerSpeed=32 * CV.MPH_TO_MS)
 
 
 @dataclass
@@ -328,17 +348,17 @@ class CAR(Platforms):
     [HyundaiCarDocs("Hyundai Santa Fe 2021-23", "All", video="https://youtu.be/VnHzSTygTS4",
                     car_parts=CarParts.common([CarHarness.hyundai_l]))],
     HYUNDAI_SANTA_FE.specs,
-    flags=HyundaiFlags.CHECKSUM_CRC8,
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8,
   )
   HYUNDAI_SANTA_FE_HEV_2022 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Santa Fe Hybrid 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l]))],
     HYUNDAI_SANTA_FE.specs,
-    flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.HYBRID,
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.HYBRID,
   )
   HYUNDAI_SANTA_FE_PHEV_2022 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Santa Fe Plug-in Hybrid 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l]))],
     HYUNDAI_SANTA_FE.specs,
-    flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.HYBRID,
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.HYBRID,
   )
   HYUNDAI_SONATA = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Sonata 2020-23", "All", video="https://www.youtube.com/watch?v=ix63r9kE3Fw",
@@ -638,6 +658,53 @@ class CAR(Platforms):
     flags=HyundaiFlags.CANFD_RADAR_SCC,
   )
 
+  # port extensions
+  HYUNDAI_BAYON_1ST_GEN_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Hyundai Bayon Non-SCC 2021", car_parts=CarParts.common([CarHarness.hyundai_n]))],
+    CarSpecs(mass=1150, wheelbase=2.58, steerRatio=13.27 * 1.15),
+    flags=HyundaiFlags.CHECKSUM_CRC8,
+  )
+  HYUNDAI_ELANTRA_2022_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Hyundai Elantra Non-SCC 2022", car_parts=CarParts.common([CarHarness.hyundai_k]))],
+    HYUNDAI_ELANTRA_2021.specs,
+    flags=HyundaiFlags.CHECKSUM_CRC8,
+  )
+  HYUNDAI_KONA_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Hyundai Kona Non-SCC 2019", car_parts=CarParts.common([CarHarness.hyundai_b]))],
+    HYUNDAI_KONA.specs,
+    flags=HyundaiFlags.ALT_LIMITS,
+  )
+  HYUNDAI_KONA_EV_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Hyundai Kona Electric Non-SCC 2019", car_parts=CarParts.common([CarHarness.hyundai_g]))],
+    HYUNDAI_KONA_EV.specs,
+    flags=HyundaiFlags.EV | HyundaiFlags.ALT_LIMITS,
+  )
+  KIA_CEED_PHEV_2022_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Kia Ceed Plug-in Hybrid Non-SCC 2022", car_parts=CarParts.common([CarHarness.hyundai_i]))],
+    CarSpecs(mass=1650, wheelbase=2.65, steerRatio=13.75, tireStiffnessFactor=0.5),
+    flags=HyundaiFlags.HYBRID,
+  )
+  KIA_FORTE_2019_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Kia Forte Non-SCC 2019", car_parts=CarParts.common([CarHarness.hyundai_g]))],
+    KIA_FORTE.specs,
+    sp_flags=HyundaiFlagsSP.NON_SCC_NO_FCA,
+  )
+  KIA_FORTE_2021_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Kia Forte Non-SCC 2021", car_parts=CarParts.common([CarHarness.hyundai_g]))],
+    KIA_FORTE.specs,
+  )
+  KIA_SELTOS_2023_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Kia Seltos Non-SCC 2023-24", car_parts=CarParts.common([CarHarness.hyundai_l]))],
+    KIA_SELTOS.specs,
+    flags=HyundaiFlags.CHECKSUM_CRC8,
+  )
+  GENESIS_G70_2021_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Genesis G70 Non-SCC 2021", car_parts=CarParts.common([CarHarness.hyundai_f]))],
+    GENESIS_G70_2020.specs,
+    flags=HyundaiFlags.CHECKSUM_CRC8,
+    sp_flags=HyundaiFlagsSP.NON_SCC_RADAR_FCA,
+  )
+
 
 class Buttons:
   NONE = 0
@@ -836,5 +903,8 @@ UNSUPPORTED_LONGITUDINAL_CAR = {
   "legacy": CAR.with_flags(HyundaiFlags.LEGACY),
   "can": CAR.with_flags(HyundaiFlags.UNSUPPORTED_LONGITUDINAL),
 }
+
+# port extensions
+NON_SCC_CAR = CAR.with_sp_flags(HyundaiFlagsSP.NON_SCC)
 
 DBC = CAR.create_dbc_map()
