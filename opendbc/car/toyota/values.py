@@ -3,8 +3,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 
-from opendbc.car import Bus, CarSpecs, PlatformConfig, Platforms
-from opendbc.car.lateral import AngleSteeringLimits
+from opendbc.car import Bus, CarSpecs, PlatformConfig, Platforms, ACCELERATION_DUE_TO_GRAVITY
+from opendbc.car.lateral import AngleSteeringLimits, ISO_LATERAL_ACCEL
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarFootnote, CarDocs, Column, CarParts, CarHarness, SupportType
@@ -34,6 +34,26 @@ class CarControllerParams:
   )
 
   MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
+
+  # Uses vehicle model for physics-based limits instead of fixed rate tables
+  AVERAGE_ROAD_ROLL = 0.06  # ~3.4 degrees, 6% superelevation
+  ANGLE_LIMITS_VM: AngleSteeringLimits = AngleSteeringLimits(
+    # EPS ignores commands above this angle and causes PCS to fault
+    94.9461,  # deg
+    ([], []),
+    ([], []),
+    # Vehicle model angle limits more aggressive than fixed rate tables
+    MAX_LATERAL_ACCEL=ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL),  # ~3.6 m/s^2
+    MAX_LATERAL_JERK=3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL),  # ~3.6 m/s^3
+    # limit angle rate for low speed comfort; EPS faults ~12 deg/frame at standstill
+    MAX_ANGLE_RATE=5,  # deg per 20ms frame
+  )
+
+  STEER_STEP_ANGLE = 2
+
+  # speed-dependent alpha for EPS noise reduction
+  SMOOTHING_VEGO = [0, 3.8, 4.9, 6.2, 8.0]       # m/s (~0, ~8.5, ~11, ~14, ~18 kph)
+  SMOOTHING_ALPHA = [0.05, 0.1, 0.3, 0.6, 1.0]    # alpha: 0.05=very smooth, 1.0=no smoothing
 
   def __init__(self, CP):
     if CP.flags & ToyotaFlags.RAISED_ACCEL_LIMIT:

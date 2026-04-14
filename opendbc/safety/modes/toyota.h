@@ -228,6 +228,7 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
       {5., 25., 25.},
       {0.36, 0.26, 0.26}
     },
+    .frequency = 50U,
   };
 
   const int TOYOTA_LTA_MAX_MEAS_TORQUE = 1500;
@@ -304,7 +305,15 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
         }
       } else {
         // check angle rate limits and inactive angle
-        if (steer_angle_cmd_checks(lta_angle, steer_control_enabled, TOYOTA_ANGLE_STEERING_LIMITS)) {
+        // Use VM-based checks like Tesla for physics-based angle rate limiting.
+        // Uses Toyota Prius TSS2 params as ref
+        const AngleSteeringParams TOYOTA_ANGLE_STEERING_PARAMS = {
+          .slip_factor = -0.0004,  // conservative estimate for Toyota TSS2
+          .steer_ratio = 13.4,     // Prius TSS2
+          .wheelbase = 2.67,       // Corolla TSS2
+        };
+
+        if (steer_angle_cmd_checks_vm(lta_angle, steer_control_enabled, TOYOTA_ANGLE_STEERING_LIMITS, TOYOTA_ANGLE_STEERING_PARAMS)) {
           tx = false;
         }
 
@@ -317,8 +326,8 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
           tx = false;
         }
 
-        // TORQUE_WIND_DOWN can only be no or full torque
-        if ((torque_wind_down != 0) && (torque_wind_down != 100)) {
+        // TORQUE_WIND_DOWN must be in valid range [0, 100]
+        if (torque_wind_down > 100) {
           tx = false;
         }
 
@@ -439,6 +448,7 @@ static safety_config toyota_init(uint16_t param) {
 
   const uint16_t TOYOTA_PARAM_SP_UNSUPPORTED_DSU = 1;
   const uint16_t TOYTOA_PARAM_SP_GAS_INTERCEPTOR = 2;
+  const uint16_t TOYOTA_PARAM_SP_ANGLE_STEERING = 4;
 
 #ifdef ALLOW_DEBUG
   const uint32_t TOYOTA_PARAM_SECOC = 8UL << TOYOTA_PARAM_OFFSET;
@@ -481,13 +491,23 @@ static safety_config toyota_init(uint16_t param) {
 
     SET_RX_CHECKS(toyota_secoc_rx_checks, ret);
   } else if (toyota_lta) {
-    // Check the quality flag for angle measurement when using LTA, since it's not set on TSS-P cars
-    static RxCheck toyota_lta_rx_checks[] = {
-      TOYOTA_RX_CHECKS(true)
-      TOYOTA_PCM_CRUISE_2_ADDR_CHECK
-    };
-
-    SET_RX_CHECKS(toyota_lta_rx_checks, ret);
+    // SP-toggled angle steering on non-native LTA cars
+    // since non-native EPS may set STEER_ANGLE_INITIALIZING differently
+    const bool sp_angle_steering = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_ANGLE_STEERING);
+    if (sp_angle_steering) {
+      static RxCheck toyota_sp_lta_rx_checks[] = {
+        TOYOTA_RX_CHECKS(false)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+      };
+      SET_RX_CHECKS(toyota_sp_lta_rx_checks, ret);
+    } else {
+      // Check the quality flag for angle measurement when using LTA, since it's not set on TSS-P cars
+      static RxCheck toyota_lta_rx_checks[] = {
+        TOYOTA_RX_CHECKS(true)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+      };
+      SET_RX_CHECKS(toyota_lta_rx_checks, ret);
+    }
   } else {
     static RxCheck toyota_lka_rx_checks[] = {
       TOYOTA_RX_CHECKS(false)
@@ -525,13 +545,22 @@ static safety_config toyota_init(uint16_t param) {
     SET_TX_MSGS(TOYOTA_INTERCEPTOR_TX_MSGS, ret);
 
     if (toyota_lta) {
-      static RxCheck toyota_lta_interceptor_rx_checks[] = {
-        TOYOTA_RX_CHECKS(true)
-        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
-        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
-      };
-
-      SET_RX_CHECKS(toyota_lta_interceptor_rx_checks, ret);
+      const bool sp_angle_steering_gi = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_ANGLE_STEERING);
+      if (sp_angle_steering_gi) {
+        static RxCheck toyota_sp_lta_interceptor_rx_checks[] = {
+          TOYOTA_RX_CHECKS(false)
+          TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+          TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+        };
+        SET_RX_CHECKS(toyota_sp_lta_interceptor_rx_checks, ret);
+      } else {
+        static RxCheck toyota_lta_interceptor_rx_checks[] = {
+          TOYOTA_RX_CHECKS(true)
+          TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+          TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+        };
+        SET_RX_CHECKS(toyota_lta_interceptor_rx_checks, ret);
+      }
     } else {
       static RxCheck toyota_lka_interceptor_rx_checks[] = {
         TOYOTA_RX_CHECKS(false)

@@ -142,12 +142,24 @@ class CarInterface(CarInterfaceBase):
 
     sp_toyota_auto_brake_hold = Params().get_bool("ToyotaAutoHold")
     sp_toyota_enhanced_bsm = Params().get_bool("ToyotaEnhancedBsm")
+    sp_toyota_angle_steering = Params().get_bool("ToyotaAngleSteering")
     if sp_toyota_enhanced_bsm and candidate in (TSS2_CAR - SECOC_CAR):
       ret.flags |= ToyotaFlagsSP.SP_ENHANCED_BSM.value
     if candidate == CAR.TOYOTA_PRIUS_TSS2:
       ret.flags |= ToyotaFlagsSP.SP_NEED_DEBUG_BSM.value
     if sp_toyota_auto_brake_hold and candidate in (TSS2_CAR - RADAR_ACC_CAR - SECOC_CAR):
       ret.flags |= ToyotaFlagsSP.SP_AUTO_BRAKE_HOLD.value
+
+    # angel
+    if sp_toyota_angle_steering and candidate in (TSS2_CAR - SECOC_CAR):
+      ret.flags |= ToyotaFlagsSP.SP_ANGLE_STEERING.value
+      ret.safetyParam |= ToyotaSafetyFlagsSP.SP_ANGLE_STEERING
+      stock_cp.steerControlType = structs.CarParams.SteerControlType.angle
+      stock_cp.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.LTA.value
+      # Angle control has slightly more actuator delay but better tracking
+      stock_cp.steerActuatorDelay = 0.15
+      stock_cp.steerLimitTimer = 0.6
+      stock_cp.lateralTuning.init('pid')
 
     # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
     # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
