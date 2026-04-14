@@ -45,52 +45,6 @@ MAX_USER_TORQUE = 500
 LEFT_BLINDSPOT = b"\x41"
 RIGHT_BLINDSPOT = b"\x42"
 
-# TORQUE_WIND_DOWN gain controller constants
-TWD_SPEED_BP = [0, 5, 10, 20]          # m/s breakpoints
-TWD_GAIN_CEILING = [55, 70, 90, 100]   # max wind-down value at each speed (0-100)
-TWD_RAMP_UP = 2.0     # wind-down increase per frame when ramping up
-TWD_RAMP_DOWN = 3.0   # wind-down decrease per frame when ramping down
-TWD_OVERRIDE_FACTOR = 0.15  # reduce gain to 15% when driver overrides
-TWD_OVERRIDE_TORQUE = 100   # driver torque threshold for override detection
-
-
-def sp_smooth_angle(apply_angle: float, apply_angle_last: float, v_ego: float) -> float:
-  alpha = float(np.interp(v_ego, CarControllerParams.SMOOTHING_VEGO, CarControllerParams.SMOOTHING_ALPHA))
-  return apply_angle_last + alpha * (apply_angle - apply_angle_last)
-
-
-def compute_torque_wind_down(wind_down_last: float, v_ego: float, lat_active: bool,
-                             driver_torque: float, eps_torque: float,
-                             steer_max: int) -> float:
-  if not lat_active:
-    return 0.0
-
-  # Hard safety limits — must match panda safety code (toyota.h)
-  # Panda blocks torque_wind_down != 0 when driver/EPS torque exceeds these thresholds
-  PANDA_MAX_DRIVER_TORQUE = 150  # TOYOTA_LTA_MAX_DRIVER_TORQUE in safety
-  PANDA_MAX_EPS_TORQUE = 1500    # TOYOTA_LTA_MAX_MEAS_TORQUE in safety
-  if abs(driver_torque) > PANDA_MAX_DRIVER_TORQUE or abs(eps_torque) > PANDA_MAX_EPS_TORQUE:
-    return 0.0
-
-  # Speed-dependent ceiling
-  ceiling = float(np.interp(v_ego, TWD_SPEED_BP, TWD_GAIN_CEILING))
-
-  # Driver override: reduce gain when driver is actively steering (below safety threshold)
-  is_override = abs(driver_torque) > TWD_OVERRIDE_TORQUE
-  target = ceiling * TWD_OVERRIDE_FACTOR if is_override else ceiling
-
-  # EPS torque saturation: back off if EPS is near its limits
-  if abs(eps_torque) > steer_max * 0.85:
-    target = min(target, ceiling * 0.5)
-
-  # Smooth ramp up/down
-  if target > wind_down_last:
-    wind_down = min(wind_down_last + TWD_RAMP_UP, target)
-  else:
-    wind_down = max(wind_down_last - TWD_RAMP_DOWN, target)
-
-  return float(np.clip(wind_down, 0, 100))
-
 def get_long_tune(CP, params):
   if CP.carFingerprint in TSS2_CAR:
     if Params().get_bool("ToyotaTSS2Long"):
@@ -160,8 +114,6 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     self.sp_angle_steering = bool(CP_SP.flags & ToyotaFlagsSP.SP_ANGLE_STEERING)
     if self.sp_angle_steering:
       self.VM = VehicleModel(CP)
-      self.torque_wind_down = 0.0
-      self.smoothed_angle = 0.0
       class _VMLimits:
         ANGLE_LIMITS = CarControllerParams.ANGLE_LIMITS_VM
         STEER_STEP = CarControllerParams.STEER_STEP_ANGLE
@@ -215,16 +167,11 @@ class CarController(CarControllerBase, GasInterceptorCarController):
         current_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
         if self.sp_angle_steering:
-          # VM-based angle limits + smoothing
-          # Apply vehicle-model-based rate/accel limits (like Tesla)
+          # Apply vehicle-model-based rate/accel limits
           # This gives more steering authority than the fixed rate tables
-          rate_limited_angle = apply_steer_angle_limits_vm(
+          self.last_angle = apply_steer_angle_limits_vm(
             apply_angle, self.last_angle, CS.out.vEgoRaw, current_angle,
             CC.latActive, self.vm_limits, self.VM)
-
-          #speed-dependent smoothing to reduce EPS jitter
-          self.smoothed_angle = sp_smooth_angle(rate_limited_angle, self.smoothed_angle, CS.out.vEgoRaw)
-          self.last_angle = self.smoothed_angle
         else:
           # Angular rate limit based on speed
           self.last_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgoRaw,
@@ -251,16 +198,9 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
 
-      if self.sp_angle_steering and lta_active:
-        self.torque_wind_down = compute_torque_wind_down(
-          self.torque_wind_down, CS.out.vEgoRaw, lta_active,
-          CS.out.steeringTorque, CS.out.steeringTorqueEps,
-          self.params.STEER_MAX)
-        torque_wind_down = int(round(self.torque_wind_down))
-      else:
-        full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.params.STEER_MAX and
-                                 abs(CS.out.steeringTorque) < self.params.MAX_LTA_DRIVER_TORQUE_ALLOWANCE)
-        torque_wind_down = 100 if lta_active and full_torque_condition else 0
+      full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.params.STEER_MAX and
+                               abs(CS.out.steeringTorque) < self.params.MAX_LTA_DRIVER_TORQUE_ALLOWANCE)
+      torque_wind_down = 100 if lta_active and full_torque_condition else 0
 
       can_sends.append(toyotacan.create_lta_steer_command(self.packer, self.CP.steerControlType, self.last_angle,
                                                           lta_active, self.frame // 2, torque_wind_down))
