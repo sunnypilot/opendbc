@@ -41,6 +41,10 @@ void set_alternative_experience(int mode){
   alternative_experience = mode;
 }
 
+void mads_apply_alternative_experience(int mode){
+  mads_set_alternative_experience(&mode);
+}
+
 void set_relay_malfunction(bool c){
   relay_malfunction = c;
 }
