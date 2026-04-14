@@ -39,13 +39,15 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.SECOC.value
       ret.dashcamOnly = is_release
 
-    if candidate in ANGLE_CONTROL_CAR:
+    sp_toyota_angle_steering = Params().get_bool("ToyotaAngleSteering")
+
+    if candidate in ANGLE_CONTROL_CAR or (sp_toyota_angle_steering and candidate in (TSS2_CAR - SECOC_CAR)):
       ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.LTA.value
 
       # LTA control can be more delayed and winds up more often
-      ret.steerActuatorDelay = 0.18
-      ret.steerLimitTimer = 0.8
+      ret.steerActuatorDelay = 0.15 if (sp_toyota_angle_steering and candidate not in ANGLE_CONTROL_CAR) else 0.18
+      ret.steerLimitTimer = 0.6 if (sp_toyota_angle_steering and candidate not in ANGLE_CONTROL_CAR) else 0.8
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -154,12 +156,6 @@ class CarInterface(CarInterfaceBase):
     if sp_toyota_angle_steering and candidate in (TSS2_CAR - SECOC_CAR):
       ret.flags |= ToyotaFlagsSP.SP_ANGLE_STEERING.value
       ret.safetyParam |= ToyotaSafetyFlagsSP.SP_ANGLE_STEERING
-      stock_cp.steerControlType = structs.CarParams.SteerControlType.angle
-      stock_cp.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.LTA.value
-      # Angle control has slightly more actuator delay but better tracking
-      stock_cp.steerActuatorDelay = 0.15
-      stock_cp.steerLimitTimer = 0.6
-      stock_cp.lateralTuning.init('pid')
 
     # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
     # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
