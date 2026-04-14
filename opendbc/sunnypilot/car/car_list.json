@@ -28,9 +28,6 @@
     "model": "MDX",
     "year": [
       "2020"
-      "2022",
-      "2023",
-      "2024"
     ],
     "package": "All"
   },
@@ -40,6 +37,9 @@
     "brand": "honda",
     "model": "MDX",
     "year": [
+      "2022",
+      "2023",
+      "2024"
     ],
     "package": "All"
   },
