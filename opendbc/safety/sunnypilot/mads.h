@@ -86,7 +86,7 @@ inline void m_update_control_state(void) {
   // Initial control requests from button or ACC transitions
   if ((m_mads_state.acc_main.transition == MADS_EDGE_RISING) ||
       (m_mads_state.mads_button.transition == MADS_EDGE_RISING) ||
-      (m_mads_state.controls_allowed.transition == MADS_EDGE_RISING)) {
+      (m_mads_state.op_controls_allowed.transition == MADS_EDGE_RISING)) {
     m_mads_state.controls_requested_lateral = true;
   }
 
@@ -177,13 +177,13 @@ inline void mads_exit_controls(const DisengageReason reason) {
 inline void mads_state_update(const bool op_vehicle_moving, const bool op_acc_main, const bool op_allowed, const bool is_braking, const bool _steering_disengage) {
   m_mads_state.is_vehicle_moving = op_vehicle_moving;
   m_mads_state.acc_main.current = op_acc_main;
-  m_mads_state.controls_allowed.current = op_allowed;
+  m_mads_state.op_controls_allowed.current = op_allowed;
   m_mads_state.mads_button.current = mads_button_press;
   m_mads_state.braking.current = is_braking;
   m_mads_state.mads_steering_disengage.current = _steering_disengage;
 
   m_update_binary_state(&m_mads_state.acc_main);
-  m_update_binary_state(&m_mads_state.controls_allowed);
+  m_update_binary_state(&m_mads_state.op_controls_allowed);
   m_update_binary_state(&m_mads_state.braking);
   m_update_binary_state(&m_mads_state.mads_steering_disengage);
   m_update_button_state(&m_mads_state.mads_button);

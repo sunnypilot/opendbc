@@ -70,7 +70,7 @@ typedef struct {
 
   ButtonStateTracking mads_button;
   BinaryStateTracking acc_main;
-  BinaryStateTracking controls_allowed;
+  BinaryStateTracking op_controls_allowed;
   BinaryStateTracking braking;
   BinaryStateTracking mads_steering_disengage;
 
