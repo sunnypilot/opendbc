@@ -222,11 +222,11 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
     .angle_deg_to_can = 17.452007,
     .angle_rate_up_lookup = {
       {5., 25., 25.},
-      {0.3, 0.15, 0.15}
+      {1.2, 0.6, 0.6}  // Widened 4x from {0.3, 0.15, 0.15}
     },
     .angle_rate_down_lookup = {
       {5., 25., 25.},
-      {0.36, 0.26, 0.26}
+      {1.5, 1.0, 1.0}  // Widened 4x from {0.36, 0.26, 0.26}
     },
     .frequency = 50U,
   };
@@ -310,7 +310,7 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
         const AngleSteeringParams TOYOTA_ANGLE_STEERING_PARAMS = {
           .slip_factor = -0.0004,  // conservative estimate for Toyota TSS2
           .steer_ratio = 13.4,     // Prius TSS2
-          .wheelbase = 2.67,       // Corolla TSS2
+          .wheelbase = 2.70,       // Prius TSS2
         };
 
         if (steer_angle_cmd_checks_vm(lta_angle, steer_control_enabled, TOYOTA_ANGLE_STEERING_LIMITS, TOYOTA_ANGLE_STEERING_PARAMS)) {
