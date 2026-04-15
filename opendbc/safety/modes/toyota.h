@@ -220,13 +220,14 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
     // factor for STEER_TORQUE_SENSOR->STEER_ANGLE and STEERING_LTA->STEER_ANGLE_CMD (1 / 0.0573)
     .max_angle = 1657,  // EPS only accepts up to 94.9461
     .angle_deg_to_can = 17.452007,
+    // VM enforces ISO lateral accel (3.6 m/s²) and jerk (3.6 m/s³) limits
     .angle_rate_up_lookup = {
-      {5., 25., 25.},
-      {1.2, 0.6, 0.6}  // Widened 4x from {0.3, 0.15, 0.15}
+      {0., 0., 0.},
+      {0., 0., 0.}
     },
     .angle_rate_down_lookup = {
-      {5., 25., 25.},
-      {1.5, 1.0, 1.0}  // Widened 4x from {0.36, 0.26, 0.26}
+      {0., 0., 0.},
+      {0., 0., 0.}
     },
     .frequency = 50U,
   };
