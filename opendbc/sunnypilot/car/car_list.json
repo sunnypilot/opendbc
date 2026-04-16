@@ -1994,13 +1994,14 @@
     ],
     "package": "All"
   },
-  "Hyundai Tucson Hybrid (without HDA II) 2025": {
+  "Hyundai Tucson Hybrid (without HDA II) 2025-26": {
     "platform": "HYUNDAI_TUCSON_HEV_2025",
     "make": "Hyundai",
     "brand": "hyundai",
     "model": "Tucson Hybrid (without HDA II)",
     "year": [
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
