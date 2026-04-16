@@ -434,7 +434,7 @@ class CAR(Platforms):
     flags=HyundaiFlags.CCNC,
   )
   HYUNDAI_TUCSON_HEV_2025 = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Hyundai Tucson Hybrid (without HDA II) 2025", car_parts=CarParts.common([CarHarness.hyundai_n]))],
+    [HyundaiCarDocs("Hyundai Tucson Hybrid (without HDA II) 2025-26", car_parts=CarParts.common([CarHarness.hyundai_n]))],
     CarSpecs(mass=1630, wheelbase=2.756, steerRatio=13.7, tireStiffnessFactor=0.385),
     flags=HyundaiFlags.CCNC,
   )
