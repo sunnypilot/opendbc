@@ -161,10 +161,15 @@ class CarController(CarControllerBase, GasInterceptorCarController):
       # If using LTA control, disable LKA and set steering angle command
       apply_torque = 0
       apply_steer_req = False
+      current_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+
+      # Always track current angle on inactive frames (even odd frames) so re-engagement never jumps
+      if not CC.latActive:
+        self.last_angle = current_angle
+
       if self.frame % 2 == 0:
         # EPS uses the torque sensor angle to control with, offset to compensate
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
-        current_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
         if self.sp_angle_steering:
           # Apply vehicle-model-based rate/accel limits
@@ -198,8 +203,10 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
 
+      # SP angle steering raises the driver torque threshold to allow torque
+      driver_torque_limit = MAX_USER_TORQUE if self.sp_angle_steering else self.params.MAX_LTA_DRIVER_TORQUE_ALLOWANCE
       full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.params.STEER_MAX and
-                               abs(CS.out.steeringTorque) < self.params.MAX_LTA_DRIVER_TORQUE_ALLOWANCE)
+                               abs(CS.out.steeringTorque) < driver_torque_limit)
       torque_wind_down = 100 if lta_active and full_torque_condition else 0
 
       can_sends.append(toyotacan.create_lta_steer_command(self.packer, self.CP.steerControlType, self.last_angle,

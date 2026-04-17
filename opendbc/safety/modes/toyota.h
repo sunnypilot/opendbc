@@ -69,6 +69,7 @@ static bool toyota_secoc = false;
 static bool toyota_alt_brake = false;
 static bool toyota_stock_longitudinal = false;
 static bool toyota_lta = false;
+static bool toyota_sp_angle_steering = false;
 static int toyota_dbc_eps_torque_factor = 100;   // conversion factor for STEER_TORQUE_EPS in %: see dbc file
 
 static uint32_t toyota_compute_checksum(const CANPacket_t *msg) {
@@ -220,8 +221,7 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
     // factor for STEER_TORQUE_SENSOR->STEER_ANGLE and STEERING_LTA->STEER_ANGLE_CMD (1 / 0.0573)
     .max_angle = 1657,  // EPS only accepts up to 94.9461
     .angle_deg_to_can = 17.452007,
-    // VM enforces ISO lateral accel (3.6 m/s²) and jerk (3.6 m/s³) limits
-    .angle_rate_up_lookup = {
+        .angle_rate_up_lookup = {
       {0., 0., 0.},
       {0., 0., 0.}
     },
@@ -309,9 +309,9 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
         // Use VM-based checks like Tesla for physics-based angle rate limiting.
         // Uses Toyota Prius TSS2 params as ref
         const AngleSteeringParams TOYOTA_ANGLE_STEERING_PARAMS = {
-          .slip_factor = -0.0004,  // conservative estimate for Toyota TSS2
+          .slip_factor = -0.0009750603723810179,  // calc_slip_factor(VM) for Prius TSS2
           .steer_ratio = 13.4,     // Prius TSS2
-          .wheelbase = 2.70,       // Prius TSS2
+          .wheelbase = 2.70002,    // Prius TSS2 wheelbase
         };
 
         if (steer_angle_cmd_checks_vm(lta_angle, steer_control_enabled, TOYOTA_ANGLE_STEERING_LIMITS, TOYOTA_ANGLE_STEERING_PARAMS)) {
@@ -332,9 +332,11 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
           tx = false;
         }
 
-        // check if we should wind down torque
+        // check if we should wind down torque for driver override
+        // SP angle steering uses a higher threshold to allow torque
+        int lta_max_driver_torque = toyota_sp_angle_steering ? 500 : TOYOTA_LTA_MAX_DRIVER_TORQUE;
         int driver_torque = SAFETY_MIN(SAFETY_ABS(torque_driver.min), SAFETY_ABS(torque_driver.max));
-        if ((driver_torque > TOYOTA_LTA_MAX_DRIVER_TORQUE) && (torque_wind_down != 0)) {
+        if ((driver_torque > lta_max_driver_torque) && (torque_wind_down != 0)) {
           tx = false;
         }
 
@@ -463,6 +465,7 @@ static safety_config toyota_init(uint16_t param) {
 
   const bool toyota_unsupported_dsu = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_UNSUPPORTED_DSU);
   enable_gas_interceptor = GET_FLAG(current_safety_param_sp, TOYTOA_PARAM_SP_GAS_INTERCEPTOR);
+  toyota_sp_angle_steering = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_ANGLE_STEERING);
 
   // gas interceptor should not be used if openpilot is not controlling longitudinal or is a TSK car
   if (toyota_stock_longitudinal || toyota_secoc) {
