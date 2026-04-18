@@ -16,9 +16,11 @@
 ButtonState mads_button_press = MADS_BUTTON_UNAVAILABLE;
 MADSState m_mads_state;
 
-// state for mads controls_allowed_lat timeout logic
+bool controls_allowed_lateral = false;
+
+// state for mads controls_allowed_lateral timeout logic
 bool heartbeat_engaged_mads = false;  // MADS enabled, passed in heartbeat USB command
-uint32_t heartbeat_engaged_mads_mismatches = 0U;  // count of mismatches between heartbeat_engaged_mads and controls_allowed_lat
+uint32_t heartbeat_engaged_mads_mismatches = 0U;  // count of mismatches between heartbeat_engaged_mads and controls_allowed_lateral
 
 // ===============================
 // State Update Helpers
@@ -57,8 +59,8 @@ inline void m_mads_state_init(void) {
   m_mads_state.current_disengage.active_reason = MADS_DISENGAGE_REASON_NONE;
   m_mads_state.current_disengage.pending_reasons = MADS_DISENGAGE_REASON_NONE;
 
-  m_mads_state.controls_requested_lat = false;
-  m_mads_state.controls_allowed_lat = false;
+  m_mads_state.controls_requested_lateral = false;
+  controls_allowed_lateral = false;
 }
 
 inline void m_update_button_state(ButtonStateTracking *button_state) {
@@ -75,7 +77,7 @@ inline void m_update_binary_state(BinaryStateTracking *state) {
 
 /**
  * @brief Updates the MADS control state based on current system conditions
- * 
+ *
  * @return void
  */
 inline void m_update_control_state(void) {
@@ -85,7 +87,7 @@ inline void m_update_control_state(void) {
   if ((m_mads_state.acc_main.transition == MADS_EDGE_RISING) ||
       (m_mads_state.mads_button.transition == MADS_EDGE_RISING) ||
       (m_mads_state.op_controls_allowed.transition == MADS_EDGE_RISING)) {
-    m_mads_state.controls_requested_lat = true;
+    m_mads_state.controls_requested_lateral = true;
   }
 
   // Primary control blockers - these prevent any further control processing
@@ -114,24 +116,25 @@ inline void m_update_control_state(void) {
     } else if ((m_mads_state.braking.transition == MADS_EDGE_FALLING) &&
                (m_mads_state.current_disengage.active_reason == MADS_DISENGAGE_REASON_BRAKE) &&
                (m_mads_state.current_disengage.pending_reasons == MADS_DISENGAGE_REASON_BRAKE)) {
-      m_mads_state.controls_requested_lat = true;
+      m_mads_state.controls_requested_lateral = true;
     } else if (m_mads_state.braking.current) {
       allowed = false;
     } else {
     }
   }
 
-  // Process control request if conditions allow
-  if (allowed && m_mads_state.controls_requested_lat && !m_mads_state.controls_allowed_lat) {
-    m_mads_state.controls_requested_lat = false;
-    m_mads_state.controls_allowed_lat = true;
+  // Process control request if conditions allow. Gate the write on system_enabled so that
+  // stock safety builds (MADS disabled) never flip the global on.
+  if (allowed && m_mads_state.system_enabled && m_mads_state.controls_requested_lateral && !controls_allowed_lateral) {
+    m_mads_state.controls_requested_lateral = false;
+    controls_allowed_lateral = true;
     m_mads_state.current_disengage.active_reason = MADS_DISENGAGE_REASON_NONE;
     m_mads_state.current_disengage.pending_reasons = MADS_DISENGAGE_REASON_NONE;
   }
 }
 
 inline void mads_heartbeat_engaged_check(void) {
-  if (m_mads_state.controls_allowed_lat && !heartbeat_engaged_mads) {
+  if (controls_allowed_lateral && !heartbeat_engaged_mads) {
     heartbeat_engaged_mads_mismatches += 1U;
     if (heartbeat_engaged_mads_mismatches >= 3U) {
       mads_exit_controls(MADS_DISENGAGE_REASON_HEARTBEAT_ENGAGED_MISMATCH);
@@ -164,15 +167,11 @@ inline void mads_exit_controls(const DisengageReason reason) {
   // Always track this as a pending reason
   m_mads_state.current_disengage.pending_reasons |= reason;
 
-  if (m_mads_state.controls_allowed_lat) {
+  if (controls_allowed_lateral) {
     m_mads_state.current_disengage.active_reason = reason;
-    m_mads_state.controls_requested_lat = false;
-    m_mads_state.controls_allowed_lat = false;
+    m_mads_state.controls_requested_lateral = false;
+    controls_allowed_lateral = false;
   }
-}
-
-inline bool mads_is_lateral_control_allowed_by_mads(void) {
-  return m_mads_state.system_enabled && m_mads_state.controls_allowed_lat;
 }
 
 inline void mads_state_update(const bool op_vehicle_moving, const bool op_acc_main, const bool op_allowed, const bool is_braking, const bool _steering_disengage) {
