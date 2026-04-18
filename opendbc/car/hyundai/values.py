@@ -582,7 +582,7 @@ class CAR(Platforms):
   )
   KIA_SORENTO_HEV_4TH_GEN_LFA2 = HyundaiCanFDPlatformConfig(
     [
-      HyundaiCarDocs("Kia Sorento Hybrid 2026 with LFA2", "All", car_parts=CarParts.common([CarHarness.hyundai_q])),
+      HyundaiCarDocs("Kia Sorento Hybrid 2026", "All", car_parts=CarParts.common([CarHarness.hyundai_q])),
     ],
     CarSpecs(mass=1970, wheelbase=2.814, steerRatio=13.27, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.CANFD_ANGLE_STEERING,
