@@ -1287,6 +1287,14 @@ FW_VERSIONS = {
       b'\xf1\x00NQ5__               1.01 1.03 99110-P1000         ',
     ],
   },
+  CAR.KIA_SPORTAGE_2026: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NQ51.011.021.012551000HKP_NQ524_50509099211P1110',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00NQ5__               1.00 1.04 99110P1100          ',
+    ],
+  },
   CAR.KIA_SPORTAGE_HEV_2026: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NQ51.011.021.012551000HKP_NQ524_50509099211P1110',

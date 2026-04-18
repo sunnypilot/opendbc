@@ -1913,6 +1913,16 @@
     ],
     "package": "Highway Driving Assist II & Lane Follow Assist 2"
   },
+  "Hyundai Santa Fe Hybrid (without HDA II, LFA2) 2026": {
+    "platform": "HYUNDAI_SANTA_FE_HEV_5TH_GEN",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Santa Fe Hybrid (without HDA II, LFA2)",
+    "year": [
+      "2026"
+    ],
+    "package": "Lane Follow Assist 2"
+  },
   "Hyundai Santa Fe Plug-in Hybrid 2022-23": {
     "platform": "HYUNDAI_SANTA_FE_PHEV_2022",
     "make": "Hyundai",
@@ -2582,6 +2592,16 @@
     "year": [
       "2023",
       "2024"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
+  "Kia Sportage (without HDA II) 2026": {
+    "platform": "KIA_SPORTAGE_2026",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Sportage (without HDA II)",
+    "year": [
+      "2026"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
