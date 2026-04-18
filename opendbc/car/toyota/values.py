@@ -45,8 +45,12 @@ class CarControllerParams:
     # Vehicle model angle limits more aggressive than fixed rate tables
     MAX_LATERAL_ACCEL=ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL),  # ~3.6 m/s^2
     MAX_LATERAL_JERK=3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL),  # ~3.6 m/s^3
-    # 3 deg/frame @ 50Hz = 150 deg/s; prevents discontinuous jumps on re-engagement without limiting turning authority
-    MAX_ANGLE_RATE=3,  # deg per 20ms frame
+    # Toyota EPS faults when steer rate > 100 deg/s sustained for > 17 frames (MAX_STEER_RATE_FRAMES).
+    # 2 deg/frame @ 50Hz = exactly 100 deg/s — at the fault boundary. Combined with the pre-clamp
+    # in carcontroller, this prevents both planner snaps and sustained rate faults without
+    # reducing torque authority at steady-state (MAX_ANGLE_RATE only limits command delta, not torque).
+    # Tesla uses 5 deg/frame because their EPS fault threshold is 12 deg/frame — far more tolerant.
+    MAX_ANGLE_RATE=2,  # deg per 20ms frame
   )
 
   STEER_STEP_ANGLE = 2
