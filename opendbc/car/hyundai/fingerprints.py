@@ -1275,7 +1275,7 @@ FW_VERSIONS = {
       b'\xf1\x00MQhe SCC FHCUP      1.00 1.07 99110-P4000         ',
     ],
   },
-CAR.KIA_SORENTO_HEV_4TH_GEN_LFA2: {
+  CAR.KIA_SORENTO_HEV_4TH_GEN_LFA2: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00MQ4HMFC  AT USA LHD 1.00 1.00 99210-P2600 250617',
     ],
