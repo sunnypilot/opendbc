@@ -141,9 +141,6 @@ class CarController(CarControllerBase):
     # Button messages
     if not self.CP.openpilotLongitudinalControl:
       if CC.cruiseControl.cancel and self.cancel_counter > CANCEL_BUTTON_DELAY_FRAMES:
-        # Delayed cancel: on newer CAN models, CF_Clu_CruiseSwState=4 is a pause/resume toggle (not a true cancel).
-        # Waiting CANCEL_BUTTON_DELAY_FRAMES lets factory SCC disengage naturally on brake press within its ~100 ms
-        # latency, and this branch acts as a fallback if SCC fails to disengage for any other reason.
         can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP))
       elif CC.cruiseControl.resume:
         # send resume at a max freq of 10Hz
@@ -215,9 +212,6 @@ class CarController(CarControllerBase):
             can_sends.append(hyundaicanfd.create_acc_cancel(self.packer, self.CP, self.CAN, CS.cruise_info))
             self.last_button_frame = self.frame
           elif self.cancel_counter > CANCEL_BUTTON_DELAY_FRAMES:
-            # Delayed cancel: on non-CANFD_ALT_BUTTONS cars, CRUISE_BUTTONS=4 is a pause/resume toggle (not a true cancel).
-            # Waiting CANCEL_BUTTON_DELAY_FRAMES lets factory SCC disengage naturally on brake press within its ~100 ms
-            # latency, and this burst acts as a fallback if SCC fails to disengage for any other reason.
             for _ in range(20):
               can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, self.CAN, CS.buttons_counter + 1, Buttons.CANCEL))
             self.last_button_frame = self.frame
