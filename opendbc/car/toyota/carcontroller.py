@@ -3,7 +3,7 @@ import numpy as np
 from openpilot.common.params import Params
 from opendbc.car import Bus, make_tester_present_msg, rate_limit, structs, ACCELERATION_DUE_TO_GRAVITY, DT_CTRL
 from opendbc.car.lateral import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, \
-  apply_steer_angle_limits_vm, common_fault_avoidance
+                                apply_steer_angle_limits_vm, common_fault_avoidance
 from opendbc.car.carlog import carlog
 from opendbc.car.common.filter_simple import FirstOrderFilter, HighPassFilter
 from opendbc.car.common.pid import PIDController
@@ -165,7 +165,16 @@ class CarController(CarControllerBase, GasInterceptorCarController):
 
       # Always track current angle on inactive frames (even odd frames) so re-engagement never jumps
       if not CC.latActive:
-        self.last_angle = current_angle
+        if self.sp_angle_steering:
+          # Step last_angle toward current_angle by at most MAX_ANGLE_RATE per frame.
+          # This bounds the disengage snap: apply_steer_angle_limits_vm will snap to
+          # current_angle on lat_active=False, but since last_angle is already within
+          # MAX_ANGLE_RATE of current_angle, the EPS-visible step is always bounded.
+          max_rate = self.vm_limits.ANGLE_LIMITS.MAX_ANGLE_RATE
+          gap = current_angle - self.last_angle
+          self.last_angle += float(np.clip(gap, -max_rate, max_rate))
+        else:
+          self.last_angle = current_angle
 
       if self.frame % 2 == 0:
         # EPS uses the torque sensor angle to control with, offset to compensate
