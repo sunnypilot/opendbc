@@ -45,8 +45,8 @@ class CarControllerParams:
     # Vehicle model angle limits more aggressive than fixed rate tables
     MAX_LATERAL_ACCEL=ISO_LATERAL_ACCEL + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL),  # ~3.6 m/s^2
     MAX_LATERAL_JERK=3.0 + (ACCELERATION_DUE_TO_GRAVITY * AVERAGE_ROAD_ROLL),  # ~3.6 m/s^3
-    # limit angle rate for low speed comfort; EPS faults ~12 deg/frame at standstill
-    MAX_ANGLE_RATE=5,  # deg per 20ms frame
+    # 3 deg/frame @ 50Hz = 150 deg/s; prevents discontinuous jumps on re-engagement without limiting turning authority
+    MAX_ANGLE_RATE=3,  # deg per 20ms frame
   )
 
   STEER_STEP_ANGLE = 2
