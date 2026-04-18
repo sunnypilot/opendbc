@@ -23,8 +23,8 @@ def is_steering_msg(mode, param, addr):
   elif mode in (CarParams.SafetyModel.hyundai, CarParams.SafetyModel.hyundaiLegacy):
     ret = addr == 832
   elif mode == CarParams.SafetyModel.hyundaiCanfd:
-    ret = addr == (0x110 if param & HyundaiSafetyFlags.CANFD_LKA_STEERING_ALT else
-                   0x50 if param & HyundaiSafetyFlags.CANFD_LKA_STEERING else
+    ret = addr == (0x110 if param & HyundaiSafetyFlags.CANFD_LKA_STEER_MSG_ALT else
+                   0x50 if param & HyundaiSafetyFlags.CANFD_LKA_STEER_MSG else
                    0x12A)
   elif mode == CarParams.SafetyModel.chrysler:
     ret = addr == 0x292
@@ -62,6 +62,7 @@ def get_steer_value(mode, param, msg):
   elif mode == CarParams.SafetyModel.hyundaiCanfd:
     if param & HyundaiSafetyFlags.CANFD_ANGLE_STEERING:
       angle = (msg.data[11] << 6) | (msg.data[10] >> 2)
+      angle = to_signed(angle, 14)
     else:
       torque = ((msg.data[5] >> 1) | (msg.data[6] & 0xF) << 7) - 1024
   elif mode == CarParams.SafetyModel.chrysler:
