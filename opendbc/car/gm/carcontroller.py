@@ -1,6 +1,6 @@
 import numpy as np
 from opendbc.can import CANPacker
-from opendbc.car import Bus, DT_CTRL, structs
+from opendbc.car import Bus, DT_CTRL, cancel_after_delay, structs
 from opendbc.car.lateral import apply_driver_steer_torque_limits
 from opendbc.car.gm import gmcan
 from opendbc.car.common.conversions import Conversions as CV
@@ -144,7 +144,7 @@ class CarController(CarControllerBase):
 
       # Stock longitudinal, integrated at camera
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
-        if self.cancel_counter > CAMERA_CANCEL_DELAY_FRAMES:
+        if cancel_after_delay(self.cancel_counter, CC.cruiseControl.cancel, CAMERA_CANCEL_DELAY_FRAMES):
           self.last_button_frame = self.frame
           can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.buttons_counter, CruiseButtons.CANCEL))
 
