@@ -22,6 +22,10 @@ class AngleSteeringLimits:
   MAX_LATERAL_ACCEL: float = 0
   MAX_LATERAL_JERK: float = 0
   MAX_ANGLE_RATE: float = math.inf
+  # Maximum allowed cmd-to-actual angle error. Prevents cmd from racing ahead of the
+  # wheel when the EPS cannot physically track fast enough (e.g. tight low-speed turns),
+  # which otherwise causes LTA tracking-error faults (LTA_STATE=25/9).
+  MAX_TRACKING_ERROR: float = math.inf
 
 
 def apply_driver_steer_torque_limits(apply_torque: int, apply_torque_last: int, driver_torque: float, LIMITS, steer_max: int | None = None):
@@ -119,6 +123,12 @@ def apply_steer_angle_limits_vm(apply_angle: float, apply_angle_last: float, v_e
   # *** max lateral accel limit ***
   max_angle = get_max_angle_vm(v_ego_raw, VM, limits)
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
+
+  # *** max tracking error limit ***
+  # Clamps cmd within MAX_TRACKING_ERROR of the actual wheel angle so the EPS never
+  # receives a target it cannot physically reach, which causes LTA tracking-error faults.
+  max_err = limits.ANGLE_LIMITS.MAX_TRACKING_ERROR
+  new_apply_angle = np.clip(new_apply_angle, steering_angle - max_err, steering_angle + max_err)
 
   # angle is current angle when inactive
   if not lat_active:

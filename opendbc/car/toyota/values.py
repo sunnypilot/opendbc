@@ -48,6 +48,11 @@ class CarControllerParams:
     # Toyota EPS faults when steer rate > 100 deg/s sustained for > 17 frames (MAX_STEER_RATE_FRAMES).
     # 1.5 deg/frame @ 50Hz = 75 deg/s — 25% margin below the 100 deg/s fault boundary.
     MAX_ANGLE_RATE=1.5,  # deg per 20ms frame
+    # Clamp cmd within 6 deg of the actual wheel angle to prevent LTA tracking-error faults
+    # (LTA_STATE=25/9). At low speed on tight turns the EPS physically moves ~20 deg/s max;
+    # without this, the cmd can race 12+ deg ahead and trigger a steerTempUnavailable.
+    # 6 deg = ~300ms of EPS tracking headroom at 20 deg/s — enough for smooth turns.
+    MAX_TRACKING_ERROR=6.0,  # deg
   )
 
   STEER_STEP_ANGLE = 2
