@@ -67,7 +67,7 @@ class CarInterface(CarInterfaceBase):
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
         if not ret.flags & HyundaiFlags.CANFD_RADAR_SCC:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
-        if 0xCB in fingerprint[CAN.CAM]:  # ADAS_CMD_35_10ms
+        if 0xCB in fingerprint[CAN.CAM]:  # LFA_ALT
           ret.flags |= HyundaiFlags.SEND_LFA.value
 
       # Some LKA steering cars have alternative messages for gear checks

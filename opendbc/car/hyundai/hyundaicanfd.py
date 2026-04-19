@@ -62,11 +62,10 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
       "ADAS_ACIAnglTqRedcGainVal": apply_torque if lat_active else 0,
     }
 
-  ADAS_CMD_35_10ms_values = {}
+  LFA_ALT_values = {}
   if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING and CP.flags & HyundaiFlags.SEND_LFA:
-    # Here we create ADAS_CMD_35_10ms
     ActvACILvl2Sta = ActvACISta.ACTIVE35_ACTIVE if lat_active else ActvACISta.INACTIVE if enabled else ActvACISta.INACTIVE
-    ADAS_CMD_35_10ms_values = {
+    LFA_ALT_values = {
       "ADAS_ActvACISta": ActvACISta.INIT.value,
       "ADAS_ActvACILvl2Sta": ActvACILvl2Sta.value,
       "ADAS_StrAnglReqVal": apply_angle,
@@ -83,7 +82,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, values))
   elif CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING and CP.flags & HyundaiFlags.SEND_LFA:
     # For cars with an HDA1 and LFA2, we send LFA messages to the ADAS ECU.
-    ret.append(packer.make_can_msg("ADAS_CMD_35_10ms", CAN.ECAN, ADAS_CMD_35_10ms_values))
+    ret.append(packer.make_can_msg("LFA_ALT", CAN.ECAN, LFA_ALT_values))
   else:
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
 
