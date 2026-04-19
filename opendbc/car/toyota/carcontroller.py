@@ -166,11 +166,11 @@ class CarController(CarControllerBase, GasInterceptorCarController):
       # Always track current angle on inactive frames (even odd frames) so re-engagement never jumps
       if not CC.latActive:
         if self.sp_angle_steering:
-          # Step last_angle toward current_angle by at most MAX_ANGLE_RATE per frame.
-          # This bounds the disengage snap: apply_steer_angle_limits_vm will snap to
-          # current_angle on lat_active=False, but since last_angle is already within
-          # MAX_ANGLE_RATE of current_angle, the EPS-visible step is always bounded.
-          max_rate = self.vm_limits.ANGLE_LIMITS.MAX_ANGLE_RATE
+          # Step last_angle toward current_angle at the LTA-equivalent rate per 100Hz frame.
+          # MAX_ANGLE_RATE is defined per 20ms LTA step (STEER_STEP=2 ctrl frames), so divide
+          # by STEER_STEP to get the per-10ms ctrl-frame rate. This prevents last_angle from
+          # advancing at 2x the intended rate when the inactive block runs at 100Hz.
+          max_rate = self.vm_limits.ANGLE_LIMITS.MAX_ANGLE_RATE / self.vm_limits.STEER_STEP
           gap = current_angle - self.last_angle
           self.last_angle += float(np.clip(gap, -max_rate, max_rate))
         else:
