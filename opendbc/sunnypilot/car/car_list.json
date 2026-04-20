@@ -1799,6 +1799,16 @@
     ],
     "package": "All"
   },
+  "Hyundai Santa Fe Non-SCC 2022": {
+    "platform": "HYUNDAI_SANTA_FE_2022_NON_SCC",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Santa Fe Non-SCC",
+    "year": [
+      "2022"
+    ],
+    "package": "All"
+  },
   "Hyundai Santa Fe Plug-in Hybrid 2022-23": {
     "platform": "HYUNDAI_SANTA_FE_PHEV_2022",
     "make": "Hyundai",
