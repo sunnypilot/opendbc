@@ -30,6 +30,7 @@ non_tested_cars = [
   HONDA.ACURA_TLX_2G,
   HYUNDAI.KIA_SORENTO_2024,
   HYUNDAI.HYUNDAI_IONIQ_5_N,
+  HYUNDAI.HYUNDAI_TUCSON_PHEV_2025,
 
   # These had their DSUs unplugged, need new routes
   # TOYOTA.LEXUS_ES  # hybrid

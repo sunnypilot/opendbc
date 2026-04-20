@@ -2015,6 +2015,16 @@
     ],
     "package": "All"
   },
+  "Hyundai Tucson Plug-in Hybrid (without HDA II) 2025": {
+    "platform": "HYUNDAI_TUCSON_PHEV_2025",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Tucson Plug-in Hybrid (without HDA II)",
+    "year": [
+      "2025"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Hyundai Veloster 2019-20": {
     "platform": "HYUNDAI_VELOSTER",
     "make": "Hyundai",
