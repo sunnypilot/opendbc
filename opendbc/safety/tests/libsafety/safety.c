@@ -41,6 +41,14 @@ void set_alternative_experience(int mode){
   alternative_experience = mode;
 }
 
+void mads_apply_alternative_experience(int mode){
+  mads_set_alternative_experience(&mode);
+}
+
+void tick_mads_state(bool vm, bool acc_main, bool op_allowed, bool braking, bool steering_disengage){
+  mads_state_update(vm, acc_main, op_allowed, braking, steering_disengage);
+}
+
 void set_relay_malfunction(bool c){
   relay_malfunction = c;
 }
@@ -195,16 +203,12 @@ static MADSState *get_mads_state(void) {
   return &m_mads_state;
 }
 
-bool get_lat_active(void){
-  return is_lat_active();
+bool get_controls_allowed_lateral(void){
+  return controls_allowed_lateral;
 }
 
-bool get_controls_allowed_lat(void){
-  return mads_is_lateral_control_allowed_by_mads();
-}
-
-bool get_controls_requested_lat(void){
-  return get_mads_state()->controls_requested_lat;
+bool get_controls_requested_lateral(void){
+  return get_mads_state()->controls_requested_lateral;
 }
 
 bool get_enable_mads(void){
@@ -239,8 +243,8 @@ int get_mads_button_press(void){
   return mads_button_press;
 }
 
-void set_controls_allowed_lat(bool c){
-  m_mads_state.controls_allowed_lat = c;
+void set_controls_allowed_lateral(bool c){
+  controls_allowed_lateral = c;
 }
 
 bool get_mads_acc_main(void){
@@ -255,8 +259,8 @@ void mads_set_current_disengage_reason(int reason) {
   m_mads_state.current_disengage.active_reason = reason;
 }
 
-void set_controls_requested_lat(bool c){
-  m_mads_state.controls_requested_lat = c;
+void set_controls_requested_lateral(bool c){
+  m_mads_state.controls_requested_lateral = c;
 }
 
 void set_mads_params(bool enable_mads, bool disengage_lateral_on_brake, bool pause_lateral_on_brake){
@@ -298,4 +302,10 @@ void init_tests(void){
 
   // assumes autopark on safety mode init to avoid a fault. get rid of that for testing
   tesla_autopark = false;
+
+  // reset MADS state to prevent leaking between tests
+  mads_set_system_state(false, false, false);
+  mads_button_press = MADS_BUTTON_UNAVAILABLE;
+  heartbeat_engaged_mads = false;
+  heartbeat_engaged_mads_mismatches = 0U;
 }
