@@ -59,7 +59,6 @@ class CarController(CarControllerBase):
     self.permit_braking = True
     self.steer_rate_counter = 0
     self.distance_button = 0
-    self.cancel_counter = 0
 
     # *** start long control state ***
     self.long_pid = get_long_tune(self.CP, self.params)
@@ -84,8 +83,7 @@ class CarController(CarControllerBase):
     hud_control = CC.hudControl
     lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
 
-    self.cancel_counter = self.cancel_counter + 1 if CC.cruiseControl.cancel else 0
-    pcm_cancel_cmd = cancel_after_delay(self.cancel_counter, CC.cruiseControl.cancel, CRUISE_CANCEL_DELAY_FRAMES)
+    pcm_cancel_cmd = cancel_after_delay(CC.cruiseControl.cancel, CRUISE_CANCEL_DELAY_FRAMES)
 
     if len(CC.orientationNED) == 3:
       self.pitch.update(CC.orientationNED[1])

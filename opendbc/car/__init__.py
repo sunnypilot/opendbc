@@ -26,10 +26,6 @@ def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
   return val_steady
 
 
-def cancel_after_delay(counter: int, cancel: bool, delay_frames: int) -> bool:
-  return cancel and counter > delay_frames
-
-
 def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: dict[int, structs.CarState.ButtonEvent.Type],
                          unpressed_btn: int = 0) -> list[structs.CarState.ButtonEvent]:
   events: list[structs.CarState.ButtonEvent] = []

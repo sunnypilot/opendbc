@@ -61,7 +61,6 @@ class CarController(CarControllerBase):
     self.apply_torque_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
-    self.cancel_counter = 0
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -87,10 +86,6 @@ class CarController(CarControllerBase):
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
 
     can_sends = []
-
-    # Delay the cancel button send so the brake can disengage factory SCC first.
-    # Reset whenever openpilot is no longer requesting cancel.
-    self.cancel_counter = self.cancel_counter + 1 if CC.cruiseControl.cancel else 0
 
     # *** common hyundai stuff ***
 
@@ -140,7 +135,9 @@ class CarController(CarControllerBase):
 
     # Button messages
     if not self.CP.openpilotLongitudinalControl:
-      if cancel_after_delay(self.cancel_counter, CC.cruiseControl.cancel, CANCEL_BUTTON_DELAY_FRAMES):
+      # Delay the cancel button send so the brake can disengage factory SCC first.
+      # Reset whenever openpilot is no longer requesting cancel.
+      if cancel_after_delay(CC.cruiseControl.cancel, CANCEL_BUTTON_DELAY_FRAMES):
         can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP))
       elif CC.cruiseControl.resume:
         # send resume at a max freq of 10Hz
