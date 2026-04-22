@@ -1,4 +1,6 @@
 import re
+import unittest
+
 from opendbc.car import gen_empty_fingerprint
 from opendbc.car.structs import CarParams
 from opendbc.car.tesla.interface import CarInterface
@@ -52,7 +54,7 @@ FSD_14_FW_RULE = {
 }
 
 
-class TestTeslaFingerprint:
+class TestTeslaFingerprint(unittest.TestCase):
   def test_fw_platform_code(self):
     # Every EPS FW must parse and its platform letter must match the car it's filed under.
     for car_model, ecus in FW_VERSIONS.items():
