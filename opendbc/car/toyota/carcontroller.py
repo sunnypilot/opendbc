@@ -81,9 +81,8 @@ class CarController(CarControllerBase):
     actuators = CC.actuators
     stopping = actuators.longControlState == LongCtrlState.stopping
     hud_control = CC.hudControl
-    lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
-
     pcm_cancel_cmd = self.cancel_after_delay(CC.cruiseControl.cancel, CRUISE_CANCEL_DELAY_FRAMES)
+    lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
 
     if len(CC.orientationNED) == 3:
       self.pitch.update(CC.orientationNED[1])
