@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from opendbc.car import Bus, make_tester_present_msg, rate_limit, structs, ACCELERATION_DUE_TO_GRAVITY, DT_CTRL, cancel_after_delay
+from opendbc.car import Bus, make_tester_present_msg, rate_limit, structs, ACCELERATION_DUE_TO_GRAVITY, DT_CTRL
 from opendbc.car.lateral import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance
 from opendbc.car.carlog import carlog
 from opendbc.car.common.filter_simple import FirstOrderFilter, HighPassFilter
@@ -83,7 +83,7 @@ class CarController(CarControllerBase):
     hud_control = CC.hudControl
     lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
 
-    pcm_cancel_cmd = cancel_after_delay(CC.cruiseControl.cancel, CRUISE_CANCEL_DELAY_FRAMES)
+    pcm_cancel_cmd = self.cancel_after_delay(CC.cruiseControl.cancel, CRUISE_CANCEL_DELAY_FRAMES)
 
     if len(CC.orientationNED) == 3:
       self.pitch.update(CC.orientationNED[1])

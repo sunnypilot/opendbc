@@ -1,6 +1,6 @@
 import numpy as np
 from opendbc.can import CANPacker
-from opendbc.car import Bus, DT_CTRL, cancel_after_delay, make_tester_present_msg, structs
+from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs
 from opendbc.car.lateral import apply_driver_steer_torque_limits, common_fault_avoidance
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
@@ -137,7 +137,7 @@ class CarController(CarControllerBase):
     if not self.CP.openpilotLongitudinalControl:
       # Delay the cancel button send so the brake can disengage factory SCC first.
       # Reset whenever openpilot is no longer requesting cancel.
-      if cancel_after_delay(CC.cruiseControl.cancel, CANCEL_BUTTON_DELAY_FRAMES):
+      if self.cancel_after_delay(CC.cruiseControl.cancel, CANCEL_BUTTON_DELAY_FRAMES):
         can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP))
       elif CC.cruiseControl.resume:
         # send resume at a max freq of 10Hz
