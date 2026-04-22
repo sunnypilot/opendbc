@@ -27,6 +27,9 @@ Ecu = CarParams.Ecu
 #   software_major/minor : numeric components after the first '.' — conventional release numbers.
 #                          minor is optional (e.g. 'E4S014.27' has no minor).
 #
+# Suspected (not confirmed): for M3/MY, `TeM3_*` outer + no-leading-digit variant_code == HW3, and
+# `TeMYG4_*` outer + leading-'4' variant_code == HW4 (the 'G4' in TeMYG4 likely denotes Gen 4).
+#
 # Example full parse of 'TeMYG4_Main_0.0.0 (78),E4HP015.05.0':
 #   unknown_prefix='TeMYG4_Main_0.0.0 (78)'
 #   platform=E  variant_code=4HP015  software_major=05  software_minor=0
