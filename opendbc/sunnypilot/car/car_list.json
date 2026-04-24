@@ -1667,6 +1667,17 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Hyundai Kona (SX2) 2023-24": {
+    "platform": "HYUNDAI_KONA_2ND_GEN",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Kona (SX2)",
+    "year": [
+      "2023",
+      "2024"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Hyundai Kona Electric 2018-21": {
     "platform": "HYUNDAI_KONA_EV",
     "make": "Hyundai",
