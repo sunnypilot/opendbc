@@ -42,6 +42,12 @@ def make_msg(bus, addr, length=8, dat=None):
   return libsafety_py.make_CANPacket(addr, bus, dat)
 
 
+def tx_msg_addr_bus_len(msg):
+  addr, bus = msg[0], msg[1]
+  length = msg[2] if len(msg) > 2 and isinstance(msg[2], int) else 8
+  return addr, bus, length
+
+
 class CANPackerSafety(CANPacker):
   def make_can_msg_safety(self, name_or_addr, bus, values, fix_checksum=None):
     msg = self.make_can_msg(name_or_addr, bus, values)
@@ -847,7 +853,8 @@ class SafetyTest(SafetyTestBase):
     # make sure SCANNED_ADDRS stays up to date with car port TX_MSGS; new
     # model ports should expand the range if needed
     for msg in self.TX_MSGS:
-      self.assertTrue(msg[0] in self.SCANNED_ADDRS, f"{msg[0]=:#x}")
+      addr, _, _ = tx_msg_addr_bus_len(msg)
+      self.assertTrue(addr in self.SCANNED_ADDRS, f"{addr=:#x}")
 
   def test_fwd_hook(self):
     # some safety modes don't forward anything, while others blacklist msgs
@@ -862,7 +869,7 @@ class SafetyTest(SafetyTestBase):
   def test_spam_can_buses(self):
     for bus in range(4):
       for addr in self.SCANNED_ADDRS:
-        if [addr, bus] not in self.TX_MSGS:
+        if not any((tx_addr == addr) and (tx_bus == bus) and (tx_len == 8) for tx_addr, tx_bus, tx_len in map(tx_msg_addr_bus_len, self.TX_MSGS)):
           self.assertFalse(self._tx(make_msg(bus, addr, 8)), f"allowed TX {addr=} {bus=}")
 
   def test_default_controls_not_allowed(self):
@@ -944,17 +951,23 @@ class SafetyTest(SafetyTestBase):
             if attr.startswith('TestHyundaiLongitudinal'):
               # exceptions for common msgs across different Hyundai CAN platforms
               tx = list(filter(lambda m: m[0] not in [0x420, 0x50A, 0x389, 0x4A2], tx))
-            all_tx.append([[m[0], m[1], attr] for m in tx])
+
+            if attr.startswith('TestHyundai') and current_test.startswith('TestHyundai') and \
+               'LfaHdaMfc8' not in attr and 'LfaHdaMfc8' not in current_test:
+              tx = list(filter(lambda m: tx_msg_addr_bus_len(m) != (0x485, 0, 4), tx))
+            all_tx.append([[*tx_msg_addr_bus_len(m), attr] for m in tx])
 
     # make sure we got all the msgs
     self.assertTrue(len(all_tx) >= len(test_files)-1)
 
     for tx_msgs in all_tx:
-      for addr, bus, test_name in tx_msgs:
-        msg = make_msg(bus, addr)
+      for addr, bus, length, test_name in tx_msgs:
+        msg = make_msg(bus, addr, length)
         self.safety.set_controls_allowed(1)
         # TODO: this should be blocked
-        if current_test in ["TestNissanSafety", "TestNissanSafetyAltEpsBus", "TestNissanLeafSafety"] and [addr, bus] in self.TX_MSGS:
+        nissan_txs = map(tx_msg_addr_bus_len, self.TX_MSGS)
+        if current_test in ["TestNissanSafety", "TestNissanSafetyAltEpsBus", "TestNissanLeafSafety"] and \
+           any((tx_addr == addr) and (tx_bus == bus) for tx_addr, tx_bus, _ in nissan_txs):
           continue
         self.assertFalse(self._tx(msg), f"transmit of {addr=:#x} {bus=} from {test_name} during {current_test} was allowed")
 
