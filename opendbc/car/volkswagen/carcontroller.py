@@ -122,7 +122,6 @@ class CarController(CarControllerBase):
     if gra_send_ready and (CC.cruiseControl.cancel or CC.cruiseControl.resume):
       can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.CAN.ext, CS.gra_stock_values,
                                                            cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
-      gra_send_ready = False # Only send one button command per button press until we see the stock counter increment
 
     new_actuators = actuators.as_builder()
     new_actuators.torque = self.apply_torque_last / self.CCP.STEER_MAX
