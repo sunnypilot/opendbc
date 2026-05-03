@@ -68,6 +68,18 @@
     ],
     "package": "All"
   },
+  "Acura RDX 2022-24": {
+    "platform": "ACURA_RDX_3G_MMR",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "RDX",
+    "year": [
+      "2022",
+      "2023",
+      "2024"
+    ],
+    "package": "All"
+  },
   "Acura TLX 2021-22": {
     "platform": "ACURA_TLX_2G",
     "make": "Acura",
@@ -137,6 +149,20 @@
       "2022",
       "2023",
       "2024"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
+  "Audi Q5 2013-17": {
+    "platform": "AUDI_Q5_MK1",
+    "make": "Audi",
+    "brand": "volkswagen",
+    "model": "Q5",
+    "year": [
+      "2013",
+      "2014",
+      "2015",
+      "2016",
+      "2017"
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
@@ -2812,6 +2838,23 @@
     ],
     "package": "ProPILOT Assist"
   },
+  "Porsche Macan 2017-24": {
+    "platform": "PORSCHE_MACAN_MK1",
+    "make": "Porsche",
+    "brand": "volkswagen",
+    "model": "Macan",
+    "year": [
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+      "2024"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
   "Ram 1500 2019-24": {
     "platform": "RAM_1500_5TH_GEN",
     "make": "Ram",
@@ -2897,6 +2940,18 @@
       "2025"
     ],
     "package": "All"
+  },
+  "SEAT Alhambra 2018-20": {
+    "platform": "VOLKSWAGEN_SHARAN_MK2",
+    "make": "SEAT",
+    "brand": "volkswagen",
+    "model": "Alhambra",
+    "year": [
+      "2018",
+      "2019",
+      "2020"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
   "SEAT Ateca 2016-23": {
     "platform": "SEAT_ATECA_MK1",
@@ -3782,6 +3837,18 @@
     ],
     "package": "All"
   },
+  "Toyota RAV4 Prime 2021-23": {
+    "platform": "TOYOTA_RAV4_PRIME",
+    "make": "Toyota",
+    "brand": "toyota",
+    "model": "RAV4 Prime",
+    "year": [
+      "2021",
+      "2022",
+      "2023"
+    ],
+    "package": "All"
+  },
   "Toyota Sienna 2018-20": {
     "platform": "TOYOTA_SIENNA",
     "make": "Toyota",
@@ -3791,6 +3858,29 @@
       "2018",
       "2019",
       "2020"
+    ],
+    "package": "All"
+  },
+  "Toyota Sienna 2021-23": {
+    "platform": "TOYOTA_SIENNA_4TH_GEN",
+    "make": "Toyota",
+    "brand": "toyota",
+    "model": "Sienna",
+    "year": [
+      "2021",
+      "2022",
+      "2023"
+    ],
+    "package": "All"
+  },
+  "Toyota Yaris (Non-US only) 2020, 2023": {
+    "platform": "TOYOTA_YARIS",
+    "make": "Toyota",
+    "brand": "toyota",
+    "model": "Yaris (Non-US only)",
+    "year": [
+      "2020",
+      "2023"
     ],
     "package": "All"
   },
@@ -3872,6 +3962,26 @@
       "2020",
       "2021",
       "2022"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
+  "Volkswagen Caddy 2019": {
+    "platform": "VOLKSWAGEN_CADDY_MK3",
+    "make": "Volkswagen",
+    "brand": "volkswagen",
+    "model": "Caddy",
+    "year": [
+      "2019"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
+  "Volkswagen Caddy Maxi 2019": {
+    "platform": "VOLKSWAGEN_CADDY_MK3",
+    "make": "Volkswagen",
+    "brand": "volkswagen",
+    "model": "Caddy Maxi",
+    "year": [
+      "2019"
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
@@ -4079,6 +4189,19 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
+  "Volkswagen Jetta 2015-18": {
+    "platform": "VOLKSWAGEN_JETTA_MK6",
+    "make": "Volkswagen",
+    "brand": "volkswagen",
+    "model": "Jetta",
+    "year": [
+      "2015",
+      "2016",
+      "2017",
+      "2018"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
   "Volkswagen Jetta 2019-23": {
     "platform": "VOLKSWAGEN_JETTA_MK7",
     "make": "Volkswagen",
@@ -4156,6 +4279,21 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
+  "Volkswagen Passat NMS 2017-22": {
+    "platform": "VOLKSWAGEN_PASSAT_NMS",
+    "make": "Volkswagen",
+    "brand": "volkswagen",
+    "model": "Passat NMS",
+    "year": [
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
   "Volkswagen Polo 2018-23": {
     "platform": "VOLKSWAGEN_POLO_MK6",
     "make": "Volkswagen",
@@ -4183,6 +4321,20 @@
       "2021",
       "2022",
       "2023"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
+  "Volkswagen Sharan 2018-22": {
+    "platform": "VOLKSWAGEN_SHARAN_MK2",
+    "make": "Volkswagen",
+    "brand": "volkswagen",
+    "model": "Sharan",
+    "year": [
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022"
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
