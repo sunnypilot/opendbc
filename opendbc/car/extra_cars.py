@@ -37,17 +37,19 @@ class CAR(Platforms):
 
   EXTRA_HONDA = ExtraPlatformConfig(
     [
+      CommunityCarDocs("Acura ADX 2025-26"),
       CommunityCarDocs("Acura Integra 2023-25"),
       CommunityCarDocs("Acura MDX 2015-16", "Advance Package"),
       CommunityCarDocs("Acura MDX 2017-20"),
-      CommunityCarDocs("Acura MDX 2022-24"),
-      CommunityCarDocs("Acura RDX 2022-25"),
+      CommunityCarDocs("Acura MDX Hybrid 2017-20"),
+      CommunityCarDocs("Acura RDX 2025"),
       CommunityCarDocs("Acura RLX 2017", "Advance Package or Technology Package"),
       CommunityCarDocs("Acura TLX 2015-17", "Advance Package"),
       CommunityCarDocs("Acura TLX 2018-20"),
-      CommunityCarDocs("Acura TLX 2022-23"),
+      CommunityCarDocs("Acura TLX 2023"),
       GMSecurityCarDocs("Acura ZDX 2024"),
       CommunityCarDocs("Honda Accord 2016-17", "Honda Sensing"),
+      CommunityCarDocs("Honda Accord Hybrid 2017"),
       CommunityCarDocs("Honda Clarity 2018-21"),
       GMSecurityCarDocs("Honda Prologue 2024-25"),
     ],
@@ -55,8 +57,8 @@ class CAR(Platforms):
 
   EXTRA_HYUNDAI = ExtraPlatformConfig(
     [
-      CommunityCarDocs("Hyundai Palisade 2023-24", package="HDA2"),
-      CommunityCarDocs("Kia Telluride 2023-24", package="HDA2"),
+      CommunityCarDocs("Hyundai Palisade 2023-24", "Highway Driving Assist II"),
+      CommunityCarDocs("Kia Telluride 2023-24", "Highway Driving Assist II"),
     ],
   )
 

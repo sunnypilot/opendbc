@@ -3,7 +3,7 @@ from enum import Enum, IntFlag
 
 from opendbc.car import Bus, PlatformConfig, DbcDict, Platforms, CarSpecs
 from opendbc.car.structs import CarParams
-from opendbc.car.docs_definitions import CarDocs, CarFootnote, CarHarness, CarParts, Column
+from opendbc.car.docs_definitions import CarDocs, CarFootnote, CarHarness, CarParts, Column, SupportType
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 from opendbc.sunnypilot.car.gm.values_ext import GMFlagsSP
@@ -88,6 +88,13 @@ class GMCarDocs(CarDocs):
       self.car_parts = CarParts.common([CarHarness.obd_ii])
 
 
+@dataclass
+class GMNonAccCarDocs(GMCarDocs):
+  package: str = "No Adaptive Cruise Control (Non-ACC)"
+  support_type: SupportType = SupportType.COMMUNITY
+  support_link: str = "community"
+
+
 @dataclass(frozen=True, kw_only=True)
 class GMCarSpecs(CarSpecs):
   tireStiffnessFactor: float = 0.444  # not optimized yet
@@ -114,6 +121,12 @@ class GMSDGMPlatformConfig(GMPlatformConfig):
   def init(self):
     # Don't show in docs until the harness is sold. See https://github.com/commaai/openpilot/issues/32471
     self.car_docs = []
+
+
+@dataclass
+class GMNonSccPlatformConfig(GMPlatformConfig):
+  def init(self):
+    self.sp_flags |= GMFlagsSP.NON_ACC
 
 
 class CAR(Platforms):
@@ -199,58 +212,48 @@ class CAR(Platforms):
   # port extensions
   # Separate car def is required when there is no ASCM
   # (for now) unless there is a way to detect it when it has been unplugged...
-  # CHEVROLET_VOLT_CC = GMPlatformConfig(
-  #   [GMCarDocs("Chevrolet Volt LT 2017-18")],
+  # CHEVROLET_VOLT_CC = GMNonSccPlatformConfig(
+  #   [GMNonAccCarDocs("Chevrolet Volt LT 2017-18")],
   #   CHEVROLET_VOLT.specs,
-  #   sp_flags=GMFlagsSP.NON_ACC,
   # )
-  CHEVROLET_BOLT_NON_ACC = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Bolt EV Non-ACC 2017")],
+  CHEVROLET_BOLT_NON_ACC = GMNonSccPlatformConfig(
+    [GMNonAccCarDocs("Chevrolet Bolt EV Non-ACC 2017")],
     CHEVROLET_BOLT_EUV.specs,
-    sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_BOLT_NON_ACC_1ST_GEN = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Bolt EV Non-ACC 2018-21")],
+  CHEVROLET_BOLT_NON_ACC_1ST_GEN = GMNonSccPlatformConfig(
+    [GMNonAccCarDocs("Chevrolet Bolt EV Non-ACC 2018-21")],
     CHEVROLET_BOLT_EUV.specs,
-    sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_BOLT_NON_ACC_2ND_GEN = GMPlatformConfig(
+  CHEVROLET_BOLT_NON_ACC_2ND_GEN = GMNonSccPlatformConfig(
     [
-      GMCarDocs("Chevrolet Bolt EUV LT Non-ACC 2022-23"),
-      GMCarDocs("Chevrolet Bolt EV LT Non-ACC 2022-23"),
+      GMNonAccCarDocs("Chevrolet Bolt EUV LT Non-ACC 2022-23"),
+      GMNonAccCarDocs("Chevrolet Bolt EV LT Non-ACC 2022-23"),
     ],
     CHEVROLET_BOLT_EUV.specs,
-    sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_EQUINOX_NON_ACC_3RD_GEN = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Equinox Non-ACC 2019-22")],
+  CHEVROLET_EQUINOX_NON_ACC_3RD_GEN = GMNonSccPlatformConfig(
+    [GMNonAccCarDocs("Chevrolet Equinox Non-ACC 2019-22")],
     CHEVROLET_EQUINOX.specs,
-    sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Suburban Non-ACC 2016-20")],
+  CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN = GMNonSccPlatformConfig(
+    [GMNonAccCarDocs("Chevrolet Suburban Non-ACC 2016-20")],
     CarSpecs(mass=2731, wheelbase=3.302, steerRatio=17.3, centerToFrontRatio=0.49),
-    sp_flags=GMFlagsSP.NON_ACC,
   )
-  CADILLAC_CT6_NON_ACC_1ST_GEN = GMPlatformConfig(
-    [GMCarDocs("Cadillac CT6 Non-ACC 2017-18")],
+  CADILLAC_CT6_NON_ACC_1ST_GEN = GMNonSccPlatformConfig(
+    [GMNonAccCarDocs("Cadillac CT6 Non-ACC 2017-18")],
     CarSpecs(mass=2358, wheelbase=3.11, steerRatio=17.7, centerToFrontRatio=0.4),
-    sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Trailblazer Non-ACC 2021-22")],
+  CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN = GMNonSccPlatformConfig(
+    [GMNonAccCarDocs("Chevrolet Trailblazer Non-ACC 2021-22")],
     CHEVROLET_TRAILBLAZER.specs,
-    sp_flags=GMFlagsSP.NON_ACC,
   )
-  CHEVROLET_MALIBU_NON_ACC_9TH_GEN = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Malibu Non-ACC 2016-23")],
+  CHEVROLET_MALIBU_NON_ACC_9TH_GEN = GMNonSccPlatformConfig(
+    [GMNonAccCarDocs("Chevrolet Malibu Non-ACC 2016-23")],
     CarSpecs(mass=1450, wheelbase=2.8, steerRatio=15.8, centerToFrontRatio=0.4),
-    sp_flags=GMFlagsSP.NON_ACC,
   )
-  CADILLAC_XT5_NON_ACC_1ST_GEN = GMPlatformConfig(
-    [GMCarDocs("Cadillac XT5 Non-ACC 2018")],
+  CADILLAC_XT5_NON_ACC_1ST_GEN = GMNonSccPlatformConfig(
+    [GMNonAccCarDocs("Cadillac XT5 Non-ACC 2018")],
     CarSpecs(mass=1810, wheelbase=2.86, steerRatio=16.34, centerToFrontRatio=0.5),
-    sp_flags=GMFlagsSP.NON_ACC,
   )
 
 
