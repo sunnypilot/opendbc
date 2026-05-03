@@ -25,7 +25,7 @@ class CarStateExt:
 
     if self.CP.flags & HyundaiFlags.CANFD:
       if self.CP_SP.flags & HyundaiFlagsSP.SPEED_LIMIT_AVAILABLE:
-        bus = cp if self.CP.flags & HyundaiFlags.CANFD_LKA_STEERING else cp_cam
+        bus = cp if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG else cp_cam
         speed_limit = bus.vl["FR_CMR_02_100ms"]["ISLW_SpdCluMainDis"]
     else:
       nav, cam = 0, 0
