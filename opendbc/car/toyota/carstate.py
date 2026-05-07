@@ -282,38 +282,36 @@ class CarState(CarStateBase, CarStateExt):
 
   # Enhanced BSM (@arne182, @rav4kumar)
   def sp_get_enhanced_bsm(self, cp):
-    # Let's keep all the commented out code for easy debug purposes in the future.
     distance_1 = cp.vl["DEBUG"].get('BLINDSPOTD1')
     distance_2 = cp.vl["DEBUG"].get('BLINDSPOTD2')
     side = cp.vl["DEBUG"].get('BLINDSPOTSIDE')
 
     if all(val is not None for val in [distance_1, distance_2, side]):
+      detected = distance_1 > 10 or distance_2 > 10
+
       if side == 65:  # left blind spot
-        if distance_1 != self._left_blindspot_d1 or distance_2 != self._left_blindspot_d2:
-          self._left_blindspot_d1 = distance_1
-          self._left_blindspot_d2 = distance_2
+        self._left_blindspot_d1 = distance_1
+        self._left_blindspot_d2 = distance_2
+        if detected:
+          self._left_blindspot = True
           self._left_blindspot_counter = 100
-        self._left_blindspot = distance_1 > 10 or distance_2 > 10
+        else:
+          self._left_blindspot_counter = max(0, self._left_blindspot_counter - 1)
+          if self._left_blindspot_counter == 0:
+            self._left_blindspot = False
+            self._left_blindspot_d1 = self._left_blindspot_d2 = 0
 
       elif side == 66:  # right blind spot
-        if distance_1 != self._right_blindspot_d1 or distance_2 != self._right_blindspot_d2:
-          self._right_blindspot_d1 = distance_1
-          self._right_blindspot_d2 = distance_2
+        self._right_blindspot_d1 = distance_1
+        self._right_blindspot_d2 = distance_2
+        if detected:
+          self._right_blindspot = True
           self._right_blindspot_counter = 100
-        self._right_blindspot = distance_1 > 10 or distance_2 > 10
-
-      # update counters
-      self._left_blindspot_counter = max(0, self._left_blindspot_counter - 1)
-      self._right_blindspot_counter = max(0, self._right_blindspot_counter - 1)
-
-      # reset blind spot status if counter reaches 0
-      if self._left_blindspot_counter == 0:
-        self._left_blindspot = False
-        self._left_blindspot_d1 = self._left_blindspot_d2 = 0
-
-      if self._right_blindspot_counter == 0:
-        self._right_blindspot = False
-        self._right_blindspot_d1 = self._right_blindspot_d2 = 0
+        else:
+          self._right_blindspot_counter = max(0, self._right_blindspot_counter - 1)
+          if self._right_blindspot_counter == 0:
+            self._right_blindspot = False
+            self._right_blindspot_d1 = self._right_blindspot_d2 = 0
 
     return self._left_blindspot, self._right_blindspot
 

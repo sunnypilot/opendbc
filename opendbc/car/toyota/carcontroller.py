@@ -95,8 +95,8 @@ class CarController(CarControllerBase, GasInterceptorCarController):
 
     self.left_blindspot_debug_enabled = False
     self.right_blindspot_debug_enabled = False
-    self.left_last_blindspot_frame = 0
-    self.right_last_blindspot_frame = 0
+    self._left_bsm_session_frame = 0
+    self._right_bsm_session_frame = 0
 
     self._auto_lock_speed = 0.0
 
@@ -351,7 +351,7 @@ class CarController(CarControllerBase, GasInterceptorCarController):
       can_sends.append(make_tester_present_msg(0x750, 0, 0xF))
 
     if self.CP_SP.flags & ToyotaFlagsSP.SP_ENHANCED_BSM and self.frame > 200:
-      can_sends.extend(self.create_enhanced_bsm_messages(CS, 20, True))
+      can_sends.extend(self.create_enhanced_bsm_messages(CS))
 
     new_actuators = actuators.as_builder()
     new_actuators.torque = apply_torque / self.params.STEER_MAX
@@ -364,34 +364,28 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     return new_actuators, can_sends
 
   # Enhanced BSM (@arne182, @rav4kumar)
-  def create_enhanced_bsm_messages(self, CS: structs.CarState, e_bsm_rate: int = 20, always_on: bool = True):
+  _BSM_SESSION_INTERVAL = 400  # frames (4 s at 100 Hz) — periodic session re-entry survives ECU resets
+
+  def create_enhanced_bsm_messages(self, CS: structs.CarState):
     can_sends = []
 
-    # left bsm
-    if not self.left_blindspot_debug_enabled:
-      if always_on or CS.out.vEgo > 6:  # eagle eye camera will stop working if left bsm is switched on under 6m/s
-        can_sends.append(toyotacan.create_set_bsm_debug_mode(LEFT_BLINDSPOT, True))
-        self.left_blindspot_debug_enabled = True
-    else:
-      if not always_on and self.frame - self.left_last_blindspot_frame > 50:
-        can_sends.append(toyotacan.create_set_bsm_debug_mode(LEFT_BLINDSPOT, False))
-        self.left_blindspot_debug_enabled = False
-      if self.frame % e_bsm_rate == 0:
-        can_sends.append(toyotacan.create_bsm_polling_status(LEFT_BLINDSPOT))
-        self.left_last_blindspot_frame = self.frame
+    # left bsm — session entry on first call and every 4 s
+    if not self.left_blindspot_debug_enabled or self.frame - self._left_bsm_session_frame >= self._BSM_SESSION_INTERVAL:
+      can_sends.append(toyotacan.create_set_bsm_debug_mode(LEFT_BLINDSPOT, True))
+      self.left_blindspot_debug_enabled = True
+      self._left_bsm_session_frame = self.frame
 
-    # right bsm
-    if not self.right_blindspot_debug_enabled:
-      if always_on or CS.out.vEgo > 6:  # eagle eye camera will stop working if right bsm is switched on under 6m/s
-        can_sends.append(toyotacan.create_set_bsm_debug_mode(RIGHT_BLINDSPOT, True))
-        self.right_blindspot_debug_enabled = True
-    else:
-      if not always_on and self.frame - self.right_last_blindspot_frame > 50:
-        can_sends.append(toyotacan.create_set_bsm_debug_mode(RIGHT_BLINDSPOT, False))
-        self.right_blindspot_debug_enabled = False
-      if self.frame % e_bsm_rate == e_bsm_rate // 2:
-        can_sends.append(toyotacan.create_bsm_polling_status(RIGHT_BLINDSPOT))
-        self.right_last_blindspot_frame = self.frame
+    if self.frame % 10 == 0:
+      can_sends.append(toyotacan.create_bsm_polling_status(LEFT_BLINDSPOT))
+
+    # right bsm — session entry on first call and every 4 s
+    if not self.right_blindspot_debug_enabled or self.frame - self._right_bsm_session_frame >= self._BSM_SESSION_INTERVAL:
+      can_sends.append(toyotacan.create_set_bsm_debug_mode(RIGHT_BLINDSPOT, True))
+      self.right_blindspot_debug_enabled = True
+      self._right_bsm_session_frame = self.frame
+
+    if self.frame % 10 == 5:
+      can_sends.append(toyotacan.create_bsm_polling_status(RIGHT_BLINDSPOT))
 
     return can_sends
 
