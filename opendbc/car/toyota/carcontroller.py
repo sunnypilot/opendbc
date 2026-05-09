@@ -95,8 +95,6 @@ class CarController(CarControllerBase, GasInterceptorCarController):
 
     self.left_blindspot_debug_enabled = False
     self.right_blindspot_debug_enabled = False
-    self._left_bsm_session_frame = 0
-    self._right_bsm_session_frame = 0
 
     self._auto_lock_speed = 0.0
 
@@ -364,25 +362,19 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     return new_actuators, can_sends
 
   # Enhanced BSM (@arne182, @rav4kumar)
-  _BSM_SESSION_INTERVAL = 400  # frames (4 s at 100 Hz) — periodic session re-entry survives ECU resets
-
   def create_enhanced_bsm_messages(self, CS: structs.CarState):
     can_sends = []
 
-    # left bsm — session entry on first call and every 4 s
-    if not self.left_blindspot_debug_enabled or self.frame - self._left_bsm_session_frame >= self._BSM_SESSION_INTERVAL:
+    if not self.left_blindspot_debug_enabled:
       can_sends.append(toyotacan.create_set_bsm_debug_mode(LEFT_BLINDSPOT, True))
       self.left_blindspot_debug_enabled = True
-      self._left_bsm_session_frame = self.frame
 
     if self.frame % 10 == 0:
       can_sends.append(toyotacan.create_bsm_polling_status(LEFT_BLINDSPOT))
 
-    # right bsm — session entry on first call and every 4 s
-    if not self.right_blindspot_debug_enabled or self.frame - self._right_bsm_session_frame >= self._BSM_SESSION_INTERVAL:
+    if not self.right_blindspot_debug_enabled:
       can_sends.append(toyotacan.create_set_bsm_debug_mode(RIGHT_BLINDSPOT, True))
       self.right_blindspot_debug_enabled = True
-      self._right_bsm_session_frame = self.frame
 
     if self.frame % 10 == 5:
       can_sends.append(toyotacan.create_bsm_polling_status(RIGHT_BLINDSPOT))
