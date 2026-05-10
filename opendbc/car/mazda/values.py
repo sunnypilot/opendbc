@@ -73,6 +73,10 @@ class CAR(Platforms):
     [MazdaCarDocs("Mazda CX-5 2022-25")],
     MAZDA_CX5.specs,
   )
+  MAZDA_CX9_2021_EPS_CX5_2022 = MazdaPlatformConfig(
+    [MazdaCarDocs("Mazda CX-9 2021-23 with EPS (same as CX-5 2022-25)", video="https://youtu.be/dA3duO4a0O4")],
+    MAZDA_CX9.specs,
+  )
 
 
 class LKAS_LIMITS:
