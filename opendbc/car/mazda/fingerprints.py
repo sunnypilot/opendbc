@@ -280,7 +280,7 @@ FW_VERSIONS = {
       b'PXM7-21PS1-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-    CAR.MAZDA_CX9_2021_EPS_CX5_2022: {
+  CAR.MAZDA_CX9_2021_EPS_CX5_2022: {
     (Ecu.eps, 0x730, None): [
       b'KSD5-3210X-C-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
