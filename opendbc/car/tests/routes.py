@@ -28,7 +28,7 @@ non_tested_cars = [
   SUBARU.SUBARU_FORESTER_HYBRID,
   VOLKSWAGEN.PORSCHE_MACAN_MK1,
   HONDA.ACURA_TLX_2G,
-  MAZDA.MAZDA_CX9_2021_EPS_CX5_2022
+  MAZDA.MAZDA_CX9_2021_EPS_CX5_2022,
 
   # These had their DSUs unplugged, need new routes
   # TOYOTA.LEXUS_ES  # hybrid
