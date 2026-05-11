@@ -2777,6 +2777,16 @@
     ],
     "package": "All"
   },
+  "MAZDA CX-9 2021 EPS CX-5 2022": {
+    "platform": "MAZDA_CX9_2021_EPS_CX5_2022",
+    "make": "MAZDA",
+    "brand": "mazda",
+    "model": "CX-9 2021 EPS CX-5",
+    "year": [
+      "2022"
+    ],
+    "package": "All"
+  },
   "Mazda CX-9 2021-23": {
     "platform": "MAZDA_CX9_2021",
     "make": "Mazda",
