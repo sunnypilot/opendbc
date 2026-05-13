@@ -76,7 +76,7 @@ class CarStateExt:
 
       # VDM_UserAdasRequest: 0=IDLE, 1=UP_1, 2=UP_2, 3=DOWN_1, 4=DOWN_2
       stalk_down = int(cp.vl["VDM_AdasSts"]["VDM_UserAdasRequest"]) in (3, 4)
-      # Mimic Rivian ACC: holding stalk 0.5s sets speed to current speed (never decreases)
+      # Mimic Rivian ACC: stalk-down updates set speed to current speed without decreasing it.
       self.set_speed = max(self.set_speed, ret.vEgoCluster)
       self.set_speed = max(MIN_SET_SPEED, min(self.set_speed, MAX_SET_SPEED))
       ret.cruiseState.speed = self.set_speed
