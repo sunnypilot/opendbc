@@ -30,7 +30,7 @@ class CarStateExt:
     self.distance_button = 0
     self.increase_counter = 0
     self.decrease_counter = 0
-    
+
   def update_longitudinal_upgrade(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp_park = can_parsers[Bus.alt]
     cp_adas = can_parsers[Bus.adas]
