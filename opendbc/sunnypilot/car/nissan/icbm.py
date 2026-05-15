@@ -31,6 +31,17 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     self.__res_button = False
     self.__prev_res_button = False
 
+  def clear_queue(self):
+    self.__state = 0
+    self.__queued_buttons.clear()
+    self.__distance_button = False
+    self.__prev_distance_button = False
+    self.__set_button = False
+    self.__prev_set_button = False
+    self.__res_button = False
+    self.__prev_res_button = False
+    self.last_button_frame = self.frame
+
   def update(self, CS, CC_SP, packer, frame, last_button_frame) -> list[CanData]:
     can_sends: list[CanData] = []
     self.CC_SP = CC_SP

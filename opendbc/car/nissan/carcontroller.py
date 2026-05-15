@@ -52,10 +52,11 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
       self.packer, self.apply_angle_last, self.frame, CC.latActive, lkas_max_torque))
 
     if self.CP.carFingerprint != CAR.NISSAN_ALTIMA and self.frame % 2 == 0:
-      icbm_msg = IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame)
-      if pcm_cancel_cmd:
+      if pcm_cancel_cmd or CS.cruise_throttle_msg["CANCEL_BUTTON"]:
+        IntelligentCruiseButtonManagementInterface.clear_queue(self)
         can_sends.append(nissancan.create_cruise_throttle_msg(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, self.frame, "CANCEL_BUTTON"))
       else:
+        icbm_msg = IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame)
         if icbm_msg:
           can_sends.extend(icbm_msg)
         else:
