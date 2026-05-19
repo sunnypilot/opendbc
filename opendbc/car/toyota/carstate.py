@@ -15,7 +15,7 @@ from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
 SteerControlType = structs.CarParams.SteerControlType
-AccelPersonality = custom.LongitudinalPlanSP.AccelerationPersonality
+AccelPersonality = custom.LongitudinalPlanSP.AccelPersonality
 
 # These steering fault definitions seem to be common across LKA (torque) and LTA (angle):
 # - high steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
