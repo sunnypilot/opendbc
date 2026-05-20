@@ -146,6 +146,7 @@ class CarInterface(CarInterfaceBase):
       ret.flags |= ToyotaFlagsSP.SP_ENHANCED_BSM.value
     if candidate == CAR.TOYOTA_PRIUS_TSS2:
       ret.flags |= ToyotaFlagsSP.SP_NEED_DEBUG_BSM.value
+      ret.flags |= ToyotaFlagsSP.SP_HYBRID_TELEMETRY.value
     if sp_toyota_auto_brake_hold and candidate in (TSS2_CAR - RADAR_ACC_CAR - SECOC_CAR):
       ret.flags |= ToyotaFlagsSP.SP_AUTO_BRAKE_HOLD.value
 

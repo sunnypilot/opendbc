@@ -168,3 +168,12 @@ class CarStateExt:
     # Update traffic signals and speed limit
     self.update_traffic_signals(cp_cam)
     ret_sp.speedLimit = self.calculate_speed_limit()
+
+    if self.CP_SP.flags & ToyotaFlagsSP.SP_HYBRID_TELEMETRY:
+      ret_sp.hvSocPct = int(cp.vl["HYBRID_BATTERY"]["HV_SOC_PCT"])
+      ret_sp.hybridDriveState = int(cp.vl["HYBRID_POWERTRAIN"]["HYBRID_DRIVE_STATE"])
+      ret_sp.coastFuelCut = bool(cp.vl["HYBRID_POWERTRAIN"]["COAST_FUEL_CUT"])
+      ret_sp.brakeHydraulicPressure = int(cp.vl["BRAKE_HYDRAULIC"]["BRAKE_PRESSURE"])
+      ret_sp.hvRegenCurrent = int(cp.vl["HV_INVERTER"]["HV_CURRENT_LO"])
+      ret_sp.hvBusVoltage = int(cp.vl["HV_INVERTER"]["HV_VOLTAGE_LO"])
+      ret_sp.driveModeState = int(cp.vl["VEHICLE_DRIVE_MODE"]["DRIVE_MODE_STATE"])
