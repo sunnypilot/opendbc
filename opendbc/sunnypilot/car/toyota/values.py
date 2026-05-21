@@ -17,7 +17,6 @@ class ToyotaFlagsSP(IntFlag):
   SP_ENHANCED_BSM = 32
   SP_NEED_DEBUG_BSM = 64
   SP_AUTO_BRAKE_HOLD = 128
-  SP_HYBRID_TELEMETRY = 256
 
 
 class ToyotaSafetyFlagsSP:

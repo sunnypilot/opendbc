@@ -170,10 +170,3 @@ class CarControlSP:
 @auto_dataclass
 class CarStateSP:
   speedLimit: float = auto_field()
-  hvSocPct: int = auto_field()
-  hybridDriveState: int = auto_field()
-  coastFuelCut: bool = auto_field()
-  brakeHydraulicPressure: int = auto_field()
-  hvRegenCurrent: int = auto_field()
-  hvBusVoltage: int = auto_field()
-  driveModeState: int = auto_field()
