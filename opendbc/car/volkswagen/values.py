@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
 from typing import List, Tuple
 
-from opendbc.car import Bus, CanBusBase, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds
+from opendbc.car import Bus, CanBusBase, CarSpecs, DbcDict, DT_CTRL, PlatformConfig, Platforms, structs, uds
 from opendbc.car.lateral import CurvatureSteeringLimits
 from opendbc.can import CANDefine
 from opendbc.car.common.conversions import Conversions as CV
@@ -56,6 +56,8 @@ class CarControllerParams:
   ACC_CONTROL_STEP = 2                     # ACC_06/ACC_07/ACC_System frequency 50Hz
   AEB_CONTROL_STEP = 2                     # ACC_10 frequency 50Hz
   AEB_HUD_STEP = 20                        # ACC_15 frequency 5Hz
+  HCA_STATUS_WATCHDOG_WINDOW_FRAMES = round(5.0 / DT_CTRL)
+  HCA_STATUS_WATCHDOG_ALLOWED_FLUCTUATIONS_PER_SECOND = 2.0
 
   # Documented lateral limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
   # MQB vs PQ maximums are shared, but rate-of-change limited differently
@@ -109,6 +111,8 @@ class CarControllerParams:
       self.AEB_HUD_STEP            = 20    # MEB_AWV_01 message frequency 5Hz
       self.LDW_STEP                = 10    # LDW_02 message frequency 10Hz
       self.ACC_HUD_STEP            = 6     # MEB_ACC_01 message frequency 16Hz
+      self.HCA_STATUS_WATCHDOG_MAX_FLUCTUATION_FRAMES = round(self.HCA_STATUS_WATCHDOG_WINDOW_FRAMES *
+                                                               DT_CTRL * self.HCA_STATUS_WATCHDOG_ALLOWED_FLUCTUATIONS_PER_SECOND)
       self.STEER_DRIVER_ALLOWANCE  = 60    # Driver torque 0.6 Nm, begin steering reduction from MAX
       self.STEER_DRIVER_SLIGHT_PRESS = 15  # Driver torque 0.15 Nm for slight steering override detection
       self.STEER_DRIVER_MAX        = 300   # Driver torque 3.0 Nm, stop steering reduction at MIN
@@ -240,21 +244,25 @@ class VolkswagenSafetyFlags(IntFlag):
 
 class VolkswagenFlags(IntFlag):
   # Detected flags
-  STOCK_HCA_PRESENT = 1
-  KOMBI_PRESENT = 4
-  STOCK_KLR_PRESENT = 64
-  STOCK_PSD_PRESENT = 32
-  STOCK_PSD_06_PRESENT = 1024
-  STOCK_DIAGNOSE_01_PRESENT = 2048
-  ALT_GEAR = 512
-  DISABLE_RADAR = 4096
+  STOCK_HCA_PRESENT         = 2 ** 0
+  KOMBI_PRESENT             = 2 ** 2
+  STOCK_KLR_PRESENT         = 2 ** 6
+  STOCK_PSD_PRESENT         = 2 ** 5
+  STOCK_PSD_06_PRESENT      = 2 ** 10
+  STOCK_DIAGNOSE_01_PRESENT = 2 ** 11
+  ALT_GEAR                  = 2 ** 9
+  DISABLE_RADAR             = 2 ** 12
+  STOCK_EA_PRESENT          = 2 ** 14
+  STOCK_VZE_PRESENT         = 2 ** 15
+  CLUSTER_NO_TA_LANES       = 2 ** 16
 
   # Static flags
-  PQ = 2
-  MEB = 16
-  MEB_GEN2 = 128
-  MQB_EVO = 256
-  MLB = 8
+  PQ           = 2 ** 1
+  MEB          = 2 ** 4
+  MEB_GEN2     = 2 ** 7
+  MQB_EVO      = 2 ** 8
+  MQB_EVO_GEN2 = 2 ** 13
+  MLB          = 2 ** 3
 
 
 @dataclass
@@ -299,6 +307,8 @@ class VolkswagenMQBevoPlatformConfig(PlatformConfig):
 
   def init(self):
     self.flags |= VolkswagenFlags.MQB_EVO
+    if self.flags & VolkswagenFlags.MQB_EVO_GEN2:
+      self.dbc_dict = {Bus.pt: 'vw_mqbevo_2024', Bus.radar: 'vw_mqbevo_2024'}
 
 
 @dataclass
@@ -577,6 +587,14 @@ class CAR(Platforms):
     VolkswagenCarSpecs(mass=1335, wheelbase=2.61),
     chassis_codes={"8V", "FF"},
     wmis={WMI.AUDI_GERMANY_CAR, WMI.AUDI_SPORT, WMI.VOLKSWAGEN_CHINA_FAW},
+  )
+  AUDI_A3_MK4 = VolkswagenMQBevoPlatformConfig(
+    [VWCarDocs("Audi RS3 2026")],
+    VolkswagenCarSpecs(mass=1650, wheelbase=2.631),
+    chassis_codes={"GY"},
+    wmis={WMI.AUDI_EUROPE_MPV},
+    #model_years={"T"},
+    flags=VolkswagenFlags.MQB_EVO_GEN2 | VolkswagenFlags.CLUSTER_NO_TA_LANES,
   )
   AUDI_Q2_MK1 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Audi Q2 2018")],

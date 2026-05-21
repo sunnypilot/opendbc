@@ -140,6 +140,18 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
         self.apply_torque_last = apply_torque
         can_sends.append(self.CCS.create_steering_control(self.packer_pt, self.CAN.pt, apply_torque, hca_enabled))
 
+    # Emergency Assist mitigation
+    if self.CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO):
+      if self.CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT:
+        # send capacitive steering wheel touched
+        # propably EA is stock activated only for cars equipped with capacitive steering wheel
+        # (also stock long does resume from stop as long as hands on is detected additionally to OP resume spam)
+        klr_send_ready = CS.klr_stock_values["COUNTER"] != self.klr_counter_last
+        if klr_send_ready:
+          can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, self.CAN.cam, CC.latActive, CS.klr_stock_values))
+          can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, self.CAN.pt, CC.latActive, CS.klr_stock_values))
+        self.klr_counter_last = CS.klr_stock_values["COUNTER"]
+    else:
       if self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
         # Pacify VW Emergency Assist driver inactivity detection by changing its view of driver steering input torque
         # to the greatest of actual driver input or 2x openpilot's output (1x openpilot output is not enough to
@@ -149,23 +161,12 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
           ea_simulated_torque = CS.out.steeringTorque
         can_sends.append(self.CCS.create_eps_update(self.packer_pt, self.CAN.cam, CS.eps_stock_values, ea_simulated_torque))
 
-    # Emergency Assist intervention
-    if self.CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO) and self.CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT:
-      # send capacitive steering wheel touched
-      # propably EA is stock activated only for cars equipped with capacitive steering wheel
-      # (also stock long does resume from stop as long as hands on is detected additionally to OP resume spam)
-      klr_send_ready = CS.klr_stock_values["COUNTER"] != self.klr_counter_last
-      if klr_send_ready:
-        can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, self.CAN.cam, CC.latActive, CS.klr_stock_values))
-        can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, self.CAN.pt, CC.latActive, CS.klr_stock_values))
-      self.klr_counter_last = CS.klr_stock_values["COUNTER"]
-
     # **** Blinker Controls ************************************************** #
     # "Wechselblinken" has to be allowed in assistance blinker functions in gateway
     # "Wechselblinken" means switching between hazards and one sided indicators for every indicator cycle (VW MEB full cycle: 0.8 seconds, 1st normal, 2nd hazards)
     # user input has hgher prio than EA indicating, post cycle handover is done via actual indicator signal if EA would already request
     # signaling indicators for 1 frame to trigger the first non hazard cycle, retrigger after the car signals a fully ended cycle
-    if self.CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO):
+    if self.CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO) and self.CP.flags & VolkswagenFlags.STOCK_EA_PRESENT:
       if self.frame % 2 == 0:
         blinker_active = CS.left_blinker_active or CS.right_blinker_active
         left_blinker = CC.leftBlinker if not blinker_active else False
@@ -252,7 +253,7 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
 
       if self.CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO):
         sound_alert = self.CCP.LDW_SOUNDS["Chime"] if hud_alert == self.CCP.LDW_MESSAGES["laneAssistTakeOver"] and not CC.disableCarSteerAlerts else self.CCP.LDW_SOUNDS["None"]
-        can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, self.CAN.pt, CS.ldw_stock_values, CC.latActive,
+        can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, self.CAN.pt, self.CP, CS.ldw_stock_values, CC.latActive,
                                                          CS.out.steeringPressed, hud_alert, hud_control, sound_alert))
       else:
         can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, self.CAN.pt, CS.ldw_stock_values, CC.latActive,

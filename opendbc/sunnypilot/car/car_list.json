@@ -199,6 +199,16 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
+  "Audi RS3 2026": {
+    "platform": "AUDI_A3_MK4",
+    "make": "Audi",
+    "brand": "volkswagen",
+    "model": "RS3",
+    "year": [
+      "2026"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
   "Audi S3 2015-17": {
     "platform": "AUDI_A3_MK3",
     "make": "Audi",
@@ -4257,7 +4267,7 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
-  "Volkswagen MQBevo 2020-25": {
+  "Volkswagen MQBevo Gen 1 2020-25": {
     "platform": "VOLKSWAGEN_GOLF_MK8",
     "make": "Volkswagen",
     "brand": "volkswagen",
@@ -4269,6 +4279,16 @@
       "2023",
       "2024",
       "2025"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
+  "Volkswagen MQBevo Gen 2 2026": {
+    "platform": "AUDI_A3_MK4",
+    "make": "Volkswagen",
+    "brand": "volkswagen",
+    "model": "MQBevo Gen 2",
+    "year": [
+      "2026"
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },

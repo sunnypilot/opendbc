@@ -195,6 +195,7 @@ struct CarState {
   steeringDisengage @58 :Bool;     # more force than steeringPressed, disengages for applicable brands
   steerFaultTemporary @35 :Bool;
   steerFaultPermanent @36 :Bool;
+  steerFaultWarning @65 :Bool;
 
   invalidLkasSetting @55 :Bool;    # stock LKAS is incorrectly configured (i.e. on or off)
   stockAeb @30 :Bool;

@@ -48,7 +48,7 @@ class CarInterface(CarInterfaceBase):
       elif ret.flags & VolkswagenFlags.MQB_EVO:
         safety_configs = [get_safety_config(structs.CarParams.SafetyModel.volkswagenMqbEvo)]
         
-      if ret.flags & VolkswagenFlags.MEB_GEN2:
+      if ret.flags & (VolkswagenFlags.MEB_GEN2 | VolkswagenFlags.MQB_EVO_GEN2):
         safety_configs[0].safetyParam |= VolkswagenSafetyFlags.ALT_CRC_VARIANT_1.value
       
       ret.enableBsm = 0x24C in fingerprint[0]  # MEB_Side_Assist_01
@@ -68,6 +68,9 @@ class CarInterface(CarInterfaceBase):
       if 0x30B in fingerprint[0]:  # Kombi_01
         ret.flags |= VolkswagenFlags.KOMBI_PRESENT.value
 
+      if 0x303 in fingerprint[2]:  # HCA_03
+        ret.flags |= VolkswagenFlags.STOCK_HCA_PRESENT.value
+
       if 0x25D in fingerprint[0]:  # KLR_01
         ret.flags |= VolkswagenFlags.STOCK_KLR_PRESENT.value
 
@@ -82,6 +85,12 @@ class CarInterface(CarInterfaceBase):
 
       if 0x3DC in fingerprint[0]:  # Gatway_73
         ret.flags |= VolkswagenFlags.ALT_GEAR.value
+
+      if all(msg in fingerprint[2] for msg in (0x1A4, 0x1F0)):  # EA_01, EA_02
+        ret.flags |= VolkswagenFlags.STOCK_EA_PRESENT.value
+
+      if 0x12DD54A7 in fingerprint[2]:  # VZE_04
+        ret.flags |= VolkswagenFlags.STOCK_VZE_PRESENT.value
 
       if ret.networkLocation == NetworkLocation.fwdCamera:
         ret.flags |= VolkswagenFlags.DISABLE_RADAR.value

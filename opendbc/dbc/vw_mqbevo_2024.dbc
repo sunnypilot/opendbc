@@ -171,7 +171,7 @@ BO_ 219 AWV_03: 48 XXX
  SG_ SET_ME_1023 : 94|10@1+ (1,0) [0|3] "" XXX
  SG_ SET_ME_1 : 129|1@0+ (1,0) [0|1] "" XXX
 
-BO_ 252 ESC_51: 48 XXX
+BO_ 252 ESC_51: 64 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ NEW_SIGNAL_2 : 14|6@1+ (1,0) [0|3] "" XXX
@@ -330,7 +330,7 @@ BO_ 264 Fahrwerk_01: 8 XXX
  SG_ Fahrwerk_01_CRC : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ Fahrwerk_01_BZ : 8|4@1+ (1,0) [0|15] "" XXX
 
-BO_ 267 Motor_51: 32 XXX
+BO_ 267 Motor_51: 48 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Accel_Pedal_Pressure : 12|9@1+ (0.4,0) [0|255] "" XXX
@@ -553,6 +553,7 @@ BO_ 333 ACC_18: 32 XXX
  SG_ SET_ME_0XFE : 80|8@1+ (1,0) [0|255] "" XXX
  SG_ ACC_AKTIV_regelt : 90|1@0+ (1,0) [0|1] "" XXX
  SG_ SET_ME_0X1 : 92|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_ME_0x2FE : 98|10@1+ (1,0) [0|63] "" XXX
  SG_ SET_ME_0X9 : 232|4@1+ (1,0) [0|15] "" XXX
  SG_ Speed : 236|12@1+ (0.1,0) [0|15] "" XXX
  SG_ Accel_Boost : 248|6@1+ (1,0) [0|3] "" XXX
@@ -617,7 +618,7 @@ BO_ 588 MEB_Side_Assist_01: 16 XXX
  SG_ Higher_Speed_01 : 33|1@0+ (1,0) [0|1] "" XXX
  SG_ Higher_Speed_02 : 83|1@0+ (1,0) [0|1] "" XXX
  SG_ Lower_Speed_02 : 84|1@0+ (1,0) [0|1] "" XXX
- SG_ Standstill : 86|1@0+ (1,0) [0|1] "" XXX
+ SG_ Motion_State : 171|2@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_1 : 98|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_6 : 119|1@0+ (1,0) [0|1] "" XXX
 
@@ -675,8 +676,16 @@ BO_ 619 TA_01: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Travel_Assist_Status : 13|3@1+ (1,0) [0|3] "" XXX
+ SG_ Speed_Mode_01 : 16|1@0+ (1,0) [0|1] "" XXX
+ SG_ Speed_Mode_02 : 18|1@0+ (1,0) [0|1] "" XXX
  SG_ Travel_Assist_Request : 19|3@1+ (1,0) [0|7] "" XXX
+ SG_ Init : 22|1@0+ (1,0) [0|1] "" XXX
  SG_ Travel_Assist_Available : 23|1@1+ (1,0) [0|1] "" XXX
+ SG_ Unknown_01 : 26|1@0+ (1,0) [0|1] "" XXX
+ SG_ Unknown_02 : 28|1@0+ (1,0) [0|1] "" XXX
+ SG_ Unknown_03 : 31|1@0+ (1,0) [0|1] "" XXX
+ SG_ Speed_Mode_Status : 32|3@1+ (1,0) [0|7] "" XXX
+ SG_ Lane_Unsure : 37|2@1+ (1,0) [0|3] "" XXX
 
 BO_ 679 ACC_13: 8 XXX
  SG_ ACC_Regelgeschw : 12|10@1+ (0.32,0) [0|327.04] "Unit_KiloMeterPerHour" XXX
@@ -1997,6 +2006,7 @@ CM_ SG_ 1720 KBI_Reifenumfang_Sekundaer "Fahrzeuge mit unterschiedlichen Reifenu
 
 VAL_ 159 EPS_HCA_Status 0 "disabled" 1 "initializing" 2 "fault" 3 "ready" 4 "rejected" 5 "active";
 VAL_ 173 GE_Fahrstufe 5 "P" 6 "R" 7 "N" 8 "D" 9 "S" 10 "E" 13 "T" 14 "T";
+VAL_ 258 Motion_State 1 "Forwards" 2 "Reversing" 3 "Stopped";
 VAL_ 258 EPB_Status 0 "offen" 1 "geschlossen_Parken" 2 "teilgespannt_Halten" 3 "im_Lauf_oeffnen" 4 "im_Lauf_schliessen" 5 "tbd" 6 "Init" 7 "unbekannt";
 VAL_ 267 TSK_Status 0 "init" 1 "disabled" 2 "enabled" 3 "regulating" 4 "accel_pedal_override" 5 "brake_only" 6 "temp_fault" 7 "perm_fault";
 VAL_ 279 AWV1_Anf_Prefill 0 "Prefill_nicht_aktivieren" 1 "Prefill_aktivieren";

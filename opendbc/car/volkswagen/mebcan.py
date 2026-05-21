@@ -83,8 +83,8 @@ def create_blinker_control(packer, bus, ea_hud_stock_values, ea_control_stock_va
   return packer.make_can_msg("EA_02", bus, values)
 
 
-def create_lka_hud_control(packer, bus, ldw_stock_values, lat_active, steering_pressed, hud_alert, hud_control, sound_alert):
-  display_mode = 1 if lat_active else 0 # travel assist style showing yellow lanes when op is active
+def create_lka_hud_control(packer, bus, CP, ldw_stock_values, lat_active, steering_pressed, hud_alert, hud_control, sound_alert):
+  display_mode = 1 if lat_active and not (CP.flags & VolkswagenFlags.CLUSTER_NO_TA_LANES) else 0 # travel assist style showing yellow lanes when op is active
   
   values = {}
   if len(ldw_stock_values):
@@ -122,6 +122,7 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, cancel=False, resu
     "GRA_Tip_Wiederaufnahme": resume or up,
     "GRA_Tip_Setzen": down,
   })
+
   return packer.make_can_msg("GRA_ACC_01", bus, values)
 
 

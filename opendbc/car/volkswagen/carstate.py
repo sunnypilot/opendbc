@@ -1,3 +1,5 @@
+from collections import deque
+
 from opendbc.can import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.interfaces import CarStateBase
@@ -30,6 +32,9 @@ class CarState(CarStateBase, MadsCarState):
     self.speed_limit_predicative_type = 0
     self.force_rhd_for_bsm = False
     self.acc_type = 0
+    self.hca_status_last = None
+    self.hca_status_fluct_counter = 0
+    self.hca_status_fluctuation_frames = deque()
 
   def update_button_enable(self, buttonEvents: list[structs.CarState.ButtonEvent]):
     if not self.CP.pcmCruise:
@@ -172,7 +177,7 @@ class CarState(CarStateBase, MadsCarState):
     ret.steeringTorque = pt_cp.vl["Lenkhilfe_3"]["LH3_LM"] * (1, -1)[int(pt_cp.vl["Lenkhilfe_3"]["LH3_LMSign"])]
     ret.steeringPressed = abs(ret.steeringTorque) > self.CCP.STEER_DRIVER_ALLOWANCE
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["Lenkhilfe_2"]["LH2_Sta_HCA"])
-    ret.steerFaultTemporary, ret.steerFaultPermanent = self.update_hca_state(hca_status)
+    ret.steerFaultTemporary, ret.steerFaultPermanent, ret.steerFaultWarning = self.update_hca_state(hca_status)
 
     # Update gas, brakes, and gearshift.
     ret.gasPressed = pt_cp.vl["Motor_3"]["MO3_Pedalwert"] > 0
@@ -284,7 +289,10 @@ class CarState(CarStateBase, MadsCarState):
     drive_mode = ret.gearShifter == GearShifter.drive
     
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["QFK_01"]["LatCon_HCA_Status"])
-    ret.steerFaultTemporary, ret.steerFaultPermanent = self.update_hca_state(hca_status, drive_mode=drive_mode)
+    hca_status_fluctuation = self.update_hca_status_watchdog(hca_status) if not (self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT) else False
+    ret.steerFaultTemporary, ret.steerFaultPermanent, ret.steerFaultWarning = self.update_hca_state(
+      hca_status, drive_mode=drive_mode, hca_watchdog_fail=hca_status_fluctuation
+    )
 
     # VW Emergency Assist status tracking and mitigation
     self.eps_stock_values = pt_cp.vl["LH_EPS_03"]
@@ -365,7 +373,7 @@ class CarState(CarStateBase, MadsCarState):
 
     # Speed Limit
     raining = pt_cp.vl["RLS_01"]["RS_Regenmenge"] > 0
-    vze_01_values = cam_cp.vl["VZE_04"] # Traffic Sign Recognition
+    vze_04_values = cam_cp.vl["VZE_04"] if self.CP.flags & VolkswagenFlags.STOCK_VZE_PRESENT else {} # Traffic Sign Recognition
     psd_04_values = alt_cp.vl["PSD_04"] if self.CP.flags & VolkswagenFlags.STOCK_PSD_PRESENT else {} # Predicative Street Data
     psd_05_values = alt_cp.vl["PSD_05"] if self.CP.flags & VolkswagenFlags.STOCK_PSD_PRESENT else {}
     psd_06_values = alt_cp.vl["PSD_06"] if self.CP.flags & VolkswagenFlags.STOCK_PSD_PRESENT else {}
@@ -373,7 +381,7 @@ class CarState(CarStateBase, MadsCarState):
     diagnose_01_values = pt_cp.vl["Diagnose_01"] if self.CP.flags & VolkswagenFlags.STOCK_DIAGNOSE_01_PRESENT else {}
 
     self.speed_limit_mgr.enable_predicative_speed_limit(self.enable_predicative_speed_limit, self.enable_pred_react_to_speed_limits, self.enable_pred_react_to_curves)
-    self.speed_limit_mgr.update(ret.vEgo, psd_04_values, psd_05_values, psd_06_values, vze_01_values, raining, diagnose_01_values)
+    self.speed_limit_mgr.update(ret.vEgo, psd_04_values, psd_05_values, psd_06_values, vze_04_values, raining, diagnose_01_values)
     ret.cruiseState.speedLimit = self.speed_limit_mgr.get_speed_limit()
     ret.cruiseState.speedLimitPredicative = self.speed_limit_mgr.get_speed_limit_predicative()
     self.speed_limit_predicative_type = self.speed_limit_mgr.get_speed_limit_predicative_type()
@@ -401,8 +409,8 @@ class CarState(CarStateBase, MadsCarState):
     ret.espDisabled = bool(pt_cp.vl["ESP_21"]["ESP_Tastung_passiv"]) # this is also true for ESC Sport mode
     ret.espActive   = bool(pt_cp.vl["ESP_21"]["ESP_Eingriff"])
 
-    self.ea_hud_stock_values = cam_cp.vl["EA_02"]
-    self.ea_control_stock_values = cam_cp.vl["EA_01"]
+    self.ea_hud_stock_values = cam_cp.vl["EA_02"] if self.CP.flags & VolkswagenFlags.STOCK_EA_PRESENT else {}
+    self.ea_control_stock_values = cam_cp.vl["EA_01"] if self.CP.flags & VolkswagenFlags.STOCK_EA_PRESENT else {}
 
     if self.CP.flags & VolkswagenFlags.MEB:
       ret.fuelGauge = pt_cp.vl["Motor_16"]["MO_Energieinhalt_BMS"]
@@ -493,16 +501,30 @@ class CarState(CarStateBase, MadsCarState):
     ret.steeringPressed = abs(ret.steeringTorque) > self.CCP.STEER_DRIVER_ALLOWANCE
 
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"])
-    ret.steerFaultTemporary, ret.steerFaultPermanent = self.update_hca_state(hca_status, drive_mode)
+    ret.steerFaultTemporary, ret.steerFaultPermanent, ret.steerFaultWarning = self.update_hca_state(hca_status, drive_mode)
     return
+    
+  def update_hca_status_watchdog(self, hca_status):
+    # On MY2025+ vehicles the steering command path moves to Automotive Ethernet, where it cannot be intercepted here.
+    # Detect the resulting fluctuating HCA status so a user-facing warning can be raised.
+    current_frame = self.frame
+    if self.hca_status_last is not None and hca_status is not None and hca_status != self.hca_status_last:
+      self.hca_status_fluctuation_frames.append(current_frame)
+    self.hca_status_last = hca_status
+    while self.hca_status_fluctuation_frames and current_frame - self.hca_status_fluctuation_frames[0] >= self.CCP.HCA_STATUS_WATCHDOG_WINDOW_FRAMES:
+      self.hca_status_fluctuation_frames.popleft()
 
-  def update_hca_state(self, hca_status, drive_mode=True):
+    self.hca_status_fluct_counter = len(self.hca_status_fluctuation_frames)
+    return self.hca_status_fluct_counter >= self.CCP.HCA_STATUS_WATCHDOG_MAX_FLUCTUATION_FRAMES
+
+  def update_hca_state(self, hca_status, drive_mode=True, hca_watchdog_fail=False):
     # Treat FAULT as temporary for worst likely EPS recovery time, for cars without factory Lane Assist
     # DISABLED means the EPS hasn't been configured to support Lane Assist
     self.eps_init_complete = self.eps_init_complete or (hca_status in ("DISABLED", "READY", "ACTIVE") or self.frame > 600)
-    perm_fault = drive_mode and hca_status == "DISABLED" or (self.eps_init_complete and hca_status == "FAULT")
-    temp_fault = drive_mode and hca_status in ("REJECTED", "PREEMPTED") or not self.eps_init_complete
-    return temp_fault, perm_fault
+    perm_fault = (drive_mode and hca_status == "DISABLED") or (self.eps_init_complete and hca_status == "FAULT")
+    warning = drive_mode and hca_watchdog_fail
+    temp_fault = (drive_mode and hca_status in ("REJECTED", "PREEMPTED")) or not self.eps_init_complete
+    return temp_fault, perm_fault, warning
     
   def update_acc_fault(self, acc_fault, parking_brake=False, drive_mode=True, recovery_frames_max=100):
     # Ignore FAULT when not in drive mode and parked
