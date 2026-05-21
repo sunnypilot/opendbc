@@ -7,7 +7,7 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.volkswagen import mlbcan, mqbcan, pqcan, mebcan
 from opendbc.car.volkswagen.values import CanBus, CarControllerParams, VolkswagenFlags
-from opendbc.car.volkswagen.mebutils import LongControlJerk, LongControlLimit, map_speed_to_acc_tempolimit, LatControlCurvature
+from opendbc.car.volkswagen.mebutils import LongControlJerk, LongControlLimit, map_speed_to_acc_tempolimit
 
 from opendbc.sunnypilot.car.volkswagen.icbm import IntelligentCruiseButtonManagementInterface
 
@@ -72,11 +72,6 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
     self.speed_limit_changed_timer = 0
     self.radar_disabled_warning_timer = 0
     self.hide_ea_error = False
-    self.LateralController = (
-      LatControlCurvature(self.CCP.CURVATURE_PID, self.CCP.CURVATURE_LIMITS.CURVATURE_MAX, 1 / (DT_CTRL * self.CCP.STEER_STEP))
-      if (CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO))
-      else None
-    )
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
@@ -97,15 +92,11 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
         #   * steering power as counter and near zero before OP lane assist deactivation
         # MEB rack can be used continously without time limits
         # maximum real steering angle change ~ 120-130 deg/s
-        
+
         if CC.latActive:
           hca_enabled = True
-          if CC.curvatureControllerActive: # PID + (car curv - VM no roll)
-            apply_curvature = self.LateralController.update(CS.out, CC, actuators.curvature)
-            apply_curvature = apply_curvature + (CS.out.steeringCurvature - (CC.currentCurvature - CC.rollCompensation))
-          else: # car curv - VM with roll
-            apply_curvature = actuators.curvature + (CS.out.steeringCurvature - CC.currentCurvature)
-          apply_curvature = apply_std_curvature_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, CS.out.steeringCurvature,
+          # Pure passthrough from openpilot core PID + feedforward; only rate limits applied here
+          apply_curvature = apply_std_curvature_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgoRaw, CS.out.steeringCurvature,
                                                        CS.out.steeringPressed, self.CCP.STEER_STEP, CC.latActive, self.CCP.CURVATURE_LIMITS)
 
           min_power = max(self.steering_power_last - self.CCP.STEERING_POWER_STEP, self.CCP.STEERING_POWER_MIN)
@@ -116,12 +107,11 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
           steering_power = min(max(target_power, min_power), max_power)
           
         else:
-          self.LateralController.reset()
           if self.steering_power_last > 0: # keep HCA alive until steering power has reduced to zero
             hca_enabled = True
             apply_curvature = np.clip(CS.out.steeringCurvature, -self.CCP.CURVATURE_LIMITS.CURVATURE_MAX, self.CCP.CURVATURE_LIMITS.CURVATURE_MAX) # synchronize with current curvature
             steering_power = max(self.steering_power_last - self.CCP.STEERING_POWER_STEP, 0)
-          else: 
+          else:
             hca_enabled = False
             apply_curvature = 0. # inactive curvature
             steering_power = 0

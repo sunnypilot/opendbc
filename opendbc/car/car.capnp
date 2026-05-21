@@ -525,6 +525,7 @@ struct CarParams {
     indiDEPRECATED @27 :LateralINDITuning;
     lqrDEPRECATED @40 :LateralLQRTuning;
     torque @67 :LateralTorqueTuning;
+    curvature @79 :LateralCurvatureTuning;
   }
 
   steerLimitAlert @28 :Bool;
@@ -576,6 +577,15 @@ struct CarParams {
     kiBP @2 :List(Float32);
     kiV @3 :List(Float32);
     kf @4 :Float32;
+  }
+
+  struct LateralCurvatureTuning {
+    kpBP @0 :List(Float32);
+    kpV @1 :List(Float32);
+    kiBP @2 :List(Float32);
+    kiV @3 :List(Float32);
+    kf @4 :Float32;
+    useCarSteerCurvature @5 :Bool;
   }
 
   struct LateralTorqueTuning {
