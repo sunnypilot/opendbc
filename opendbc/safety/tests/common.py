@@ -900,6 +900,11 @@ class SafetyTest(SafetyTestBase):
               continue
             if attr.startswith('TestSubaruPreglobal') and current_test.startswith('TestSubaruPreglobal'):
               continue
+            # brake_intercept is a SUBARU_IMPREZA_2020 mode and shares the Subaru main-bus TX set (ES_LKAS, etc.)
+            if 'BrakeIntercept' in attr and current_test.startswith('TestSubaru'):
+              continue
+            if 'BrakeIntercept' in current_test and attr.startswith('TestSubaru'):
+              continue
             if {attr, current_test}.issubset({'TestVolkswagenPqSafety', 'TestVolkswagenPqStockSafety', 'TestVolkswagenPqLongSafety'}):
               continue
             if {attr, current_test}.issubset({'TestGmCameraSafety', 'TestGmCameraLongitudinalSafety', 'TestGmAscmSafety',

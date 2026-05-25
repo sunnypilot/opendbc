@@ -87,6 +87,7 @@ def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
   _initialize_coop_steering(CP, CP_SP, params_dict)
   _initialize_radar_tracks(CP, CP_SP, can_recv, can_send)
   _initialize_stop_and_go(CP, CP_SP, params_dict)
+  _initialize_brake_intercept(CP, CP_SP, params_dict)
   _initialize_toyota(CP, CP_SP, params_dict)
 
 
@@ -131,6 +132,14 @@ def _initialize_stop_and_go(CP: structs.CarParams, CP_SP: structs.CarParamsSP, p
       CP_SP.flags |= SubaruFlagsSP.STOP_AND_GO_MANUAL_PARKING_BRAKE.value
     if stop_and_go or stop_and_go_manual_parking_brake:
       CP_SP.safetyParam |= SubaruSafetyFlagsSP.STOP_AND_GO
+
+
+def _initialize_brake_intercept(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
+  if CP.brand == 'subaru' and CP.alphaLongitudinalAvailable:
+    # alphaLongitudinalAvailable excludes: GEN2, PREGLOBAL, LKAS_ANGLE, HYBRID
+    if int(params_dict.get("SubaruAutoVehicleHold", 0)) == 1:
+      CP.flags |= SubaruFlags.BRAKE_HOLD.value
+      CP_SP.safetyParam |= SubaruSafetyFlagsSP.BRAKE_INTERCEPT  # OR-assign: preserves SnG bit if set
 
 
 def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
