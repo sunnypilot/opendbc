@@ -1831,6 +1831,16 @@
     ],
     "package": "All"
   },
+  "Hyundai Palisade Hybrid 2026": {
+    "platform": "HYUNDAI_PALISADE_HEV",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Palisade Hybrid",
+    "year": [
+      "2026"
+    ],
+    "package": "All"
+  },
   "Hyundai Santa Cruz 2022-24": {
     "platform": "HYUNDAI_SANTA_CRUZ_1ST_GEN",
     "make": "Hyundai",
@@ -2453,12 +2463,14 @@
     ],
     "package": "All"
   },
-  "Kia Sorento Hybrid 2026 with LFA2": {
+  "Kia Sorento Hybrid 2026": {
     "platform": "KIA_SORENTO_HEV_4TH_GEN_LFA2",
     "make": "Kia",
     "brand": "hyundai",
-    "model": "Sorento Hybrid 2026 with LFA2",
-    "year": [],
+    "model": "Sorento Hybrid",
+    "year": [
+      "2026"
+    ],
     "package": "All"
   },
   "Kia Sorento Plug-in Hybrid 2022-23": {
