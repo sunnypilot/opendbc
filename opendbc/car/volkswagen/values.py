@@ -381,7 +381,7 @@ class CAR(Platforms):
 
   FORD_EXPLORER_EV_MK1 = VolkswagenMEBPlatformConfig(
     [VWCarDocs("Ford Explorer EV Limited 2024-25")],
-    VolkswagenCarSpecs(mass=2090, wheelbase=2.77, steerRatio=21.7),
+    VolkswagenCarSpecs(mass=2090, wheelbase=2.77, steerRatio=13.7),
     chassis_codes={"EF"},
     wmis={WMI.FORD_EUROPE_CAR},
     flags=VolkswagenFlags.MEB_GEN2,
