@@ -301,7 +301,6 @@ class CarState(CarStateBase, MadsCarState):
     #ret.gasPressed   = pt_cp.vl["Motor_54"]["Accelerator_Pressure"] > 0 # MQBevo offset is not reliable (fluctuation or different statically in small range)
     ret.gasPressed   = pt_cp.vl["Motor_51"]["Accel_Pedal_Pressure"] > 0 # detects accel pedal "a little bit" later than ["Motor_54"]["Accelerator_Pressure"]
     ret.brakePressed = bool(pt_cp.vl["Motor_14"]["MO_Fahrer_bremst"]) # includes regen braking by user
-    ret.brake        = pt_cp.vl["ESC_51"]["Brake_Pressure"]
 
     ret.parkingBrake = pt_cp.vl["ESC_50"]["EPB_Status"] in (1, 4) # EPB closing or closed (candidate for all plattforms)
     #ret.parkingBrake = pt_cp.vl["Gateway_73"]["EPB_Status"] in (1, 4) # this signal is not working for newer models
