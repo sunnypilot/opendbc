@@ -140,7 +140,7 @@ class CarState(CarStateBase, CarStateExt):
         accel_profile = AccelPersonality.normal
 
       if not self._accel_profile_init or accel_profile != self._prev_accel_profile:
-        Params().put_nonblocking('AccelPersonality', int(accel_profile))
+        Params().put('AccelPersonality', int(accel_profile))
         self._accel_profile_init = True
         self._prev_accel_profile = accel_profile
 
