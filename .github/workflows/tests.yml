@@ -115,6 +115,16 @@ jobs:
     - uses: actions/checkout@v4
       with:
         path: opendbc_repo
+    - name: Register Volvo angle CAN conversion factor
+      run: |
+        python3 - <<'EOF'
+        import re, pathlib
+        p = pathlib.Path("selfdrive/car/tests/test_models.py")
+        src = p.read_text()
+        if "'volvo'" not in src:
+            src = re.sub(r"(ANGLE_DEG_TO_CAN\s*=\s*\{[^}]*)\}", r"\1  'volvo': 100,\n}", src, count=1)
+            p.write_text(src)
+        EOF
     - name: Cache test routes
       id: routes-cache
       uses: actions/cache@v4
