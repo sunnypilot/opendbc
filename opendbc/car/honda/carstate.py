@@ -198,12 +198,12 @@ class CarState(CarStateBase, CarStateExt):
         self.brake_switch_prev = brake_switch
       ret.brakePressed = (cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0) or self.brake_switch_active
 
+    ret.brakeDEPRECATED = cp.vl["VSA_STATUS"]["USER_BRAKE"]
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
     ret.cruiseState.available = bool(cp.vl[self.car_state_scm_msg]["MAIN_ON"])
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.HONDA_PILOT, CAR.HONDA_RIDGELINE):
-      ret.brakeDEPRECATED = cp.vl["VSA_STATUS"]["USER_BRAKE"]
       if ret.brakeDEPRECATED > 0.1:
         ret.brakePressed = True
 
