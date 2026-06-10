@@ -36,6 +36,9 @@
 #define VW_MEB_GEN2_RX_CHECKS                                                                       \
   {.msg = {{MSG_Motor_51, 0, 48, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
   {.msg = {{MSG_ESC_51, 0, 64, 100U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},    \
+  
+#define VW_MEB_RADAR_RX_CHECKS                                                                      \
+  {.msg = {{MSG_AWV_03, 2, 48, 1U, .max_counter = 15U, .ignore_frequency_check = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
 
 #define VW_MEB_LONG_TX_MSGS                                                            \
   {MSG_HCA_03, 0, 24, .check_relay = true},                                            \
@@ -90,8 +93,9 @@ static uint32_t volkswagen_meb_compute_crc(const CANPacket_t *msg) {
     crc ^= (uint8_t[]){0xDA,0x6B,0x0E,0xB2,0x78,0xBD,0x5A,0x81,0x7B,0xD6,0x41,0x39,0x76,0xB6,0xD7,0x35}[counter];
   } else if (msg->addr == MSG_EA_02) {
     crc ^= (uint8_t[]){0x2F,0x3C,0x22,0x60,0x18,0xEB,0x63,0x76,0xC5,0x91,0x0F,0x27,0x34,0x04,0x7F,0x02}[counter];
-  }
-  else {
+  } else if (msg->addr == MSG_AWV_03) {
+    crc ^= (uint8_t[]){0x09,0xFA,0xCA,0x8E,0x62,0xD5,0xD1,0xF0,0x31,0xA0,0xAF,0xDA,0x4D,0x1A,0x0A,0x97}[counter];
+  } else {
     // Undefined CAN message, CRC check expected to fail
   }
   crc = volkswagen_crc8_lut_8h2f[crc];
@@ -113,6 +117,8 @@ static uint32_t volkswagen_meb_gen2_compute_crc(const CANPacket_t *msg) {
     len = 60;
   } else if (msg->addr == MSG_Motor_51) {
     len = 44;
+  } else if (msg->addr == MSG_AWV_03) {
+    len = 42;
   } else {
 	return volkswagen_meb_compute_crc(msg); // fallback
   }
@@ -130,6 +136,8 @@ static uint32_t volkswagen_meb_gen2_compute_crc(const CANPacket_t *msg) {
 	crc ^= (uint8_t[]){0x69,0xDC,0xF9,0x64,0x6A,0xCE,0x55,0x2C,0xC4,0x38,0x8F,0xD1,0xC6,0x43,0xB4,0xB1}[counter];
   } else if (msg->addr == MSG_Motor_51) {
 	crc ^= (uint8_t[]){0x2C,0xB1,0x1A,0x75,0xBB,0x65,0x79,0x47,0x81,0x2B,0xCC,0x96,0x17,0xDB,0xC0,0x94}[counter];
+  } else if (msg->addr == MSG_AWV_03) {
+	crc ^= (uint8_t[]){0x09,0xFA,0xCA,0x8E,0x62,0xD5,0xD1,0xF0,0x31,0xA0,0xAF,0xDA,0x4D,0x1A,0x0A,0x97}[counter];
   } else {
 	return volkswagen_meb_compute_crc(msg); // fallback
   }
@@ -163,15 +171,28 @@ static safety_config volkswagen_meb_init(uint16_t param) {
   static RxCheck volkswagen_meb_rx_checks[] = {
     VW_MEB_COMMON_RX_CHECKS
 	VW_MEB_RX_CHECKS
+	VW_MEB_RADAR_RX_CHECKS
+  };
+  
+  static RxCheck volkswagen_meb_no_radar_rx_checks[] = {
+    VW_MEB_COMMON_RX_CHECKS
+	VW_MEB_RX_CHECKS
   };
 
   static RxCheck volkswagen_meb_gen2_rx_checks[] = {
+    VW_MEB_COMMON_RX_CHECKS
+	VW_MEB_GEN2_RX_CHECKS
+	VW_MEB_RADAR_RX_CHECKS
+  };
+  
+  static RxCheck volkswagen_meb_gen2_no_radar_rx_checks[] = {
     VW_MEB_COMMON_RX_CHECKS
 	VW_MEB_GEN2_RX_CHECKS
   };
 
   volkswagen_set_button_prev = false;
   volkswagen_resume_button_prev = false;
+  volkswagen_stock_aeb = false;
 
   volkswagen_alt_crc_variant_1 = GET_FLAG(param, FLAG_VOLKSWAGEN_ALT_CRC_VARIANT_1);
 
@@ -195,9 +216,17 @@ static safety_config volkswagen_meb_init(uint16_t param) {
   }
   
   if (volkswagen_alt_crc_variant_1) {
-	SET_RX_CHECKS(volkswagen_meb_gen2_rx_checks, ret);
+	if (volkswagen_disable_radar || !volkswagen_longitudinal) {
+	  SET_RX_CHECKS(volkswagen_meb_gen2_no_radar_rx_checks, ret);
+	} else {
+	  SET_RX_CHECKS(volkswagen_meb_gen2_rx_checks, ret);
+	}
   } else {
-	SET_RX_CHECKS(volkswagen_meb_rx_checks, ret);
+	if (volkswagen_disable_radar || !volkswagen_longitudinal) {
+	  SET_RX_CHECKS(volkswagen_meb_no_radar_rx_checks, ret);
+	} else {
+	  SET_RX_CHECKS(volkswagen_meb_rx_checks, ret);
+	}
   }
   
   return ret;
@@ -294,6 +323,15 @@ static void volkswagen_meb_rx_hook(const CANPacket_t *msg) {
       int accel_pedal_value = ((msg->data[1] >> 4) & 0x0FU) | ((msg->data[2] & 0x1FU) << 4);
       gas_pressed = accel_pedal_value > 0;
     }
+  }
+
+  if (msg->bus == 2U) {
+	// update AEB
+    if (msg->addr == MSG_AWV_03) {
+      if (volkswagen_longitudinal) {
+        volkswagen_stock_aeb = GET_BIT(msg, 65U);
+	  }
+    }
 	
   }
 }
@@ -339,6 +377,23 @@ static bool volkswagen_meb_tx_hook(const CANPacket_t *msg) {
     int desired_accel = ((((msg->data[4] & 0x7U) << 8) | msg->data[3]) * 5U) - 7220U;
 
     if (longitudinal_accel_checks(desired_accel, VOLKSWAGEN_MEB_LONG_LIMITS)) {
+      tx = false;
+    }
+
+    // Fallback: Don't send ACC_18 longitudinal control when the stock AEB system is active
+    // In normal operation, openpilot sends inactive_accel via carcontroller when AEB is detected.
+    // This check is a last-line defense against transient states where that didn't happen.
+    if (volkswagen_stock_aeb && (desired_accel != VOLKSWAGEN_MEB_LONG_LIMITS.inactive_accel)) {
+      tx = false;
+    }
+  }
+
+  // Fallback: Don't send ACC_18 longitudinal control when the stock AEB system is active
+  // In normal operation, openpilot sends inactive_accel via carcontroller when AEB is detected.
+  // This check is a last-line defense against transient states where that didn't happen.
+  if (volkswagen_stock_aeb && (msg->addr == MSG_ACC_18)) {
+    int desired_accel = ((((msg->data[4] & 0x7U) << 8) | msg->data[3]) * 5U) - 7220U;
+    if (desired_accel != VOLKSWAGEN_MEB_LONG_LIMITS.inactive_accel) {
       tx = false;
     }
   }

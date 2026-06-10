@@ -187,25 +187,28 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
         # Logic to prevent car error with EPB:
         #   * send a few frames of HMS RAMP RELEASE command at the very begin of long override and right at the end of active long control -> clean exit of ACC car controls
         #   * (1 frame of HMS RAMP RELEASE is enough, but lower the possibility of panda safety blocking it)
+        
+        # AEB fallback: when stock AEB is active, always send inactive accel to allow stock system takeover
+        long_active = CC.enabled and not CS.out.stockAeb
         starting = actuators.longControlState == LongCtrlState.starting and CS.out.vEgo <= self.CP.vEgoStarting # openpilot sets starting state after overriding, ensure being in range
-        accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.enabled else 0)
+        accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if long_active else 0)
 
         long_override = CC.cruiseControl.override or CS.out.gasPressed
         self.long_override_counter = min(self.long_override_counter + 1, 5) if long_override else 0
         long_override_begin = long_override and self.long_override_counter < 5
 
-        self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
-        long_disabling = not CC.enabled and self.long_disabled_counter < 5
+        self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not long_active else 0
+        long_disabling = not long_active and self.long_disabled_counter < 5
 
         critical_state = hud_control.visualAlert == VisualAlert.fcw
         if CC.longComfortMode:
-          self.long_jerk_control.update(CC.enabled, long_override, hud_control.leadDistance, hud_control.leadVisible, accel, critical_state)
-          self.long_limit_control.update(CC.enabled, CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance, hud_control.leadVisible, critical_state)
+          self.long_jerk_control.update(long_active, long_override, hud_control.leadDistance, hud_control.leadVisible, accel, critical_state)
+          self.long_limit_control.update(long_active, CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance, hud_control.leadVisible, critical_state)
           
-        acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, long_override)          
-        acc_hold_type = self.CCS.acc_hold_type(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, starting, stopping,
+        acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, long_active, long_override)          
+        acc_hold_type = self.CCS.acc_hold_type(CS.out.cruiseState.available, CS.out.accFaulted, long_active, starting, stopping,
                                                CS.esp_hold_confirmation, long_override, long_override_begin, long_disabling)
-        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, self.CAN.pt, self.CP, CS.acc_type, CC.enabled,
+        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, self.CAN.pt, self.CP, CS.acc_type, long_active,
                                                            self.long_jerk_control.get_jerk_up() if CC.longComfortMode else 4.0, self.long_jerk_control.get_jerk_down() if CC.longComfortMode else 4.0,
                                                            self.long_limit_control.get_upper_limit() if CC.longComfortMode else 0., self.long_limit_control.get_lower_limit() if CC.longComfortMode else 0.,
                                                            accel, acc_control, acc_hold_type, stopping, starting, CS.esp_hold_confirmation,
@@ -273,8 +276,11 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
         show_distance_bars = self.frame - self.distance_bar_frame < 400
         gap = max(8, CS.out.vEgo * hud_control.leadFollowTime)
         distance = max(8, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0
-        acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
-                                                       CC.cruiseControl.override or CS.out.gasPressed)
+        
+        # AEB fallback: when stock AEB is active, HUD shows inactive state to allow stock system takeover
+        long_active = CC.enabled and not CS.out.stockAeb
+        acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, long_active,
+                                                        CC.cruiseControl.override or CS.out.gasPressed)
           
         sl_predicative_active = True if CC.cruiseControl.speedLimitPredicative and CS.out.cruiseState.speedLimitPredicative != 0 else False
         if CC.cruiseControl.speedLimit and CS.out.cruiseState.speedLimit != 0 and self.speed_limit_last != CS.out.cruiseState.speedLimit:

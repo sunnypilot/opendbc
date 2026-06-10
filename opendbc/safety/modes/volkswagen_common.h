@@ -16,6 +16,9 @@ bool volkswagen_longitudinal = false;
 extern bool volkswagen_disable_radar;
 bool volkswagen_disable_radar = false;
 
+extern bool volkswagen_stock_aeb;
+bool volkswagen_stock_aeb = false;
+
 extern bool volkswagen_set_button_prev;
 bool volkswagen_set_button_prev = false;
 
