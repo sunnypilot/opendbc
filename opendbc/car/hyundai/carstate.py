@@ -258,7 +258,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     ret.steerFaultTemporary = cp.vl["MDPS"]["MDPS_LkaFailSta"] != 0
 
     alt = ""
-    if self.CP.flags & HyundaiFlags.CCNC_NON_HDA2:
+    if self.CP.flags & HyundaiFlags.CCNC:
       alt = "_ALT"
       if not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
         self.msg_161, self.msg_162, self.msg_1b5 = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"], cp_cam.vl["FR_CMR_03_50ms"]))

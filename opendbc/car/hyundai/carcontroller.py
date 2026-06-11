@@ -200,7 +200,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
     lka_steering = self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG
     lka_steering_long = lka_steering and self.CP.openpilotLongitudinalControl
-    ccnc_non_hda2 = self.CP.flags & HyundaiFlags.CCNC_NON_HDA2
+    ccnc_non_hda2 = self.CP.flags & HyundaiFlags.CCNC and not lka_steering
 
     # steering control
     can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon))
