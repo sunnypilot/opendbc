@@ -95,8 +95,12 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
 
         if CC.latActive:
           hca_enabled = True
-          # compensate the gap between measured and current curvature
-          apply_curvature = actuators.curvature + (CS.out.steeringCurvature - CC.currentCurvature)
+          # compensate the gap between measured and current curvature; always keep roll in the output exactly once
+          # roll is included for both cases
+          if CC.curvatureControllerActive:
+            apply_curvature = actuators.curvature + (CS.out.steeringCurvature - CC.currentCurvature)
+          else:
+            apply_curvature = actuators.curvature + (CS.out.steeringCurvature - CC.currentCurvature) + CC.rollCompensation
           apply_curvature = apply_std_curvature_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, CS.out.steeringCurvature,
                                                        CS.out.steeringPressed, self.CCP.STEER_STEP, CC.latActive, self.CCP.CURVATURE_LIMITS)
 
