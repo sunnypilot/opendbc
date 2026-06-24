@@ -55,7 +55,7 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
     # TODO: verify if this minSteerSpeed guard is still needed
-    if pcm_cancel_cmd and CS.out.vEgo > self.CP.minSteerSpeed:
+    if pcm_cancel_cmd and CS.out.vEgo > self.CP.minSteerSpeed and not CS.out.brakePressed:
       can_sends.append(volvocan.create_button_msg(self.packer_pt, cancel=True))
 
     # run at 50hz
