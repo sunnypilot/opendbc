@@ -3,11 +3,26 @@ import json
 import os
 import unicodedata
 
+from opendbc.car import gen_empty_fingerprint
 from opendbc.car.common.basedir import BASEDIR
-from opendbc.car.docs import get_all_footnotes, get_params_for_docs
+from opendbc.car.docs import get_all_footnotes
+from opendbc.car.structs import CarParams
+from opendbc.car.car_helpers import interfaces
+from opendbc.car.mock.values import CAR as MOCK
 from opendbc.car.values import PLATFORMS
 
 CAR_LIST_JSON_OUT = os.path.join(BASEDIR, "../", "sunnypilot", "car", "car_list.json")
+
+
+def _get_params_for_docs_sp(platform) -> tuple[CarParams, object]:
+  cp_platform = platform if platform in interfaces else MOCK.MOCK
+  CP: CarParams = interfaces[cp_platform].get_params(cp_platform, fingerprint=gen_empty_fingerprint(),
+                                                     car_fw=[CarParams.CarFw(ecu=CarParams.Ecu.unknown)],
+                                                     alpha_long=True, is_release=False, docs=True)
+  CP_SP = interfaces[cp_platform].get_params_sp(CP, cp_platform, fingerprint=gen_empty_fingerprint(),
+                                                car_fw=[CarParams.CarFw(ecu=CarParams.Ecu.unknown)],
+                                                alpha_long=True, is_release_sp=True, docs=True)
+  return CP, CP_SP
 
 
 def get_car_list() -> dict[str, dict[str, list[str] | str]]:
@@ -26,7 +41,7 @@ def build_sorted_car_list(platforms, footnotes) -> dict[str, dict[str, list[str]
   cars: dict[str, dict[str, list[str] | str]] = {}
   for model, platform in platforms.items():
     car_docs = platform.config.get_all_docs()
-    CP, CP_SP = get_params_for_docs(platform)
+    CP, CP_SP = _get_params_for_docs_sp(platform)
 
     if CP.dashcamOnly or not len(car_docs):
       continue
