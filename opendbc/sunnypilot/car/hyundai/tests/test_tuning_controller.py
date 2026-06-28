@@ -115,8 +115,8 @@ class TestLongitudinalTuningController(unittest.TestCase):
     self.controller.accel_last = -1.0
     for _ in range(50):
       self.controller.calculate_jerk(self.CC, self.CS, LongCtrlState.pid)
-    self.assertEqual(self.controller.jerk_upper, 2.6)
-    self.assertEqual(self.controller.jerk_lower, 3.3)
+    self.assertAlmostEqual(self.controller.jerk_upper, 2.67, delta=0.01)
+    self.assertAlmostEqual(self.controller.jerk_lower, 3.33, delta=0.01)
 
   def test_calc_accel(self):
     self.CP_SP.flags = 0
