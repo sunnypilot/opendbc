@@ -1496,6 +1496,16 @@
     ],
     "package": "All"
   },
+  "Hyundai AZERA Hybrid (with HDA II & LFA2) 2025": {
+    "platform": "HYUNDAI_AZERA_HEV_7TH_GEN",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "AZERA Hybrid (with HDA II & LFA2)",
+    "year": [
+      "2025"
+    ],
+    "package": "Highway Driving Assist II & Lane Follow Assist 2"
+  },
   "Hyundai Custin 2023": {
     "platform": "HYUNDAI_CUSTIN_1ST_GEN",
     "make": "Hyundai",
