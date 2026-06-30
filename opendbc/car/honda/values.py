@@ -111,6 +111,9 @@ class HondaCarDocs(CarDocs):
 
     self.car_parts = CarParts.common([harness])
 
+    if CP.alphaLongitudinalAvailable:
+      self.footnotes.append(Footnote.HONDA_ALPHALONG)
+
     if CP.carFingerprint in (CAR.HONDA_CLARITY,):
       self.car_parts = CarParts.common([CarHarness.honda_clarity])
       self.car_parts.custom_parts_url = "https://shop.retropilot.org/product/honda-clarity-proxy-board-kit"
@@ -122,6 +125,9 @@ class Footnote(Enum):
   CIVIC_DIESEL = CarFootnote(
     "2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph.",
     Column.FSR_STEERING)
+  HONDA_ALPHALONG = CarFootnote(
+    "Enabling longitudinal control (alpha) will disable all CMBS functionality, including AEB and FCW.",
+    Column.LONGITUDINAL)
 
 
 @dataclass
@@ -390,8 +396,8 @@ class CAR(Platforms):
 
   # port extensions
   HONDA_CLARITY = HondaNidecPlatformConfig(
-    [HondaCarDocs("Honda Clarity 2018-21", min_steer_speed=12. * CV.MPH_TO_MS)],
-    CarSpecs(mass=1834, wheelbase=2.75, centerToFrontRatio=0.4, steerRatio=16.5),
+    [HondaCarDocs("Honda Clarity 2018-21", "All", min_steer_speed=3. * CV.MPH_TO_MS)],
+    CarSpecs(mass=1838, wheelbase=2.75, centerToFrontRatio=0.4, steerRatio=16.5),
     radar_dbc_dict('honda_clarity_hybrid_2018_can_generated'),
     flags=HondaFlags.HAS_ALL_DOOR_STATES,
   )
