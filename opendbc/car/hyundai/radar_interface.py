@@ -1,52 +1,179 @@
 import math
+from dataclasses import dataclass
 
 from opendbc.can import CANParser
-from opendbc.car import Bus, structs
+from opendbc.car import structs
 from opendbc.car.interfaces import RadarInterfaceBase
-from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.radar_interface_ext import RadarInterfaceExt
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
-MANDO_RADAR_ADDR = 0x500
-MANDO_RADAR_COUNT = 32
-MRREVO14F_RADAR_ADDR = 0x602
-MRREVO14F_RADAR_COUNT = 16
-MRR30_RADAR_ADDR = 0x210
-MRR30_RADAR_COUNT = 16
-MRR35_RADAR_ADDR = 0x3A5
-MRR35_RADAR_COUNT = 32
+RADAR_TRACK_BUSES = (0, 1, 2)
+
 
 # POC for parsing corner radars: https://github.com/commaai/openpilot/pull/24221/
 
 
-def get_radar_can_parser(CP, radar_addr, radar_count):
-  if Bus.radar not in DBC[CP.carFingerprint]:
-    return None
+@dataclass(frozen=True)
+class HyundaiRadarTrackSpec:
+  name: str
+  start_addr: int
+  msg_count: int
+  track_prefixes: tuple[str, ...]
 
-  messages = [(f"RADAR_TRACK_{addr:x}", 50) for addr in range(radar_addr, radar_addr + radar_count)]
-  return CANParser(DBC[CP.carFingerprint][Bus.radar], messages, 1)
+  @property
+  def end_addr(self) -> int:
+    return self.start_addr + self.msg_count - 1
+
+  @property
+  def address_range(self) -> range:
+    return range(self.start_addr, self.end_addr + 1)
+
+  @property
+  def dbc_name(self) -> str:
+    return f"hyundai_{self.name.lower()}_generated"
+
+
+@dataclass(frozen=True)
+class HyundaiRadarTrackConfig:
+  spec: HyundaiRadarTrackSpec
+  bus: int
+
+
+@dataclass
+class HyundaiRadarParserConfig:
+  spec: HyundaiRadarTrackSpec
+  bus: int
+  parser: CANParser
+
+
+RADAR_500_51F = HyundaiRadarTrackSpec("RADAR_500_51F", 0x500, 32, ("",))
+RADAR_210_21F = HyundaiRadarTrackSpec("RADAR_210_21F", 0x210, 16, ("1_", "2_"))
+RADAR_235_248 = HyundaiRadarTrackSpec("RADAR_235_248", 0x235, 20, ("",))
+RADAR_3A5_3C4 = HyundaiRadarTrackSpec("RADAR_3A5_3C4", 0x3A5, 32, ("",))
+RADAR_602_611 = HyundaiRadarTrackSpec("RADAR_602_611", 0x602, 16, ("1_", "2_"))
+
+HYUNDAI_RADAR_TRACK_SPECS = (RADAR_500_51F, RADAR_210_21F, RADAR_235_248, RADAR_3A5_3C4, RADAR_602_611)
+DEFAULT_RADAR_TRIGGER_MSG = max(rt.end_addr for rt in HYUNDAI_RADAR_TRACK_SPECS)
+
+DETECTED_RADAR_TRACKS: dict[str, tuple[HyundaiRadarTrackConfig, ...]] = {}
+
+
+def detect_radar_tracks(fingerprint: dict[int, dict[int, int]]) -> tuple[HyundaiRadarTrackConfig, ...]:
+  detected: list[HyundaiRadarTrackConfig] = []
+  for radar_spec in HYUNDAI_RADAR_TRACK_SPECS:
+    for bus in RADAR_TRACK_BUSES:
+      if all(addr in fingerprint[bus] for addr in radar_spec.address_range):
+        detected.append(HyundaiRadarTrackConfig(radar_spec, bus))
+  return tuple(detected)
+
+
+def set_detected_radar_tracks(car_fingerprint: str, radar_tracks: tuple[HyundaiRadarTrackConfig, ...]) -> None:
+  DETECTED_RADAR_TRACKS[car_fingerprint] = radar_tracks
+
+
+def get_detected_radar_tracks(CP) -> tuple[HyundaiRadarTrackConfig, ...]:
+  return DETECTED_RADAR_TRACKS.get(CP.carFingerprint, ())
+
+
+def get_radar_can_parser(radar_track: HyundaiRadarTrackConfig) -> CANParser:
+  messages = [(f"RADAR_TRACK_{addr:x}", 50) for addr in radar_track.spec.address_range]
+  return CANParser(radar_track.spec.dbc_name, messages, radar_track.bus)
+
+
+def get_all_radar_track_candidates() -> tuple[HyundaiRadarTrackConfig, ...]:
+  return tuple(HyundaiRadarTrackConfig(radar_spec, bus) for radar_spec in HYUNDAI_RADAR_TRACK_SPECS for bus in RADAR_TRACK_BUSES)
+
+
+def get_track_storage_key(radar_spec: HyundaiRadarTrackSpec, addr: int, track_prefix: str) -> tuple[str, int]:
+  if radar_spec.name in ("RADAR_500_51F", "RADAR_235_248", "RADAR_3A5_3C4"):
+    return (radar_spec.name, addr)
+
+  track_index = int(track_prefix[0]) - 1
+  return (radar_spec.name, addr * 2 + track_index)
+
+
+def get_track_ts_nanos(parser: CANParser, msg_name: str, radar_spec: HyundaiRadarTrackSpec, track_prefix: str) -> int:
+  if radar_spec.name == "RADAR_602_611":
+    return parser.ts_nanos[msg_name][f"{track_prefix}DISTANCE"]
+  if radar_spec.name in ("RADAR_210_21F", "RADAR_235_248"):
+    return parser.ts_nanos[msg_name][f"{track_prefix}LONG_DIST"]
+  return parser.ts_nanos[msg_name]["LONG_DIST"]
+
+
+def decode_radar_track(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> tuple[float, float, float, float]:
+  if radar_spec.name == "RADAR_602_611":
+    return (
+      track_msg[f"{track_prefix}DISTANCE"],
+      track_msg[f"{track_prefix}LATERAL"],
+      track_msg[f"{track_prefix}SPEED"],
+      float("nan"),
+    )
+
+  if radar_spec.name == "RADAR_210_21F":
+    return (
+      track_msg[f"{track_prefix}LONG_DIST"],
+      track_msg[f"{track_prefix}LAT_DIST"],
+      track_msg[f"{track_prefix}REL_SPEED"],
+      float("nan"),
+    )
+
+  if radar_spec.name == "RADAR_500_51F":
+    azimuth = math.radians(track_msg["AZIMUTH"])
+    long_dist = track_msg["LONG_DIST"]
+    return (
+      math.cos(azimuth) * long_dist,
+      0.5 * -math.sin(azimuth) * long_dist,
+      track_msg["REL_SPEED"],
+      track_msg["REL_ACCEL"],
+    )
+
+  if radar_spec.name == "RADAR_235_248":
+    return (
+      track_msg["LONG_DIST"],
+      track_msg["LAT_DIST"],
+      track_msg["REL_SPEED"],
+      float("nan"),
+    )
+
+  return (
+    track_msg["LONG_DIST"],
+    track_msg["LAT_DIST"],
+    track_msg["REL_SPEED"],
+    track_msg["REL_ACCEL"],
+  )
+
+
+def is_radar_track_valid(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> bool:
+  if radar_spec.name == "RADAR_602_611":
+    return track_msg[f"{track_prefix}DISTANCE"] != 255.75
+
+  if radar_spec.name == "RADAR_210_21F":
+    return track_msg[f"{track_prefix}STATE"] in (3, 4)
+
+  if radar_spec.name == "RADAR_235_248":
+    return track_msg["STATE"] in (3, 4)
+
+  return track_msg["STATE"] in (3, 4)
 
 
 class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
   def __init__(self, CP, CP_SP):
     RadarInterfaceBase.__init__(self, CP, CP_SP)
     RadarInterfaceExt.__init__(self, CP, CP_SP)
-    self.CP_flags = CP.flags
-    if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
-      self.radar_addr, self.radar_count = MRREVO14F_RADAR_ADDR, MRREVO14F_RADAR_COUNT
-    elif self.CP_flags & HyundaiFlags.MRR30_RADAR:
-      self.radar_addr, self.radar_count = MRR30_RADAR_ADDR, MRR30_RADAR_COUNT
-    elif self.CP_flags & HyundaiFlags.MRR35_RADAR:
-      self.radar_addr, self.radar_count = MRR35_RADAR_ADDR, MRR35_RADAR_COUNT
-    else:
-      self.radar_addr, self.radar_count = MANDO_RADAR_ADDR, MANDO_RADAR_COUNT
-    self.updated_messages = set()
-    self.trigger_msg = self.radar_addr + self.radar_count - 1
+    detected_tracks = get_detected_radar_tracks(CP)
+    candidate_tracks = get_all_radar_track_candidates() if CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR else ()
+    self.radar_tracks = tuple(dict.fromkeys((*detected_tracks, *candidate_tracks)))
+    self.radar_parsers = tuple(HyundaiRadarParserConfig(rt.spec, rt.bus, get_radar_can_parser(rt)) for rt in self.radar_tracks)
+    self.seen_radar_addrs = {(rt.spec.name, rt.bus): set(rt.spec.address_range) for rt in detected_tracks}
+    self.updated_messages: set[tuple[int, int]] = set()
+    self.active_radar_buses: dict[str, int] = {}
+    self.trigger_msg = max((rt.spec.end_addr for rt in self.radar_tracks), default=DEFAULT_RADAR_TRIGGER_MSG)
+    self.trigger_msg = self.get_trigger_msg(self.trigger_msg)
     self.track_id = 0
 
-    self.radar_off_can = CP.radarUnavailable
-    self.rcp = get_radar_can_parser(CP, self.radar_addr, self.radar_count)
+    self.radar_off_can = CP.radarUnavailable and not (CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR)
+    self.rcp = self.radar_parsers[0].parser if self.radar_parsers else None
 
     if self.CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY:
       self.initialize_radar_ext(self.trigger_msg)
@@ -55,105 +182,123 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     if self.radar_off_can or (self.rcp is None):
       return super().update(None)
 
-    vls = self.rcp.update(can_strings)
-    self.updated_messages.update(vls)
+    if self.CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY and self.use_radar_interface_ext:
+      vls = self.rcp.update(can_strings)
+      self.updated_messages.update((0, addr) for addr in vls)
 
-    if self.trigger_msg not in self.updated_messages:
+      if (0, self.trigger_msg) not in self.updated_messages:
+        return None
+
+      rr = self._update(self.updated_messages)
+      self.updated_messages.clear()
+      return rr
+
+    radar_updated = False
+    for radar_parser in self.radar_parsers:
+      vls = radar_parser.parser.update(can_strings)
+      relevant_addrs = {
+        addr for addr in vls
+        if radar_parser.spec.start_addr <= addr <= radar_parser.spec.end_addr
+      }
+      if relevant_addrs:
+        self.seen_radar_addrs.setdefault((radar_parser.spec.name, radar_parser.bus), set()).update(relevant_addrs)
+        self.updated_messages.update((radar_parser.bus, addr) for addr in relevant_addrs)
+        radar_updated = True
+
+    if not radar_updated:
       return None
 
     rr = self._update(self.updated_messages)
     self.updated_messages.clear()
-
     return rr
+
+  def _radar_range_complete(self, radar_parser: HyundaiRadarParserConfig) -> bool:
+    seen_addrs = self.seen_radar_addrs.get((radar_parser.spec.name, radar_parser.bus), set())
+    return all(addr in seen_addrs for addr in radar_parser.spec.address_range)
+
+  @staticmethod
+  def _radar_parser_valid_count(radar_parser: HyundaiRadarParserConfig, updated_messages: set[tuple[int, int]]) -> int:
+    valid_count = 0
+    for addr in radar_parser.spec.address_range:
+      if updated_messages and (radar_parser.bus, addr) not in updated_messages:
+        continue
+
+      msg_name = f"RADAR_TRACK_{addr:x}"
+      msg = radar_parser.parser.vl[msg_name]
+      for track_prefix in radar_parser.spec.track_prefixes:
+        if get_track_ts_nanos(radar_parser.parser, msg_name, radar_parser.spec, track_prefix) == 0:
+          continue
+        if is_radar_track_valid(radar_parser.spec, msg, track_prefix):
+          valid_count += 1
+    return valid_count
+
+  def _select_active_radar_parser(self, radar_parsers: list[HyundaiRadarParserConfig],
+                                  updated_messages: set[tuple[int, int]]) -> HyundaiRadarParserConfig:
+    valid_counts = {rp.bus: self._radar_parser_valid_count(rp, updated_messages) for rp in radar_parsers}
+    current_bus = self.active_radar_buses.get(radar_parsers[0].spec.name)
+    current_parser = next((rp for rp in radar_parsers if rp.bus == current_bus), None)
+
+    best_parser = max(
+      radar_parsers,
+      key=lambda rp: (
+        valid_counts[rp.bus],
+        rp.bus == current_bus,
+      ),
+    )
+    if valid_counts[best_parser.bus] == 0 and current_parser is not None:
+      best_parser = current_parser
+
+    self.active_radar_buses[best_parser.spec.name] = best_parser.bus
+    return best_parser
+
+  def _update_radar_points_from_parser(self, radar_parser: HyundaiRadarParserConfig) -> None:
+    for addr in radar_parser.spec.address_range:
+      msg_name = f"RADAR_TRACK_{addr:x}"
+      msg = radar_parser.parser.vl[msg_name]
+      for track_prefix in radar_parser.spec.track_prefixes:
+        track_key = get_track_storage_key(radar_parser.spec, addr, track_prefix)
+        if get_track_ts_nanos(radar_parser.parser, msg_name, radar_parser.spec, track_prefix) != 0 and \
+           is_radar_track_valid(radar_parser.spec, msg, track_prefix):
+          if track_key not in self.pts:
+            self.pts[track_key] = structs.RadarData.RadarPoint()
+            self.pts[track_key].trackId = self.track_id
+            self.track_id += 1
+
+          d_rel, y_rel, v_rel, a_rel = decode_radar_track(radar_parser.spec, msg, track_prefix)
+          pt = self.pts[track_key]
+          pt.measured = True
+          pt.dRel = d_rel
+          pt.yRel = y_rel
+          pt.vRel = v_rel
+          pt.aRel = a_rel
+          pt.yvRel = float('nan')
+        elif track_key in self.pts:
+          del self.pts[track_key]
 
   def _update(self, updated_messages):
     ret = structs.RadarData()
     if self.rcp is None:
       return ret
 
-    if not self.rcp.can_valid:
-      ret.errors.canError = True
-
     if self.CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY:
       if self.use_radar_interface_ext:
         return self.update_ext(ret)
 
-    for addr in range(self.radar_addr, self.radar_addr + self.radar_count):
-      msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
+    active_radar_parsers: list[HyundaiRadarParserConfig] = []
+    if self.CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR:
+      radar_parsers_by_spec: dict[str, list[HyundaiRadarParserConfig]] = {}
+      for radar_parser in self.radar_parsers:
+        if not self._radar_range_complete(radar_parser):
+          continue
+        radar_parsers_by_spec.setdefault(radar_parser.spec.name, []).append(radar_parser)
 
-      if self.CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR:
+      for radar_parsers in radar_parsers_by_spec.values():
+        active_radar_parser = self._select_active_radar_parser(radar_parsers, updated_messages)
+        active_radar_parsers.append(active_radar_parser)
+        self._update_radar_points_from_parser(active_radar_parser)
 
-        if self.CP_flags & HyundaiFlags.MRREVO14F_RADAR:
-          msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
-          for i in ("1", "2"):
-            track_key = addr * 2 + (int(i) - 1)
-            dist = msg[f"{i}_DISTANCE"]
-            if track_key not in self.pts:
-              self.pts[track_key] = structs.RadarData.RadarPoint()
-              self.pts[track_key].trackId = self.track_id
-              self.track_id += 1
-            if dist != 255.75:
-              pt = self.pts[track_key]
-              pt.measured = True
-              pt.dRel = dist
-              pt.yRel = msg[f"{i}_LATERAL"]
-              pt.vRel = msg[f"{i}_SPEED"]
-              pt.aRel = float('nan')
-              pt.yvRel = float('nan')
-            else:
-              del self.pts[track_key]
-
-        elif self.CP_flags & HyundaiFlags.MRR30_RADAR:
-          msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
-          for i in ("1", "2"):
-            track_key = addr * 2 + (int(i) - 1)
-            if track_key not in self.pts:
-              self.pts[track_key] = structs.RadarData.RadarPoint()
-              self.pts[track_key].trackId = self.track_id
-              self.track_id += 1
-            if msg[f"{i}_STATE"] in (3, 4):
-              pt = self.pts[track_key]
-              pt.measured = True
-              pt.dRel = msg[f"{i}_LONG_DIST"]
-              pt.yRel = msg[f"{i}_LAT_DIST"]
-              pt.vRel = msg[f"{i}_REL_SPEED"]
-              pt.aRel = float('nan')  # confirm REL_ACCEL factor
-              pt.yvRel = float('nan')
-            else:
-              del self.pts[track_key]
-
-        elif self.CP_flags & HyundaiFlags.MRR35_RADAR:
-          msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
-          if addr not in self.pts:
-            self.pts[addr] = structs.RadarData.RadarPoint()
-            self.pts[addr].trackId = self.track_id
-            self.track_id += 1
-          if msg['STATE'] in (3, 4):
-            self.pts[addr].measured = True
-            self.pts[addr].dRel = msg['LONG_DIST']
-            self.pts[addr].yRel = msg['LAT_DIST']
-            self.pts[addr].vRel = msg['REL_SPEED']
-            self.pts[addr].aRel = msg['REL_ACCEL']  # confirm factor
-            self.pts[addr].yvRel = float('nan')
-          else:
-            del self.pts[addr]
-
-        else:
-          msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
-          if addr not in self.pts:
-            self.pts[addr] = structs.RadarData.RadarPoint()
-            self.pts[addr].trackId = self.track_id
-            self.track_id += 1
-          if msg['STATE'] in (3, 4):
-            azimuth = math.radians(msg['AZIMUTH'])
-            self.pts[addr].measured = True
-            self.pts[addr].dRel = math.cos(azimuth) * msg['LONG_DIST']
-            self.pts[addr].yRel = 0.5 * -math.sin(azimuth) * msg['LONG_DIST']
-            self.pts[addr].vRel = msg['REL_SPEED']
-            self.pts[addr].aRel = msg['REL_ACCEL']
-            self.pts[addr].yvRel = float('nan')
-          else:
-            del self.pts[addr]
+    if any(not radar_parser.parser.can_valid for radar_parser in active_radar_parsers):
+      ret.errors.canError = True
 
     ret.points = list(self.pts.values())
     return ret

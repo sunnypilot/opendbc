@@ -1,12 +1,11 @@
-from opendbc.car import Bus, get_safety_config, structs, uds
+from opendbc.car import get_safety_config, structs, uds
 from opendbc.car.hyundai.hyundaicanfd import CanBus
-from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC, HyundaiSafetyFlags
-from opendbc.car.hyundai.radar_interface import MANDO_RADAR_ADDR, MRREVO14F_RADAR_ADDR, MRR35_RADAR_ADDR, MRR30_RADAR_ADDR
+from opendbc.car.hyundai.values import HyundaiFlags, CAR, HyundaiSafetyFlags
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.disable_ecu import disable_ecu
 from opendbc.car.hyundai.carcontroller import CarController
 from opendbc.car.hyundai.carstate import CarState
-from opendbc.car.hyundai.radar_interface import RadarInterface
+from opendbc.car.hyundai.radar_interface import RadarInterface, detect_radar_tracks, set_detected_radar_tracks
 
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
@@ -130,15 +129,9 @@ class CarInterface(CarInterfaceBase):
 
     # Common longitudinal control setup
 
-    if ret.flags & HyundaiFlags.MRREVO14F_RADAR:
-      radar_addr = MRREVO14F_RADAR_ADDR
-    elif ret.flags & HyundaiFlags.MRR30_RADAR:
-      radar_addr = MRR30_RADAR_ADDR
-    elif ret.flags & HyundaiFlags.MRR35_RADAR:
-      radar_addr = MRR35_RADAR_ADDR
-    else:
-      radar_addr = MANDO_RADAR_ADDR
-    ret.radarUnavailable = radar_addr not in fingerprint[1] or Bus.radar not in DBC[ret.carFingerprint]
+    radar_tracks = detect_radar_tracks(fingerprint)
+    set_detected_radar_tracks(ret.carFingerprint, radar_tracks)
+    ret.radarUnavailable = len(radar_tracks) == 0
     ret.openpilotLongitudinalControl = alpha_long and ret.alphaLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl
     ret.startingState = True

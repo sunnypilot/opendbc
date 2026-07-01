@@ -58,4 +58,4 @@ BO_ {a} RADAR_TRACK_{a:x}: 8 RADAR
  SG_ STATE_2 : 55|2@0+ (1,0) [0|3] "" XXX
     """)
 
-  return {"hyundai_kia_mando_front_radar.dbc": "".join(parts)}
+  return {"hyundai_radar_500_51f.dbc": "".join(parts)}

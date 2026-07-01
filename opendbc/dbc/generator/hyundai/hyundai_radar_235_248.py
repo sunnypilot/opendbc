@@ -44,21 +44,19 @@ BS_:
 BU_: XXX
     """)
 
-    for a in range(0x180, 0x180 + 5):
+    for a in range(0x235, 0x235 + 20):
         f.write(f"""
 BO_ {a} RADAR_TRACK_{a:x}: 32 RADAR
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ 1_LONG : 64|13@1+ (1,0) [0|8191] "" XXX
- SG_ NEW_SIGNAL_2 : 78|12@1+ (1,0) [0|4095] "" XXX
- SG_ NEW_SIGNAL_3 : 91|12@1+ (1,0) [0|4095] "" XXX
+ SG_ STATE : 24|4@1+ (1,0) [0|15] "" XXX
+ SG_ LONG_DIST : 64|12@1+ (0.05,0) [0|204.75] "m" XXX
+ SG_ LAT_DIST : 78|12@1+ (0.05,-102.4) [-102.4|102.35] "m" XXX
+ SG_ REL_SPEED : 91|12@1+ (0.05,-100) [-100|104.75] "m/s" XXX
  SG_ NEW_SIGNAL_4 : 104|10@1+ (1,0) [0|1023] "" XXX
- SG_ NEW_SIGNAL_5 : 115|9@1- (1,0) [0|511] "" XXX
- SG_ NEW_SIGNAL_6 : 124|16@1+ (1,0) [0|65535] "" XXX
- SG_ 2_LONG : 192|13@1+ (1,0) [0|8191] "" XXX
- SG_ NEW_SIGNAL_12 : 206|12@1+ (1,0) [0|4095] "" XXX
- SG_ NEW_SIGNAL_13 : 219|12@1+ (1,0) [0|4095] "" XXX
- SG_ NEW_SIGNAL_14 : 232|10@1+ (1,0) [0|1023] "" XXX
- SG_ NEW_SIGNAL_8 : 243|9@1- (1,0) [0|511] "" XXX
- SG_ NEW_SIGNAL_9 : 252|4@1+ (1,0) [0|15] "" XXX
+ SG_ AZIMUTH : 115|9@1- (0.1,0) [-25.6|25.5] "deg" XXX
+ SG_ NEW_SIGNAL_6 : 125|12@1+ (1,0) [0|4095] "" XXX
+ SG_ NEW_SIGNAL_7 : 138|12@1+ (1,0) [0|4095] "" XXX
+ SG_ NEW_SIGNAL_8 : 151|10@1+ (1,0) [0|1023] "" XXX
+ SG_ AZIMUTH_HR : 176|14@1+ (0.0238,-195.05) [-195.05|195.07] "deg" XXX
     """)
