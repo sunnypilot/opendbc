@@ -1157,7 +1157,7 @@
       "2020",
       "2021"
     ],
-    "package": "Honda Sensing"
+    "package": "All"
   },
   "Honda CR-V 2015-16": {
     "platform": "HONDA_CRV",
@@ -2860,6 +2860,21 @@
     "make": "Nissan",
     "brand": "nissan",
     "model": "Leaf",
+    "year": [
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023"
+    ],
+    "package": "ProPILOT Assist"
+  },
+  "Nissan Leaf IC 2018-23": {
+    "platform": "NISSAN_LEAF_IC",
+    "make": "Nissan",
+    "brand": "nissan",
+    "model": "Leaf IC",
     "year": [
       "2018",
       "2019",
