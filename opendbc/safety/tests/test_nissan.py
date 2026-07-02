@@ -129,6 +129,23 @@ class TestNissanLeafSafety(TestNissanSafety):
     values = {"CRUISE_AVAILABLE": main_on}
     return self.packer.make_can_msg_safety("CRUISE_THROTTLE", 0, values)
 
+  def test_acc_buttons(self):
+    # Leaf uses continuous CRUISE_THROTTLE forwarding (relay replacement),
+    # no button check in safety — all buttons pass through
+    btns = [
+      ("cancel", True),
+      ("propilot", True),
+      ("flw_dist", True),
+      ("_set", True),
+      ("res", True),
+      (None, True),
+    ]
+    for controls_allowed in (True, False):
+      for btn, should_tx in btns:
+        self.safety.set_controls_allowed(controls_allowed)
+        args = {} if btn is None else {btn: 1}
+        tx = self._tx(self._acc_button_cmd(**args))
+        self.assertEqual(tx, should_tx)
 
 
 if __name__ == "__main__":
