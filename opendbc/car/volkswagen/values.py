@@ -263,6 +263,7 @@ class VolkswagenFlags(IntFlag):
   MQB_EVO      = 2 ** 8
   MQB_EVO_GEN2 = 2 ** 13
   MLB          = 2 ** 3
+  FORD_CAR     = 2 ** 17
 
 
 @dataclass
@@ -381,10 +382,10 @@ class CAR(Platforms):
 
   FORD_EXPLORER_EV_MK1 = VolkswagenMEBPlatformConfig(
     [VWCarDocs("Ford Explorer EV Limited 2024-25")],
-    VolkswagenCarSpecs(mass=2090, wheelbase=2.77, steerRatio=13.7),
+    VolkswagenCarSpecs(mass=2090, wheelbase=2.77),
     chassis_codes={"EF"},
     wmis={WMI.FORD_EUROPE_CAR},
-    flags=VolkswagenFlags.MEB_GEN2,
+    flags=VolkswagenFlags.MEB_GEN2 | VolkswagenFlags.FORD_CAR,
   )
   VOLKSWAGEN_ARTEON_MK1 = VolkswagenMQBPlatformConfig(
     [

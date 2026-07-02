@@ -95,7 +95,9 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
 
         if CC.latActive:
           hca_enabled = True
-          apply_curvature = actuators.curvature + CS.out.steeringCurvature - CC.currentCurvature + CC.rollCompensation
+          # no closed loop correction for FORD as long as the current curvature car signal is verified
+          steer_correction = CS.out.steeringCurvature - CC.currentCurvature + CC.rollCompensation if not (self.CP.flags & VolkswagenFlags.FORD_CAR) else 0.
+          apply_curvature = actuators.curvature + steer_correction
           apply_curvature = apply_std_curvature_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, CS.out.steeringCurvature,
                                                        CS.out.steeringPressed, self.CCP.STEER_STEP, CC.latActive, self.CCP.CURVATURE_LIMITS)
 
