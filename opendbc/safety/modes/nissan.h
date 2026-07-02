@@ -2,39 +2,53 @@
 
 #include "opendbc/safety/declarations.h"
 
-#define NISSAN_COMMON_RX_CHECKS                                                                                                                 \
-  {.msg = {{0x2, 0, 5, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                     \
-           {0x2, 1, 5, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}},  /* STEER_ANGLE_SENSOR */  \
-  {.msg = {{0x285, 0, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                    \
-           {0x285, 1, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, /* WHEEL_SPEEDS_REAR */   \
-  {.msg = {{0x30f, 2, 3, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                    \
-           {0x30f, 1, 3, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, /* CRUISE_STATE */        \
-  {.msg = {{0x15c, 0, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                    \
-           {0x15c, 1, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                    \
-           {0x239, 0, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}}}, /* GAS_PEDAL */                  \
-  {.msg = {{0x454, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                    \
-           {0x454, 1, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                    \
-           {0x1cc, 0, 4, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}}}, /* DOORS_LIGHTS / BRAKE */      \
+#define NISSAN_COMMON_RX_CHECKS                                                                                                                           \
+  {.msg = {{0x185, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  /* STEER_TORQUE_SENSOR */  \
+  {.msg = {{0x285, 0, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                              \
+           {0x285, 1, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, /* WHEEL_SPEEDS_REAR */             \
+  {.msg = {{0x30f, 2, 3, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                              \
+           {0x30f, 1, 3, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }}}, /* CRUISE_STATE */                  \
+  {.msg = {{0x15c, 0, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                              \
+           {0x15c, 1, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                              \
+           {0x239, 0, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}}}, /* GAS_PEDAL */                            \
+  {.msg = {{0x454, 0, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                              \
+           {0x454, 1, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},                                              \
+           {0x1cc, 0, 4, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}}}, /* DOORS_LIGHTS / BRAKE */                \
 
 #define NISSAN_PRO_PILOT_RX_CHECKS(alt_eps_bus)                                                                                                      \
   {.msg = {{0x1B6, alt_eps_bus, 8, 10U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
 
 static bool nissan_alt_eps = false;
 
+static const AngleSteeringLimits NISSAN_STEERING_LIMITS = {
+  .max_angle = 60000,  // 600 deg, reasonable limit
+  .angle_deg_to_can = 100,
+  .angle_rate_up_lookup = {
+    {0., 5., 15.},
+    {5., .8, .15}
+  },
+  .angle_rate_down_lookup = {
+    {0., 5., 15.},
+    {5., 3.5, .4}
+  },
+};
+
 static void nissan_rx_hook(const CANPacket_t *msg) {
 
-  if (msg->bus == (nissan_alt_eps ? 1U : 0U)) {
-    if (msg->addr == 0x2U) {
+  // Altima: on camera bus, others: on pt bus
+  if (msg->bus == 0U) {
+    if (msg->addr == 0x185U) {
       // Current steering angle
-      // Factor -0.1, little endian
-      int angle_meas_new = (GET_BYTES(msg, 0, 4) & 0xFFFFU);
-      // Multiply by -10 to match scale of LKAS angle
-      angle_meas_new = to_signed(angle_meas_new, 16) * -10;
+      int angle_meas_new = (msg->data[2] << 10) | (msg->data[3] << 2) | (msg->data[4] >> 6);
+      // Factor is -0.01, offset is 1310. Flip to correct sign, but keep units in CAN scale
+      angle_meas_new = -angle_meas_new + (1310.0f * NISSAN_STEERING_LIMITS.angle_deg_to_can);
 
       // update array of samples
       update_sample(&angle_meas, angle_meas_new);
     }
+  }
 
+  if (msg->bus == (nissan_alt_eps ? 1U : 0U)) {
     if (msg->addr == 0x285U) {
       // Get current speed and standstill
       uint16_t right_rear = (msg->data[0] << 8) | (msg->data[1]);
@@ -79,19 +93,6 @@ static void nissan_rx_hook(const CANPacket_t *msg) {
 
 
 static bool nissan_tx_hook(const CANPacket_t *msg) {
-  const AngleSteeringLimits NISSAN_STEERING_LIMITS = {
-    .max_angle = 60000,  // 600 deg, reasonable limit
-    .angle_deg_to_can = 100,
-    .angle_rate_up_lookup = {
-      {0., 5., 15.},
-      {5., .8, .15}
-    },
-    .angle_rate_down_lookup = {
-      {0., 5., 15.},
-      {5., 3.5, .4}
-    },
-  };
-
   bool tx = true;
   bool violation = false;
 
@@ -123,13 +124,25 @@ static bool nissan_tx_hook(const CANPacket_t *msg) {
 
 
 static safety_config nissan_init(uint16_t param) {
-  static const CanMsg NISSAN_TX_MSGS[] = {
+  static const CanMsg NISSAN_TX_MSGS_LEAF[] = {
     {0x169, 0, 8, .check_relay = true},   // LKAS
     {0x2b1, 0, 8, .check_relay = true},   // PROPILOT_HUD
     {0x4cc, 0, 8, .check_relay = true},   // PROPILOT_HUD_INFO_MSG
-    {0x20b, 2, 6, .check_relay = false},  // CRUISE_THROTTLE (X-Trail)
-    {0x20b, 1, 6, .check_relay = false},  // CRUISE_THROTTLE (Altima)
-    {0x280, 2, 8, .check_relay = true}    // CANCEL_MSG (Leaf)
+    {0x239, 2, 8, .check_relay = true}    // CRUISE_THROTTLE (Leaf)
+  };
+
+  static const CanMsg NISSAN_TX_MSGS_XTRAIL[] = {
+    {0x169, 0, 8, .check_relay = true},   // LKAS
+    {0x2b1, 0, 8, .check_relay = true},   // PROPILOT_HUD
+    {0x4cc, 0, 8, .check_relay = true},   // PROPILOT_HUD_INFO_MSG
+    {0x20b, 2, 6, .check_relay = false}   // CRUISE_THROTTLE (X-Trail)
+  };
+
+  static const CanMsg NISSAN_TX_MSGS_ALTIMA[] = {
+    {0x169, 0, 8, .check_relay = true},   // LKAS
+    {0x2b1, 0, 8, .check_relay = true},   // PROPILOT_HUD
+    {0x4cc, 0, 8, .check_relay = true},   // PROPILOT_HUD_INFO_MSG
+    {0x20b, 1, 6, .check_relay = false}   // CRUISE_THROTTLE (Altima)
   };
 
   // Signals duplicated below due to the fact that these messages can come in on either CAN bus, depending on car model.
@@ -156,12 +169,14 @@ static safety_config nissan_init(uint16_t param) {
   const bool nissan_leaf = GET_FLAG(current_safety_param_sp, NISSAN_PARAM_SP_LEAF);
 
   safety_config ret;
-  SET_TX_MSGS(NISSAN_TX_MSGS, ret);
   if (nissan_leaf) {
+    SET_TX_MSGS(NISSAN_TX_MSGS_LEAF, ret);
     SET_RX_CHECKS(nissan_leaf_rx_checks, ret);
   } else if (nissan_alt_eps) {
+    SET_TX_MSGS(NISSAN_TX_MSGS_ALTIMA, ret);
     SET_RX_CHECKS(nissan_alt_eps_rx_checks, ret);
   } else {
+    SET_TX_MSGS(NISSAN_TX_MSGS_XTRAIL, ret);
     SET_RX_CHECKS(nissan_rx_checks, ret);
   }
 
