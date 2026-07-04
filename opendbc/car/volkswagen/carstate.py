@@ -117,7 +117,7 @@ class CarState(CarStateBase):
         acc_limiter_mode = ext_cp.vl["ACC_02"]["ACC_Gesetzte_Zeitluecke"] == 0
       else:
         self.acc_type = 0
-        acc_limiter_mode = False
+        acc_limiter_mode = True
 
       self.esp_hold_confirmation = bool(pt_cp.vl["ESP_21"]["ESP_Haltebestaetigung"])
       speed_limiter_mode = bool(pt_cp.vl["TSK_06"]["TSK_Limiter_ausgewaehlt"])

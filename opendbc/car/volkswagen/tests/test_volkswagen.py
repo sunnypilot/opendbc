@@ -2,10 +2,11 @@ import random
 import re
 import unittest
 
-from opendbc.car import DT_CTRL
+from opendbc.car import DT_CTRL, gen_empty_fingerprint
 from opendbc.car.structs import CarParams
 from opendbc.car.volkswagen.carcontroller import HCAMitigation
-from opendbc.car.volkswagen.values import CAR, CarControllerParams as CCP, FW_QUERY_CONFIG, WMI
+from opendbc.car.volkswagen.interface import CarInterface
+from opendbc.car.volkswagen.values import CAR, CanBus, CarControllerParams as CCP, FW_QUERY_CONFIG, NetworkLocation, VolkswagenFlagsSP, WMI
 from opendbc.car.volkswagen.fingerprints import FW_VERSIONS
 
 Ecu = CarParams.Ecu
@@ -28,6 +29,47 @@ class TestVolkswagenHCAMitigation(unittest.TestCase):
         should_nudge = actuator_value != 0 and frame == self.STUCK_TORQUE_FRAMES
         expected_torque = actuator_value - (1, -1)[actuator_value < 0] if should_nudge else actuator_value
         assert hca_mitigation.update(actuator_value, actuator_value) == expected_torque, f"{frame=}"
+
+
+class TestVolkswagenCarInterface(unittest.TestCase):
+  @staticmethod
+  def _get_params_for_messages(messages_by_bus):
+    fingerprint = gen_empty_fingerprint()
+    for bus, messages in messages_by_bus.items():
+      for message in messages:
+        fingerprint[bus][message] = 8
+    return CarInterface.get_params(CAR.AUDI_Q3_MK2, fingerprint, [], False, False, False)
+
+  def test_mqb_cruise_control_only_detection(self):
+    fingerprint = gen_empty_fingerprint()
+    CAN = CanBus(fingerprint=fingerprint)
+
+    cases = (
+      ("acc_present", {CAN.pt: (0x122,)}, 0),
+      ("cc_only_with_radar", {CAN.pt: (0x117,)}, VolkswagenFlagsSP.SP_CC_ONLY),
+      ("cc_only_without_radar", {}, VolkswagenFlagsSP.SP_CC_ONLY_NO_RADAR),
+    )
+
+    for name, messages_by_bus, expected_flag in cases:
+      with self.subTest(name=name):
+        CP = self._get_params_for_messages(messages_by_bus)
+
+        assert CP.networkLocation == NetworkLocation.fwdCamera
+        assert bool(CP.flags & VolkswagenFlagsSP.SP_CC_ONLY) == (expected_flag == VolkswagenFlagsSP.SP_CC_ONLY)
+        assert bool(CP.flags & VolkswagenFlagsSP.SP_CC_ONLY_NO_RADAR) == (expected_flag == VolkswagenFlagsSP.SP_CC_ONLY_NO_RADAR)
+
+  def test_mqb_gateway_acc_uses_camera_bus_for_cc_only_detection(self):
+    fingerprint = gen_empty_fingerprint()
+    CAN = CanBus(fingerprint=fingerprint)
+
+    CP = self._get_params_for_messages({
+      CAN.alt: (0x40,),  # Airbag_01 on the alternate bus indicates a gateway harness
+      CAN.cam: (0x122,),  # ACC_06 is camera-side when the network location is gateway
+    })
+
+    assert CP.networkLocation == NetworkLocation.gateway
+    assert not (CP.flags & VolkswagenFlagsSP.SP_CC_ONLY)
+    assert not (CP.flags & VolkswagenFlagsSP.SP_CC_ONLY_NO_RADAR)
 
 class TestVolkswagenPlatformConfigs(unittest.TestCase):
   def test_spare_part_fw_pattern(self):

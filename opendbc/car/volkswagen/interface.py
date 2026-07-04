@@ -15,18 +15,19 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
     ret.brand = "volkswagen"
     ret.radarUnavailable = True
+    CAN = CanBus(fingerprint=fingerprint)
 
     if ret.flags & VolkswagenFlags.PQ:
       # Set global PQ35/PQ46/NMS parameters
       safety_configs = [get_safety_config(structs.CarParams.SafetyModel.volkswagenPq)]
-      ret.enableBsm = 0x3BA in fingerprint[0]  # SWA_1
+      ret.enableBsm = 0x3BA in fingerprint[CAN.pt]  # SWA_1
 
-      if 0x440 in fingerprint[0] or docs:  # Getriebe_1
+      if 0x440 in fingerprint[CAN.pt] or docs:  # Getriebe_1
         ret.transmissionType = TransmissionType.automatic
       else:
         ret.transmissionType = TransmissionType.manual
 
-      if any(msg in fingerprint[1] for msg in (0x1A0, 0xC2)):  # Bremse_1, Lenkwinkel_1
+      if any(msg in fingerprint[CAN.alt] for msg in (0x1A0, 0xC2)):  # Bremse_1, Lenkwinkel_1
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
@@ -36,37 +37,38 @@ class CarInterface(CarInterfaceBase):
     elif ret.flags & VolkswagenFlags.MLB:
       # Set global MLB parameters
       safety_configs = [get_safety_config(structs.CarParams.SafetyModel.volkswagenMlb)]
-      ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
+      ret.enableBsm = 0x30F in fingerprint[CAN.pt]  # SWA_01
       ret.networkLocation = NetworkLocation.gateway
       ret.dashcamOnly = is_release  # Release support needs HCA timeout fix, safety validation, revised J533 harness
 
     else:
       # Set global MQB parameters
       safety_configs = [get_safety_config(structs.CarParams.SafetyModel.volkswagen)]
-      ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
+      ret.enableBsm = 0x30F in fingerprint[CAN.pt]  # SWA_01
 
-      if 0xAD in fingerprint[0] or docs:  # Getriebe_11
+      if 0xAD in fingerprint[CAN.pt] or docs:  # Getriebe_11
         ret.transmissionType = TransmissionType.automatic
-      elif 0x187 in fingerprint[0]:  # Motor_EV_01
+      elif 0x187 in fingerprint[CAN.pt]:  # Motor_EV_01
         ret.transmissionType = TransmissionType.direct
       else:
         ret.transmissionType = TransmissionType.manual
 
-      if any(msg in fingerprint[1] for msg in (0x40, 0x86, 0xB2, 0xFD)):  # Airbag_01, LWI_01, ESP_19, ESP_21
+      if any(msg in fingerprint[CAN.alt] for msg in (0x40, 0x86, 0xB2, 0xFD)):  # Airbag_01, LWI_01, ESP_19, ESP_21
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
-      if 0x126 in fingerprint[2]:  # HCA_01
+      if 0x126 in fingerprint[CAN.cam]:  # HCA_01
         ret.flags |= VolkswagenFlags.STOCK_HCA_PRESENT.value
-      if 0x6B8 in fingerprint[0]:  # Kombi_03
+      if 0x6B8 in fingerprint[CAN.pt]:  # Kombi_03
         ret.flags |= VolkswagenFlags.KOMBI_PRESENT.value
 
       # Auto-detect CC only mode by checking for ACC_06/ACC_07 presence
       # ACC_06 = 0x122, ACC_07 = 0x12E, ACC_10 = 0x117
-      has_acc = 0x122 in fingerprint[0] or 0x12E in fingerprint[0]
+      acc_bus = CAN.cam if ret.networkLocation == NetworkLocation.gateway else CAN.pt
+      has_acc = 0x122 in fingerprint[acc_bus] or 0x12E in fingerprint[acc_bus]
       if not has_acc:
-        has_radar = 0x117 in fingerprint[0]  # ACC_10 for FCW/AEB
+        has_radar = 0x117 in fingerprint[acc_bus]  # ACC_10 for FCW/AEB
         if has_radar:
           ret.flags |= VolkswagenFlagsSP.SP_CC_ONLY.value
         else:
@@ -107,7 +109,6 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStopping = 0.5
     ret.autoResumeSng = ret.minEnableSpeed == -1
 
-    CAN = CanBus(fingerprint=fingerprint)
     if CAN.pt >= 4:
       safety_configs.insert(0, get_safety_config(structs.CarParams.SafetyModel.noOutput))
     ret.safetyConfigs = safety_configs
