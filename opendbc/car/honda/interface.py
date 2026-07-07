@@ -95,6 +95,12 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0., 5., 35.]
       ret.longitudinalTuning.kiV = [1.2, 0.8, 0.5]
 
+      if candidate == CAR.HONDA_ACCORD_9G_AU:
+        # FORK: measured brake actuator lag was ~0.6 s (carOutput brake cmd vs aEgo, 44,839 engaged
+        # pedal-free samples) while the default is 0.15 -- planner now commands decel earlier to
+        # compensate for late braking. UNTESTED ON-ROAD as of 2026-07; revert by deleting this block.
+        ret.longitudinalActuatorDelay = 0.6
+
     # Disable control if EPS mod detected
     for fw in car_fw:
       if fw.ecu == "eps" and b"," in fw.fwVersion:
@@ -231,6 +237,10 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.RADARLESS.value
     if candidate in HONDA_BOSCH_CANFD:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.BOSCH_CANFD.value
+    # HONDA_ACCORD_9G_AU: stand the stock ACC (Elesys radar) down (block + re-send SCM_BUTTONS with
+    # MAIN_ON=0) so its blocked ACC brake demands can't trip the VSA TSA fault that disables EPS. Long-control only.
+    if candidate == CAR.HONDA_ACCORD_9G_AU and ret.openpilotLongitudinalControl:
+      ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.ELESYS_SCM_STANDDOWN.value
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
@@ -238,7 +248,7 @@ class CarInterface(CarInterfaceBase):
     ret.autoResumeSng = candidate in (HONDA_BOSCH | {CAR.HONDA_CIVIC})
     if ret.autoResumeSng:
       ret.minEnableSpeed = -1.
-    elif candidate == CAR.HONDA_ODYSSEY_TWN:
+    elif candidate in (CAR.HONDA_ODYSSEY_TWN, CAR.HONDA_ACCORD_9G_AU):
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
     else:
       ret.minEnableSpeed = 25.51 * CV.MPH_TO_MS

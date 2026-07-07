@@ -20,21 +20,41 @@ def compute_gb_honda_bosch(accel, speed):
   return 0.0, 0.0
 
 
-def compute_gb_honda_nidec(accel, speed):
+# FORK CHANGE (Accord 9G AU, 2026-07): measured brake feedforward gain.
+# Upstream maps COMPUTER_BRAKE assuming full scale = 4.8 m/s^2 of deceleration; this car
+# delivers much less, so planned decels chronically under-ran (late/weak braking at red
+# lights and behind decelerating leads, needing driver overrides). Fit over 44,839 engaged,
+# pedal-free 20 Hz samples from ~45 drives (routes 00..8b; carOutput brake cmd lagged 0.6 s
+# against aEgo, R^2 = 0.61):
+#   overall:      -2.53 m/s^2 per unit (OLS) / -2.63 (median, 0.10-0.55 linear region)
+#   steady-state: -2.58 median (13,539 samples with cmd held stable 1 s) -- response is
+#                 ~linear up to 0.8 fraction, no hard saturation when the command is held
+#   by speed:     3-8 m/s: -2.9 | 8-13 m/s: -2.8 | 13-25 m/s: -2.35 (weakest at speed)
+# => full-scale value 2.6. Effect: the brake fraction for a given decel rises ~1.85x, so the
+# commanded COMPUTER_BRAKE reaches the needed level immediately instead of waiting for the
+# ki-only PID to wind up. Tuning range: 2.4 (firmer, best highway margin) .. 2.8 (softer
+# city stops). Gas scaling intentionally stays at 4.8.
+# Note: measured actuator lag was ~0.6 s while CP.longitudinalActuatorDelay is 0.15 --
+# raising that (interface.py) is the next candidate fix for braking starting late.
+ELESYS_BRAKE_SCALE = {CAR.HONDA_ACCORD_9G_AU: 2.6}
+
+
+def compute_gb_honda_nidec(accel, speed, fingerprint=None):
   creep_brake = 0.0
   creep_speed = 2.3
   creep_brake_value = 0.15
   if speed < creep_speed:
     creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  gb = float(accel) / 4.8 - creep_brake
-  return np.clip(gb, 0.0, 1.0), np.clip(-gb, 0.0, 1.0)
+  gas = float(accel) / 4.8 - creep_brake                                          # gas: upstream scaling
+  brake = float(accel) / ELESYS_BRAKE_SCALE.get(fingerprint, 4.8) - creep_brake    # FORK: measured brake gain
+  return np.clip(gas, 0.0, 1.0), np.clip(-brake, 0.0, 1.0)
 
 
 def compute_gas_brake(accel, speed, fingerprint):
   if fingerprint in HONDA_BOSCH:
     return compute_gb_honda_bosch(accel, speed)
   else:
-    return compute_gb_honda_nidec(accel, speed)
+    return compute_gb_honda_nidec(accel, speed, fingerprint)  # FORK: pass car for brake scale
 
 
 # TODO not clear this does anything useful
@@ -227,6 +247,14 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
 
           can_sends.extend(GasInterceptorCarController.update(self, CC, CS, gas, brake, wind_brake, self.packer, self.frame))
 
+    # Stock ACC stand-down: the Elesys radar keeps its own ACC armed off the PCM cruise mirror, so
+    # clearing cruise buttons never disengaged it. It does read the master ACC on/off (MAIN) switch
+    # from SCM_BUTTONS, so we re-send SCM_BUTTONS to it (bus 2) with MAIN_ON=0 -> the stock ACC stands
+    # down, stopping the blocked ACC brake that trips the VSA TSA fault. The PCM on the pt bus still
+    # gets the driver's real MAIN/buttons (OP engages normally); CMBS/FCW are independent of MAIN. ~25 Hz.
+    if self.CP.carFingerprint == CAR.HONDA_ACCORD_9G_AU and self.CP.openpilotLongitudinalControl and self.frame % 4 == 0:
+      can_sends.append(hondacan.create_scm_buttons_no_cruise(self.packer, self.CAN.camera, CS.scm_buttons))
+
     # Send dashboard UI commands.
     if self.frame % 10 == 0:
       if self.CP.openpilotLongitudinalControl:
@@ -235,8 +263,10 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
                                                  hud_control, hud_v_cruise, CS.is_metric, CS.acc_hud))
 
       steering_available = CS.out.cruiseState.available and CS.out.vEgo > max(self.params.STEER_GLOBAL_MIN_SPEED, self.CP.minSteerSpeed)
-      can_sends.extend(hondacan.create_lkas_hud(self.packer, self.CAN.lkas, self.CP, hud_control, CC.latActive,
-                                                steering_available, alert_steer_required, CS.lkas_hud, self.dashed_lanes))
+      # HONDA_ACCORD_9G_AU: 4-byte LKAS_HUD with a different layout; stock camera's HUD is forwarded instead
+      if self.CP.carFingerprint != CAR.HONDA_ACCORD_9G_AU:
+        can_sends.extend(hondacan.create_lkas_hud(self.packer, self.CAN.lkas, self.CP, hud_control, CC.latActive,
+                                                  steering_available, alert_steer_required, CS.lkas_hud, self.dashed_lanes))
 
       if self.CP.openpilotLongitudinalControl:
         # TODO: combining with create_acc_hud block above will change message order and will need replay logs regenerated

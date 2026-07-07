@@ -137,7 +137,10 @@ class CarState(CarStateBase, CarStateExt):
 
       # Log non-critical stock ACC/LKAS faults if Nidec (camera)
       if self.CP.carFingerprint not in HONDA_BOSCH:
-        ret.carFaultedNonCritical = bool(cp_cam.vl["ACC_HUD"]["ACC_PROBLEM"] or cp_cam.vl["LKAS_HUD"]["LKAS_PROBLEM"])
+        if self.CP.carFingerprint == CAR.HONDA_ACCORD_9G_AU:
+          ret.carFaultedNonCritical = bool(cp_cam.vl["ACC_HUD"]["ACC_PROBLEM"] or cp.vl["LKAS_HUD"]["LKAS_PROBLEM"])
+        else:
+          ret.carFaultedNonCritical = bool(cp_cam.vl["ACC_HUD"]["ACC_PROBLEM"] or cp_cam.vl["LKAS_HUD"]["LKAS_PROBLEM"])
 
     ret.espDisabled = cp.vl["VSA_STATUS"]["ESP_DISABLED"] != 0
 
@@ -211,6 +214,13 @@ class CarState(CarStateBase, CarStateExt):
       # TODO: find the radarless AEB_STATUS bit and make sure ACCEL_COMMAND is correct to enable AEB alerts
       if self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
         ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
+    elif self.CP.carFingerprint == CAR.HONDA_ACCORD_9G_AU:
+      # stock AEB actively braking: FCW alarm (==2) OR the radar AEB state machine engaged (AEB_STATUS
+      # != 0 = prepare/ready/braking, valid now that MAIN_ON=0 keeps the stock ACC off), AND a real
+      # brake command -- the pre-brake prepare(3)/ready(2) frames are gated out (they stand down w/o braking).
+      ret.stockAeb = bool((cp_cam.vl["BRAKE_COMMAND"]["FCW"] >= 2 or cp_cam.vl["BRAKE_COMMAND"]["AEB_STATUS"] != 0) and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
+      if ret.stockAeb and bool(cp_cam.vl["ACC_HUD"]["ACC_ON"] == 0):
+        ret.carFaultedNonCritical = True  # disengage cruise if stock ACC disengages during AEB
     else:
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
 
@@ -220,6 +230,8 @@ class CarState(CarStateBase, CarStateExt):
       ret.stockFcw = cp_cam.vl["BRAKE_COMMAND"]["FCW"] != 0
       self.acc_hud = cp_cam.vl["ACC_HUD"]
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
+      if self.CP.carFingerprint == CAR.HONDA_ACCORD_9G_AU:
+        self.scm_buttons = cp.vl["SCM_BUTTONS"]  # for re-sending on bus 2 with MAIN_ON=0 (stock-ACC stand-down)
     if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
       self.lkas_hud = cp_cam.vl["LKAS_HUD"]
 
