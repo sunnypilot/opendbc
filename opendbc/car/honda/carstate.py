@@ -218,7 +218,8 @@ class CarState(CarStateBase, CarStateExt):
       # stock AEB actively braking: FCW alarm (==2) OR the radar AEB state machine engaged (AEB_STATUS
       # != 0 = prepare/ready/braking, valid now that MAIN_ON=0 keeps the stock ACC off), AND a real
       # brake command -- the pre-brake prepare(3)/ready(2) frames are gated out (they stand down w/o braking).
-      ret.stockAeb = bool((cp_cam.vl["BRAKE_COMMAND"]["FCW"] >= 2 or cp_cam.vl["BRAKE_COMMAND"]["AEB_STATUS"] != 0) and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
+      brake_cmd = cp_cam.vl["BRAKE_COMMAND"]
+      ret.stockAeb = bool((brake_cmd["FCW"] >= 2 or brake_cmd["AEB_STATUS"] != 0) and brake_cmd["COMPUTER_BRAKE"] > 1e-5)
       if ret.stockAeb and bool(cp_cam.vl["ACC_HUD"]["ACC_ON"] == 0):
         ret.carFaultedNonCritical = True  # disengage cruise if stock ACC disengages during AEB
     else:
