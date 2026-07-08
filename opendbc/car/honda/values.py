@@ -324,7 +324,7 @@ class CAR(Platforms):
   )
   HONDA_ACCORD_9G_AU = HondaNidecPlatformConfig(
     [
-      HondaCarDocs("Honda Accord 2013-15", "V6L", support_type=SupportType.COMMUNITY, support_link="#community"),
+      HondaCarDocs("Honda Accord 2013-15", "V6L & Tech", support_type=SupportType.COMMUNITY, support_link="#community"),
     ],
     CarSpecs(mass=3343 * CV.LB_TO_KG, wheelbase=2.78, steerRatio=17.5, centerToFrontRatio=0.37,
              minSteerSpeed=99. * CV.MPH_TO_MS),  # as spec
