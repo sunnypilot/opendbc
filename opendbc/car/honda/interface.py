@@ -98,8 +98,12 @@ class CarInterface(CarInterfaceBase):
       if candidate == CAR.HONDA_ACCORD_9G_AU:
         # FORK: measured brake actuator lag was ~0.6 s (carOutput brake cmd vs aEgo, 44,839 engaged
         # pedal-free samples) while the default is 0.15 -- planner now commands decel earlier to
-        # compensate for late braking. UNTESTED ON-ROAD as of 2026-07; revert by deleting this block.
+        # compensate for late braking.
         ret.longitudinalActuatorDelay = 0.6
+        # FORK: on route ac35d9891f stops died into a 0.5-0.7 m/s crawl: plan speed hovered just
+        # above vEgoStopping=0.5 so shouldStop never latched ('stopping' in only 365 of 94.5k
+        # engaged frames) and the stopAccel ramp never fired. Enter the stopping ramp earlier.
+        ret.vEgoStopping = 0.8
 
     # Disable control if EPS mod detected
     for fw in car_fw:

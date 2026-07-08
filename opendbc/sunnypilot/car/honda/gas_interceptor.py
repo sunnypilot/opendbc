@@ -9,6 +9,7 @@ import numpy as np
 
 from opendbc.car import structs
 from opendbc.car.can_definitions import CanData
+from opendbc.car.honda.values import CAR
 from opendbc.sunnypilot.car import create_gas_interceptor_command
 
 
@@ -27,6 +28,11 @@ class GasInterceptorCarController:
     if self.CP_SP.enableGasInterceptor:
       # way too aggressive at low speed without this
       gas_mult = np.interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
+      if self.CP.carFingerprint == CAR.HONDA_ACCORD_9G_AU:
+        # FORK: measured pedal->accel gain (grade+lag corrected, route ac35d9891f) is ~4.8 @ 10 m/s
+        # but falls to ~3.5 @ 14 and ~2.2 @ 18 m/s. The capped 1.0 multiplier under-gassed at speed,
+        # leaving the slow ki (0.5) to grind out the error -> sluggish accel / pedal-lag feel.
+        gas_mult = np.interp(CS.out.vEgo, [0., 10., 15., 20.], [0.4, 1.0, 1.4, 2.1])
       # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
       # This prevents unexpected pedal range rescaling
       # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected

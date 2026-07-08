@@ -21,9 +21,25 @@ def compute_gb_honda_bosch(accel, speed):
 
 
 ELESYS_BRAKE_SCALE: dict[str, float] = {CAR.HONDA_ACCORD_9G_AU: 2.6}
+# FORK: measured self-propulsion (torque-converter creep) on flat ground, m/s^2 vs speed.
+# Grade-corrected coastdown pooled over 76 local routes (~140k low-speed coast frames), consistent
+# with the single new-build route ac35d9891f: ~1.05 @ 0.3-0.6 m/s, 0.79 @ 0.6-1, 0.66 @ 1-1.5,
+# 0.43 @ 1.5-2, ~0.3 @ 2-4, ~0 by 5.
+ELESYS_CREEP_BP = [0., 0.75, 1.75, 3.0, 5.0]
+ELESYS_CREEP_V = [1.15, 0.8, 0.45, 0.3, 0.0]
 
 
 def compute_gb_honda_nidec(accel, speed, fingerprint: str | None = None):
+  if fingerprint in ELESYS_BRAKE_SCALE:
+    # FORK: creep as a physical accel offset applied BEFORE per-side scaling. Upstream's creep_brake
+    # (0.15 fraction, worth 0.72 m/s^2 on the ILX 4.8 scale) is applied in fraction units, so on the
+    # rescaled 2.6 brake it was only worth 0.39 m/s^2 -- ~3x weaker than this car's measured creep.
+    # Result: stops died into a ~0.6 m/s crawl (cb 60-96 sent; stock bus-2 data confirms cb <~60
+    # produces no decel and >100 is needed to keep decelerating near a stop).
+    net = float(accel) - float(np.interp(speed, ELESYS_CREEP_BP, ELESYS_CREEP_V))
+    gas = max(net, 0.) / 4.8
+    brake = max(-net, 0.) / ELESYS_BRAKE_SCALE[fingerprint]
+    return np.clip(gas, 0.0, 1.0), np.clip(brake, 0.0, 1.0)
   creep_brake = 0.0
   creep_speed = 2.3
   creep_brake_value = 0.15
@@ -66,14 +82,20 @@ def actuator_hysteresis(brake, braking, brake_steady, v_ego, car_fingerprint):
   return brake, braking, brake_steady
 
 
-def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts):
+def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts, steady_refresh=20.):
   pump_on = False
 
   # reset pump timer if:
   # - there is an increment in brake request
   # - we are applying steady state brakes and we haven't been running the pump
-  #   for more than 20s (to prevent pressure bleeding)
-  if apply_brake > apply_brake_last or (ts - last_pump_ts > 20. and apply_brake > 0):
+  #   for more than steady_refresh s (to prevent pressure bleeding)
+  # FORK(HONDA_ACCORD_9G_AU): stock Elesys re-primes the pump all through braking. Bus-2 pump
+  # duty over 19 routes where stock braking reached the car: ~99% while cb rising, ~39% steady,
+  # ~10% falling (50% overall); and decel measurably fades when the pump is off at steady
+  # command (+0.04 m/s^3) vs building when on (-0.07). Upstream's 20 s refresh lets pressure
+  # bleed through an entire stop approach -- the "loses brake pressure" overshoot. A 0.5 s
+  # refresh (0.2 s on / 0.5 s period = 40% steady duty) matches the stock envelope.
+  if apply_brake > apply_brake_last or (ts - last_pump_ts > steady_refresh and apply_brake > 0):
     last_pump_ts = ts
 
   # once the pump is on, run it for at least 0.2s
@@ -221,7 +243,8 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
         else:
           apply_brake = np.clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(np.clip(apply_brake * self.params.NIDEC_BRAKE_MAX, 0, self.params.NIDEC_BRAKE_MAX - 1))
-          pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
+          steady_refresh = 0.5 if self.CP.carFingerprint == CAR.HONDA_ACCORD_9G_AU else 20.  # FORK: see brake_pump_hysteresis
+          pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts, steady_refresh)
 
           pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, self.CAN, apply_brake, pump_on,
