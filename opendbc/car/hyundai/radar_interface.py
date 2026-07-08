@@ -40,6 +40,9 @@ class HyundaiRadarTrackConfig:
   bus: int
 
 
+HyundaiRadarTrackKey = tuple[str, int]
+
+
 @dataclass
 class HyundaiRadarParserConfig:
   spec: HyundaiRadarTrackSpec
@@ -85,7 +88,7 @@ def get_all_radar_track_candidates() -> tuple[HyundaiRadarTrackConfig, ...]:
   return tuple(HyundaiRadarTrackConfig(radar_spec, bus) for radar_spec in HYUNDAI_RADAR_TRACK_SPECS for bus in RADAR_TRACK_BUSES)
 
 
-def get_track_storage_key(radar_spec: HyundaiRadarTrackSpec, addr: int, track_prefix: str) -> tuple[str, int]:
+def get_track_storage_key(radar_spec: HyundaiRadarTrackSpec, addr: int, track_prefix: str) -> HyundaiRadarTrackKey:
   if radar_spec.name in ("RADAR_500_51F", "RADAR_235_248", "RADAR_3A5_3C4"):
     return (radar_spec.name, addr)
 
@@ -161,6 +164,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
   def __init__(self, CP, CP_SP):
     RadarInterfaceBase.__init__(self, CP, CP_SP)
     RadarInterfaceExt.__init__(self, CP, CP_SP)
+    self.pts: dict[int | HyundaiRadarTrackKey, structs.RadarData.RadarPoint] = {}
     detected_tracks = get_detected_radar_tracks(CP)
     candidate_tracks = get_all_radar_track_candidates() if CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR else ()
     self.radar_tracks = tuple(dict.fromkeys((*detected_tracks, *candidate_tracks)))
@@ -173,7 +177,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.track_id = 0
 
     self.radar_off_can = CP.radarUnavailable and not (CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR)
-    self.rcp = self.radar_parsers[0].parser if self.radar_parsers else None
+    self.rcp: CANParser | None = self.radar_parsers[0].parser if self.radar_parsers else None
 
     if self.CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY:
       self.initialize_radar_ext(self.trigger_msg)

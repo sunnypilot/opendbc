@@ -10,8 +10,8 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 class RadarInterfaceExt(EsccRadarInterfaceBase):
   msg_src: str
   trigger_msg: int
-  rcp: CANParser
-  pts: dict[int, structs.RadarData.RadarPoint]
+  rcp: CANParser | None
+  pts: dict[int | tuple[str, int], structs.RadarData.RadarPoint]
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     EsccRadarInterfaceBase.__init__(self, CP, CP_SP)
@@ -30,7 +30,7 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     if self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
       return "SCC_CONTROL" if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else "SCC11"
 
-  def get_radar_ext_can_parser(self) -> CANParser:
+  def get_radar_ext_can_parser(self) -> CANParser | None:
     if self.ESCC.enabled:
       lead_src, bus = "ESCC", 0
     elif self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
