@@ -20,22 +20,6 @@ def compute_gb_honda_bosch(accel, speed):
   return 0.0, 0.0
 
 
-# FORK CHANGE (Accord 9G AU, 2026-07): measured brake feedforward gain.
-# Upstream maps COMPUTER_BRAKE assuming full scale = 4.8 m/s^2 of deceleration; this car
-# delivers much less, so planned decels chronically under-ran (late/weak braking at red
-# lights and behind decelerating leads, needing driver overrides). Fit over 44,839 engaged,
-# pedal-free 20 Hz samples from ~45 drives (routes 00..8b; carOutput brake cmd lagged 0.6 s
-# against aEgo, R^2 = 0.61):
-#   overall:      -2.53 m/s^2 per unit (OLS) / -2.63 (median, 0.10-0.55 linear region)
-#   steady-state: -2.58 median (13,539 samples with cmd held stable 1 s) -- response is
-#                 ~linear up to 0.8 fraction, no hard saturation when the command is held
-#   by speed:     3-8 m/s: -2.9 | 8-13 m/s: -2.8 | 13-25 m/s: -2.35 (weakest at speed)
-# => full-scale value 2.6. Effect: the brake fraction for a given decel rises ~1.85x, so the
-# commanded COMPUTER_BRAKE reaches the needed level immediately instead of waiting for the
-# ki-only PID to wind up. Tuning range: 2.4 (firmer, best highway margin) .. 2.8 (softer
-# city stops). Gas scaling intentionally stays at 4.8.
-# Note: measured actuator lag was ~0.6 s while CP.longitudinalActuatorDelay is 0.15 --
-# raising that (interface.py) is the next candidate fix for braking starting late.
 ELESYS_BRAKE_SCALE = {CAR.HONDA_ACCORD_9G_AU: 2.6}
 
 
