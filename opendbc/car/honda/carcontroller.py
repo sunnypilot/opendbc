@@ -20,17 +20,18 @@ def compute_gb_honda_bosch(accel, speed):
   return 0.0, 0.0
 
 
-ELESYS_BRAKE_SCALE = {CAR.HONDA_ACCORD_9G_AU: 2.6}
+ELESYS_BRAKE_SCALE: dict[str, float] = {CAR.HONDA_ACCORD_9G_AU: 2.6}
 
 
-def compute_gb_honda_nidec(accel, speed, fingerprint=None):
+def compute_gb_honda_nidec(accel, speed, fingerprint: str | None = None):
   creep_brake = 0.0
   creep_speed = 2.3
   creep_brake_value = 0.15
   if speed < creep_speed:
     creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
+  brake_scale = ELESYS_BRAKE_SCALE.get(fingerprint, 4.8) if fingerprint is not None else 4.8   # FORK: measured brake gain
   gas = float(accel) / 4.8 - creep_brake                                          # gas: upstream scaling
-  brake = float(accel) / ELESYS_BRAKE_SCALE.get(fingerprint, 4.8) - creep_brake    # FORK: measured brake gain
+  brake = float(accel) / brake_scale - creep_brake
   return np.clip(gas, 0.0, 1.0), np.clip(-brake, 0.0, 1.0)
 
 
