@@ -54,9 +54,9 @@ RADAR_500_51F = HyundaiRadarTrackSpec("RADAR_500_51F", 0x500, 32, ("",))
 RADAR_210_21F = HyundaiRadarTrackSpec("RADAR_210_21F", 0x210, 16, ("1_", "2_"))
 RADAR_235_248 = HyundaiRadarTrackSpec("RADAR_235_248", 0x235, 20, ("",))
 RADAR_3A5_3C4 = HyundaiRadarTrackSpec("RADAR_3A5_3C4", 0x3A5, 32, ("",))
-RADAR_602_611 = HyundaiRadarTrackSpec("RADAR_602_611", 0x602, 16, ("1_", "2_"))
+RADAR_602_617 = HyundaiRadarTrackSpec("RADAR_602_617", 0x602, 16, ("1_", "2_"))
 
-HYUNDAI_RADAR_TRACK_SPECS = (RADAR_500_51F, RADAR_210_21F, RADAR_235_248, RADAR_3A5_3C4, RADAR_602_611)
+HYUNDAI_RADAR_TRACK_SPECS = (RADAR_500_51F, RADAR_210_21F, RADAR_235_248, RADAR_3A5_3C4, RADAR_602_617)
 DEFAULT_RADAR_TRIGGER_MSG = max(rt.end_addr for rt in HYUNDAI_RADAR_TRACK_SPECS)
 
 DETECTED_RADAR_TRACKS: dict[str, tuple[HyundaiRadarTrackConfig, ...]] = {}
@@ -97,7 +97,7 @@ def get_track_storage_key(radar_spec: HyundaiRadarTrackSpec, addr: int, track_pr
 
 
 def get_track_ts_nanos(parser: CANParser, msg_name: str, radar_spec: HyundaiRadarTrackSpec, track_prefix: str) -> int:
-  if radar_spec.name == "RADAR_602_611":
+  if radar_spec.name == "RADAR_602_617":
     return parser.ts_nanos[msg_name][f"{track_prefix}DISTANCE"]
   if radar_spec.name in ("RADAR_210_21F", "RADAR_235_248"):
     return parser.ts_nanos[msg_name][f"{track_prefix}LONG_DIST"]
@@ -105,7 +105,7 @@ def get_track_ts_nanos(parser: CANParser, msg_name: str, radar_spec: HyundaiRada
 
 
 def decode_radar_track(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> tuple[float, float, float, float]:
-  if radar_spec.name == "RADAR_602_611":
+  if radar_spec.name == "RADAR_602_617":
     return (
       track_msg[f"{track_prefix}DISTANCE"],
       track_msg[f"{track_prefix}LATERAL"],
@@ -148,7 +148,7 @@ def decode_radar_track(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefi
 
 
 def is_radar_track_valid(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> bool:
-  if radar_spec.name == "RADAR_602_611":
+  if radar_spec.name == "RADAR_602_617":
     return track_msg[f"{track_prefix}DISTANCE"] != 255.75
 
   if radar_spec.name == "RADAR_210_21F":

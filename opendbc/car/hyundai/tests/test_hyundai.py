@@ -8,7 +8,7 @@ from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.hyundai.interface import CarInterface
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.radar_interface import HYUNDAI_RADAR_TRACK_SPECS, RADAR_210_21F, RADAR_235_248, RADAR_3A5_3C4, \
-                                                RADAR_500_51F, RADAR_602_611, RadarInterface, get_detected_radar_tracks
+                                                RADAR_500_51F, RADAR_602_617, RadarInterface, get_detected_radar_tracks
 from opendbc.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
@@ -54,7 +54,7 @@ def add_radar_range(fingerprint, radar_spec, bus, missing_addr=None):
 
 def mark_track_updated(parser, radar_spec, addr, prefix=""):
   msg_name = f"RADAR_TRACK_{addr:x}"
-  signal = "DISTANCE" if radar_spec == RADAR_602_611 else "LONG_DIST"
+  signal = "DISTANCE" if radar_spec == RADAR_602_617 else "LONG_DIST"
   parser.ts_nanos[msg_name][f"{prefix}{signal}"] = 1
 
 
@@ -213,7 +213,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert RI.active_radar_buses[RADAR_235_248.name] == 1
 
   def test_radar_interface_two_track_ranges(self):
-    for radar_spec in (RADAR_210_21F, RADAR_602_611):
+    for radar_spec in (RADAR_210_21F, RADAR_602_617):
       with self.subTest(radar_spec=radar_spec.name):
         fingerprint = gen_empty_fingerprint()
         add_radar_range(fingerprint, radar_spec, 1)
