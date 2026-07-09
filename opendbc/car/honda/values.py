@@ -77,7 +77,8 @@ class HondaFlags(IntFlag):
 
   HAS_ALL_DOOR_STATES = 256  # Some Hondas have all door states, others only driver door
   BOSCH_ALT_RADAR = 512
-  ELESYS = 1024
+  ELESYS = 1024  # FORK: Elesys-radar cars (e.g. 9G Accord AU)
+  HYBRID = 2048
   BOSCH_TJA_CONTROL = 4096
 
 

@@ -17,17 +17,17 @@ NIDEC_CAR = CAR.HONDA_CRV  # plain Nidec, no interceptor assumptions in these un
 
 class TestElesysCategory(unittest.TestCase):
   def test_membership(self):
-    self.assertIn(ELESYS_CAR, HONDA_ELESYS)
-    self.assertNotIn(ELESYS_CAR, HONDA_BOSCH)
-    self.assertNotIn(NIDEC_CAR, HONDA_ELESYS)
+    self.assertTrue(ELESYS_CAR in HONDA_ELESYS)
+    self.assertFalse(ELESYS_CAR in HONDA_BOSCH)
+    self.assertFalse(NIDEC_CAR in HONDA_ELESYS)
     # every Elesys car needs a brake scale (or falls back to the default) and must not be Bosch
     for car in HONDA_ELESYS:
-      self.assertNotIn(car, HONDA_BOSCH)
+      self.assertFalse(car in HONDA_BOSCH)
 
   def test_dispatch(self):
     # Elesys car routes to the Elesys mapping, Nidec car to upstream mapping
     a, v = -1.5, 7.0
-    self.assertEqual(compute_gas_brake(a, v, ELESYS_CAR), compute_gb_honda_elesys(a, v, ELESYS_CAR))
+    self.assertEqual(compute_gas_brake(a, v, ELESYS_CAR), compute_gb_honda_elesys(a, v))
     self.assertEqual(compute_gas_brake(a, v, NIDEC_CAR), tuple(compute_gb_honda_nidec(a, v)))
 
 
@@ -52,37 +52,37 @@ class TestComputeGbElesys(unittest.TestCase):
   def test_creep_offset_near_stop(self):
     # measured: a small planner decel near standstill must still command a real brake,
     # because the car self-propels at ~1 m/s^2 (torque-converter creep)
-    gas, brake = compute_gb_honda_elesys(-0.29, 0.65, ELESYS_CAR)
+    gas, brake = compute_gb_honda_elesys(-0.29, 0.65)
     self.assertEqual(gas, 0.0)
     self.assertGreater(brake * 256, 100)  # above the measured effectiveness threshold
 
   def test_mid_speed_brake_scale(self):
     # above the creep band the mapping is a pure rescale: accel/2.6
-    gas, brake = compute_gb_honda_elesys(-1.5, 7.0, ELESYS_CAR)
+    gas, brake = compute_gb_honda_elesys(-1.5, 7.0)
     self.assertEqual(gas, 0.0)
-    self.assertAlmostEqual(brake, 1.5 / ELESYS_BRAKE_SCALE[ELESYS_CAR], places=6)
+    self.assertAlmostEqual(brake, 1.5 / ELESYS_BRAKE_SCALE, places=6)
 
   def test_gas_side(self):
-    gas, brake = compute_gb_honda_elesys(1.0, 10.0, ELESYS_CAR)
+    gas, brake = compute_gb_honda_elesys(1.0, 10.0)
     self.assertEqual(brake, 0.0)
     self.assertAlmostEqual(gas, 1.0 / 4.8, places=6)
 
   def test_mutually_exclusive_and_clipped(self):
     for accel in np.arange(-4.0, 2.5, 0.25):
       for speed in (0.0, 0.5, 1.0, 2.0, 5.0, 15.0):
-        gas, brake = compute_gb_honda_elesys(float(accel), speed, ELESYS_CAR)
+        gas, brake = compute_gb_honda_elesys(float(accel), speed)
         self.assertGreaterEqual(min(gas, brake), 0.0)
         self.assertLessEqual(max(gas, brake), 1.0)
         self.assertEqual(min(gas, brake), 0.0)  # never both
 
   def test_stopping_ramp_saturates(self):
     # stopAccel (-2.0) near standstill must be full brake (creep + 2.0 > 2.6)
-    _, brake = compute_gb_honda_elesys(-2.0, 0.4, ELESYS_CAR)
+    _, brake = compute_gb_honda_elesys(-2.0, 0.4)
     self.assertEqual(brake, 1.0)
 
   def test_light_gas_still_brakes_in_creep_band(self):
     # wanting +0.3 m/s^2 at crawl speed means braking: the car creeps harder than that on its own
-    gas, brake = compute_gb_honda_elesys(0.3, 0.5, ELESYS_CAR)
+    gas, brake = compute_gb_honda_elesys(0.3, 0.5)
     self.assertEqual(gas, 0.0)
     self.assertGreater(brake, 0.0)
 
@@ -121,7 +121,6 @@ class TestBrakePumpHysteresis(unittest.TestCase):
     self.assertFalse(pump)
 
 
-
 class TestBrakeCommandUnitsBit(unittest.TestCase):
   """SET_ME_1 in BRAKE_COMMAND is the cluster units flag on Elesys cars (0 = metric,
   1 = imperial) and a reserved constant 1 on every other Honda."""
@@ -145,13 +144,13 @@ class TestBrakeCommandUnitsBit(unittest.TestCase):
     b = CANPacker(DBC[car][Bus.pt]).make_can_msg("BRAKE_COMMAND", 0, {"SET_ME_1": 1})
     da = bytes(a.dat if hasattr(a, 'dat') else a[1])
     db = bytes(b.dat if hasattr(b, 'dat') else b[1])
-    return bytes(x ^ y for x, y in zip(da, db))
+    return bytes(x ^ y for x, y in zip(da, db, strict=True))
 
   def test_elesys_bit_tracks_units(self):
     metric = self._frame(CAR.HONDA_ACCORD_9G_AU, True)
     imperial = self._frame(CAR.HONDA_ACCORD_9G_AU, False)
     mask = self._units_bit_mask(CAR.HONDA_ACCORD_9G_AU)
-    diff = bytes(x ^ y for x, y in zip(metric, imperial))
+    diff = bytes(x ^ y for x, y in zip(metric, imperial, strict=True))
     # outside the checksum byte, metric vs imperial frames differ in exactly the SET_ME_1 bit
     self.assertEqual(diff[:7], mask[:7])
     self.assertEqual(sum(bin(b).count('1') for b in mask[:7]), 1)
