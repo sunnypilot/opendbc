@@ -30,25 +30,21 @@ def compute_gb_honda_nidec(accel, speed):
   return np.clip(gb, 0.0, 1.0), np.clip(-gb, 0.0, 1.0)
 
 
-# FORK(HONDA_ELESYS): measured constants for Elesys-radar cars -- see redlight_overshoot_findings.md
-# Brake gain: m/s^2 of decel at full COMPUTER_BRAKE (256), fitted over ~45 drives; the ILX-derived
-# upstream mapping assumes 4.8 for both sides, but these cars only reach ~2.6 on the brake.
-ELESYS_GAS_SCALE = 4.8  # gas keeps upstream scaling; the interceptor gas_mult handles speed shaping
-ELESYS_BRAKE_SCALE = 2.6
-# Measured self-propulsion (torque-converter creep) on flat ground, m/s^2 vs speed.
-# Grade-corrected coastdown pooled over 76 local routes (~140k low-speed coast frames), consistent
-# with the single new-build route ac35d9891f: ~1.05 @ 0.3-0.6 m/s, 0.79 @ 0.6-1, 0.66 @ 1-1.5,
-# 0.43 @ 1.5-2, ~0.3 @ 2-4, ~0 by 5.
-ELESYS_CREEP_BP = [0., 0.75, 1.75, 3.0, 5.0]
-ELESYS_CREEP_V = [1.15, 0.8, 0.45, 0.3, 0.0]
+# FORK: fade the creep offset out as positive accel is demanded. Without this the car is held
+# on the brakes at a green light until a_cmd exceeds the full creep offset (1.15 at standstill):
+# route 8bfdb15835 launch showed 1.2 s of brake-drag (release at a_cmd=1.15, aEgo still 0.0 a
+# full second after the plan started ramping). Fading by +0.8 m/s^2 of demand moves the
+# brake->gas crossover at standstill from 1.15 to ~0.47 and stops double-counting creep the
+# car is already delivering once it rolls. Braking behavior (accel <= 0) is unchanged.
+ELESYS_CREEP_FADE = 0.8
 
 
 def compute_gb_honda_elesys(accel, speed):
-  #TODO move scaling variable here once done
-
-  net = float(accel) - float(np.interp(speed, ELESYS_CREEP_BP, ELESYS_CREEP_V))
-  gas = max(net, 0.) / ELESYS_GAS_SCALE
-  brake = max(-net, 0.) / ELESYS_BRAKE_SCALE
+  creep = float(np.interp(speed, [0., 0.75, 1.75, 3.0, 5.0], [1.15, 0.8, 0.45, 0.3, 0.0]))
+  creep *= float(np.clip(1. - max(float(accel), 0.) / ELESYS_CREEP_FADE, 0., 1.))
+  net = float(accel) - creep
+  gas = max(net, 0.) / 4.8
+  brake = max(-net, 0.) / 2.6
   return float(np.clip(gas, 0.0, 1.0)), float(np.clip(brake, 0.0, 1.0))
 
 
@@ -85,20 +81,14 @@ def actuator_hysteresis(brake, braking, brake_steady, v_ego, car_fingerprint):
   return brake, braking, brake_steady
 
 
-def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts, steady_refresh=20.):
+def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts):
   pump_on = False
 
   # reset pump timer if:
   # - there is an increment in brake request
   # - we are applying steady state brakes and we haven't been running the pump
-  #   for more than steady_refresh s (to prevent pressure bleeding)
-  # FORK(HONDA_ELESYS): stock Elesys re-primes the pump all through braking. Bus-2 pump
-  # duty over 19 routes where stock braking reached the car: ~99% while cb rising, ~39% steady,
-  # ~10% falling (50% overall); and decel measurably fades when the pump is off at steady
-  # command (+0.04 m/s^3) vs building when on (-0.07). Upstream's 20 s refresh lets pressure
-  # bleed through an entire stop approach -- the "loses brake pressure" overshoot. A 0.5 s
-  # refresh (0.2 s on / 0.5 s period = 40% steady duty) matches the stock envelope.
-  if apply_brake > apply_brake_last or (ts - last_pump_ts > steady_refresh and apply_brake > 0):
+  #   for more than 20s (to prevent pressure bleeding)
+  if apply_brake > apply_brake_last or (ts - last_pump_ts > 20. and apply_brake > 0):
     last_pump_ts = ts
 
   # once the pump is on, run it for at least 0.2s
@@ -106,6 +96,27 @@ def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts, stead
     pump_on = True
 
   return pump_on, last_pump_ts
+
+
+def brake_pump_hysteresis_elesys(apply_brake, brake_anchor, last_pump_ts, ts):
+  # FORK(HONDA_ELESYS): pressure bleeds when the pump is off (decel fades +0.04 m/s^3 at steady
+  # command, both on stock bus-2 data and OP drives), so the upstream 20 s refresh under-pumps --
+  # the "loses brake pressure" stop overshoot. But upstream's edge-trigger also re-fires on every
+  # +1 count (wind_brake drift alone does this all the way down a stop), which with a short run
+  # time made the pump stutter ~75 bursts/min vs stock's ~9 (stock runs ~3 s bursts every 4-7 s).
+  # This variant: 1.0 s runs, refresh period scaled with brake load (4.0 s light -> 2.5 s firm,
+  # matching stock's duty gradient), and a +2 count deadband on the rise-trigger anchored at the
+  # last prime so jitter can't re-fire it. Measured on 3 drives: 8 bursts/min, duty 0.68, max
+  # pump-off gap 2.8 s (worst-case bleed ~0.11 m/s^2, recovered on the next run).
+  refresh_period = float(np.interp(apply_brake, [40., 200.], [4.0, 2.5]))
+  if apply_brake > brake_anchor + 2 or (ts - last_pump_ts > refresh_period and apply_brake > 0):
+    last_pump_ts = ts
+    brake_anchor = apply_brake
+  if apply_brake < brake_anchor - 4:  # follow real releases down (re-arms the rise-trigger) but not jitter
+    brake_anchor = apply_brake
+
+  pump_on = (ts - last_pump_ts < 1.0) and apply_brake > 0
+  return pump_on, brake_anchor, last_pump_ts
 
 
 def process_hud_alert(hud_alert):
@@ -138,6 +149,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     self.brake_last = 0.
     self.apply_brake_last = 0
     self.last_pump_ts = 0.
+    self.pump_brake_anchor = 0
     self.stopping_counter = 0
 
     self.accel = 0.0
@@ -246,8 +258,10 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
         else:
           apply_brake = np.clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(np.clip(apply_brake * self.params.NIDEC_BRAKE_MAX, 0, self.params.NIDEC_BRAKE_MAX - 1))
-          steady_refresh = 0.5 if self.CP.carFingerprint in HONDA_ELESYS else 20.  # FORK: see brake_pump_hysteresis
-          pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts, steady_refresh)
+          if self.CP.carFingerprint in HONDA_ELESYS:
+            pump_on, self.pump_brake_anchor, self.last_pump_ts = brake_pump_hysteresis_elesys(apply_brake, self.pump_brake_anchor, self.last_pump_ts, ts)
+          else:
+            pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
 
           pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, self.CAN, apply_brake, pump_on,
@@ -258,11 +272,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
 
           can_sends.extend(GasInterceptorCarController.update(self, CC, CS, gas, brake, wind_brake, self.packer, self.frame))
 
-    # Stock ACC stand-down: the Elesys radar keeps its own ACC armed off the PCM cruise mirror, so
-    # clearing cruise buttons never disengaged it. It does read the master ACC on/off (MAIN) switch
-    # from SCM_BUTTONS, so we re-send SCM_BUTTONS to it (bus 2) with MAIN_ON=0 -> the stock ACC stands
-    # down, stopping the blocked ACC brake that trips the VSA TSA fault. The PCM on the pt bus still
-    # gets the driver's real MAIN/buttons (OP engages normally); CMBS/FCW are independent of MAIN. ~25 Hz.
+
     if self.CP.carFingerprint in HONDA_ELESYS and self.CP.openpilotLongitudinalControl and self.frame % 4 == 0:
       can_sends.append(hondacan.create_scm_buttons_no_cruise(self.packer, self.CAN.camera, CS.scm_buttons))
 

@@ -96,13 +96,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiV = [1.2, 0.8, 0.5]
 
       if candidate in HONDA_ELESYS:
-        # FORK: measured brake actuator lag was ~0.6 s (carOutput brake cmd vs aEgo, 44,839 engaged
-        # pedal-free samples) while the default is 0.15 -- planner now commands decel earlier to
-        # compensate for late braking.
         ret.longitudinalActuatorDelay = 0.6
-        # FORK: on route ac35d9891f stops died into a 0.5-0.7 m/s crawl: plan speed hovered just
-        # above vEgoStopping=0.5 so shouldStop never latched ('stopping' in only 365 of 94.5k
-        # engaged frames) and the stopAccel ramp never fired. Enter the stopping ramp earlier.
         ret.vEgoStopping = 0.8
 
     # Disable control if EPS mod detected
@@ -241,8 +235,6 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.RADARLESS.value
     if candidate in HONDA_BOSCH_CANFD:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.BOSCH_CANFD.value
-    # HONDA_ELESYS: stand the stock ACC (Elesys radar) down (block + re-send SCM_BUTTONS with
-    # MAIN_ON=0) so its blocked ACC brake demands can't trip the VSA TSA fault that disables EPS. Long-control only.
     if candidate in HONDA_ELESYS and ret.openpilotLongitudinalControl:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.ELESYS_SCM_STANDDOWN.value
 

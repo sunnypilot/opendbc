@@ -56,7 +56,7 @@ class HondaSafetyFlags(IntFlag):
   NIDEC_ALT = 4
   RADARLESS = 8
   BOSCH_CANFD = 16
-  ELESYS_SCM_STANDDOWN = 32  # HONDA_ACCORD_9G_AU (Elesys radar): block + re-send SCM_BUTTONS (MAIN_ON=0) to stand stock ACC down
+  ELESYS_SCM_STANDDOWN = 32
 
 
 class HondaFlags(IntFlag):
@@ -77,7 +77,7 @@ class HondaFlags(IntFlag):
 
   HAS_ALL_DOOR_STATES = 256  # Some Hondas have all door states, others only driver door
   BOSCH_ALT_RADAR = 512
-  ELESYS = 1024  # FORK: Elesys-radar cars (e.g. 9G Accord AU)
+  ELESYS = 1024
   HYBRID = 2048
   BOSCH_TJA_CONTROL = 4096
 
