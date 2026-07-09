@@ -1,6 +1,6 @@
 from opendbc.car import CanBusBase
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.honda.values import (CAR, HondaFlags, HONDA_BOSCH, HONDA_BOSCH_ALT_RADAR, HONDA_BOSCH_RADARLESS,
+from opendbc.car.honda.values import (HondaFlags, HONDA_BOSCH, HONDA_BOSCH_ALT_RADAR, HONDA_BOSCH_RADARLESS, HONDA_ELESYS,
                                       HONDA_BOSCH_CANFD, CarControllerParams)
 from opendbc.sunnypilot.car.honda.values_ext import HondaFlagsSP
 
@@ -47,20 +47,22 @@ class CanBus(CanBusBase):
     return self.offset
 
 
-def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake, CP_SP):
+def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake, is_metric, CP_SP):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
   pcm_fault_cmd = False
-  # HONDA_ACCORD_9G_AU: SET_ME_1 is a metric/imperial flag here (0 = metric);
-  accord_au = car_fingerprint == CAR.HONDA_ACCORD_9G_AU
+  # HONDA_ELESYS: SET_ME_1 is the cluster units flag (0 = metric, 1 = imperial); reserved constant 1 elsewhere
+  set_me_1 = 1
+  if car_fingerprint in HONDA_ELESYS and is_metric:
+    set_me_1 = 0
 
   values = {
     "CRUISE_OVERRIDE": pcm_override,
     "CRUISE_FAULT_CMD": pcm_fault_cmd,
     "CRUISE_CANCEL_CMD": pcm_cancel_cmd,
     "COMPUTER_BRAKE_REQUEST": brake_rq,
-    "SET_ME_1": 0 if accord_au else 1,
+    "SET_ME_1": set_me_1,
     "BRAKE_LIGHTS": brakelights,
     "CHIME": stock_brake["CHIME"] if fcw else 0,  # send the chime for stock fcw
     "FCW": fcw << 1,  # TODO: Why are there two bits for fcw?

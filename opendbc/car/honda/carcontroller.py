@@ -4,7 +4,7 @@ from opendbc.can import CANPacker
 from opendbc.car import Bus, DT_CTRL, rate_limit, make_tester_present_msg, structs
 from opendbc.car.honda import hondacan
 from opendbc.car.honda.values import CAR, CruiseButtons, HONDA_BOSCH, HONDA_BOSCH_CANFD, HONDA_BOSCH_RADARLESS, \
-                                     HONDA_BOSCH_TJA_CONTROL, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
+                                     HONDA_BOSCH_TJA_CONTROL, HONDA_ELESYS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.honda.mads import MadsCarController
@@ -20,8 +20,22 @@ def compute_gb_honda_bosch(accel, speed):
   return 0.0, 0.0
 
 
-ELESYS_BRAKE_SCALE: dict[str, float] = {CAR.HONDA_ACCORD_9G_AU: 2.6}
-# FORK: measured self-propulsion (torque-converter creep) on flat ground, m/s^2 vs speed.
+def compute_gb_honda_nidec(accel, speed):
+  creep_brake = 0.0
+  creep_speed = 2.3
+  creep_brake_value = 0.15
+  if speed < creep_speed:
+    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
+  gb = float(accel) / 4.8 - creep_brake
+  return np.clip(gb, 0.0, 1.0), np.clip(-gb, 0.0, 1.0)
+
+
+# FORK(HONDA_ELESYS): measured constants for Elesys-radar cars -- see redlight_overshoot_findings.md
+# Brake gain: m/s^2 of decel at full COMPUTER_BRAKE (256), fitted over ~45 drives; the ILX-derived
+# upstream mapping assumes 4.8 for both sides, but these cars only reach ~2.6 on the brake.
+ELESYS_GAS_SCALE = 4.8  # gas keeps upstream scaling; the interceptor gas_mult handles speed shaping
+ELESYS_BRAKE_SCALE = 2.6
+# Measured self-propulsion (torque-converter creep) on flat ground, m/s^2 vs speed.
 # Grade-corrected coastdown pooled over 76 local routes (~140k low-speed coast frames), consistent
 # with the single new-build route ac35d9891f: ~1.05 @ 0.3-0.6 m/s, 0.79 @ 0.6-1, 0.66 @ 1-1.5,
 # 0.43 @ 1.5-2, ~0.3 @ 2-4, ~0 by 5.
@@ -29,33 +43,22 @@ ELESYS_CREEP_BP = [0., 0.75, 1.75, 3.0, 5.0]
 ELESYS_CREEP_V = [1.15, 0.8, 0.45, 0.3, 0.0]
 
 
-def compute_gb_honda_nidec(accel, speed, fingerprint: str | None = None):
-  if fingerprint in ELESYS_BRAKE_SCALE:
-    # FORK: creep as a physical accel offset applied BEFORE per-side scaling. Upstream's creep_brake
-    # (0.15 fraction, worth 0.72 m/s^2 on the ILX 4.8 scale) is applied in fraction units, so on the
-    # rescaled 2.6 brake it was only worth 0.39 m/s^2 -- ~3x weaker than this car's measured creep.
-    # Result: stops died into a ~0.6 m/s crawl (cb 60-96 sent; stock bus-2 data confirms cb <~60
-    # produces no decel and >100 is needed to keep decelerating near a stop).
-    net = float(accel) - float(np.interp(speed, ELESYS_CREEP_BP, ELESYS_CREEP_V))
-    gas = max(net, 0.) / 4.8
-    brake = max(-net, 0.) / ELESYS_BRAKE_SCALE[fingerprint]
-    return np.clip(gas, 0.0, 1.0), np.clip(brake, 0.0, 1.0)
-  creep_brake = 0.0
-  creep_speed = 2.3
-  creep_brake_value = 0.15
-  if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  brake_scale = ELESYS_BRAKE_SCALE.get(fingerprint, 4.8) if fingerprint is not None else 4.8   # FORK: measured brake gain
-  gas = float(accel) / 4.8 - creep_brake                                          # gas: upstream scaling
-  brake = float(accel) / brake_scale - creep_brake
-  return np.clip(gas, 0.0, 1.0), np.clip(-brake, 0.0, 1.0)
+def compute_gb_honda_elesys(accel, speed):
+  #TODO move scaling variable here once done
+
+  net = float(accel) - float(np.interp(speed, ELESYS_CREEP_BP, ELESYS_CREEP_V))
+  gas = max(net, 0.) / ELESYS_GAS_SCALE
+  brake = max(-net, 0.) / ELESYS_BRAKE_SCALE
+  return float(np.clip(gas, 0.0, 1.0)), float(np.clip(brake, 0.0, 1.0))
 
 
 def compute_gas_brake(accel, speed, fingerprint):
   if fingerprint in HONDA_BOSCH:
     return compute_gb_honda_bosch(accel, speed)
+  elif fingerprint in HONDA_ELESYS:
+    return compute_gb_honda_elesys(accel, speed)
   else:
-    return compute_gb_honda_nidec(accel, speed, fingerprint)  # FORK: pass car for brake scale
+    return compute_gb_honda_nidec(accel, speed)
 
 
 # TODO not clear this does anything useful
@@ -89,7 +92,7 @@ def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts, stead
   # - there is an increment in brake request
   # - we are applying steady state brakes and we haven't been running the pump
   #   for more than steady_refresh s (to prevent pressure bleeding)
-  # FORK(HONDA_ACCORD_9G_AU): stock Elesys re-primes the pump all through braking. Bus-2 pump
+  # FORK(HONDA_ELESYS): stock Elesys re-primes the pump all through braking. Bus-2 pump
   # duty over 19 routes where stock braking reached the car: ~99% while cb rising, ~39% steady,
   # ~10% falling (50% overall); and decel measurably fades when the pump is off at steady
   # command (+0.04 m/s^3) vs building when on (-0.07). Upstream's 20 s refresh lets pressure
@@ -243,13 +246,13 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
         else:
           apply_brake = np.clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(np.clip(apply_brake * self.params.NIDEC_BRAKE_MAX, 0, self.params.NIDEC_BRAKE_MAX - 1))
-          steady_refresh = 0.5 if self.CP.carFingerprint == CAR.HONDA_ACCORD_9G_AU else 20.  # FORK: see brake_pump_hysteresis
+          steady_refresh = 0.5 if self.CP.carFingerprint in HONDA_ELESYS else 20.  # FORK: see brake_pump_hysteresis
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts, steady_refresh)
 
           pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, self.CAN, apply_brake, pump_on,
                                                          pcm_override, pcm_cancel_cmd, alert_fcw,
-                                                         self.CP.carFingerprint, CS.stock_brake, self.CP_SP))
+                                                         self.CP.carFingerprint, CS.stock_brake, CS.is_metric, self.CP_SP))
           self.apply_brake_last = apply_brake
           self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
 
@@ -260,7 +263,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     # from SCM_BUTTONS, so we re-send SCM_BUTTONS to it (bus 2) with MAIN_ON=0 -> the stock ACC stands
     # down, stopping the blocked ACC brake that trips the VSA TSA fault. The PCM on the pt bus still
     # gets the driver's real MAIN/buttons (OP engages normally); CMBS/FCW are independent of MAIN. ~25 Hz.
-    if self.CP.carFingerprint == CAR.HONDA_ACCORD_9G_AU and self.CP.openpilotLongitudinalControl and self.frame % 4 == 0:
+    if self.CP.carFingerprint in HONDA_ELESYS and self.CP.openpilotLongitudinalControl and self.frame % 4 == 0:
       can_sends.append(hondacan.create_scm_buttons_no_cruise(self.packer, self.CAN.camera, CS.scm_buttons))
 
     # Send dashboard UI commands.
@@ -271,8 +274,8 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
                                                  hud_control, hud_v_cruise, CS.is_metric, CS.acc_hud))
 
       steering_available = CS.out.cruiseState.available and CS.out.vEgo > max(self.params.STEER_GLOBAL_MIN_SPEED, self.CP.minSteerSpeed)
-      # HONDA_ACCORD_9G_AU: 4-byte LKAS_HUD with a different layout; stock camera's HUD is forwarded instead
-      if self.CP.carFingerprint != CAR.HONDA_ACCORD_9G_AU:
+      # HONDA_ELESYS: 4-byte LKAS_HUD with a different layout; stock camera's HUD is forwarded instead
+      if self.CP.carFingerprint not in HONDA_ELESYS:
         can_sends.extend(hondacan.create_lkas_hud(self.packer, self.CAN.lkas, self.CP, hud_control, CC.latActive,
                                                   steering_available, alert_steer_required, CS.lkas_hud, self.dashed_lanes))
 

@@ -4,7 +4,7 @@ from opendbc.car import get_safety_config, structs, uds
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.disable_ecu import disable_ecu
 from opendbc.car.honda.hondacan import CanBus
-from opendbc.car.honda.values import CarControllerParams, HondaFlags, CAR, HONDA_BOSCH, HONDA_BOSCH_CANFD, \
+from opendbc.car.honda.values import CarControllerParams, HondaFlags, CAR, HONDA_BOSCH, HONDA_BOSCH_CANFD, HONDA_ELESYS, \
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, HondaSafetyFlags
 from opendbc.car.honda.carcontroller import CarController
 from opendbc.car.honda.carstate import CarState
@@ -95,7 +95,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0., 5., 35.]
       ret.longitudinalTuning.kiV = [1.2, 0.8, 0.5]
 
-      if candidate == CAR.HONDA_ACCORD_9G_AU:
+      if candidate in HONDA_ELESYS:
         # FORK: measured brake actuator lag was ~0.6 s (carOutput brake cmd vs aEgo, 44,839 engaged
         # pedal-free samples) while the default is 0.15 -- planner now commands decel earlier to
         # compensate for late braking.
@@ -241,9 +241,9 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.RADARLESS.value
     if candidate in HONDA_BOSCH_CANFD:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.BOSCH_CANFD.value
-    # HONDA_ACCORD_9G_AU: stand the stock ACC (Elesys radar) down (block + re-send SCM_BUTTONS with
+    # HONDA_ELESYS: stand the stock ACC (Elesys radar) down (block + re-send SCM_BUTTONS with
     # MAIN_ON=0) so its blocked ACC brake demands can't trip the VSA TSA fault that disables EPS. Long-control only.
-    if candidate == CAR.HONDA_ACCORD_9G_AU and ret.openpilotLongitudinalControl:
+    if candidate in HONDA_ELESYS and ret.openpilotLongitudinalControl:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.ELESYS_SCM_STANDDOWN.value
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed

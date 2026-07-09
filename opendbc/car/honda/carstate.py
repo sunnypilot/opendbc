@@ -5,7 +5,7 @@ from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.honda.hondacan import CanBus
-from opendbc.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_BOSCH_ALT_RADAR, HONDA_BOSCH_CANFD, \
+from opendbc.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA_BOSCH_ALT_RADAR, HONDA_BOSCH_CANFD, HONDA_ELESYS, \
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, \
                                                  HondaFlags, CruiseButtons, CruiseSettings, GearShifter, CarControllerParams
 from opendbc.car.interfaces import CarStateBase
@@ -137,7 +137,7 @@ class CarState(CarStateBase, CarStateExt):
 
       # Log non-critical stock ACC/LKAS faults if Nidec (camera)
       if self.CP.carFingerprint not in HONDA_BOSCH:
-        if self.CP.carFingerprint == CAR.HONDA_ACCORD_9G_AU:
+        if self.CP.carFingerprint in HONDA_ELESYS:
           ret.carFaultedNonCritical = bool(cp_cam.vl["ACC_HUD"]["ACC_PROBLEM"] or cp.vl["LKAS_HUD"]["LKAS_PROBLEM"])
         else:
           ret.carFaultedNonCritical = bool(cp_cam.vl["ACC_HUD"]["ACC_PROBLEM"] or cp_cam.vl["LKAS_HUD"]["LKAS_PROBLEM"])
@@ -214,7 +214,7 @@ class CarState(CarStateBase, CarStateExt):
       # TODO: find the radarless AEB_STATUS bit and make sure ACCEL_COMMAND is correct to enable AEB alerts
       if self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
         ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
-    elif self.CP.carFingerprint == CAR.HONDA_ACCORD_9G_AU:
+    elif self.CP.carFingerprint in HONDA_ELESYS:
       # stock AEB actively braking: FCW alarm (==2) OR the radar AEB state machine engaged (AEB_STATUS
       # != 0 = prepare/ready/braking, valid now that MAIN_ON=0 keeps the stock ACC off), AND a real
       # brake command -- the pre-brake prepare(3)/ready(2) frames are gated out (they stand down w/o braking).
@@ -231,7 +231,7 @@ class CarState(CarStateBase, CarStateExt):
       ret.stockFcw = cp_cam.vl["BRAKE_COMMAND"]["FCW"] != 0
       self.acc_hud = cp_cam.vl["ACC_HUD"]
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
-      if self.CP.carFingerprint == CAR.HONDA_ACCORD_9G_AU:
+      if self.CP.carFingerprint in HONDA_ELESYS:
         self.scm_buttons = cp.vl["SCM_BUTTONS"]  # for re-sending on bus 2 with MAIN_ON=0 (stock-ACC stand-down)
     if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
       self.lkas_hud = cp_cam.vl["LKAS_HUD"]
