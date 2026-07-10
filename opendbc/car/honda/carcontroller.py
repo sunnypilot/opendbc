@@ -30,18 +30,9 @@ def compute_gb_honda_nidec(accel, speed):
   return np.clip(gb, 0.0, 1.0), np.clip(-gb, 0.0, 1.0)
 
 
-# FORK: fade the creep offset out as positive accel is demanded. Without this the car is held
-# on the brakes at a green light until a_cmd exceeds the full creep offset (1.15 at standstill):
-# route 8bfdb15835 launch showed 1.2 s of brake-drag (release at a_cmd=1.15, aEgo still 0.0 a
-# full second after the plan started ramping). Fading by +0.8 m/s^2 of demand moves the
-# brake->gas crossover at standstill from 1.15 to ~0.47 and stops double-counting creep the
-# car is already delivering once it rolls. Braking behavior (accel <= 0) is unchanged.
-ELESYS_CREEP_FADE = 0.8
-
-
 def compute_gb_honda_elesys(accel, speed):
   creep = float(np.interp(speed, [0., 0.75, 1.75, 3.0, 5.0], [1.15, 0.8, 0.45, 0.3, 0.0]))
-  creep *= float(np.clip(1. - max(float(accel), 0.) / ELESYS_CREEP_FADE, 0., 1.))
+  creep *= float(np.clip(1. - max(float(accel), 0.) / 0.8, 0., 1.))
   net = float(accel) - creep
   gas = max(net, 0.) / 4.8
   brake = max(-net, 0.) / 2.6
@@ -98,7 +89,7 @@ def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts):
   return pump_on, last_pump_ts
 
 
-def brake_pump_hysteresis_elesys(apply_brake, brake_anchor, last_pump_ts, ts):
+def brake_pump_hysteresis_elesys(apply_brake, v_ego, brake_anchor, last_pump_ts, ts):
   # FORK(HONDA_ELESYS): pressure bleeds when the pump is off (decel fades +0.04 m/s^3 at steady
   # command, both on stock bus-2 data and OP drives), so the upstream 20 s refresh under-pumps --
   # the "loses brake pressure" stop overshoot. But upstream's edge-trigger also re-fires on every
@@ -108,7 +99,14 @@ def brake_pump_hysteresis_elesys(apply_brake, brake_anchor, last_pump_ts, ts):
   # matching stock's duty gradient), and a +2 count deadband on the rise-trigger anchored at the
   # last prime so jitter can't re-fire it. Measured on 3 drives: 8 bursts/min, duty 0.68, max
   # pump-off gap 2.8 s (worst-case bleed ~0.11 m/s^2, recovered on the next run).
-  refresh_period = float(np.interp(apply_brake, [40., 200.], [4.0, 2.5]))
+  # At standstill the held pressure barely decays (route fb142b2417: 228 s of holds, zero creep
+  # through every pump-off gap) and the cabin is quiet, so periodic re-priming every 2.5 s just
+  # burps the pump ~23x/min of hold. Top up rarely when stopped; any decay shows up as motion,
+  # which drops the standstill period and re-primes immediately (last_pump_ts is long expired).
+  if v_ego < 0.2:
+    refresh_period = 30.0
+  else:
+    refresh_period = float(np.interp(apply_brake, [40., 200.], [4.0, 2.5]))
   if apply_brake > brake_anchor + 2 or (ts - last_pump_ts > refresh_period and apply_brake > 0):
     last_pump_ts = ts
     brake_anchor = apply_brake
@@ -259,7 +257,8 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
           apply_brake = np.clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(np.clip(apply_brake * self.params.NIDEC_BRAKE_MAX, 0, self.params.NIDEC_BRAKE_MAX - 1))
           if self.CP.carFingerprint in HONDA_ELESYS:
-            pump_on, self.pump_brake_anchor, self.last_pump_ts = brake_pump_hysteresis_elesys(apply_brake, self.pump_brake_anchor, self.last_pump_ts, ts)
+            pump_on, self.pump_brake_anchor, self.last_pump_ts = brake_pump_hysteresis_elesys(
+              apply_brake, CS.out.vEgo, self.pump_brake_anchor, self.last_pump_ts, ts)
           else:
             pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
 

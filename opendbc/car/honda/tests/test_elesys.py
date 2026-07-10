@@ -142,12 +142,12 @@ class TestBrakePumpHysteresis(unittest.TestCase):
   """Upstream pump logic must stay pristine; the Elesys variant trades the 20 s bleed window
   for stock-like long runs (1.0 s) at a load-scaled period with a jitter deadband."""
 
-  def _duty_elesys(self, cb, seconds=20.0, jitter=0):
+  def _duty_elesys(self, cb, seconds=20.0, jitter=0, v_ego=5.0):
     anchor, last_pump_ts, on = 0, -99.0, 0
     n = int(seconds * 100)
     for i in range(n):
       c = cb + (jitter if (i // 25) % 2 else -jitter)   # slow +-jitter square wave
-      pump, anchor, last_pump_ts = brake_pump_hysteresis_elesys(c, anchor, last_pump_ts, i * 0.01)
+      pump, anchor, last_pump_ts = brake_pump_hysteresis_elesys(c, v_ego, anchor, last_pump_ts, i * 0.01)
       on += pump
     return on / n
 
@@ -165,20 +165,36 @@ class TestBrakePumpHysteresis(unittest.TestCase):
     anchor, last = 0, -99.0
     pumps = []
     for i in range(1, 60):
-      p, anchor, last = brake_pump_hysteresis_elesys(3 * i, anchor, last, i * 0.01)
+      p, anchor, last = brake_pump_hysteresis_elesys(3 * i, 5.0, anchor, last, i * 0.01)
       pumps.append(p)
     self.assertTrue(all(pumps[1:]))
 
   def test_release_rearms_trigger(self):
     # command drops then rises again: rise must re-trigger promptly (anchor follows down)
     anchor, last = 0, -99.0
-    _, anchor, last = brake_pump_hysteresis_elesys(150, anchor, last, 0.0)
-    _, anchor, last = brake_pump_hysteresis_elesys(50, anchor, last, 1.5)   # released past run window
-    p, anchor, last = brake_pump_hysteresis_elesys(56, anchor, last, 1.6)   # +6 over new anchor
+    _, anchor, last = brake_pump_hysteresis_elesys(150, 5.0, anchor, last, 0.0)
+    _, anchor, last = brake_pump_hysteresis_elesys(50, 5.0, anchor, last, 1.5)   # released past run window
+    p, anchor, last = brake_pump_hysteresis_elesys(56, 5.0, anchor, last, 1.6)   # +6 over new anchor
+    self.assertTrue(p)
+
+  def test_standstill_hold_is_quiet(self):
+    # stopped with brake held: rare top-ups only (~1 s per 30 s), not a burp every 2.5 s.
+    # 487 s of logged holds showed zero effective creep across every pump-off gap.
+    duty = self._duty_elesys(250, seconds=60.0, v_ego=0.0)
+    self.assertLess(duty, 0.06)
+
+  def test_motion_reprimes_after_long_hold(self):
+    # if pressure ever decays enough that the car starts creeping, the standstill period no
+    # longer applies and the expired timer must re-prime immediately
+    anchor, last = 0, -99.0
+    _, anchor, last = brake_pump_hysteresis_elesys(250, 0.0, anchor, last, 0.0)    # prime on entry
+    p, anchor, last = brake_pump_hysteresis_elesys(250, 0.0, anchor, last, 10.0)   # deep in the hold: quiet
+    self.assertFalse(p)
+    p, anchor, last = brake_pump_hysteresis_elesys(250, 0.3, anchor, last, 10.1)   # car creeps -> re-prime
     self.assertTrue(p)
 
   def test_no_pump_without_brake(self):
-    p, _, _ = brake_pump_hysteresis_elesys(0, 0, -99.0, 5.0)
+    p, _, _ = brake_pump_hysteresis_elesys(0, 0.0, 0, -99.0, 5.0)
     self.assertFalse(p)
     p2, _ = brake_pump_hysteresis(0, 0, 0.0, 5.0)
     self.assertFalse(p2)
