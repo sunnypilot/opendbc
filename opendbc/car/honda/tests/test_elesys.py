@@ -185,7 +185,7 @@ class TestBrakePumpHysteresis(unittest.TestCase):
     self.assertTrue(p)
 
   def test_final_approach_single_continuous_run(self):
-    # firm braking through the last metres of a stop: one continuous run, exactly one start
+    # firm braking through the last meters of a stop: one continuous run, exactly one start
     anchor, last, starts, on, prev = 0, -99.0, 0, 0, False
     for i in range(500):  # 5 s at v ramping 2.4 -> 0.2
       v = 2.4 - i * 0.0044
