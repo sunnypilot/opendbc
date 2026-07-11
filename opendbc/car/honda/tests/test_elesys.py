@@ -151,10 +151,10 @@ class TestBrakePumpHysteresis(unittest.TestCase):
       on += pump
     return on / n
 
-  def test_steady_duty_load_scaled(self):
-    # 1.0 s runs: light braking ~1/4.0 s, firm ~1/2.5 s (stock's duty gradient direction)
-    self.assertAlmostEqual(self._duty_elesys(60), 1.0 / 3.81, delta=0.05)
-    self.assertAlmostEqual(self._duty_elesys(200), 1.0 / 2.5, delta=0.05)
+  def test_steady_duty_backstop_only(self):
+    # perfectly steady command: only the periodic backstop runs (1.0 s per 8->5 s period)
+    self.assertAlmostEqual(self._duty_elesys(60), 1.0 / 7.625, delta=0.04)
+    self.assertAlmostEqual(self._duty_elesys(200), 1.0 / 5.0, delta=0.04)
 
   def test_jitter_does_not_retrigger(self):
     # +-2 count jitter must not add duty beyond the periodic refresh
@@ -169,13 +169,32 @@ class TestBrakePumpHysteresis(unittest.TestCase):
       pumps.append(p)
     self.assertTrue(all(pumps[1:]))
 
-  def test_release_rearms_trigger(self):
-    # command drops then rises again: rise must re-trigger promptly (anchor follows down)
+  def test_refractory_blocks_small_rises_then_allows(self):
+    # small rise right after a run: blocked by the 2.5 s refractory; allowed once idle,
+    # and a big rise (+15, real apply ramp) bypasses the refractory entirely
     anchor, last = 0, -99.0
     _, anchor, last = brake_pump_hysteresis_elesys(150, 5.0, anchor, last, 0.0)
-    _, anchor, last = brake_pump_hysteresis_elesys(50, 5.0, anchor, last, 1.5)   # released past run window
-    p, anchor, last = brake_pump_hysteresis_elesys(56, 5.0, anchor, last, 1.6)   # +6 over new anchor
+    _, anchor, last = brake_pump_hysteresis_elesys(50, 5.0, anchor, last, 1.5)    # release re-arms anchor
+    p, anchor, last = brake_pump_hysteresis_elesys(56, 5.0, anchor, last, 1.6)    # +6: refractory blocks
+    self.assertFalse(p)
+    p, anchor, last = brake_pump_hysteresis_elesys(56, 5.0, anchor, last, 4.0)    # idle: now allowed
     self.assertTrue(p)
+    anchor, last = 0, -99.0
+    _, anchor, last = brake_pump_hysteresis_elesys(150, 5.0, anchor, last, 0.0)
+    p, anchor, last = brake_pump_hysteresis_elesys(170, 5.0, anchor, last, 1.6)   # +20: bypasses refractory
+    self.assertTrue(p)
+
+  def test_final_approach_single_continuous_run(self):
+    # firm braking through the last metres of a stop: one continuous run, exactly one start
+    anchor, last, starts, on, prev = 0, -99.0, 0, 0, False
+    for i in range(500):  # 5 s at v ramping 2.4 -> 0.2
+      v = 2.4 - i * 0.0044
+      p, anchor, last = brake_pump_hysteresis_elesys(150, v, anchor, last, i * 0.01)
+      starts += (p and not prev)
+      on += p
+      prev = p
+    self.assertEqual(starts, 1)
+    self.assertGreater(on / 500, 0.95)
 
   def test_standstill_hold_is_quiet(self):
     # stopped with brake held: rare top-ups only (~1 s per 30 s), not a burp every 2.5 s.

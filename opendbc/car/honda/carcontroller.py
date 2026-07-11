@@ -90,28 +90,34 @@ def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts):
 
 
 def brake_pump_hysteresis_elesys(apply_brake, v_ego, brake_anchor, last_pump_ts, ts):
-  # FORK(HONDA_ELESYS): pressure bleeds when the pump is off (decel fades +0.04 m/s^3 at steady
-  # command, both on stock bus-2 data and OP drives), so the upstream 20 s refresh under-pumps --
-  # the "loses brake pressure" stop overshoot. But upstream's edge-trigger also re-fires on every
-  # +1 count (wind_brake drift alone does this all the way down a stop), which with a short run
-  # time made the pump stutter ~75 bursts/min vs stock's ~9 (stock runs ~3 s bursts every 4-7 s).
-  # This variant: 1.0 s runs, refresh period scaled with brake load (4.0 s light -> 2.5 s firm,
-  # matching stock's duty gradient), and a +2 count deadband on the rise-trigger anchored at the
-  # last prime so jitter can't re-fire it. Measured on 3 drives: 8 bursts/min, duty 0.68, max
-  # pump-off gap 2.8 s (worst-case bleed ~0.11 m/s^2, recovered on the next run).
-  # At standstill the held pressure barely decays (route fb142b2417: 228 s of holds, zero creep
-  # through every pump-off gap) and the cabin is quiet, so periodic re-priming every 2.5 s just
-  # burps the pump ~23x/min of hold. Top up rarely when stopped; any decay shows up as motion,
-  # which drops the standstill period and re-primes immediately (last_pump_ts is long expired).
-  if v_ego < 0.2:
-    refresh_period = 30.0
-  else:
-    refresh_period = float(np.interp(apply_brake, [40., 200.], [4.0, 2.5]))
-  if apply_brake > brake_anchor + 2 or (ts - last_pump_ts > refresh_period and apply_brake > 0):
+  # FORK(HONDA_ELESYS): pressure bleeds with the pump off (decel fades ~+0.17 m/s^3 at steady
+  # command on this build; same signature on stock bus-2 data), so upstream's 20 s refresh
+  # under-pumps -- the original stop-overshoot bug. But re-priming on every +1 count made the
+  # pump stutter (75 starts/min). The audible part is the START of each run, so this shapes
+  # WHEN it runs, not just how much:
+  #  - final stop approach (0.15 <= v < 2.5, firm cb): run continuously -- one smooth whir that
+  #    fades into the hold instead of separate bursts (measured 1.1 starts/stop vs 1.6)
+  #  - standstill hold: 30 s top-ups only (holds showed zero creep across every pump-off gap);
+  #    any decay appears as motion, which re-primes immediately via the branches below
+  #  - moving braking: rise-trigger (+3 deadband) with a 2.5 s refractory after each 1.0 s run;
+  #    big rises (+15, real apply ramps) bypass the refractory so pressure build is never delayed.
+  #    Bleed is self-healing here: fading decel makes the PI raise the command past the deadband.
+  #  - periodic backstop 8.0 s light -> 5.0 s firm braking.
+  # Replayed on routes 55885a0ee9/dd8c602d69: moving duty 0.68, 7 starts/min, ramps 100% primed.
+  if 0.15 <= v_ego < 2.5 and apply_brake > 100:
     last_pump_ts = ts
     brake_anchor = apply_brake
-  if apply_brake < brake_anchor - 4:  # follow real releases down (re-arms the rise-trigger) but not jitter
-    brake_anchor = apply_brake
+  else:
+    refresh_period = 30.0 if v_ego < 0.15 else float(np.interp(apply_brake, [40., 200.], [8.0, 5.0]))
+    rise = apply_brake > brake_anchor + 3
+    big_rise = apply_brake > brake_anchor + 15
+    in_run = ts - last_pump_ts < 1.0
+    idle = ts - last_pump_ts > 3.5  # run (1.0 s) + refractory (2.5 s)
+    if (rise and (in_run or idle or big_rise)) or (ts - last_pump_ts > refresh_period and apply_brake > 0):
+      last_pump_ts = ts
+      brake_anchor = apply_brake
+    if apply_brake < brake_anchor - 6:  # follow real releases down, ignore jitter
+      brake_anchor = apply_brake
 
   pump_on = (ts - last_pump_ts < 1.0) and apply_brake > 0
   return pump_on, brake_anchor, last_pump_ts
