@@ -2228,13 +2228,14 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Kia K4 (without HDA II) 2025": {
+  "Kia K4 (without HDA II) 2025-26": {
     "platform": "KIA_K4_2025",
     "make": "Kia",
     "brand": "hyundai",
     "model": "K4 (without HDA II)",
     "year": [
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
