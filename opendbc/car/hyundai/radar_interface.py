@@ -7,6 +7,7 @@ from opendbc.car.interfaces import RadarInterfaceBase
 
 from opendbc.sunnypilot.car.hyundai.radar_interface_ext import RadarInterfaceExt
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import RadarType
 
 RADAR_TRACK_BUSES = (0, 1, 2)
 
@@ -166,21 +167,76 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     RadarInterfaceExt.__init__(self, CP, CP_SP)
     self.pts: dict[int | HyundaiRadarTrackKey, structs.RadarData.RadarPoint] = {}
     detected_tracks = get_detected_radar_tracks(CP)
-    candidate_tracks = get_all_radar_track_candidates() if CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR else ()
-    self.radar_tracks = tuple(dict.fromkeys((*detected_tracks, *candidate_tracks)))
+    self.radar_tracks = detected_tracks
     self.radar_parsers = tuple(HyundaiRadarParserConfig(rt.spec, rt.bus, get_radar_can_parser(rt)) for rt in self.radar_tracks)
     self.seen_radar_addrs = {(rt.spec.name, rt.bus): set(rt.spec.address_range) for rt in detected_tracks}
     self.updated_messages: set[tuple[int, int]] = set()
     self.active_radar_buses: dict[str, int] = {}
-    self.trigger_msg = max((rt.spec.end_addr for rt in self.radar_tracks), default=DEFAULT_RADAR_TRIGGER_MSG)
-    self.trigger_msg = self.get_trigger_msg(self.trigger_msg)
+    self.trigger_msg = DEFAULT_RADAR_TRIGGER_MSG
     self.track_id = 0
 
-    self.radar_off_can = CP.radarUnavailable and not (CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR)
-    self.rcp: CANParser | None = self.radar_parsers[0].parser if self.radar_parsers else None
+    self.radar_off_can = True
+    self.rcp: CANParser | None = None
+    self._radar_mode: int | None = None
 
-    if self.CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY:
-      self.initialize_radar_ext(self.trigger_msg)
+    if CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR:
+      radar_mode = RadarType.FULL_RADAR
+    elif CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY:
+      radar_mode = RadarType.LEAD_ONLY
+    else:
+      radar_mode = RadarType.OFF
+    self.set_radar_mode(radar_mode)
+
+  def _ensure_full_radar_parsers(self) -> None:
+    radar_tracks = tuple(dict.fromkeys((*self.radar_tracks, *get_all_radar_track_candidates())))
+    existing_parsers = {(parser.spec.name, parser.bus): parser for parser in self.radar_parsers}
+    self.radar_tracks = radar_tracks
+    radar_parsers = []
+    for track in radar_tracks:
+      radar_parser = existing_parsers.get((track.spec.name, track.bus))
+      if radar_parser is None:
+        radar_parser = HyundaiRadarParserConfig(track.spec, track.bus, get_radar_can_parser(track))
+      radar_parsers.append(radar_parser)
+    self.radar_parsers = tuple(radar_parsers)
+
+  @property
+  def radar_mode(self) -> int | None:
+    return self._radar_mode
+
+  def set_radar_mode(self, radar_mode: int) -> bool:
+    if radar_mode not in (RadarType.OFF, RadarType.LEAD_ONLY, RadarType.FULL_RADAR):
+      raise ValueError(f"invalid Hyundai radar mode: {radar_mode}")
+    if radar_mode == self._radar_mode:
+      return False
+
+    radar_mode_flags = HyundaiFlagsSP.RADAR_OFF | HyundaiFlagsSP.RADAR_LEAD_ONLY | HyundaiFlagsSP.RADAR_FULL_RADAR
+    self.CP_SP.flags &= ~radar_mode_flags.value
+    mode_flag = {
+      RadarType.OFF: HyundaiFlagsSP.RADAR_OFF,
+      RadarType.LEAD_ONLY: HyundaiFlagsSP.RADAR_LEAD_ONLY,
+      RadarType.FULL_RADAR: HyundaiFlagsSP.RADAR_FULL_RADAR,
+    }[radar_mode]
+    self.CP_SP.flags |= mode_flag.value
+
+    self.pts.clear()
+    self.updated_messages.clear()
+    self.active_radar_buses.clear()
+
+    if radar_mode == RadarType.FULL_RADAR:
+      self._ensure_full_radar_parsers()
+      self.trigger_msg = max((track.spec.end_addr for track in self.radar_tracks), default=DEFAULT_RADAR_TRIGGER_MSG)
+      self.rcp = self.radar_parsers[0].parser if self.radar_parsers else None
+      self.radar_off_can = self.rcp is None
+    elif radar_mode == RadarType.LEAD_ONLY and self.use_radar_interface_ext:
+      self.initialize_radar_ext(DEFAULT_RADAR_TRIGGER_MSG)
+      self.radar_off_can = self.rcp is None
+    else:
+      self.trigger_msg = DEFAULT_RADAR_TRIGGER_MSG
+      self.rcp = None
+      self.radar_off_can = True
+
+    self._radar_mode = radar_mode
+    return True
 
   def update(self, can_strings):
     if self.radar_off_can or (self.rcp is None):
