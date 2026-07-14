@@ -204,7 +204,10 @@ class TestHyundaiFingerprint(unittest.TestCase):
     CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
 
     RI = RadarInterface(CP, CP_SP)
+    radar_messages = [(addr, b'\x00' * 8, 1) for addr in RADAR_235_248.address_range]
+    RI._discover_radar_parsers([(0, radar_messages)])
     radar_parser = get_radar_parser(RI, RADAR_235_248, 1)
+    assert len(RI.radar_parsers) == 1
     assert len(RI._update([]).points) == 0
 
     for addr in range(RADAR_235_248.start_addr, RADAR_235_248.end_addr + 1):
@@ -237,6 +240,8 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert not CP_SP.flags & (HyundaiFlagsSP.RADAR_OFF | HyundaiFlagsSP.RADAR_LEAD_ONLY)
     assert not RI.radar_off_can
 
+    radar_messages = [(addr, b'\x00' * 8, 1) for addr in RADAR_235_248.address_range]
+    RI._discover_radar_parsers([(0, radar_messages)])
     radar_parser = get_radar_parser(RI, RADAR_235_248, 1)
     for addr in RADAR_235_248.address_range:
       RI.seen_radar_addrs.setdefault((RADAR_235_248.name, 1), set()).add(addr)
