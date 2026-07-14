@@ -299,6 +299,13 @@ struct CarState {
 struct RadarData @0x888ad6581cf0aacb {
   errors @3 :Error;
   points @1 :List(RadarPoint);
+  trackSources @4 :List(RadarTrackSource);
+
+  struct RadarTrackSource {
+    startAddress @0 :UInt16;
+    endAddress @1 :UInt16;
+    bus @2 :UInt8;
+  }
 
   struct Error {
     canError @0 :Bool;

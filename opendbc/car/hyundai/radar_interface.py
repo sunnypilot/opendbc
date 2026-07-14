@@ -304,5 +304,10 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     if any(not radar_parser.parser.can_valid for radar_parser in active_radar_parsers):
       ret.errors.canError = True
 
+    ret.trackSources = [{
+      "startAddress": radar_parser.spec.start_addr,
+      "endAddress": radar_parser.spec.end_addr,
+      "bus": radar_parser.bus,
+    } for radar_parser in active_radar_parsers]
     ret.points = list(self.pts.values())
     return ret
