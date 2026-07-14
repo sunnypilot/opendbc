@@ -109,7 +109,7 @@ def _initialize_radar(CI: CarInterfaceBaseSP, CP: structs.CarParams, CP_SP: stru
 
   # Hyundai Radar
   if CP.brand == 'hyundai':
-    hyundai_radar = params_dict["HyundaiRadar"]
+    hyundai_radar = int(params_dict.get("HyundaiRadar", 0))
     if hyundai_radar == RadarType.OFF:
       CP_SP.flags |= HyundaiFlagsSP.RADAR_OFF.value
     if hyundai_radar == RadarType.LEAD_ONLY:
