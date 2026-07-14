@@ -161,9 +161,14 @@ class TestHyundaiFingerprint(unittest.TestCase):
     radar_3a5_3c4_msg["REL_ACCEL"] = 0
     mark_track_updated(radar_3a5_3c4_parser.parser, RADAR_3A5_3C4, RADAR_3A5_3C4.start_addr)
 
-    points = RI._update([]).points
+    radar_data = RI._update([])
+    points = radar_data.points
 
     assert len(points) == 2
+    assert [(source.startAddress, source.endAddress, source.bus) for source in radar_data.trackSources] == [
+      (RADAR_500_51F.start_addr, RADAR_500_51F.end_addr, 1),
+      (RADAR_3A5_3C4.start_addr, RADAR_3A5_3C4.end_addr, 2),
+    ]
     assert ("RADAR_500_51F", RADAR_500_51F.start_addr) in RI.pts
     assert ("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr) in RI.pts
 
