@@ -16,6 +16,7 @@ from opendbc.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR
                                          NON_SCC_CAR
 from opendbc.car.hyundai.fingerprints import FW_VERSIONS
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import RadarType
 
 Ecu = CarParams.Ecu
 
@@ -220,6 +221,46 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
     assert len(points) == 1
     assert RI.active_radar_buses[RADAR_235_248.name] == 1
+
+  def test_radar_interface_live_mode_switch(self):
+    fingerprint = gen_empty_fingerprint()
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_OFF.value)
+    RI = RadarInterface(CP, CP_SP)
+
+    assert RI.radar_off_can
+    assert RI.rcp is None
+
+    assert RI.set_radar_mode(RadarType.FULL_RADAR)
+    assert CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR
+    assert not CP_SP.flags & (HyundaiFlagsSP.RADAR_OFF | HyundaiFlagsSP.RADAR_LEAD_ONLY)
+    assert not RI.radar_off_can
+
+    radar_parser = get_radar_parser(RI, RADAR_235_248, 1)
+    for addr in RADAR_235_248.address_range:
+      RI.seen_radar_addrs.setdefault((RADAR_235_248.name, 1), set()).add(addr)
+
+    msg = radar_parser.parser.vl[f"RADAR_TRACK_{RADAR_235_248.start_addr:x}"]
+    msg["STATE"] = 3
+    msg["LONG_DIST"] = 10
+    msg["LAT_DIST"] = 1
+    msg["REL_SPEED"] = 2
+    mark_track_updated(radar_parser.parser, RADAR_235_248, RADAR_235_248.start_addr)
+
+    radar_data = RI._update({(1, RADAR_235_248.start_addr)})
+    assert len(radar_data.points) == 1
+
+    assert RI.set_radar_mode(RadarType.OFF)
+    assert CP_SP.flags & HyundaiFlagsSP.RADAR_OFF
+    assert not CP_SP.flags & (HyundaiFlagsSP.RADAR_LEAD_ONLY | HyundaiFlagsSP.RADAR_FULL_RADAR)
+    assert RI.radar_off_can
+    assert RI.rcp is None
+    assert len(RI.pts) == 0
+    assert len(RI._update(set()).points) == 0
+
+    assert RI.set_radar_mode(RadarType.FULL_RADAR)
+    assert not RI.radar_off_can
+    assert not RI.set_radar_mode(RadarType.FULL_RADAR)
 
   def test_radar_interface_two_track_ranges(self):
     for radar_spec in (RADAR_210_21F, RADAR_602_617):
