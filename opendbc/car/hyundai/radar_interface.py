@@ -255,7 +255,8 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.active_radar_buses[best_parser.spec.name] = best_parser.bus
     return best_parser
 
-  def _update_radar_points_from_parser(self, radar_parser: HyundaiRadarParserConfig) -> None:
+  def _update_radar_points_from_parser(self, radar_parser: HyundaiRadarParserConfig) -> int:
+    track_count = 0
     for addr in radar_parser.spec.address_range:
       msg_name = f"RADAR_TRACK_{addr:x}"
       msg = radar_parser.parser.vl[msg_name]
@@ -263,6 +264,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
         track_key = get_track_storage_key(radar_parser.spec, addr, track_prefix)
         if get_track_ts_nanos(radar_parser.parser, msg_name, radar_parser.spec, track_prefix) != 0 and \
            is_radar_track_valid(radar_parser.spec, msg, track_prefix):
+          track_count += 1
           if track_key not in self.pts:
             self.pts[track_key] = structs.RadarData.RadarPoint()
             self.pts[track_key].trackId = self.track_id
@@ -278,6 +280,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
           pt.yvRel = float('nan')
         elif track_key in self.pts:
           del self.pts[track_key]
+    return track_count
 
   def _update(self, updated_messages):
     ret = structs.RadarData()
@@ -289,6 +292,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
         return self.update_ext(ret)
 
     active_radar_parsers: list[HyundaiRadarParserConfig] = []
+    active_radar_sources: list[tuple[HyundaiRadarParserConfig, int]] = []
     if self.CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR:
       radar_parsers_by_spec: dict[str, list[HyundaiRadarParserConfig]] = {}
       for radar_parser in self.radar_parsers:
@@ -299,7 +303,8 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
       for radar_parsers in radar_parsers_by_spec.values():
         active_radar_parser = self._select_active_radar_parser(radar_parsers, updated_messages)
         active_radar_parsers.append(active_radar_parser)
-        self._update_radar_points_from_parser(active_radar_parser)
+        track_count = self._update_radar_points_from_parser(active_radar_parser)
+        active_radar_sources.append((active_radar_parser, track_count))
 
     if any(not radar_parser.parser.can_valid for radar_parser in active_radar_parsers):
       ret.errors.canError = True
@@ -308,6 +313,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
       "startAddress": radar_parser.spec.start_addr,
       "endAddress": radar_parser.spec.end_addr,
       "bus": radar_parser.bus,
-    } for radar_parser in active_radar_parsers]
+      "trackCount": track_count,
+    } for radar_parser, track_count in active_radar_sources]
     ret.points = list(self.pts.values())
     return ret
