@@ -3,6 +3,7 @@ import re
 import unittest
 
 from opendbc.car import DT_CTRL
+from opendbc.car.fw_versions import match_fw_to_car
 from opendbc.car.structs import CarParams
 from opendbc.car.volkswagen.carcontroller import HCAMitigation
 from opendbc.car.volkswagen.values import CAR, CarControllerParams as CCP, FW_QUERY_CONFIG, WMI
@@ -30,6 +31,19 @@ class TestVolkswagenHCAMitigation(unittest.TestCase):
         assert hca_mitigation.update(actuator_value, actuator_value) == expected_torque, f"{frame=}"
 
 class TestVolkswagenPlatformConfigs(unittest.TestCase):
+  def test_caddy_5_mqb_evo_fw_fingerprint(self):
+    caddy_5_fw = {
+      (Ecu.cornerRadar, 0x74e): b'\xf1\x872Q0907686G \xf1\x890287',
+      (Ecu.adas, 0x769): b'\xf1\x875WA980556B \xf1\x890254',
+      (Ecu.fwdRadar, 0x757): b'\xf1\x875WA907572C \xf1\x890461',
+      (Ecu.fwdCamera, 0x74f): b'\xf1\x875WA980653D \xf1\x893403',
+    }
+    car_fw = [CarParams.CarFw(ecu=ecu, address=address, subAddress=0, fwVersion=fw, brand='volkswagen')
+              for (ecu, address), fw in caddy_5_fw.items()]
+
+    _, matches = match_fw_to_car(car_fw, vin='', allow_fuzzy=False, log=False)
+    assert matches == {CAR.VOLKSWAGEN_GOLF_MK8}
+
   def test_spare_part_fw_pattern(self):
     # Relied on for determining if a FW is likely VW
     for platform, ecus in FW_VERSIONS.items():

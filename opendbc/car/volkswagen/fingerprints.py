@@ -395,9 +395,11 @@ FW_VERSIONS = {
     (Ecu.srs, 0x715, None): [],
     (Ecu.eps, 0x712, None): [],
     (Ecu.cornerRadar, 0x74e, None): [
+      b'\xf1\x872Q0907686G \xf1\x890287',
       b'\xf1\x872Q0907686J \xf1\x890288',
     ],
     (Ecu.adas, 0x769, None): [
+      b'\xf1\x875WA980556B \xf1\x890254',
       b'\xf1\x875WA980556C \xf1\x890314',
       b'\xf1\x875WA980556D \xf1\x890364',
     ],
@@ -408,6 +410,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x74f, None): [
       b'\xf1\x875WA980653C \xf1\x893301',
+      b'\xf1\x875WA980653D \xf1\x893403',
       b'\xf1\x875WA980653D \xf1\x893405',
     ],
   },
