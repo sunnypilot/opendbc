@@ -1191,6 +1191,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 1.00 99211-N7030 C55',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7030 C55',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7035 C5C',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NX4__               1.00 1.02 99110N7000          ',
