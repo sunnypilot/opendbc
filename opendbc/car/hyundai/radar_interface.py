@@ -59,6 +59,7 @@ RADAR_602_617 = HyundaiRadarTrackSpec("RADAR_602_617", 0x602, 16, ("1_", "2_"))
 
 HYUNDAI_RADAR_TRACK_SPECS = (RADAR_500_51F, RADAR_210_21F, RADAR_235_248, RADAR_3A5_3C4, RADAR_602_617)
 DEFAULT_RADAR_TRIGGER_MSG = max(rt.end_addr for rt in HYUNDAI_RADAR_TRACK_SPECS)
+RADAR_TRACK_SPEC_BY_ADDR = {addr: spec for spec in HYUNDAI_RADAR_TRACK_SPECS for addr in spec.address_range}
 
 DETECTED_RADAR_TRACKS: dict[str, tuple[HyundaiRadarTrackConfig, ...]] = {}
 
@@ -83,10 +84,6 @@ def get_detected_radar_tracks(CP) -> tuple[HyundaiRadarTrackConfig, ...]:
 def get_radar_can_parser(radar_track: HyundaiRadarTrackConfig) -> CANParser:
   messages = [(f"RADAR_TRACK_{addr:x}", 50) for addr in radar_track.spec.address_range]
   return CANParser(radar_track.spec.dbc_name, messages, radar_track.bus)
-
-
-def get_all_radar_track_candidates() -> tuple[HyundaiRadarTrackConfig, ...]:
-  return tuple(HyundaiRadarTrackConfig(radar_spec, bus) for radar_spec in HYUNDAI_RADAR_TRACK_SPECS for bus in RADAR_TRACK_BUSES)
 
 
 def get_track_storage_key(radar_spec: HyundaiRadarTrackSpec, addr: int, track_prefix: str) -> HyundaiRadarTrackKey:
@@ -188,17 +185,32 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
       radar_mode = RadarType.OFF
     self.set_radar_mode(radar_mode)
 
-  def _ensure_full_radar_parsers(self) -> None:
-    radar_tracks = tuple(dict.fromkeys((*self.radar_tracks, *get_all_radar_track_candidates())))
-    existing_parsers = {(parser.spec.name, parser.bus): parser for parser in self.radar_parsers}
-    self.radar_tracks = radar_tracks
-    radar_parsers = []
-    for track in radar_tracks:
-      radar_parser = existing_parsers.get((track.spec.name, track.bus))
-      if radar_parser is None:
-        radar_parser = HyundaiRadarParserConfig(track.spec, track.bus, get_radar_can_parser(track))
-      radar_parsers.append(radar_parser)
-    self.radar_parsers = tuple(radar_parsers)
+  def _discover_radar_parsers(self, can_strings) -> None:
+    existing_parsers = {(parser.spec.name, parser.bus) for parser in self.radar_parsers}
+    updated_candidates: dict[tuple[str, int], HyundaiRadarTrackSpec] = {}
+    for _, can_messages in can_strings:
+      for addr, _, bus in can_messages:
+        spec = RADAR_TRACK_SPEC_BY_ADDR.get(addr)
+        parser_key = (spec.name, bus) if spec is not None else None
+        if spec is not None and bus in RADAR_TRACK_BUSES and parser_key not in existing_parsers:
+          self.seen_radar_addrs.setdefault(parser_key, set()).add(addr)
+          updated_candidates[parser_key] = spec
+
+    discovered_tracks = [
+      HyundaiRadarTrackConfig(spec, bus)
+      for (spec_name, bus), spec in updated_candidates.items()
+      if all(addr in self.seen_radar_addrs[(spec_name, bus)] for addr in spec.address_range)
+    ]
+
+    if not discovered_tracks:
+      return
+
+    self.radar_tracks = (*self.radar_tracks, *discovered_tracks)
+    self.radar_parsers = (*self.radar_parsers, *(
+      HyundaiRadarParserConfig(track.spec, track.bus, get_radar_can_parser(track)) for track in discovered_tracks
+    ))
+    if self.rcp is None:
+      self.rcp = self.radar_parsers[0].parser
 
   @property
   def radar_mode(self) -> int | None:
@@ -224,10 +236,9 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.active_radar_buses.clear()
 
     if radar_mode == RadarType.FULL_RADAR:
-      self._ensure_full_radar_parsers()
       self.trigger_msg = max((track.spec.end_addr for track in self.radar_tracks), default=DEFAULT_RADAR_TRIGGER_MSG)
       self.rcp = self.radar_parsers[0].parser if self.radar_parsers else None
-      self.radar_off_can = self.rcp is None
+      self.radar_off_can = False
     elif radar_mode == RadarType.LEAD_ONLY and self.use_radar_interface_ext:
       self.initialize_radar_ext(DEFAULT_RADAR_TRIGGER_MSG)
       self.radar_off_can = self.rcp is None
@@ -240,7 +251,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     return True
 
   def update(self, can_strings):
-    if self.radar_off_can or (self.rcp is None):
+    if self.radar_off_can:
       ret = super().update(None)
       if ret is not None:
         ret.radarTracksAvailable = self.radar_tracks_available
@@ -257,6 +268,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
       self.updated_messages.clear()
       return rr
 
+    self._discover_radar_parsers(can_strings)
     radar_updated = False
     for radar_parser in self.radar_parsers:
       vls = radar_parser.parser.update(can_strings)
@@ -345,12 +357,11 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
   def _update(self, updated_messages):
     ret = structs.RadarData()
     ret.radarTracksAvailable = self.radar_tracks_available
-    if self.rcp is None:
-      return ret
 
     if self.CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY:
-      if self.use_radar_interface_ext:
+      if self.use_radar_interface_ext and self.rcp is not None:
         return self.update_ext(ret)
+      return ret
 
     active_radar_parsers: list[HyundaiRadarParserConfig] = []
     active_radar_sources: list[tuple[HyundaiRadarParserConfig, int]] = []
