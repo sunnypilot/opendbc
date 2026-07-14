@@ -230,6 +230,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
     assert RI.radar_off_can
     assert RI.rcp is None
+    assert not RI._update(set()).radarTracksAvailable
 
     assert RI.set_radar_mode(RadarType.FULL_RADAR)
     assert CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR
@@ -249,6 +250,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
     radar_data = RI._update({(1, RADAR_235_248.start_addr)})
     assert len(radar_data.points) == 1
+    assert radar_data.radarTracksAvailable
 
     assert RI.set_radar_mode(RadarType.OFF)
     assert CP_SP.flags & HyundaiFlagsSP.RADAR_OFF
@@ -256,7 +258,9 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert RI.radar_off_can
     assert RI.rcp is None
     assert len(RI.pts) == 0
-    assert len(RI._update(set()).points) == 0
+    radar_data = RI._update(set())
+    assert len(radar_data.points) == 0
+    assert radar_data.radarTracksAvailable
 
     assert RI.set_radar_mode(RadarType.FULL_RADAR)
     assert not RI.radar_off_can

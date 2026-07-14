@@ -300,6 +300,7 @@ struct RadarData @0x888ad6581cf0aacb {
   errors @3 :Error;
   points @1 :List(RadarPoint);
   trackSources @4 :List(RadarTrackSource);
+  radarTracksAvailable @5 :Bool;
 
   struct RadarTrackSource {
     startAddress @0 :UInt16;
