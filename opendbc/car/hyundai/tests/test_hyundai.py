@@ -3,17 +3,19 @@ from hypothesis import settings, given, strategies as st
 import unittest
 
 from opendbc.car import gen_empty_fingerprint
-from opendbc.car.structs import CarParams
+from opendbc.car.structs import CarParams, CarParamsSP
 from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.hyundai.interface import CarInterface
 from opendbc.car.hyundai.hyundaicanfd import CanBus
-from opendbc.car.hyundai.radar_interface import RADAR_START_ADDR
+from opendbc.car.hyundai.radar_interface import HYUNDAI_RADAR_TRACK_SPECS, RADAR_210_21F, RADAR_235_248, RADAR_3A5_3C4, \
+                                                RADAR_500_51F, RADAR_602_617, RadarInterface, get_detected_radar_tracks
 from opendbc.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
                                          HyundaiFlags, get_platform_codes, HyundaiSafetyFlags, \
                                          NON_SCC_CAR
 from opendbc.car.hyundai.fingerprints import FW_VERSIONS
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 Ecu = CarParams.Ecu
 
@@ -48,6 +50,22 @@ NO_DATES_PLATFORMS = {
 CANFD_EXPECTED_ECUS = {Ecu.fwdCamera, Ecu.fwdRadar}
 
 
+def add_radar_range(fingerprint, radar_spec, bus, missing_addr=None):
+  for addr in range(radar_spec.start_addr, radar_spec.end_addr + 1):
+    if addr != missing_addr:
+      fingerprint[bus][addr] = 8
+
+
+def mark_track_updated(parser, radar_spec, addr, prefix=""):
+  msg_name = f"RADAR_TRACK_{addr:x}"
+  signal = "DISTANCE" if radar_spec == RADAR_602_617 else "LONG_DIST"
+  parser.ts_nanos[msg_name][f"{prefix}{signal}"] = 1
+
+
+def get_radar_parser(RI, radar_spec, bus):
+  return next(rp for rp in RI.radar_parsers if rp.spec == radar_spec and rp.bus == bus)
+
+
 class TestHyundaiFingerprint(unittest.TestCase):
   def test_feature_detection(self):
     # LKA steering
@@ -63,9 +81,172 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for radar in (True, False):
       fingerprint = gen_empty_fingerprint()
       if radar:
-        fingerprint[1][RADAR_START_ADDR] = 8
+        add_radar_range(fingerprint, RADAR_500_51F, 1)
       CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
       assert CP.radarUnavailable != radar
+
+  def test_radar_track_detection(self):
+    for radar_spec in HYUNDAI_RADAR_TRACK_SPECS:
+      for bus in (0, 1, 2):
+        with self.subTest(radar_spec=radar_spec.name, bus=bus):
+          fingerprint = gen_empty_fingerprint()
+          add_radar_range(fingerprint, radar_spec, bus)
+
+          CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+          radar_tracks = get_detected_radar_tracks(CP)
+
+          assert not CP.radarUnavailable
+          assert len(radar_tracks) == 1
+          assert radar_tracks[0].spec == radar_spec
+          assert radar_tracks[0].bus == bus
+
+  def test_radar_track_detection_requires_full_range(self):
+    for radar_spec in HYUNDAI_RADAR_TRACK_SPECS:
+      with self.subTest(radar_spec=radar_spec.name):
+        fingerprint = gen_empty_fingerprint()
+        add_radar_range(fingerprint, radar_spec, 1, missing_addr=radar_spec.end_addr)
+
+        CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+
+        assert CP.radarUnavailable
+        assert get_detected_radar_tracks(CP) == ()
+
+  def test_radar_track_detection_multiple_ranges(self):
+    fingerprint = gen_empty_fingerprint()
+    add_radar_range(fingerprint, RADAR_500_51F, 1)
+    add_radar_range(fingerprint, RADAR_3A5_3C4, 2)
+
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+    radar_tracks = get_detected_radar_tracks(CP)
+
+    assert not CP.radarUnavailable
+    assert [(rt.spec, rt.bus) for rt in radar_tracks] == [(RADAR_500_51F, 1), (RADAR_3A5_3C4, 2)]
+
+  def test_radar_track_detection_keeps_duplicate_range_candidates(self):
+    fingerprint = gen_empty_fingerprint()
+    add_radar_range(fingerprint, RADAR_500_51F, 0)
+    add_radar_range(fingerprint, RADAR_500_51F, 1)
+    add_radar_range(fingerprint, RADAR_500_51F, 2)
+
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+    radar_tracks = get_detected_radar_tracks(CP)
+
+    assert not CP.radarUnavailable
+    assert [(rt.spec, rt.bus) for rt in radar_tracks] == [(RADAR_500_51F, 0), (RADAR_500_51F, 1), (RADAR_500_51F, 2)]
+
+  def test_radar_interface_multiple_parsers(self):
+    fingerprint = gen_empty_fingerprint()
+    add_radar_range(fingerprint, RADAR_500_51F, 1)
+    add_radar_range(fingerprint, RADAR_3A5_3C4, 2)
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
+
+    RI = RadarInterface(CP, CP_SP)
+
+    radar_500_51f_parser = get_radar_parser(RI, RADAR_500_51F, 1)
+    radar_3a5_3c4_parser = get_radar_parser(RI, RADAR_3A5_3C4, 2)
+    radar_500_51f_msg = radar_500_51f_parser.parser.vl[f"RADAR_TRACK_{RADAR_500_51F.start_addr:x}"]
+    radar_500_51f_msg["STATE"] = 3
+    radar_500_51f_msg["LONG_DIST"] = 10
+    radar_500_51f_msg["AZIMUTH"] = 0
+    radar_500_51f_msg["REL_SPEED"] = 1
+    radar_500_51f_msg["REL_ACCEL"] = 0
+    mark_track_updated(radar_500_51f_parser.parser, RADAR_500_51F, RADAR_500_51F.start_addr)
+
+    radar_3a5_3c4_msg = radar_3a5_3c4_parser.parser.vl[f"RADAR_TRACK_{RADAR_3A5_3C4.start_addr:x}"]
+    radar_3a5_3c4_msg["STATE"] = 3
+    radar_3a5_3c4_msg["LONG_DIST"] = 20
+    radar_3a5_3c4_msg["LAT_DIST"] = 1
+    radar_3a5_3c4_msg["REL_SPEED"] = 2
+    radar_3a5_3c4_msg["REL_ACCEL"] = 0
+    mark_track_updated(radar_3a5_3c4_parser.parser, RADAR_3A5_3C4, RADAR_3A5_3C4.start_addr)
+
+    points = RI._update([]).points
+
+    assert len(points) == 2
+    assert ("RADAR_500_51F", RADAR_500_51F.start_addr) in RI.pts
+    assert ("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr) in RI.pts
+
+  def test_radar_interface_duplicate_range_selects_populated_bus(self):
+    fingerprint = gen_empty_fingerprint()
+    add_radar_range(fingerprint, RADAR_210_21F, 0)
+    add_radar_range(fingerprint, RADAR_210_21F, 2)
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
+
+    RI = RadarInterface(CP, CP_SP)
+
+    bus0_parser = get_radar_parser(RI, RADAR_210_21F, 0).parser
+    bus2_parser = get_radar_parser(RI, RADAR_210_21F, 2).parser
+    msg = bus2_parser.vl[f"RADAR_TRACK_{RADAR_210_21F.start_addr:x}"]
+    msg["1_STATE"] = 3
+    msg["1_LONG_DIST"] = 10
+    msg["1_LAT_DIST"] = 1
+    msg["1_REL_SPEED"] = 2
+    mark_track_updated(bus2_parser, RADAR_210_21F, RADAR_210_21F.start_addr, "1_")
+
+    mark_track_updated(bus0_parser, RADAR_210_21F, RADAR_210_21F.start_addr, "1_")
+
+    points = RI._update({(0, RADAR_210_21F.start_addr), (2, RADAR_210_21F.start_addr)}).points
+
+    assert len(points) == 1
+    assert RI.active_radar_buses[RADAR_210_21F.name] == 2
+
+  def test_radar_interface_detects_late_live_range(self):
+    fingerprint = gen_empty_fingerprint()
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
+
+    RI = RadarInterface(CP, CP_SP)
+    radar_parser = get_radar_parser(RI, RADAR_235_248, 1)
+    assert len(RI._update([]).points) == 0
+
+    for addr in range(RADAR_235_248.start_addr, RADAR_235_248.end_addr + 1):
+      RI.seen_radar_addrs.setdefault((RADAR_235_248.name, 1), set()).add(addr)
+
+    msg = radar_parser.parser.vl[f"RADAR_TRACK_{RADAR_235_248.start_addr:x}"]
+    msg["STATE"] = 3
+    msg["LONG_DIST"] = 10
+    msg["LAT_DIST"] = 1
+    msg["REL_SPEED"] = 2
+    mark_track_updated(radar_parser.parser, RADAR_235_248, RADAR_235_248.start_addr)
+
+    points = RI._update({(1, RADAR_235_248.start_addr)}).points
+
+    assert len(points) == 1
+    assert RI.active_radar_buses[RADAR_235_248.name] == 1
+
+  def test_radar_interface_two_track_ranges(self):
+    for radar_spec in (RADAR_210_21F, RADAR_602_617):
+      with self.subTest(radar_spec=radar_spec.name):
+        fingerprint = gen_empty_fingerprint()
+        add_radar_range(fingerprint, radar_spec, 1)
+        CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+        CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
+        RI = RadarInterface(CP, CP_SP)
+
+        parser = get_radar_parser(RI, radar_spec, 1).parser
+        msg = parser.vl[f"RADAR_TRACK_{radar_spec.start_addr:x}"]
+        if radar_spec == RADAR_210_21F:
+          for i in ("1_", "2_"):
+            msg[f"{i}STATE"] = 3
+            msg[f"{i}LONG_DIST"] = 10
+            msg[f"{i}LAT_DIST"] = 1
+            msg[f"{i}REL_SPEED"] = 2
+            mark_track_updated(parser, radar_spec, radar_spec.start_addr, i)
+        else:
+          for addr in range(radar_spec.start_addr, radar_spec.end_addr + 1):
+            for i in ("1_", "2_"):
+              parser.vl[f"RADAR_TRACK_{addr:x}"][f"{i}DISTANCE"] = 255.75
+          for i in ("1_", "2_"):
+            msg[f"{i}DISTANCE"] = 10
+            msg[f"{i}LATERAL"] = 1
+            msg[f"{i}SPEED"] = 2
+            mark_track_updated(parser, radar_spec, radar_spec.start_addr, i)
+
+        points = RI._update([]).points
+
+        assert len(points) == 2
 
   def test_alternate_limits(self):
     # Alternate lateral control limits, for high torque cars, verify Panda safety mode flag is set
