@@ -305,6 +305,7 @@ struct RadarData @0x888ad6581cf0aacb {
     startAddress @0 :UInt16;
     endAddress @1 :UInt16;
     bus @2 :UInt8;
+    trackCount @3 :UInt16;
   }
 
   struct Error {
