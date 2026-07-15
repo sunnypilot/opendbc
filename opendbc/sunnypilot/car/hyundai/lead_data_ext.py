@@ -54,10 +54,10 @@ class ClusterRadarTrackSelector:
       and abs(v_ego + track.vRel) > self.STATIONARY_SPEED_THRESHOLD
     ]
     center = [track for track in moving_tracks if track.dRel >= 0 and abs(track.yRel) <= self.CENTER_HALF_WIDTH]
-    left = [track for track in moving_tracks if track.dRel >= 0 and track.yRel < -self.CENTER_HALF_WIDTH]
-    right = [track for track in moving_tracks if track.dRel >= 0 and track.yRel > self.CENTER_HALF_WIDTH]
-    left_rear = [track for track in moving_tracks if track.dRel < 0 and track.yRel < 0]
-    right_rear = [track for track in moving_tracks if track.dRel < 0 and track.yRel > 0]
+    left = [track for track in moving_tracks if track.dRel >= 0 and track.yRel > self.CENTER_HALF_WIDTH]
+    right = [track for track in moving_tracks if track.dRel >= 0 and track.yRel < -self.CENTER_HALF_WIDTH]
+    left_rear = [track for track in moving_tracks if track.dRel < 0 and track.yRel > 0]
+    right_rear = [track for track in moving_tracks if track.dRel < 0 and track.yRel < 0]
 
     used_ids: set[int] = set()
     candidates = {

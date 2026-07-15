@@ -92,10 +92,10 @@ class TestLeadDataCarController(unittest.TestCase):
     tracks = [
       make_radar_track(1, 15, 0),
       make_radar_track(2, 25, 1),
-      make_radar_track(3, 12, -3),
-      make_radar_track(4, 14, 3),
-      make_radar_track(5, -8, -2),
-      make_radar_track(6, -9, 2),
+      make_radar_track(3, 12, 3),
+      make_radar_track(4, 14, -3),
+      make_radar_track(5, -8, 2),
+      make_radar_track(6, -9, -2),
       make_radar_track(7, 5, 0, -20),
     ]
 
@@ -129,8 +129,8 @@ class TestLeadDataCarController(unittest.TestCase):
     msg_162 = {}
     slots = {
       "lead": make_radar_track(1, 20, 0.5),
-      "lead_left": make_radar_track(2, 30, -3),
-      "lead_right_rear": make_radar_track(3, -40, 4),
+      "lead_left": make_radar_track(2, 30, 3),
+      "lead_right_rear": make_radar_track(3, -40, -4),
     }
 
     update_ccnc_cluster_tracks(msg_162, slots, matched_track_ids={1})
