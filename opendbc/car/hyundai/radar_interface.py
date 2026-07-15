@@ -291,6 +291,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     for radar_parser in self.radar_parsers:
       parser_key = (radar_parser.spec.name, radar_parser.bus)
       filtered_can = []
+      parser_cycle_started = False
       parser_cycle_complete = False
       for mono_time, can_messages in can_strings:
         relevant_messages = [
@@ -299,10 +300,15 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
         ]
         if relevant_messages:
           filtered_can.append((mono_time, relevant_messages))
+          parser_cycle_started |= any(msg[0] == radar_parser.spec.start_addr for msg in relevant_messages)
           parser_cycle_complete |= any(msg[0] == radar_parser.spec.end_addr for msg in relevant_messages)
 
       if filtered_can:
-        self.pending_radar_can.setdefault(parser_key, []).extend(filtered_can)
+        if parser_cycle_started:
+          self.pending_radar_can.pop(parser_key, None)
+        pending_can = self.pending_radar_can.setdefault(parser_key, [])
+        pending_can.extend(filtered_can)
+        del pending_can[:max(0, len(pending_can) - radar_parser.spec.msg_count * 2)]
       if not parser_cycle_complete:
         continue
 
