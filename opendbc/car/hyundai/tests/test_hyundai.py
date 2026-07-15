@@ -233,11 +233,12 @@ class TestHyundaiFingerprint(unittest.TestCase):
     RI = RadarInterface(CP, CP_SP)
 
     assert RI.update([(123, [(RADAR_235_248.start_addr, b'\x00' * 8, 1)])]) is None
-    assert RI.updated_messages == {(1, RADAR_235_248.start_addr)}
+    assert len(RI.pending_radar_can[(RADAR_235_248.name, 1)]) == 1
 
     radar_data = RI.update([(124, [(RADAR_235_248.end_addr, b'\x00' * 8, 1)])])
     assert radar_data is not None
     assert RI.updated_messages == set()
+    assert RI.pending_radar_can == {}
 
   def test_radar_interface_live_mode_switch(self):
     fingerprint = gen_empty_fingerprint()

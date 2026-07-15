@@ -21,6 +21,7 @@ class HyundaiRadarTrackSpec:
   start_addr: int
   msg_count: int
   track_prefixes: tuple[str, ...]
+  signals: tuple[str, ...]
 
   @property
   def end_addr(self) -> int:
@@ -51,11 +52,22 @@ class HyundaiRadarParserConfig:
   parser: CANParser
 
 
-RADAR_500_51F = HyundaiRadarTrackSpec("RADAR_500_51F", 0x500, 32, ("",))
-RADAR_210_21F = HyundaiRadarTrackSpec("RADAR_210_21F", 0x210, 16, ("1_", "2_"))
-RADAR_235_248 = HyundaiRadarTrackSpec("RADAR_235_248", 0x235, 20, ("",))
-RADAR_3A5_3C4 = HyundaiRadarTrackSpec("RADAR_3A5_3C4", 0x3A5, 32, ("",))
-RADAR_602_617 = HyundaiRadarTrackSpec("RADAR_602_617", 0x602, 16, ("1_", "2_"))
+RADAR_500_51F = HyundaiRadarTrackSpec(
+  "RADAR_500_51F", 0x500, 32, ("",), ("STATE", "AZIMUTH", "LONG_DIST", "REL_SPEED", "REL_ACCEL"),
+)
+RADAR_210_21F = HyundaiRadarTrackSpec(
+  "RADAR_210_21F", 0x210, 16, ("1_", "2_"),
+  ("1_STATE", "1_LONG_DIST", "1_LAT_DIST", "1_REL_SPEED", "2_STATE", "2_LONG_DIST", "2_LAT_DIST", "2_REL_SPEED"),
+)
+RADAR_235_248 = HyundaiRadarTrackSpec(
+  "RADAR_235_248", 0x235, 20, ("",), ("STATE", "LONG_DIST", "LAT_DIST", "REL_SPEED"),
+)
+RADAR_3A5_3C4 = HyundaiRadarTrackSpec(
+  "RADAR_3A5_3C4", 0x3A5, 32, ("",), ("STATE", "LONG_DIST", "LAT_DIST", "REL_SPEED", "REL_ACCEL"),
+)
+RADAR_602_617 = HyundaiRadarTrackSpec(
+  "RADAR_602_617", 0x602, 16, ("1_", "2_"), ("1_DISTANCE", "1_LATERAL", "1_SPEED", "2_DISTANCE", "2_LATERAL", "2_SPEED"),
+)
 
 HYUNDAI_RADAR_TRACK_SPECS = (RADAR_500_51F, RADAR_210_21F, RADAR_235_248, RADAR_3A5_3C4, RADAR_602_617)
 DEFAULT_RADAR_TRIGGER_MSG = max(rt.end_addr for rt in HYUNDAI_RADAR_TRACK_SPECS)
@@ -83,7 +95,7 @@ def get_detected_radar_tracks(CP) -> tuple[HyundaiRadarTrackConfig, ...]:
 
 def get_radar_can_parser(radar_track: HyundaiRadarTrackConfig) -> CANParser:
   messages = [(f"RADAR_TRACK_{addr:x}", 50) for addr in radar_track.spec.address_range]
-  return CANParser(radar_track.spec.dbc_name, messages, radar_track.bus)
+  return CANParser(radar_track.spec.dbc_name, messages, radar_track.bus, signals=set(radar_track.spec.signals))
 
 
 def get_track_storage_key(radar_spec: HyundaiRadarTrackSpec, addr: int, track_prefix: str) -> HyundaiRadarTrackKey:
@@ -169,6 +181,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.radar_parsers = tuple(HyundaiRadarParserConfig(rt.spec, rt.bus, get_radar_can_parser(rt)) for rt in self.radar_tracks)
     self.seen_radar_addrs = {(rt.spec.name, rt.bus): set(rt.spec.address_range) for rt in detected_tracks}
     self.updated_messages: set[tuple[int, int]] = set()
+    self.pending_radar_can: dict[tuple[str, int], list] = {}
     self.active_radar_buses: dict[str, int] = {}
     self.trigger_msg = DEFAULT_RADAR_TRIGGER_MSG
     self.track_id = 0
@@ -237,6 +250,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
 
     self.pts.clear()
     self.updated_messages.clear()
+    self.pending_radar_can.clear()
     self.active_radar_buses.clear()
 
     if radar_mode == RadarType.FULL_RADAR:
@@ -275,7 +289,24 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self._discover_radar_parsers(can_strings)
     radar_cycle_complete = False
     for radar_parser in self.radar_parsers:
-      vls = radar_parser.parser.update(can_strings)
+      parser_key = (radar_parser.spec.name, radar_parser.bus)
+      filtered_can = []
+      parser_cycle_complete = False
+      for mono_time, can_messages in can_strings:
+        relevant_messages = [
+          msg for msg in can_messages
+          if msg[2] == radar_parser.bus and radar_parser.spec.start_addr <= msg[0] <= radar_parser.spec.end_addr
+        ]
+        if relevant_messages:
+          filtered_can.append((mono_time, relevant_messages))
+          parser_cycle_complete |= any(msg[0] == radar_parser.spec.end_addr for msg in relevant_messages)
+
+      if filtered_can:
+        self.pending_radar_can.setdefault(parser_key, []).extend(filtered_can)
+      if not parser_cycle_complete:
+        continue
+
+      vls = radar_parser.parser.update(self.pending_radar_can.pop(parser_key, []))
       relevant_addrs = {
         addr for addr in vls
         if radar_parser.spec.start_addr <= addr <= radar_parser.spec.end_addr
@@ -283,7 +314,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
       if relevant_addrs:
         self.seen_radar_addrs.setdefault((radar_parser.spec.name, radar_parser.bus), set()).update(relevant_addrs)
         self.updated_messages.update((radar_parser.bus, addr) for addr in relevant_addrs)
-        radar_cycle_complete |= radar_parser.spec.end_addr in relevant_addrs
+      radar_cycle_complete = True
 
     if not radar_cycle_complete:
       return None
