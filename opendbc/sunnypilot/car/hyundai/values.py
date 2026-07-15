@@ -8,6 +8,12 @@ See the LICENSE.md file in the root directory for more details.
 from enum import IntFlag
 
 
+class RadarType:
+  OFF = 0
+  LEAD_ONLY = 1
+  FULL_RADAR = 2
+
+
 class HyundaiSafetyFlagsSP:
   DEFAULT = 0
   ESCC = 1

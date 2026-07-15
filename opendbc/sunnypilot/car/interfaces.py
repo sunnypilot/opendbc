@@ -15,8 +15,8 @@ from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.car.subaru.values import SubaruFlags
 from opendbc.car.toyota.values import ToyotaSafetyFlags
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks as hyundai_enable_radar_tracks
-from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType, RadarType
-from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, RadarType
 from opendbc.sunnypilot.car.subaru.values_ext import SubaruFlagsSP, SubaruSafetyFlagsSP
 from opendbc.sunnypilot.car.tesla.values import TeslaFlagsSP
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP

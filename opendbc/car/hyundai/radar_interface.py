@@ -6,8 +6,7 @@ from opendbc.car import structs
 from opendbc.car.interfaces import RadarInterfaceBase
 
 from opendbc.sunnypilot.car.hyundai.radar_interface_ext import RadarInterfaceExt
-from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
-from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import RadarType
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, RadarType
 
 RADAR_TRACK_BUSES = (0, 1, 2)
 

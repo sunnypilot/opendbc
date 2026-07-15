@@ -15,8 +15,7 @@ from opendbc.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR
                                          HyundaiFlags, get_platform_codes, HyundaiSafetyFlags, \
                                          NON_SCC_CAR
 from opendbc.car.hyundai.fingerprints import FW_VERSIONS
-from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
-from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import RadarType
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, RadarType
 
 Ecu = CarParams.Ecu
 
