@@ -273,7 +273,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
       return rr
 
     self._discover_radar_parsers(can_strings)
-    radar_updated = False
+    radar_cycle_complete = False
     for radar_parser in self.radar_parsers:
       vls = radar_parser.parser.update(can_strings)
       relevant_addrs = {
@@ -283,9 +283,9 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
       if relevant_addrs:
         self.seen_radar_addrs.setdefault((radar_parser.spec.name, radar_parser.bus), set()).update(relevant_addrs)
         self.updated_messages.update((radar_parser.bus, addr) for addr in relevant_addrs)
-        radar_updated = True
+        radar_cycle_complete |= radar_parser.spec.end_addr in relevant_addrs
 
-    if not radar_updated:
+    if not radar_cycle_complete:
       return None
 
     rr = self._update(self.updated_messages)
