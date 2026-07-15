@@ -101,7 +101,7 @@ def import_logreader():
 
   raise SystemExit(
     "Could not import LogReader. Run this from an openpilot/comma tooling environment, "
-    "or install the package that provides openpilot.tools.lib.logreader."
+    + "or install the package that provides openpilot.tools.lib.logreader."
   )
 
 
@@ -173,7 +173,8 @@ def parse_buses(buses: str) -> set[int]:
   return {int(bus.strip(), 0) for bus in buses.split(",") if bus.strip()}
 
 
-def scan_route(LogReader, ReadMode, route: str, skip_s: float, duration_s: float | None, include_sendcan: bool, buses: set[int]) -> tuple[dict[int, Counter[int]], float]:
+def scan_route(LogReader, ReadMode, route: str, skip_s: float, duration_s: float | None,
+               include_sendcan: bool, buses: set[int]) -> tuple[dict[int, Counter[int]], float]:
   counts_by_bus: dict[int, Counter[int]] = defaultdict(Counter)
   start_time_ns = None
   end_s = None if duration_s is None else skip_s + duration_s
