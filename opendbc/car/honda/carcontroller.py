@@ -97,14 +97,21 @@ def brake_pump_hysteresis_elesys(apply_brake, v_ego, brake_anchor, last_pump_ts,
   # WHEN it runs, not just how much:
   #  - final stop approach (0.15 <= v < 2.5, firm cb): run continuously -- one smooth whir that
   #    fades into the hold instead of separate bursts (measured 1.1 starts/stop vs 1.6)
-  #  - standstill hold: 30 s top-ups only (holds showed zero creep across every pump-off gap);
+  #  - saturated braking while moving (cb > 200 at v >= 2.5): run continuously. Once cb rails,
+  #    the rise-trigger is dead (nothing left to rise to) and only the 5 s backstop ran: ~3 s
+  #    pump-off gaps at max demand bled ~0.5-0.7 m/s^2 exactly during the hardest braking.
+  #    Routes e64ef42e91/2418f2eb2b: achieved/commanded decel slope 0.59-0.86 (worse the harder
+  #    the demand), PI wound to -4.0 for planner -2.5..-2.8, then bit +0.5-1.0 m/s^2 over target
+  #    entering the stop. Hard braking is rare and loud enough that the extra duty isn't audible.
+  #  - standstill hold: 30 s top-ups only (holds showed zero creep across every pump-off gap,
+  #    confirmed again on the Jul-14/15 drives incl. +2-3 deg grades);
   #    any decay appears as motion, which re-primes immediately via the branches below
   #  - moving braking: rise-trigger (+3 deadband) with a 2.5 s refractory after each 1.0 s run;
   #    big rises (+15, real apply ramps) bypass the refractory so pressure build is never delayed.
   #    Bleed is self-healing here: fading decel makes the PI raise the command past the deadband.
   #  - periodic backstop 8.0 s light -> 5.0 s firm braking.
   # Replayed on routes 55885a0ee9/dd8c602d69: moving duty 0.68, 7 starts/min, ramps 100% primed.
-  if 0.15 <= v_ego < 2.5 and apply_brake > 100:
+  if (0.15 <= v_ego < 2.5 and apply_brake > 100) or (v_ego >= 2.5 and apply_brake > 200):
     last_pump_ts = ts
     brake_anchor = apply_brake
   else:

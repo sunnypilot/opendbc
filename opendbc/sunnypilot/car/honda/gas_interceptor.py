@@ -13,6 +13,18 @@ from opendbc.car.honda.values import HONDA_ELESYS
 from opendbc.sunnypilot.car import create_gas_interceptor_command
 
 
+def elesys_gas_multiplier(v_ego: float) -> float:
+  # FORK: pedal->accel gain falls off with speed (measured ~4.8 @ 10 m/s, ~3.5 @ 14, ~2.2 @ 18,
+  # route ac35d9891f). The previous curve ([0,10,15,20] -> [0.5,1.0,1.4,2.1]) fixed the ends but
+  # left the mid band on the old <=1.0 ramp: the Jul-14/15 drives (e64ef42e91/4a64f0ffb2/
+  # 2418f2eb2b) delivered only ~50-65% of commanded accel at 3-14 m/s (achieved-commanded bias
+  # -0.29..-0.60 m/s^2), leaving the slow ki (0.8-1.2) to grind out the rest -> the "slow off a
+  # stop" feel even though pure launches tracked aTarget. This raises the middle; the PI trims
+  # the remainder. Deliberately conservative vs the measured 1.5-1.7x shortfall -- revisit
+  # against the next set of logs.
+  return float(np.interp(v_ego, [0., 3., 6., 10., 15., 20.], [0.55, 0.85, 1.10, 1.25, 1.55, 2.20]))
+
+
 class GasInterceptorCarController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     self.CP = CP
@@ -29,12 +41,7 @@ class GasInterceptorCarController:
       # way too aggressive at low speed without this
       gas_mult = np.interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
       if self.CP.carFingerprint in HONDA_ELESYS:
-        # FORK: measured pedal->accel gain (grade+lag corrected, route ac35d9891f) is ~4.8 @ 10 m/s
-        # but falls to ~3.5 @ 14 and ~2.2 @ 18 m/s. The capped 1.0 multiplier under-gassed at speed,
-        # leaving the slow ki (0.5) to grind out the error -> sluggish accel / pedal-lag feel.
-        # low end 0.4 -> 0.5: launches delivered ~0.5 of planned accel at 1-3 m/s (uphill starts,
-        # route fb142b2417); +25% pedal at launch, PI trims the rest. Revisit after next drives.
-        gas_mult = np.interp(CS.out.vEgo, [0., 10., 15., 20.], [0.5, 1.0, 1.4, 2.1])
+        gas_mult = elesys_gas_multiplier(CS.out.vEgo)
       # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
       # This prevents unexpected pedal range rescaling
       # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected

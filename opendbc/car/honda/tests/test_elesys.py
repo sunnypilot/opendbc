@@ -9,6 +9,7 @@ from opendbc.car.honda import hondacan
 from opendbc.car.honda.carcontroller import (brake_pump_hysteresis, brake_pump_hysteresis_elesys,
                                              compute_gas_brake, compute_gb_honda_elesys,
                                              compute_gb_honda_nidec)
+from opendbc.sunnypilot.car.honda.gas_interceptor import elesys_gas_multiplier
 
 # golden values measured for the 9G Accord AU (redlight_overshoot_findings.md) -- deliberately
 # duplicated here so any change to the deployed mapping fails a test until re-measured
@@ -212,6 +213,38 @@ class TestBrakePumpHysteresis(unittest.TestCase):
     p, anchor, last = brake_pump_hysteresis_elesys(250, 0.3, anchor, last, 10.1)   # car creeps -> re-prime
     self.assertTrue(p)
 
+  def test_saturated_moving_braking_pumps_continuously(self):
+    # cb railed at 253 while moving: the rise-trigger is dead (nothing left to rise to), so
+    # before the saturation rule only the 5 s backstop ran -- ~3 s pump-off gaps at max demand
+    # bled ~0.5-0.7 m/s^2 and caused the PI windup -> end-of-stop bite (routes
+    # e64ef42e91/2418f2eb2b). Saturated + moving must now be one continuous run.
+    anchor, last, starts, on, prev = 0, -99.0, 0, 0, False
+    for i in range(500):  # 5 s at highway speed
+      p, anchor, last = brake_pump_hysteresis_elesys(253, 15.0, anchor, last, i * 0.01)
+      starts += (p and not prev)
+      on += p
+      prev = p
+    self.assertEqual(starts, 1)
+    self.assertGreater(on / 500, 0.95)
+
+  def test_saturation_threshold_boundary(self):
+    # exactly 200 counts while moving is NOT saturated: the periodic backstop still governs
+    # (pins the > 200 threshold; the matching duty check at v=5 is in test_steady_duty_backstop_only)
+    self.assertAlmostEqual(self._duty_elesys(200, v_ego=15.0), 1.0 / 5.0, delta=0.04)
+
+  def test_saturated_standstill_stays_quiet(self):
+    # the saturation rule must not defeat the quiet hold: railed cb at v=0 keeps 30 s top-ups
+    self.assertLess(self._duty_elesys(253, seconds=60.0, v_ego=0.0), 0.06)
+
+  def test_release_from_saturation_stops_pumping(self):
+    # leaving the saturated zone: the current run tails out (<= 1.0 s), then the refractory and
+    # backstop govern again -- the pump must not stay latched on
+    anchor, last = 0, -99.0
+    for i in range(200):  # 2 s saturated at speed
+      _, anchor, last = brake_pump_hysteresis_elesys(253, 15.0, anchor, last, i * 0.01)
+    p, anchor, last = brake_pump_hysteresis_elesys(60, 15.0, anchor, last, 3.2)  # released, 1.2 s later
+    self.assertFalse(p)
+
   def test_no_pump_without_brake(self):
     p, _, _ = brake_pump_hysteresis_elesys(0, 0.0, 0, -99.0, 5.0)
     self.assertFalse(p)
@@ -229,6 +262,31 @@ class TestBrakePumpHysteresis(unittest.TestCase):
     for i in range(1, 100):
       pump, last = brake_pump_hysteresis(i + 1, i, last, i * 0.01)
       self.assertTrue(pump)
+
+class TestElesysGasMultiplier(unittest.TestCase):
+  """Golden pedal-multiplier curve (fit on Jul-14/15 routes e64ef42e91/4a64f0ffb2/2418f2eb2b) --
+  deliberately duplicated so any change to the deployed curve fails a test until re-measured."""
+  GOLD_MULT_BP = [0., 3., 6., 10., 15., 20.]
+  GOLD_MULT_V = [0.55, 0.85, 1.10, 1.25, 1.55, 2.20]
+
+  def test_deployed_curve_matches_golden(self):
+    for v in list(self.GOLD_MULT_BP) + [1.5, 4.5, 8.0, 12.5, 17.5, 25.0]:
+      expect = float(np.interp(v, self.GOLD_MULT_BP, self.GOLD_MULT_V))
+      self.assertAlmostEqual(elesys_gas_multiplier(float(v)), expect, places=6, msg=f'v={v}')
+
+  def test_monotonic_increasing(self):
+    # gain falloff with speed means the multiplier must only ever grow
+    vals = [elesys_gas_multiplier(float(v)) for v in np.arange(0.0, 25.0, 0.25)]
+    for a, b in zip(vals[:-1], vals[1:], strict=True):
+      self.assertGreaterEqual(b, a - 1e-9)
+
+  def test_mid_band_above_old_curve(self):
+    # the 3-14 m/s band delivered only ~50-65% of commanded accel on the old <=1.0 ramp;
+    # the fix is specifically that this band now multiplies above it
+    self.assertGreaterEqual(elesys_gas_multiplier(0.0), 0.5)
+    for v in (6.0, 8.0, 10.0, 12.0):
+      old = float(np.interp(v, [0., 10., 15., 20.], [0.5, 1.0, 1.4, 2.1]))
+      self.assertGreater(elesys_gas_multiplier(v), old, msg=f'v={v}')
 
 
 class TestBrakeCommandUnitsBit(unittest.TestCase):
