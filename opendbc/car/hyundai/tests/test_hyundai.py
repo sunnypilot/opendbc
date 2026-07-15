@@ -225,6 +225,20 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert len(points) == 1
     assert RI.active_radar_buses[RADAR_235_248.name] == 1
 
+  def test_radar_interface_publishes_on_complete_cycle(self):
+    fingerprint = gen_empty_fingerprint()
+    add_radar_range(fingerprint, RADAR_235_248, 1)
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
+    RI = RadarInterface(CP, CP_SP)
+
+    assert RI.update([(123, [(RADAR_235_248.start_addr, b'\x00' * 8, 1)])]) is None
+    assert RI.updated_messages == {(1, RADAR_235_248.start_addr)}
+
+    radar_data = RI.update([(124, [(RADAR_235_248.end_addr, b'\x00' * 8, 1)])])
+    assert radar_data is not None
+    assert RI.updated_messages == set()
+
   def test_radar_interface_live_mode_switch(self):
     fingerprint = gen_empty_fingerprint()
     CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
