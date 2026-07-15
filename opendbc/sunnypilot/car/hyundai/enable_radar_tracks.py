@@ -22,7 +22,6 @@ WRITE_DATA_RESPONSE = bytes([uds.SERVICE_TYPE.WRITE_DATA_BY_IDENTIFIER + 0x40])
 CONFIG_DATA_ID = bytes([0x01, 0x42])
 DEFAULT_CONFIG = bytes([0x00, 0x00, 0x00, 0x01, 0x00, 0x00])
 TRACKS_ENABLED_CONFIG = bytes([0x00, 0x00, 0x00, 0x01, 0x00, 0x01])
-TRACKS_ENABLED_CONFIG_BYTES = b"\x00\x00\x01\x00\x01"
 
 
 def enable_radar_tracks(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, retry=2):
@@ -39,19 +38,26 @@ def enable_radar_tracks(logcan, sendcan, bus=0, addr=0x7d0, timeout=0.1, retry=2
         query = IsoTpParallelQuery(sendcan, logcan, bus, [addr], [request], [READ_DATA_RESPONSE])
 
         for _, data in query.get_data(timeout).items():
-          current_config = data[3:]
+          if not data.startswith(CONFIG_DATA_ID):
+            carlog.error(f"radar_tracks: unexpected config response: {data.hex()}")
+            return False
+
+          current_config = data[len(CONFIG_DATA_ID):]
 
           carlog.error(f"radar_tracks: current config: {current_config.hex()}")
 
-          if current_config == TRACKS_ENABLED_CONFIG_BYTES:
+          if current_config == TRACKS_ENABLED_CONFIG:
             carlog.error("radar_tracks: already enabled, skipping ...")
-          else:
+          elif current_config == DEFAULT_CONFIG:
             carlog.error("radar_tracks: reconfigure radar to output radar points ...")
             request = WRITE_DATA_REQUEST + CONFIG_DATA_ID + TRACKS_ENABLED_CONFIG
             query = IsoTpParallelQuery(sendcan, logcan, bus, [addr], [request], [WRITE_DATA_RESPONSE])
             query.get_data(0)
 
             carlog.error("radar_tracks: successfully enabled")
+          else:
+            carlog.error("radar_tracks: unsupported config, refusing to write")
+            return False
 
           return True
 
