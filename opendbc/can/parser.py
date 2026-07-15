@@ -126,10 +126,11 @@ class VLDict(dict):
 
 
 class CANParser:
-  def __init__(self, dbc_name: str, messages: list[tuple[str | int, int]], bus: int):
+  def __init__(self, dbc_name: str, messages: list[tuple[str | int, int]], bus: int, signals: set[str] | None = None):
     self.dbc_name: str = dbc_name
     self.bus: int = bus
     self.dbc: DBC = DBC(dbc_name)
+    self.signals = signals
 
     self.vl: dict[int | str, dict[str, float]] = VLDict(self)
     self.vl_all: dict[int | str, dict[str, list[float]]] = {}
@@ -162,7 +163,13 @@ class CANParser:
     assert msg.address not in self.addresses
 
     self.addresses.add(msg.address)
-    signal_names = list(msg.sigs.keys())
+    if self.signals is not None:
+      missing_signals = self.signals - msg.sigs.keys()
+      if missing_signals:
+        raise RuntimeError(f"could not find signals {sorted(missing_signals)} in message {msg.name}")
+      signal_names = [name for name in msg.sigs if name in self.signals]
+    else:
+      signal_names = list(msg.sigs.keys())
     signals_dict = {s: 0.0 for s in signal_names}
     dict.__setitem__(self.vl, msg.address, signals_dict)
     dict.__setitem__(self.vl, msg.name, signals_dict)
@@ -175,7 +182,7 @@ class CANParser:
       address=msg.address,
       name=msg.name,
       size=msg.size,
-      signals=list(msg.sigs.values()),
+      signals=[msg.sigs[name] for name in signal_names],
       ignore_alive=freq is not None and math.isnan(freq),
     )
     if freq is not None and freq > 0:
