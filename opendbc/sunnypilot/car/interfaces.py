@@ -84,7 +84,7 @@ def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
   params_dict = {k: v for param in params_list for k, v in param.items()}
 
   _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
-  _initialize_radar(CI, CP, CP_SP, params_dict)
+  _initialize_radar(CP, CP_SP, params_dict)
   _initialize_coop_steering(CP, CP_SP, params_dict)
   _initialize_radar_tracks(CP, CP_SP, can_recv, can_send)
   _initialize_stop_and_go(CP, CP_SP, params_dict)
@@ -105,7 +105,7 @@ def _initialize_custom_longitudinal_tuning(CI, CP: structs.CarParams, CP_SP: str
   _ = CI.get_longitudinal_tuning_sp(CP, CP_SP)
 
 
-def _initialize_radar(CI: CarInterfaceBaseSP, CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
+def _initialize_radar(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
 
   # Hyundai Radar
   if CP.brand == 'hyundai':
