@@ -30,7 +30,7 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     if self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
       return "SCC_CONTROL" if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else "SCC11"
 
-  def get_radar_ext_can_parser(self) -> CANParser | None:
+  def get_radar_ext_can_parser(self) -> CANParser:
     if self.ESCC.enabled:
       lead_src, bus = "ESCC", 0
     elif self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
