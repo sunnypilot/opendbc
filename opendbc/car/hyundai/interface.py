@@ -131,8 +131,6 @@ class CarInterface(CarInterfaceBase):
 
     radar_tracks = detect_radar_tracks(fingerprint)
     set_detected_radar_tracks(ret.carFingerprint, radar_tracks)
-    if radar_tracks:
-      ret.flags |= HyundaiFlags.RADAR_TRACKS_DETECTED.value
     ret.radarUnavailable = len(radar_tracks) == 0
     ret.openpilotLongitudinalControl = alpha_long and ret.alphaLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl

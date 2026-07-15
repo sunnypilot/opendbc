@@ -109,7 +109,6 @@ class HyundaiFlags(IntFlag):
   SEND_LFA = 2 ** 7
   USE_FCA = 2 ** 8
   CANFD_LKA_STEER_MSG_ALT = 2 ** 9
-  RADAR_TRACKS_DETECTED = 2 ** 28
 
   # these cars use a different gas signal
   HYBRID = 2 ** 10
@@ -117,6 +116,9 @@ class HyundaiFlags(IntFlag):
 
   # Static flags
 
+  # If 0x500 is present on bus 1 it probably has a Mando radar outputting radar points.
+  # If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py
+  MANDO_RADAR = 2 ** 12
   CANFD = 2 ** 13
 
   # The radar does SCC on these cars when HDA I, rather than the camera
