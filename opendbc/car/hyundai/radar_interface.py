@@ -247,7 +247,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
       self.initialize_radar_ext(DEFAULT_RADAR_TRIGGER_MSG)
       self.radar_off_can = self.rcp is None
     else:
-      self.trigger_msg = DEFAULT_RADAR_TRIGGER_MSG
+      self.trigger_msg = self.get_trigger_msg(DEFAULT_RADAR_TRIGGER_MSG)
       self.rcp = None
       self.radar_off_can = True
 
