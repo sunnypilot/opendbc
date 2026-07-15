@@ -76,7 +76,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
-    LeadDataCarController.update(self, CC_SP)
+    LeadDataCarController.update(self, CC_SP, CS.out.vEgo)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
     if self.frame % 5 == 0:
       LongitudinalController.update(self, CC, CS)
