@@ -236,6 +236,33 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert RI.updated_messages == set()
     assert RI.pending_radar_can == {}
 
+  def test_radar_interface_discards_incomplete_cycle_on_next_start(self):
+    fingerprint = gen_empty_fingerprint()
+    add_radar_range(fingerprint, RADAR_235_248, 1)
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
+    RI = RadarInterface(CP, CP_SP)
+    parser_key = (RADAR_235_248.name, 1)
+
+    assert RI.update([(123, [(RADAR_235_248.start_addr + 1, b'\x00' * 8, 1)])]) is None
+    assert RI.update([(124, [(RADAR_235_248.start_addr, b'\x00' * 8, 1)])]) is None
+    assert RI.pending_radar_can[parser_key] == [(124, [(RADAR_235_248.start_addr, b'\x00' * 8, 1)])]
+
+  def test_radar_interface_bounds_incomplete_cycle_storage(self):
+    fingerprint = gen_empty_fingerprint()
+    add_radar_range(fingerprint, RADAR_235_248, 1)
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
+    RI = RadarInterface(CP, CP_SP)
+    parser_key = (RADAR_235_248.name, 1)
+    pending_limit = RADAR_235_248.msg_count * 2
+
+    for mono_time in range(pending_limit + 5):
+      assert RI.update([(mono_time, [(RADAR_235_248.start_addr + 1, b'\x00' * 8, 1)])]) is None
+
+    assert len(RI.pending_radar_can[parser_key]) == pending_limit
+    assert RI.pending_radar_can[parser_key][0][0] == 5
+
   def test_radar_interface_live_mode_switch(self):
     fingerprint = gen_empty_fingerprint()
     CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
