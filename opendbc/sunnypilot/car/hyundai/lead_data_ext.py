@@ -29,25 +29,20 @@ class ClusterRadarTrackSelector:
   def _range(track: structs.CarControlSP.RadarTrack) -> float:
     return abs(track.dRel)
 
-  def _select(self, slot: str, candidates: list[structs.CarControlSP.RadarTrack], used_ids: set[int], preferred_ids: tuple[int, ...]):
+  def _select(self, slot: str, candidates: list[structs.CarControlSP.RadarTrack], used_ids: set[int]):
     available = [track for track in candidates if track.trackId not in used_ids]
     if not available:
       self._track_ids[slot] = None
       return None
 
-    preferred = next((track for track_id in preferred_ids for track in available if track.trackId == track_id), None)
-    if preferred is not None:
-      selected = preferred
-    else:
-      closest = min(available, key=self._range)
-      current = next((track for track in available if track.trackId == self._track_ids[slot]), None)
-      selected = current if current is not None and self._range(current) <= self._range(closest) + self.SWITCH_DISTANCE_MARGIN else closest
+    closest = min(available, key=self._range)
+    current = next((track for track in available if track.trackId == self._track_ids[slot]), None)
+    selected = current if current is not None and self._range(current) <= self._range(closest) + self.SWITCH_DISTANCE_MARGIN else closest
     self._track_ids[slot] = selected.trackId
     used_ids.add(selected.trackId)
     return selected
 
-  def update(self, tracks: list[structs.CarControlSP.RadarTrack], v_ego: float,
-             preferred_ids: tuple[int, ...] = ()) -> dict[str, structs.CarControlSP.RadarTrack]:
+  def update(self, tracks: list[structs.CarControlSP.RadarTrack], v_ego: float) -> dict[str, structs.CarControlSP.RadarTrack]:
     moving_tracks = [
       track for track in tracks
       if math.isfinite(track.dRel) and math.isfinite(track.yRel) and math.isfinite(track.vRel)
@@ -68,7 +63,7 @@ class ClusterRadarTrackSelector:
       "lead_left_rear": left_rear,
       "lead_right_rear": right_rear,
     }
-    selected = {slot: self._select(slot, candidates[slot], used_ids, preferred_ids) for slot in CLUSTER_TRACK_SLOTS}
+    selected = {slot: self._select(slot, candidates[slot], used_ids) for slot in CLUSTER_TRACK_SLOTS}
     return {slot: track for slot, track in selected.items() if track is not None}
 
 
@@ -170,11 +165,7 @@ class LeadDataCarController:
     self.lead_one = CC_SP.leadOne
     self.lead_two = CC_SP.leadTwo
     self.radar_tracks_active = CC_SP.radarTracksActive
-    matched_track_ids = tuple(
-      lead.radarTrackId for lead in (self.lead_one, self.lead_two)
-      if lead.status and lead.radar and lead.radarTrackId >= 0
-    )
-    self.cluster_track_slots = self.cluster_track_selector.update(CC_SP.radarTracks, v_ego, matched_track_ids) \
+    self.cluster_track_slots = self.cluster_track_selector.update(CC_SP.radarTracks, v_ego) \
       if self.radar_tracks_active else self.cluster_track_selector.reset()
 
     self.lead_distance = self.lead_one.dRel

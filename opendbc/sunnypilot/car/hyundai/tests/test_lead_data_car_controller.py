@@ -116,15 +116,6 @@ class TestLeadDataCarController(unittest.TestCase):
     self.assertEqual(selector.update([make_radar_track(1, 12, 0), make_radar_track(2, 10, 0)], 20)["lead"].trackId, 1)
     self.assertEqual(selector.update([make_radar_track(1, 12, 0), make_radar_track(2, 5, 0)], 20)["lead"].trackId, 2)
 
-  def test_cluster_radar_track_selection_prioritizes_matched_lead(self):
-    selector = ClusterRadarTrackSelector()
-    tracks = [make_radar_track(1, 10, 0), make_radar_track(2, 20, 0), make_radar_track(3, 30, 0)]
-
-    slots = selector.update(tracks, v_ego=20, preferred_ids=(3,))
-
-    self.assertEqual(slots["lead"].trackId, 3)
-    self.assertEqual(slots["lead_alt"].trackId, 1)
-
   def test_update_ccnc_cluster_tracks(self):
     msg_162 = {}
     slots = {
