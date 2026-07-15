@@ -269,7 +269,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
   def test_radar_interface_live_mode_switch(self):
     fingerprint = gen_empty_fingerprint()
     CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
-    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_OFF.value)
+    CP_SP = CarParamsSP()
     RI = RadarInterface(CP, CP_SP)
 
     assert RI.radar_off_can
@@ -278,7 +278,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
     assert RI.set_radar_mode(RadarType.FULL_RADAR)
     assert CP_SP.flags & HyundaiFlagsSP.RADAR_FULL_RADAR
-    assert not CP_SP.flags & (HyundaiFlagsSP.RADAR_OFF | HyundaiFlagsSP.RADAR_LEAD_ONLY)
+    assert not CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY
     assert not RI.radar_off_can
 
     radar_messages = [(addr, b'\x00' * 8, 1) for addr in RADAR_235_248.address_range]
@@ -299,7 +299,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert radar_data.radarTracksAvailable
 
     assert RI.set_radar_mode(RadarType.OFF)
-    assert CP_SP.flags & HyundaiFlagsSP.RADAR_OFF
     assert not CP_SP.flags & (HyundaiFlagsSP.RADAR_LEAD_ONLY | HyundaiFlagsSP.RADAR_FULL_RADAR)
     assert RI.radar_off_can
     assert RI.rcp is None

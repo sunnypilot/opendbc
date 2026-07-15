@@ -238,14 +238,12 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     if radar_mode == self._radar_mode:
       return False
 
-    radar_mode_flags = HyundaiFlagsSP.RADAR_OFF | HyundaiFlagsSP.RADAR_LEAD_ONLY | HyundaiFlagsSP.RADAR_FULL_RADAR
+    radar_mode_flags = HyundaiFlagsSP.RADAR_LEAD_ONLY | HyundaiFlagsSP.RADAR_FULL_RADAR
     self.CP_SP.flags &= ~radar_mode_flags.value
-    mode_flag = {
-      RadarType.OFF: HyundaiFlagsSP.RADAR_OFF,
-      RadarType.LEAD_ONLY: HyundaiFlagsSP.RADAR_LEAD_ONLY,
-      RadarType.FULL_RADAR: HyundaiFlagsSP.RADAR_FULL_RADAR,
-    }[radar_mode]
-    self.CP_SP.flags |= mode_flag.value
+    if radar_mode == RadarType.LEAD_ONLY:
+      self.CP_SP.flags |= HyundaiFlagsSP.RADAR_LEAD_ONLY.value
+    elif radar_mode == RadarType.FULL_RADAR:
+      self.CP_SP.flags |= HyundaiFlagsSP.RADAR_FULL_RADAR.value
 
     self.pts.clear()
     self.updated_messages.clear()
