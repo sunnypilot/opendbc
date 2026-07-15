@@ -136,25 +136,22 @@ CCNC_CLUSTER_TRACK_SIGNALS = {
 }
 
 
-def update_ccnc_cluster_tracks(msg_162, cluster_track_slots, matched_track_ids):
+def update_ccnc_cluster_tracks(msg_162, cluster_track_slots):
   for status_signal, distance_signal, lateral_signal in CCNC_CLUSTER_TRACK_SIGNALS.values():
     msg_162.update({status_signal: 0, distance_signal: 0, lateral_signal: 0})
 
   for slot, track in cluster_track_slots.items():
     status_signal, distance_signal, lateral_signal = CCNC_CLUSTER_TRACK_SIGNALS[slot]
-    matched = track.trackId in matched_track_ids
-    status = (2 if matched else 1) if slot == "lead_alt" else (4 if matched else 3)
     max_distance = 25.5 if slot.endswith("rear") else 204.7
     msg_162.update({
-      status_signal: status,
+      status_signal: 1,
       distance_signal: float(np.clip(abs(track.dRel), 0.0, max_distance)),
       lateral_signal: float(np.clip(abs(track.yRel), 0.0, 12.7)),
     })
 
 
 def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBlinker, rightBlinker, msg_161, msg_162, msg_1b5,
-                is_metric, out, main_cruise_enabled, lfa_icon, radar_tracks_active=False, cluster_track_slots=None,
-                matched_track_ids=None):
+                is_metric, out, main_cruise_enabled, lfa_icon, radar_tracks_active=False, cluster_track_slots=None):
   for f in {"FAULT_LSS", "FAULT_HDA", "FAULT_DAS", "FAULT_LFA", "FAULT_DAW", "FAULT_ESS"}:
     msg_162[f] = 0
   if msg_161["ALERTS_2"] == 5:
@@ -249,7 +246,7 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
     msg_162["LEAD_DISTANCE"] = msg_1b5["Longitudinal_Distance"]
 
   if radar_tracks_active:
-    update_ccnc_cluster_tracks(msg_162, cluster_track_slots or {}, matched_track_ids or set())
+    update_ccnc_cluster_tracks(msg_162, cluster_track_slots or {})
 
   return [packer.make_can_msg(msg, CAN.ECAN, data) for msg, data in [("CCNC_0x161", msg_161), ("CCNC_0x162", msg_162)]]
 

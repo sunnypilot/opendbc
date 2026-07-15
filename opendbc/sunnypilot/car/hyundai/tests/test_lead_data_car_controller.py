@@ -124,13 +124,13 @@ class TestLeadDataCarController(unittest.TestCase):
       "lead_right_rear": make_radar_track(3, -40, -4),
     }
 
-    update_ccnc_cluster_tracks(msg_162, slots, matched_track_ids={1})
+    update_ccnc_cluster_tracks(msg_162, slots)
 
-    self.assertEqual(msg_162["LEAD"], 4)
+    self.assertEqual(msg_162["LEAD"], 1)
     self.assertEqual(msg_162["LEAD_DISTANCE"], 20)
     self.assertEqual(msg_162["LEAD_LATERAL"], 0.5)
-    self.assertEqual(msg_162["LEAD_LEFT"], 3)
+    self.assertEqual(msg_162["LEAD_LEFT"], 1)
     self.assertEqual(msg_162["LEAD_LEFT_LATERAL"], 3)
-    self.assertEqual(msg_162["LEAD_RIGHT_REAR_STATUS"], 3)
+    self.assertEqual(msg_162["LEAD_RIGHT_REAR_STATUS"], 1)
     self.assertEqual(msg_162["LEAD_RIGHT_REAR_DISTANCE"], 25.5)
     self.assertEqual(msg_162["LEAD_ALT"], 0)

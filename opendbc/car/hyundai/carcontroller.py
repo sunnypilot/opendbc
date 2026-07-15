@@ -213,13 +213,9 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     # LFA and HDA icons
     if self.frame % 5 == 0 and (not lka_steering or lka_steering_long):
       if ccnc_non_hda2:
-        matched_track_ids = {
-          lead.radarTrackId for lead in (self.lead_one, self.lead_two)
-          if lead.status and lead.radar and lead.radarTrackId >= 0
-        }
         can_sends.extend(hyundaicanfd.create_ccnc(self.packer, self.CAN, self.CP.openpilotLongitudinalControl, CC.enabled, CC.hudControl, CC.leftBlinker,
                                                   CC.rightBlinker, CS.msg_161, CS.msg_162, CS.msg_1b5, CS.is_metric, CS.out, CS.main_cruise_enabled,
-                                                  self.lfa_icon, self.radar_tracks_active, self.cluster_track_slots, matched_track_ids))
+                                                  self.lfa_icon, self.radar_tracks_active, self.cluster_track_slots))
       else:
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
 
