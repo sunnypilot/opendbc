@@ -12,5 +12,7 @@ class GMFlagsSP(IntFlag):
   NON_ACC = 1
 
 
-class GMSafetyFlagsSP:
+class GMSafetyFlagsSP(IntFlag):
   NON_ACC = 1
+  GAS_INTERCEPTOR = 2
+  PEDAL_LONG = 4
