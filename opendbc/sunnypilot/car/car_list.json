@@ -4105,6 +4105,21 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
+  "Volkswagen Caddy 2021-26": {
+    "platform": "VOLKSWAGEN_CADDY_MK5",
+    "make": "Volkswagen",
+    "brand": "volkswagen",
+    "model": "Caddy",
+    "year": [
+      "2021",
+      "2022",
+      "2023",
+      "2024",
+      "2025",
+      "2026"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
   "Volkswagen Caddy Maxi 2019": {
     "platform": "VOLKSWAGEN_CADDY_MK3",
     "make": "Volkswagen",
@@ -4112,6 +4127,21 @@
     "model": "Caddy Maxi",
     "year": [
       "2019"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
+  "Volkswagen Caddy Maxi 2021-26": {
+    "platform": "VOLKSWAGEN_CADDY_MK5",
+    "make": "Volkswagen",
+    "brand": "volkswagen",
+    "model": "Caddy Maxi",
+    "year": [
+      "2021",
+      "2022",
+      "2023",
+      "2024",
+      "2025",
+      "2026"
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },

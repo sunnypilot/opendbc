@@ -421,6 +421,17 @@ class CAR(Platforms):
     chassis_codes={"2K"},
     wmis={WMI.VOLKSWAGEN_COMMERCIAL_BUS_VAN},
   )
+  VOLKSWAGEN_CADDY_MK5 = VolkswagenMQBevoPlatformConfig(
+    [
+      VWCarDocs("Volkswagen Caddy 2021-26"),
+      VWCarDocs("Volkswagen Caddy Maxi 2021-26"),
+    ],
+    # Preserve the Golf Mk8 control parameters already validated on this vehicle.
+    # Caddy-specific lateral tuning should be validated separately.
+    VolkswagenCarSpecs(mass=1397, wheelbase=2.62),
+    chassis_codes={"SK"},
+    wmis={WMI.VOLKSWAGEN_COMMERCIAL_BUS_VAN},
+  )
   VOLKSWAGEN_CRAFTER_MK2 = VolkswagenMQBPlatformConfig(
     [
       VWCarDocs("Volkswagen Crafter 2017-24", video="https://youtu.be/4100gLeabmo"),

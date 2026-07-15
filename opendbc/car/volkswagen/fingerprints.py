@@ -153,6 +153,20 @@ FW_VERSIONS = {
       b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\x0155',
     ],
   },
+  CAR.VOLKSWAGEN_CADDY_MK5: {
+    (Ecu.cornerRadar, 0x74e, None): [
+      b'\xf1\x872Q0907686G \xf1\x890287',
+    ],
+    (Ecu.adas, 0x769, None): [
+      b'\xf1\x875WA980556B \xf1\x890254',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x875WA907572C \xf1\x890461',
+    ],
+    (Ecu.fwdCamera, 0x74f, None): [
+      b'\xf1\x875WA980653D \xf1\x893403',
+    ],
+  },
   CAR.VOLKSWAGEN_CRAFTER_MK2: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704L906056BP\xf1\x894729',
@@ -395,11 +409,9 @@ FW_VERSIONS = {
     (Ecu.srs, 0x715, None): [],
     (Ecu.eps, 0x712, None): [],
     (Ecu.cornerRadar, 0x74e, None): [
-      b'\xf1\x872Q0907686G \xf1\x890287',
       b'\xf1\x872Q0907686J \xf1\x890288',
     ],
     (Ecu.adas, 0x769, None): [
-      b'\xf1\x875WA980556B \xf1\x890254',
       b'\xf1\x875WA980556C \xf1\x890314',
       b'\xf1\x875WA980556D \xf1\x890364',
     ],
@@ -410,7 +422,6 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x74f, None): [
       b'\xf1\x875WA980653C \xf1\x893301',
-      b'\xf1\x875WA980653D \xf1\x893403',
       b'\xf1\x875WA980653D \xf1\x893405',
     ],
   },
