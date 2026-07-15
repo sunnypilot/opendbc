@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-import os
 
-if __name__ == "__main__":
-  dbc_name = os.path.basename(__file__).replace(".py", ".dbc")
-  hyundai_path = os.path.dirname(os.path.realpath(__file__))
-  with open(os.path.join(hyundai_path, dbc_name), "w", encoding='utf-8') as f:
-    f.write("""
+
+def generate():
+  parts = []
+  parts.append("""
 VERSION ""
 
 
@@ -44,8 +42,8 @@ BS_:
 BU_: XXX
     """)
 
-    for a in range(0x3A5, 0x3A5 + 32):
-        f.write(f"""
+  for a in range(0x3A5, 0x3A5 + 32):
+    parts.append(f"""
 BO_ {a} RADAR_TRACK_{a:x}: 24 RADAR
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
@@ -76,3 +74,5 @@ BO_ {a} RADAR_TRACK_{a:x}: 24 RADAR
  SG_ NEW_SIGNAL_16 : 185|2@0+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_17 : 187|2@0+ (1,0) [0|3] "" XXX
     """)
+
+  return {"hyundai_radar_3a5_3c4.dbc": "".join(parts)}
