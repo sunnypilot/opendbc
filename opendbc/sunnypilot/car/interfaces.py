@@ -106,8 +106,6 @@ def _initialize_custom_longitudinal_tuning(CI, CP: structs.CarParams, CP_SP: str
 
 
 def _initialize_radar(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
-
-  # Hyundai Radar
   if CP.brand == 'hyundai':
     radar_mode = int(params_dict.get("RadarTracks", RadarType.OFF))
     if radar_mode == RadarType.LEAD_ONLY:
