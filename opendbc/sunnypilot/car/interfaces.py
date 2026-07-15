@@ -128,10 +128,11 @@ def _initialize_coop_steering(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
 
 def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
                              can_recv: CanRecvCallable | None = None, can_send: CanSendCallable | None = None) -> None:
-  if CP.brand == 'hyundai':
-    if CP.flags & HyundaiFlags.MANDO_RADAR and (CP.radarUnavailable or CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC):
-      tracks_enabled = hyundai_enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0)
-      CP.radarUnavailable = not tracks_enabled
+  radar_requested = CP_SP.flags & (HyundaiFlagsSP.RADAR_LEAD_ONLY | HyundaiFlagsSP.RADAR_FULL_RADAR)
+  radar_tracks_detected = CP.flags & HyundaiFlags.RADAR_TRACKS_DETECTED
+  if CP.brand == 'hyundai' and radar_requested and not radar_tracks_detected and not CP.flags & HyundaiFlags.CANFD:
+    if hyundai_enable_radar_tracks(can_recv, can_send, bus=0, addr=0x7d0):
+      CP.radarUnavailable = False
 
 
 def _initialize_stop_and_go(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:

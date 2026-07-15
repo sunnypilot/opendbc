@@ -93,6 +93,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
           radar_tracks = get_detected_radar_tracks(CP)
 
           assert not CP.radarUnavailable
+          assert CP.flags & HyundaiFlags.RADAR_TRACKS_DETECTED
           assert len(radar_tracks) == 1
           assert radar_tracks[0].spec == radar_spec
           assert radar_tracks[0].bus == bus
@@ -106,6 +107,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
         CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
 
         assert CP.radarUnavailable
+        assert not CP.flags & HyundaiFlags.RADAR_TRACKS_DETECTED
         assert get_detected_radar_tracks(CP) == ()
 
   def test_radar_track_detection_multiple_ranges(self):
