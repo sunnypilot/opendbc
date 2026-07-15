@@ -1148,6 +1148,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00ME  MFC  AT KOR LHD 1.00 1.00 99211-GO000 241007',
       b'\xf1\x00ME  MFC  AT KOR LHD 1.00 1.01 99211-GO000 250103',
+      b'\xf1\x00ME  MFC  AT USA LHD 1.00 1.00 99211-TD000 241007',
     ],
   },
   CAR.HYUNDAI_TUCSON_4TH_GEN: {
