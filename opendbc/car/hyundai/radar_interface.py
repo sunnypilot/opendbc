@@ -189,10 +189,14 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     existing_parsers = {(parser.spec.name, parser.bus) for parser in self.radar_parsers}
     updated_candidates: dict[tuple[str, int], HyundaiRadarTrackSpec] = {}
     for _, can_messages in can_strings:
-      for addr, _, bus in can_messages:
+      for raw_addr, _, raw_bus in can_messages:
+        addr, bus = int(raw_addr), int(raw_bus)
         spec = RADAR_TRACK_SPEC_BY_ADDR.get(addr)
-        parser_key = (spec.name, bus) if spec is not None else None
-        if spec is not None and bus in RADAR_TRACK_BUSES and parser_key not in existing_parsers:
+        if spec is None or bus not in RADAR_TRACK_BUSES:
+          continue
+
+        parser_key = (spec.name, bus)
+        if parser_key not in existing_parsers:
           self.seen_radar_addrs.setdefault(parser_key, set()).add(addr)
           updated_candidates[parser_key] = spec
 
