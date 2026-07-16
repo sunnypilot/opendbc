@@ -129,7 +129,7 @@ class CANParser:
   def __init__(self, dbc_name: str, messages: list[tuple[str | int, int]], bus: int, signals: set[str] | None = None):
     self.dbc_name: str = dbc_name
     self.bus: int = bus
-    self.dbc: DBC = DBC(dbc_name)
+    self.dbc = DBC(dbc_name)
     self.signals = signals
 
     self.vl: dict[int | str, dict[str, float]] = VLDict(self)
