@@ -109,13 +109,24 @@ class TestHyundaiFingerprint(unittest.TestCase):
       "COAST_AGE": 15,
       "STATE": 4,
       "NEW_SIGNAL_8": -21,
-      "LONG_DIST": 203.95,
+      "LONG_DIST": 409.55,
       "LAT_DIST": -61.55,
       "REL_SPEED": -66.79,
       "NEW_SIGNAL_4": 2,
       "REL_LAT_SPEED": -3.25,
       "REL_ACCEL": 10.22,
-      "NEW_SIGNAL_5": 30,
+      "NEW_SIGNAL_18": 2,
+      "NEW_SIGNAL_5": 32,
+      "WIDTH": 3.1,
+      "LENGTH": 15.5,
+      "ABS_SPEED": 68.3,
+      "ORIENTATION_ANGLE": -173,
+      "NEW_SIGNAL_13": 10,
+      "NEW_SIGNAL_12": 5,
+      "NEW_SIGNAL_14": 1,
+      "NEW_SIGNAL_15": 2,
+      "NEW_SIGNAL_16": 3,
+      "NEW_SIGNAL_17": 1,
     }
 
     parser.update([(1, [packer.make_can_msg("RADAR_TRACK_3a5", 1, values)])])
@@ -124,7 +135,25 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for signal, expected in values.items():
       assert abs(parsed[signal] - expected) < 1e-6
     assert "LAT_DIST_ACCEL" not in parsed
-    assert "NEW_SIGNAL_18" not in parsed
+
+  def test_radar_3a5_known_ioniq9_frames(self):
+    parser = CANParser(RADAR_3A5_3C4.dbc_name, [
+      ("RADAR_TRACK_3af", RADAR_3A5_3C4.frequency),
+      ("RADAR_TRACK_3c0", RADAR_3A5_3C4.frequency),
+    ], 1)
+
+    # The distance MSB is set, so this is 205.25 m rather than a wrapped 0.45 m.
+    distance_frame = bytes.fromhex("d19ba383061f4d8004b8ee8303c7800000541f03cd271608")
+    parser.update([(1, [(0x3AF, distance_frame, 1)])])
+    assert parser.vl["RADAR_TRACK_3af"]["LONG_DIST"] == 205.25
+
+    # The length MSB is set, so this is a 15.2 m long object rather than 2.4 m.
+    dimensions_frame = bytes.fromhex("fb29791225ff3081a2400d313ffadffd016c98a728a0aa06")
+    parser.update([(2, [(0x3C0, dimensions_frame, 1)])])
+    dimensions = parser.vl["RADAR_TRACK_3c0"]
+    assert dimensions["WIDTH"] == 2.7
+    assert abs(dimensions["LENGTH"] - 15.2) < 1e-6
+    assert dimensions["ORIENTATION_ANGLE"] == 10
 
   def test_feature_detection(self):
     # LKA steering
