@@ -47,7 +47,7 @@ BU_: XXX
 BO_ {a} RADAR_TRACK_{a:x}: 32 RADAR
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ 1_COUNTER_255 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ 1_AGE : 47|8@0+ (1,0) [0|255] "" XXX
  SG_ 1_STATE_ALT : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ 1_STATE : 55|4@0+ (1,0) [0|15] "" XXX
  SG_ 1_NEW_SIGNAL_3 : 63|8@0- (1,0) [0|255] "" XXX
@@ -57,7 +57,7 @@ BO_ {a} RADAR_TRACK_{a:x}: 32 RADAR
  SG_ 1_NEW_SIGNAL_1 : 102|2@1+ (1,0) [0|3] "" XXX
  SG_ 1_LAT_ACCEL : 104|13@1- (1,0) [0|8191] "" XXX
  SG_ 1_REL_ACCEL : 118|10@1- (1,0) [0|1023] "" XXX
- SG_ 2_COUNTER_255 : 175|8@0+ (1,0) [0|255] "" XXX
+ SG_ 2_AGE : 175|8@0+ (1,0) [0|255] "" XXX
  SG_ 2_STATE_ALT : 179|4@0+ (1,0) [0|15] "" XXX
  SG_ 2_STATE : 183|4@0+ (1,0) [0|15] "" XXX
  SG_ 2_NEW_SIGNAL_3 : 191|8@0- (1,0) [0|255] "" XXX
