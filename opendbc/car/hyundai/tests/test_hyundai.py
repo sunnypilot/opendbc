@@ -1,6 +1,6 @@
 from hypothesis import settings, given, strategies as st
 
-import unittest  # noqa: TID251
+import unittest
 
 from opendbc.can import CANPacker, CANParser
 from opendbc.car import gen_empty_fingerprint
@@ -55,7 +55,7 @@ CANFD_EXPECTED_ECUS = {Ecu.fwdCamera, Ecu.fwdRadar}
 def add_radar_range(fingerprint, radar_spec, bus, missing_addr=None):
   for addr in range(radar_spec.start_addr, radar_spec.end_addr + 1):
     if addr != missing_addr:
-      fingerprint[bus][addr] = 8
+      fingerprint[bus][addr] = radar_spec.message_size
 
 
 def mark_track_updated(parser, radar_spec, addr, prefix=""):
@@ -76,6 +76,15 @@ class TestHyundaiFingerprint(unittest.TestCase):
       "RADAR_235_248": 33,
       "RADAR_3A5_3C4": 20,
       "RADAR_602_617": 10,
+    }
+
+  def test_radar_track_message_sizes(self):
+    assert {spec.name: spec.message_size for spec in HYUNDAI_RADAR_TRACK_SPECS} == {
+      "RADAR_500_51F": 8,
+      "RADAR_210_21F": 32,
+      "RADAR_235_248": 32,
+      "RADAR_3A5_3C4": 24,
+      "RADAR_602_617": 8,
     }
 
   def test_radar_602_track_validity(self):
@@ -165,6 +174,17 @@ class TestHyundaiFingerprint(unittest.TestCase):
         assert CP.radarUnavailable
         assert get_detected_radar_tracks(CP) == ()
 
+  def test_radar_track_detection_requires_correct_message_size(self):
+    fingerprint = gen_empty_fingerprint()
+    add_radar_range(fingerprint, RADAR_3A5_3C4, 0)
+    add_radar_range(fingerprint, RADAR_3A5_3C4, 1)
+    fingerprint[1][RADAR_3A5_3C4.start_addr] = 8
+
+    CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
+    radar_tracks = get_detected_radar_tracks(CP)
+
+    assert [(rt.spec, rt.bus) for rt in radar_tracks] == [(RADAR_3A5_3C4, 0)]
+
   def test_radar_track_detection_multiple_ranges(self):
     fingerprint = gen_empty_fingerprint()
     add_radar_range(fingerprint, RADAR_500_51F, 1)
@@ -251,13 +271,48 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert len(points) == 1
     assert RI.active_radar_buses[RADAR_210_21F.name] == 2
 
+  def test_radar_interface_duplicate_range_selects_correct_cadence(self):
+    fingerprint = gen_empty_fingerprint()
+    add_radar_range(fingerprint, RADAR_3A5_3C4, 0)
+    add_radar_range(fingerprint, RADAR_3A5_3C4, 2)
+    CP = CarInterface.get_params(CAR.KIA_SPORTAGE_5TH_GEN, fingerprint, [], False, False, False)
+    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
+    RI = RadarInterface(CP, CP_SP)
+
+    bus0_parser = get_radar_parser(RI, RADAR_3A5_3C4, 0)
+    bus2_parser = get_radar_parser(RI, RADAR_3A5_3C4, 2)
+    bus0_parser.cycle_timestamps.extend(range(0, 500_000_000, 50_000_000))
+    bus2_parser.cycle_timestamps.extend(range(0, 500_000_000, 100_000_000))
+
+    RI._update(set())
+
+    assert RI.active_radar_buses[RADAR_3A5_3C4.name] == 0
+
+  def test_radar_interface_duplicate_range_rejects_stale_echo(self):
+    fingerprint = gen_empty_fingerprint()
+    add_radar_range(fingerprint, RADAR_3A5_3C4, 0)
+    add_radar_range(fingerprint, RADAR_3A5_3C4, 2)
+    CP = CarInterface.get_params(CAR.KIA_SPORTAGE_5TH_GEN, fingerprint, [], False, False, False)
+    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
+    RI = RadarInterface(CP, CP_SP)
+
+    bus0_parser = get_radar_parser(RI, RADAR_3A5_3C4, 0)
+    bus2_parser = get_radar_parser(RI, RADAR_3A5_3C4, 2)
+    bus0_parser.cycle_timestamps.extend(range(500_000_000, 1_000_000_000, 50_000_000))
+    bus2_parser.cycle_timestamps.extend(range(0, 500_000_000, 50_000_000))
+
+    RI.active_radar_buses[RADAR_3A5_3C4.name] = 2
+    RI._update(set())
+
+    assert RI.active_radar_buses[RADAR_3A5_3C4.name] == 0
+
   def test_radar_interface_detects_late_live_range(self):
     fingerprint = gen_empty_fingerprint()
     CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
     CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
 
     RI = RadarInterface(CP, CP_SP)
-    radar_messages = [(addr, b'\x00' * 8, 1) for addr in RADAR_235_248.address_range]
+    radar_messages = [(addr, b'\x00' * RADAR_235_248.message_size, 1) for addr in RADAR_235_248.address_range]
     RI._discover_radar_parsers([(0, radar_messages)])
     radar_parser = get_radar_parser(RI, RADAR_235_248, 1)
     assert len(RI.radar_parsers) == 1
@@ -278,6 +333,21 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert len(points) == 1
     assert RI.active_radar_buses[RADAR_235_248.name] == 1
 
+  def test_radar_interface_live_detection_requires_correct_message_size(self):
+    fingerprint = gen_empty_fingerprint()
+    CP = CarInterface.get_params(CAR.KIA_SPORTAGE_5TH_GEN, fingerprint, [], False, False, False)
+    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
+    RI = RadarInterface(CP, CP_SP)
+
+    wrong_size_messages = [(addr, b'\x00' * 8, 1) for addr in RADAR_3A5_3C4.address_range]
+    RI._discover_radar_parsers([(0, wrong_size_messages)])
+    assert len(RI.radar_parsers) == 0
+
+    radar_messages = [(addr, b'\x00' * RADAR_3A5_3C4.message_size, 0) for addr in RADAR_3A5_3C4.address_range]
+    RI._discover_radar_parsers([(1, radar_messages)])
+
+    assert [(rp.spec, rp.bus) for rp in RI.radar_parsers] == [(RADAR_3A5_3C4, 0)]
+
   def test_radar_interface_publishes_on_complete_cycle(self):
     fingerprint = gen_empty_fingerprint()
     add_radar_range(fingerprint, RADAR_235_248, 1)
@@ -285,10 +355,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
     CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
     RI = RadarInterface(CP, CP_SP)
 
-    assert RI.update([(123, [(RADAR_235_248.start_addr, b'\x00' * 8, 1)])]) is None
+    dat = b'\x00' * RADAR_235_248.message_size
+    assert RI.update([(123, [(RADAR_235_248.start_addr, dat, 1)])]) is None
     assert len(RI.pending_radar_can[(RADAR_235_248.name, 1)]) == 1
 
-    radar_data = RI.update([(124, [(RADAR_235_248.end_addr, b'\x00' * 8, 1)])])
+    radar_data = RI.update([(124, [(RADAR_235_248.end_addr, dat, 1)])])
     assert radar_data is not None
     assert RI.updated_messages == set()
     assert RI.pending_radar_can == {}
@@ -301,9 +372,10 @@ class TestHyundaiFingerprint(unittest.TestCase):
     RI = RadarInterface(CP, CP_SP)
     parser_key = (RADAR_235_248.name, 1)
 
-    assert RI.update([(123, [(RADAR_235_248.start_addr + 1, b'\x00' * 8, 1)])]) is None
-    assert RI.update([(124, [(RADAR_235_248.start_addr, b'\x00' * 8, 1)])]) is None
-    assert RI.pending_radar_can[parser_key] == [(124, [(RADAR_235_248.start_addr, b'\x00' * 8, 1)])]
+    dat = b'\x00' * RADAR_235_248.message_size
+    assert RI.update([(123, [(RADAR_235_248.start_addr + 1, dat, 1)])]) is None
+    assert RI.update([(124, [(RADAR_235_248.start_addr, dat, 1)])]) is None
+    assert RI.pending_radar_can[parser_key] == [(124, [(RADAR_235_248.start_addr, dat, 1)])]
 
   def test_radar_interface_bounds_incomplete_cycle_storage(self):
     fingerprint = gen_empty_fingerprint()
@@ -315,7 +387,8 @@ class TestHyundaiFingerprint(unittest.TestCase):
     pending_limit = RADAR_235_248.msg_count * 2
 
     for mono_time in range(pending_limit + 5):
-      assert RI.update([(mono_time, [(RADAR_235_248.start_addr + 1, b'\x00' * 8, 1)])]) is None
+      dat = b'\x00' * RADAR_235_248.message_size
+      assert RI.update([(mono_time, [(RADAR_235_248.start_addr + 1, dat, 1)])]) is None
 
     assert len(RI.pending_radar_can[parser_key]) == pending_limit
     assert RI.pending_radar_can[parser_key][0][0] == 5
@@ -335,7 +408,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert not CP_SP.flags & HyundaiFlagsSP.RADAR_LEAD_ONLY
     assert not RI.radar_off_can
 
-    radar_messages = [(addr, b'\x00' * 8, 1) for addr in RADAR_235_248.address_range]
+    radar_messages = [(addr, b'\x00' * RADAR_235_248.message_size, 1) for addr in RADAR_235_248.address_range]
     RI._discover_radar_parsers([(0, radar_messages)])
     radar_parser = get_radar_parser(RI, RADAR_235_248, 1)
     for addr in RADAR_235_248.address_range:
