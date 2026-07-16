@@ -10,7 +10,7 @@ from opendbc.car import structs
 from opendbc.car.hyundai.values import HyundaiFlags
 
 
-CLUSTER_TRACK_SLOTS = ("lead", "lead_alt", "lead_left", "lead_right", "lead_left_rear", "lead_right_rear")
+CLUSTER_TRACK_SLOTS = ("lead", "lead_left", "lead_right")
 
 
 class ClusterRadarTrackSelector:
@@ -51,17 +51,12 @@ class ClusterRadarTrackSelector:
     center = [track for track in moving_tracks if track.dRel >= 0 and abs(track.yRel) <= self.CENTER_HALF_WIDTH]
     left = [track for track in moving_tracks if track.dRel >= 0 and track.yRel > self.CENTER_HALF_WIDTH]
     right = [track for track in moving_tracks if track.dRel >= 0 and track.yRel < -self.CENTER_HALF_WIDTH]
-    left_rear = [track for track in moving_tracks if track.dRel < 0 and track.yRel > 0]
-    right_rear = [track for track in moving_tracks if track.dRel < 0 and track.yRel < 0]
 
     used_ids: set[int] = set()
     candidates = {
       "lead": center,
-      "lead_alt": center,
       "lead_left": left,
       "lead_right": right,
-      "lead_left_rear": left_rear,
-      "lead_right_rear": right_rear,
     }
     selected = {slot: self._select(slot, candidates[slot], used_ids) for slot in CLUSTER_TRACK_SLOTS}
     return {slot: track for slot, track in selected.items() if track is not None}
