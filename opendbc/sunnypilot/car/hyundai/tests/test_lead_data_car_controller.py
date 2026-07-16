@@ -103,11 +103,8 @@ class TestLeadDataCarController(unittest.TestCase):
 
     self.assertEqual({slot: track.trackId for slot, track in slots.items()}, {
       "lead": 1,
-      "lead_alt": 2,
       "lead_left": 3,
       "lead_right": 4,
-      "lead_left_rear": 5,
-      "lead_right_rear": 6,
     })
 
   def test_cluster_radar_track_selection_is_stable(self):
@@ -121,7 +118,6 @@ class TestLeadDataCarController(unittest.TestCase):
     slots = {
       "lead": make_radar_track(1, 20, 0.5),
       "lead_left": make_radar_track(2, 30, 3),
-      "lead_right_rear": make_radar_track(3, -40, -4),
     }
 
     update_ccnc_cluster_tracks(msg_162, slots)
@@ -131,6 +127,6 @@ class TestLeadDataCarController(unittest.TestCase):
     self.assertEqual(msg_162["LEAD_LATERAL"], 0.5)
     self.assertEqual(msg_162["LEAD_LEFT"], 1)
     self.assertEqual(msg_162["LEAD_LEFT_LATERAL"], 3)
-    self.assertEqual(msg_162["LEAD_RIGHT_REAR_STATUS"], 1)
-    self.assertEqual(msg_162["LEAD_RIGHT_REAR_DISTANCE"], 25.5)
     self.assertEqual(msg_162["LEAD_ALT"], 0)
+    self.assertEqual(msg_162["LEAD_LEFT_REAR_STATUS"], 0)
+    self.assertEqual(msg_162["LEAD_RIGHT_REAR_STATUS"], 0)
