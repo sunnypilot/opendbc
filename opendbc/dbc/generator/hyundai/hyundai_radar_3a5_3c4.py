@@ -1,6 +1,73 @@
 #!/usr/bin/env python3
 
 
+def _comment(*parts: str) -> str:
+  return " ".join(parts)
+
+
+RADAR_3A5_3C4_MESSAGE_COMMENT = _comment(
+  "Common Hyundai/Kia/Genesis 3A5-3C4 track layout, validated against 817852 24-byte frames from 21 forum routes",
+  "and full-route Ioniq 9/EV9 extension checks. The optional bytes 16-23 extension is not HDA2-specific.",
+  "Bits 26, 29, 39, 55, 117, 136-137, 143, 171, and 188-191 remained zero and are reserved.",
+  "The Sportage HEV 2026 route uses an incompatible overlapping layout and must not be decoded with this DBC.",
+)
+
+RADAR_3A5_3C4_SIGNAL_COMMENTS = (
+  ("CHECKSUM", "16-bit per-track-message checksum. The checksum algorithm and data ID are not yet identified."),
+  ("COUNTER", "8-bit transmit-cycle counter. It covers 0-255 and wraps; it is separate from the per-track update counter."),
+  ("STATE_ALT", "Compressed STATE mirror: 0=empty, 1=tentative/unresolved, 2=measured, 3=coasted."),
+  ("MOTION_STATE", "Ground-frame target-motion class: 0=unknown, 1=stationary, 2=moving."),
+  ("TRACK_COUNTER", "Per-track modulo-4 update counter. It normally advances with AGE and may hold between updates."),
+  ("NEW_SIGNAL_2", _comment(
+    "Unknown signed 7-bit track attribute, observed -64 to 63. It usually holds or steps by one,",
+    "but has quantized clusters and jumps near 10, 20, and 30; no strong position or velocity correlation was found.",
+  )),
+  ("AGE", "Per-track age/update count, observed 0-255. It normally increments by one on an update and may hold."),
+  ("COAST_AGE", "Prediction age: normally 0 in measured STATE=3, starts at 1 in coasted STATE=4, and increments to 15."),
+  ("STATE", _comment(
+    "Track lifecycle: 0=empty, 1/2=tentative acquisition, 3=measured, 4=coasted/predicted,",
+    "7=unresolved tentative. Values 5 and 6 were not observed.",
+  )),
+  ("NEW_SIGNAL_8", "Likely radar return strength or RCS-like, but unproven. Observed -33 to 37 and changes smoothly."),
+  ("LONG_DIST", _comment(
+    "Longitudinal distance from the ego radar. The 13th bit continues through 204.8 m rather than being a flag.",
+    "STATE=0 may carry endpoint sentinels.",
+  )),
+  ("LAT_DIST", "Lateral position relative to the ego axis. STATE=0 values are empty-track data, not target positions."),
+  ("REL_SPEED", "Longitudinal speed relative to ego; negative means the target is moving longitudinally slower than ego."),
+  ("NEW_SIGNAL_4", "Unknown category, observed 0-2. Zero dominates; 1/2 occur more often on moving targets."),
+  ("REL_LAT_SPEED", "Target lateral speed relative to the ego vehicle axis."),
+  ("REL_ACCEL", "Target longitudinal acceleration relative to ego acceleration."),
+  ("NEW_SIGNAL_18", _comment(
+    "Unknown optional attribute. Extended layouts use 1/2 for measured tracks and 0 for coasted tracks;",
+    "many platforms always transmit 0.",
+  )),
+  ("NEW_SIGNAL_5", "Unknown sparse optional attribute. Observed 0-32 and almost always 0; no stable correlation was found."),
+  ("WIDTH", _comment(
+    "Strongly identified target width in 0.1 m units from recurring approximately 2.0 m passenger cars.",
+    "Observed 0.0-3.0 m; many platforms transmit 0.",
+  )),
+  ("LENGTH", _comment(
+    "Strongly identified target length in 0.1 m units from approximately 4.0 m cars and 13.0-15.5 m long vehicles.",
+    "This is an 8-bit field; many platforms transmit 0.",
+  )),
+  ("ABS_SPEED", _comment(
+    "Strongly inferred absolute target-speed magnitude. On Ioniq 9 it matches",
+    "hypot(ego speed + REL_SPEED, REL_LAT_SPEED); observed 0.0-54.4 m/s.",
+  )),
+  ("ORIENTATION_ANGLE", _comment(
+    "Strongly inferred target orientation relative to the ego axis. Moving vehicles cluster near 0 degrees;",
+    "+/-180 is commonly unavailable/default.",
+  )),
+  ("NEW_SIGNAL_13", "Unknown optional 0-10 shape-data metric. Confidence-like behavior is plausible but unproven."),
+  ("NEW_SIGNAL_12", "Unknown optional 0-10 shape-data metric. Values 10 and 0 dominate; confidence-like behavior is unproven."),
+  ("NEW_SIGNAL_14", "Unknown optional category, observed 0-3. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
+  ("NEW_SIGNAL_15", "Unknown optional category, observed 0-2. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
+  ("NEW_SIGNAL_16", "Unknown optional category, observed 0-3. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
+  ("NEW_SIGNAL_17", "Unknown optional category, observed 0-2. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
+)
+
+
 def generate():
   parts = []
   parts.append("""
@@ -48,22 +115,38 @@ BO_ {a} RADAR_TRACK_{a:x}: 24 RADAR
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
  SG_ STATE_ALT : 25|2@0+ (1,0) [0|3] "" XXX
- SG_ MOTION_STATE : 28|2@0+ (1,0) [0|3] "" XXX
+ SG_ MOTION_STATE : 28|2@0+ (1,0) [0|2] "" XXX
  SG_ TRACK_COUNTER : 31|2@0+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_2 : 38|7@0- (1,0) [-64|63] "" XXX
  SG_ AGE : 47|8@0+ (1,0) [0|255] "" XXX
  SG_ COAST_AGE : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ STATE : 54|3@0+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_8 : 62|7@0- (1,0) [-64|63] "" XXX
- SG_ LONG_DIST : 63|12@1+ (0.05,0) [0|204.75] "m" XXX
+ SG_ NEW_SIGNAL_8 : 62|7@0- (1,0) [-33|37] "" XXX
+ SG_ LONG_DIST : 63|13@1+ (0.05,0) [0|409.55] "m" XXX
  SG_ LAT_DIST : 76|12@1- (0.05,0) [-102.4|102.35] "m" XXX
  SG_ REL_SPEED : 88|14@1- (0.01,0) [-81.92|81.91] "m/s" XXX
- SG_ NEW_SIGNAL_4 : 103|2@0+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_4 : 103|2@0+ (1,0) [0|2] "" XXX
  SG_ REL_LAT_SPEED : 104|13@1- (0.01,0) [-40.96|40.95] "m/s" XXX
  SG_ REL_ACCEL : 118|10@1- (0.02,0) [-10.24|10.22] "m/s^2" XXX
- SG_ NEW_SIGNAL_5 : 134|5@0+ (1,0) [0|31] "" XXX
+ SG_ NEW_SIGNAL_18 : 129|2@0+ (1,0) [0|2] "" XXX
+ SG_ NEW_SIGNAL_5 : 135|6@0+ (1,0) [0|32] "" XXX
+ SG_ WIDTH : 138|5@1+ (0.1,0) [0|3.1] "m" XXX
+ SG_ LENGTH : 151|8@0+ (0.1,0) [0|25.5] "m" XXX
+ SG_ ABS_SPEED : 152|10@1+ (0.1,0) [0|102.3] "m/s" XXX
+ SG_ ORIENTATION_ANGLE : 162|9@1- (1,0) [-180|180] "deg" XXX
+ SG_ NEW_SIGNAL_13 : 175|4@0+ (1,0) [0|10] "" XXX
+ SG_ NEW_SIGNAL_12 : 179|4@0+ (1,0) [0|10] "" XXX
+ SG_ NEW_SIGNAL_14 : 181|2@0+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_15 : 183|2@0+ (1,0) [0|2] "" XXX
+ SG_ NEW_SIGNAL_16 : 185|2@0+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_17 : 187|2@0+ (1,0) [0|2] "" XXX
 
+VAL_ {a} STATE_ALT 0 "EMPTY" 1 "TENTATIVE" 2 "MEASURED" 3 "COASTED" ;
 VAL_ {a} MOTION_STATE 0 "UNKNOWN" 1 "STATIONARY" 2 "MOVING" ;
+VAL_ {a} STATE 0 "EMPTY" 1 "TENTATIVE_1" 2 "TENTATIVE_2" 3 "MEASURED" 4 "COASTED" 7 "UNRESOLVED_TENTATIVE" ;
     """)
+
+    parts.append(f'CM_ BO_ {a} "{RADAR_3A5_3C4_MESSAGE_COMMENT}";\n')
+    parts.extend(f'CM_ SG_ {a} {signal} "{comment}";\n' for signal, comment in RADAR_3A5_3C4_SIGNAL_COMMENTS)
 
   return {"hyundai_radar_3a5_3c4.dbc": "".join(parts)}
