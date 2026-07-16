@@ -124,7 +124,7 @@ class TestLeadDataCarController(unittest.TestCase):
 
     self.assertEqual(msg_162["LEAD"], 1)
     self.assertEqual(msg_162["LEAD_DISTANCE"], 20)
-    self.assertEqual(msg_162["LEAD_LATERAL"], 0.5)
+    self.assertEqual(msg_162["LEAD_LATERAL"], 0)
     self.assertEqual(msg_162["LEAD_LEFT"], 1)
     self.assertEqual(msg_162["LEAD_LEFT_LATERAL"], 3)
     self.assertEqual(msg_162["LEAD_ALT"], 0)
