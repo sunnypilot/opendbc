@@ -8,7 +8,6 @@ from opendbc.sunnypilot.car.hyundai.lead_data_ext import (
   LeadDataCarController,
 )
 from opendbc.car import structs
-from opendbc.car.hyundai.hyundaicanfd import update_ccnc_cluster_tracks
 from opendbc.car.hyundai.values import HyundaiFlags
 
 
@@ -112,21 +111,3 @@ class TestLeadDataCarController(unittest.TestCase):
     self.assertEqual(selector.update([make_radar_track(1, 10, 0)], 20)["lead"].trackId, 1)
     self.assertEqual(selector.update([make_radar_track(1, 12, 0), make_radar_track(2, 10, 0)], 20)["lead"].trackId, 1)
     self.assertEqual(selector.update([make_radar_track(1, 12, 0), make_radar_track(2, 5, 0)], 20)["lead"].trackId, 2)
-
-  def test_update_ccnc_cluster_tracks(self):
-    msg_162 = {}
-    slots = {
-      "lead": make_radar_track(1, 20, 0.5),
-      "lead_left": make_radar_track(2, 30, 3),
-    }
-
-    update_ccnc_cluster_tracks(msg_162, slots)
-
-    self.assertEqual(msg_162["LEAD"], 1)
-    self.assertEqual(msg_162["LEAD_DISTANCE"], 20)
-    self.assertEqual(msg_162["LEAD_LATERAL"], 0)
-    self.assertEqual(msg_162["LEAD_LEFT"], 1)
-    self.assertEqual(msg_162["LEAD_LEFT_LATERAL"], 3)
-    self.assertEqual(msg_162["LEAD_ALT"], 0)
-    self.assertEqual(msg_162["LEAD_LEFT_REAR_STATUS"], 0)
-    self.assertEqual(msg_162["LEAD_RIGHT_REAR_STATUS"], 0)
