@@ -2,13 +2,15 @@ from hypothesis import settings, given, strategies as st
 
 import unittest
 
+from opendbc.can import CANPacker, CANParser
 from opendbc.car import gen_empty_fingerprint
 from opendbc.car.structs import CarParams, CarParamsSP
 from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.hyundai.interface import CarInterface
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.radar_interface import HYUNDAI_RADAR_TRACK_SPECS, RADAR_210_21F, RADAR_235_248, RADAR_3A5_3C4, \
-                                                RADAR_500_51F, RADAR_602_617, RadarInterface, get_detected_radar_tracks
+                                                RADAR_500_51F, RADAR_602_617, RadarInterface, get_detected_radar_tracks, \
+                                                is_radar_track_valid
 from opendbc.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
@@ -63,6 +65,29 @@ def get_radar_parser(RI, radar_spec, bus):
 
 
 class TestHyundaiFingerprint(unittest.TestCase):
+  def test_radar_track_frequencies(self):
+    assert {spec.name: spec.frequency for spec in HYUNDAI_RADAR_TRACK_SPECS} == {
+      "RADAR_500_51F": 20,
+      "RADAR_210_21F": 20,
+      "RADAR_235_248": 33,
+      "RADAR_3A5_3C4": 20,
+      "RADAR_602_617": 10,
+    }
+
+  def test_radar_602_track_validity(self):
+    for distance, valid in ((0, False), (0.25, True), (255.5, True), (255.75, False)):
+      with self.subTest(distance=distance):
+        assert is_radar_track_valid(RADAR_602_617, {"1_DISTANCE": distance}, "1_") == valid
+
+  def test_radar_602_second_track_speed(self):
+    packer = CANPacker(RADAR_602_617.dbc_name)
+    parser = CANParser(RADAR_602_617.dbc_name, [("RADAR_TRACK_602", RADAR_602_617.frequency)], 1)
+    msg = packer.make_can_msg("RADAR_TRACK_602", 1, {"2_SPEED": -15})
+
+    parser.update([(1, [msg])])
+
+    assert parser.vl["RADAR_TRACK_602"]["2_SPEED"] == -15
+
   def test_feature_detection(self):
     # LKA steering
     for lka_steering in (True, False):
