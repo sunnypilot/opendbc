@@ -1,6 +1,6 @@
 from hypothesis import settings, given, strategies as st
 
-import unittest
+import unittest  # noqa: TID251
 
 from opendbc.can import CANPacker, CANParser
 from opendbc.car import gen_empty_fingerprint
@@ -91,6 +91,35 @@ class TestHyundaiFingerprint(unittest.TestCase):
     parser.update([(1, [msg])])
 
     assert parser.vl["RADAR_TRACK_602"]["2_SPEED"] == -15
+
+  def test_radar_3a5_signal_layout(self):
+    packer = CANPacker(RADAR_3A5_3C4.dbc_name)
+    parser = CANParser(RADAR_3A5_3C4.dbc_name, [("RADAR_TRACK_3a5", RADAR_3A5_3C4.frequency)], 1)
+    values = {
+      "STATE_ALT": 3,
+      "MOTION_STATE": 2,
+      "TRACK_COUNTER": 3,
+      "NEW_SIGNAL_2": -12,
+      "AGE": 255,
+      "COAST_AGE": 15,
+      "STATE": 4,
+      "NEW_SIGNAL_8": -21,
+      "LONG_DIST": 203.95,
+      "LAT_DIST": -61.55,
+      "REL_SPEED": -66.79,
+      "NEW_SIGNAL_4": 2,
+      "REL_LAT_SPEED": -3.25,
+      "REL_ACCEL": 10.22,
+      "NEW_SIGNAL_5": 30,
+    }
+
+    parser.update([(1, [packer.make_can_msg("RADAR_TRACK_3a5", 1, values)])])
+    parsed = parser.vl["RADAR_TRACK_3a5"]
+
+    for signal, expected in values.items():
+      assert abs(parsed[signal] - expected) < 1e-6
+    assert "LAT_DIST_ACCEL" not in parsed
+    assert "NEW_SIGNAL_18" not in parsed
 
   def test_feature_detection(self):
     # LKA steering
