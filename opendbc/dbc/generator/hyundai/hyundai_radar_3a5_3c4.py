@@ -51,7 +51,7 @@ BO_ {a} RADAR_TRACK_{a:x}: 24 RADAR
  SG_ NEW_SIGNAL_3 : 28|2@0+ (1,0) [0|3] "" XXX
  SG_ COUNTER_3 : 31|2@0+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_2 : 38|7@0- (1,0) [0|127] "" XXX
- SG_ COUNTER_256 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ AGE : 47|8@0+ (1,0) [0|255] "" XXX
  SG_ NEW_SIGNAL_6 : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ STATE : 54|3@0+ (1,0) [0|7] "" XXX
  SG_ NEW_SIGNAL_8 : 62|7@0- (1,0) [0|127] "" XXX
