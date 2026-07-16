@@ -146,7 +146,7 @@ def update_ccnc_cluster_tracks(msg_162, cluster_track_slots):
     msg_162.update({
       status_signal: 1,
       distance_signal: float(np.clip(abs(track.dRel), 0.0, max_distance)),
-      lateral_signal: float(np.clip(abs(track.yRel), 0.0, 12.7)),
+      lateral_signal: 0.0 if slot == "lead" else 3.0,
     })
 
 
