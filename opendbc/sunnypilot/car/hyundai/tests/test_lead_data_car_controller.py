@@ -1,14 +1,8 @@
 import unittest
 from enum import IntFlag
 
-from opendbc.sunnypilot.car.hyundai.lead_data_ext import (
-  CanFdLeadData,
-  CanLeadData,
-  ClusterRadarTrackSelector,
-  LeadDataCarController,
-)
+from opendbc.sunnypilot.car.hyundai.lead_data_ext import LeadDataCarController, CanLeadData, CanFdLeadData
 from opendbc.car import structs
-from opendbc.car.hyundai.hyundaicanfd import update_ccnc_cluster_tracks
 from opendbc.car.hyundai.values import HyundaiFlags
 
 
@@ -25,10 +19,6 @@ def make_carcontrolsp(leadDistance=10.0, leadRelSpeed=0.0, leadVisible=True):
   c.leadOne.vRel = leadRelSpeed
   c.leadOne.status = leadVisible
   return c
-
-
-def make_radar_track(track_id, d_rel, y_rel, v_rel=0.0):
-  return structs.CarControlSP.RadarTrack(trackId=track_id, dRel=d_rel, yRel=y_rel, vRel=v_rel)
 
 
 class TestLeadDataCarController(unittest.TestCase):
@@ -86,47 +76,3 @@ class TestLeadDataCarController(unittest.TestCase):
     ld = ctrl.lead_data
     self.assertIsInstance(ld, CanFdLeadData)
     self.assertEqual(ld.object_rel_gap, 1)
-
-  def test_cluster_radar_track_regions_and_stationary_filter(self):
-    selector = ClusterRadarTrackSelector()
-    tracks = [
-      make_radar_track(1, 15, 0),
-      make_radar_track(2, 25, 1),
-      make_radar_track(3, 12, 3),
-      make_radar_track(4, 14, -3),
-      make_radar_track(5, -8, 2),
-      make_radar_track(6, -9, -2),
-      make_radar_track(7, 5, 0, -20),
-    ]
-
-    slots = selector.update(tracks, v_ego=20)
-
-    self.assertEqual({slot: track.trackId for slot, track in slots.items()}, {
-      "lead": 1,
-      "lead_left": 3,
-      "lead_right": 4,
-    })
-
-  def test_cluster_radar_track_selection_is_stable(self):
-    selector = ClusterRadarTrackSelector()
-    self.assertEqual(selector.update([make_radar_track(1, 10, 0)], 20)["lead"].trackId, 1)
-    self.assertEqual(selector.update([make_radar_track(1, 12, 0), make_radar_track(2, 10, 0)], 20)["lead"].trackId, 1)
-    self.assertEqual(selector.update([make_radar_track(1, 12, 0), make_radar_track(2, 5, 0)], 20)["lead"].trackId, 2)
-
-  def test_update_ccnc_cluster_tracks(self):
-    msg_162 = {}
-    slots = {
-      "lead": make_radar_track(1, 20, 0.5),
-      "lead_left": make_radar_track(2, 30, 3),
-    }
-
-    update_ccnc_cluster_tracks(msg_162, slots)
-
-    self.assertEqual(msg_162["LEAD"], 1)
-    self.assertEqual(msg_162["LEAD_DISTANCE"], 20)
-    self.assertEqual(msg_162["LEAD_LATERAL"], 0)
-    self.assertEqual(msg_162["LEAD_LEFT"], 1)
-    self.assertEqual(msg_162["LEAD_LEFT_LATERAL"], 3)
-    self.assertEqual(msg_162["LEAD_ALT"], 0)
-    self.assertEqual(msg_162["LEAD_LEFT_REAR_STATUS"], 0)
-    self.assertEqual(msg_162["LEAD_RIGHT_REAR_STATUS"], 0)
