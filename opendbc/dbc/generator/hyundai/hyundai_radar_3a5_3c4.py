@@ -5,9 +5,10 @@ def _comment(*parts: str) -> str:
   return " ".join(parts)
 
 
-RADAR_3A5_3C4_MESSAGE_COMMENT = _comment(
-  "Common Hyundai/Kia/Genesis 3A5-3C4 track layout, validated against 817852 24-byte frames from 21 forum routes",
-  "and full-route Ioniq 9/EV9 extension checks. The optional bytes 16-23 extension is not HDA2-specific.",
+whats RADAR_3A5_3C4_MESSAGE_COMMENT = _comment(
+  "Common Hyundai/Kia/Genesis 3A5-3C4 track layout, validated across HDA1/HDA2 and CCNC/non-CCNC routes.",
+  "Rich width, length, absolute-speed, orientation, and shape data was populated only on EV9/Ioniq 9 in the tested corpus;",
+  "HDA2 alone does not imply support, and the extension attributes belong to the same 32 tracks rather than extra objects.",
   "Bits 26, 29, 39, 55, 117, 136-137, 143, 171, and 188-191 remained zero and are reserved.",
   "The Sportage HEV 2026 route uses an incompatible overlapping layout and must not be decoded with this DBC.",
 )
@@ -28,7 +29,7 @@ RADAR_3A5_3C4_SIGNAL_COMMENTS = (
     "Track lifecycle: 0=empty, 1/2=tentative acquisition, 3=measured, 4=coasted/predicted,",
     "7=unresolved tentative. Values 5 and 6 were not observed.",
   )),
-  ("NEW_SIGNAL_8", "Likely radar return strength or RCS-like, but unproven. Observed -33 to 37 and changes smoothly."),
+  ("NEW_SIGNAL_8", "Likely radar return strength or RCS-like, but unproven. Observed -33 to 43 and changes smoothly."),
   ("LONG_DIST", _comment(
     "Longitudinal distance from the ego radar. The 13th bit continues through 204.8 m rather than being a flag.",
     "STATE=0 may carry endpoint sentinels.",
@@ -39,13 +40,13 @@ RADAR_3A5_3C4_SIGNAL_COMMENTS = (
   ("REL_LAT_SPEED", "Target lateral speed relative to the ego vehicle axis."),
   ("REL_ACCEL", "Target longitudinal acceleration relative to ego acceleration."),
   ("NEW_SIGNAL_18", _comment(
-    "Unknown optional attribute. Extended layouts use 1/2 for measured tracks and 0 for coasted tracks;",
-    "many platforms always transmit 0.",
+    "Unknown optional measurement-status attribute. EV9/Ioniq 9 use 1/2 almost exclusively for measured STATE=3 tracks",
+    "and 0 for coasted STATE=4 tracks; the distinction between 1 and 2 is unknown. The rare value 3 is also observed.",
   )),
   ("NEW_SIGNAL_5", "Unknown sparse optional attribute. Observed 0-32 and almost always 0; no stable correlation was found."),
   ("WIDTH", _comment(
     "Strongly identified target width in 0.1 m units from recurring approximately 2.0 m passenger cars.",
-    "Observed 0.0-3.0 m; many platforms transmit 0.",
+    "Observed 0.0-3.0 m; many platforms transmit 0. Every address in the range can carry it.",
   )),
   ("LENGTH", _comment(
     "Strongly identified target length in 0.1 m units from approximately 4.0 m cars and 13.0-15.5 m long vehicles.",
@@ -53,18 +54,18 @@ RADAR_3A5_3C4_SIGNAL_COMMENTS = (
   )),
   ("ABS_SPEED", _comment(
     "Strongly inferred absolute target-speed magnitude. On Ioniq 9 it matches",
-    "hypot(ego speed + REL_SPEED, REL_LAT_SPEED); observed 0.0-54.4 m/s.",
+    "hypot(ego speed + REL_SPEED, REL_LAT_SPEED), including targets without dimensions; observed 0.0-54.4 m/s.",
   )),
   ("ORIENTATION_ANGLE", _comment(
     "Strongly inferred target orientation relative to the ego axis. Moving vehicles cluster near 0 degrees;",
-    "+/-180 is commonly unavailable/default.",
+    "it is associated with dimension-bearing targets, and +/-180 is unavailable/default.",
   )),
-  ("NEW_SIGNAL_13", "Unknown optional 0-10 shape-data metric. Confidence-like behavior is plausible but unproven."),
-  ("NEW_SIGNAL_12", "Unknown optional 0-10 shape-data metric. Values 10 and 0 dominate; confidence-like behavior is unproven."),
-  ("NEW_SIGNAL_14", "Unknown optional category, observed 0-3. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
-  ("NEW_SIGNAL_15", "Unknown optional category, observed 0-2. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
-  ("NEW_SIGNAL_16", "Unknown optional category, observed 0-3. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
-  ("NEW_SIGNAL_17", "Unknown optional category, observed 0-2. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
+  ("NEW_SIGNAL_13", "Unknown optional 0-10 shape/geometry metric, nonzero only on dimension-bearing targets in tested routes."),
+  ("NEW_SIGNAL_12", "Unknown optional 0-10 shape/geometry metric. Values 10 and 0 dominate; exact meaning is unproven."),
+  ("NEW_SIGNAL_14", "Unknown optional geometry category, observed 0-3. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
+  ("NEW_SIGNAL_15", "Unknown optional geometry category, observed 0-2. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
+  ("NEW_SIGNAL_16", "Unknown optional geometry category, observed 0-3. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
+  ("NEW_SIGNAL_17", "Unknown optional geometry category, observed 0-2. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
 )
 
 
@@ -121,14 +122,14 @@ BO_ {a} RADAR_TRACK_{a:x}: 24 RADAR
  SG_ AGE : 47|8@0+ (1,0) [0|255] "" XXX
  SG_ COAST_AGE : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ STATE : 54|3@0+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_8 : 62|7@0- (1,0) [-33|37] "" XXX
+ SG_ NEW_SIGNAL_8 : 62|7@0- (1,0) [-33|43] "" XXX
  SG_ LONG_DIST : 63|13@1+ (0.05,0) [0|409.55] "m" XXX
  SG_ LAT_DIST : 76|12@1- (0.05,0) [-102.4|102.35] "m" XXX
  SG_ REL_SPEED : 88|14@1- (0.01,0) [-81.92|81.91] "m/s" XXX
  SG_ NEW_SIGNAL_4 : 103|2@0+ (1,0) [0|2] "" XXX
  SG_ REL_LAT_SPEED : 104|13@1- (0.01,0) [-40.96|40.95] "m/s" XXX
  SG_ REL_ACCEL : 118|10@1- (0.02,0) [-10.24|10.22] "m/s^2" XXX
- SG_ NEW_SIGNAL_18 : 129|2@0+ (1,0) [0|2] "" XXX
+ SG_ NEW_SIGNAL_18 : 129|2@0+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_5 : 135|6@0+ (1,0) [0|32] "" XXX
  SG_ WIDTH : 138|5@1+ (0.1,0) [0|3.1] "m" XXX
  SG_ LENGTH : 151|8@0+ (0.1,0) [0|25.5] "m" XXX

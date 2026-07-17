@@ -119,7 +119,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
       "NEW_SIGNAL_4": 2,
       "REL_LAT_SPEED": -3.25,
       "REL_ACCEL": 10.22,
-      "NEW_SIGNAL_18": 2,
+      "NEW_SIGNAL_18": 3,
       "NEW_SIGNAL_5": 32,
       "WIDTH": 3.1,
       "LENGTH": 15.5,
