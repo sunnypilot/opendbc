@@ -1,6 +1,6 @@
 from opendbc.car import CanBusBase
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.honda.values import (HondaFlags, HONDA_BOSCH, HONDA_BOSCH_ALT_RADAR, HONDA_BOSCH_RADARLESS,
+from opendbc.car.honda.values import (HondaFlags, HONDA_BOSCH, HONDA_BOSCH_ALT_RADAR, HONDA_BOSCH_RADARLESS, HONDA_ELESYS,
                                       HONDA_BOSCH_CANFD, CarControllerParams)
 from opendbc.sunnypilot.car.honda.values_ext import HondaFlagsSP
 
@@ -47,24 +47,29 @@ class CanBus(CanBusBase):
     return self.offset
 
 
-def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake, CP_SP):
+def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake, is_metric, CP_SP):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
   pcm_fault_cmd = False
+  # HONDA_ELESYS: SET_ME_1 is the cluster units flag (0 = metric, 1 = imperial); reserved constant 1 elsewhere
+  set_me_1 = 1
+  if car_fingerprint in HONDA_ELESYS and is_metric:
+    set_me_1 = 0
 
   values = {
     "CRUISE_OVERRIDE": pcm_override,
     "CRUISE_FAULT_CMD": pcm_fault_cmd,
     "CRUISE_CANCEL_CMD": pcm_cancel_cmd,
     "COMPUTER_BRAKE_REQUEST": brake_rq,
-    "SET_ME_1": 1,
+    "SET_ME_1": set_me_1,
     "BRAKE_LIGHTS": brakelights,
     "CHIME": stock_brake["CHIME"] if fcw else 0,  # send the chime for stock fcw
     "FCW": fcw << 1,  # TODO: Why are there two bits for fcw?
     "AEB_REQ_1": 0,
     "AEB_REQ_2": 0,
     "AEB_STATUS": 0,
+    "SET_ME_X00": brakelights,
   }
 
   if CP_SP.flags & HondaFlagsSP.NIDEC_HYBRID:
@@ -170,6 +175,17 @@ def create_acc_hud(packer, bus, CP, enabled, pcm_speed, pcm_accel, hud_control, 
     acc_hud_values['ICONS'] = acc_hud['ICONS']
 
   return packer.make_can_msg("ACC_HUD", bus, acc_hud_values)
+
+
+def create_scm_buttons_no_cruise(packer, bus, scm_buttons):
+  # Re-send SCM_BUTTONS to the radar with the master ACC switch forced OFF (MAIN_ON=0), continuously,
+  # so the stock ACC (Elesys radar) stands down (OP replaces it). The radar reads MAIN from this message; CMBS
+  # is independent of MAIN and keeps working. The PCM on the pt bus still gets the driver's real
+  # buttons/MAIN, so OP engages normally. Copy every signal except CHECKSUM/COUNTER (packer redoes).
+  values = {s: scm_buttons[s] for s in scm_buttons if s not in ("CHECKSUM", "COUNTER")}
+  values["MAIN_ON"] = 0        # master ACC switch off -> stock ACC stands down
+  values["CRUISE_BUTTONS"] = 0  # neutralize any in-flight cruise button
+  return packer.make_can_msg("SCM_BUTTONS", bus, values)
 
 
 def create_lkas_hud(packer, bus, CP, hud_control, lat_active, steering_available, alert_steer_required, lkas_hud, dashed_lanes):

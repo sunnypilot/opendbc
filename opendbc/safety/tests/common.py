@@ -1038,7 +1038,7 @@ class SafetyTest(SafetyTestBase):
               tx = list(filter(lambda m: m[0] not in [0x122, ], tx))
 
             # Volkswagen MQB and Honda Nidec ACC HUD messages overlap
-            if attr == 'TestVolkswagenMqbLongSafety' and current_test.startswith('TestHondaNidec'):
+            if attr == 'TestVolkswagenMqbLongSafety' and current_test.startswith(('TestHondaNidec', 'TestHondaElesys')):
               tx = list(filter(lambda m: m[0] not in [0x30c, ], tx))
 
             # Volkswagen MQB and Honda Bosch Radarless ACC HUD messages overlap
@@ -1048,7 +1048,7 @@ class SafetyTest(SafetyTestBase):
             # TODO: Temporary, should be fixed in panda firmware, safety_honda.h
             if attr.startswith('TestHonda'):
               # exceptions for common msgs across different hondas
-              tx = list(filter(lambda m: m[0] not in [0x1FA, 0x30C, 0x33D, 0x33DB], tx))
+              tx = list(filter(lambda m: m[0] not in [0x1FA, 0x30C, 0x33D, 0x33DB, 0x1A6], tx))
 
             if attr.startswith('TestHyundaiLongitudinal'):
               # exceptions for common msgs across different Hyundai CAN platforms

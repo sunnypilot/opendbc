@@ -42,6 +42,7 @@ static bool honda_fwd_brake = false;
 static bool honda_bosch_long = false;
 static bool honda_bosch_radarless = false;
 static bool honda_bosch_canfd = false;
+static bool honda_elesys_scm_standdown = false;  // HONDA_ACCORD_9G_AU (Elesys radar) stock-ACC stand-down
 static bool honda_nidec_hybrid = false;
 typedef enum {HONDA_NIDEC, HONDA_BOSCH} HondaHw;
 static HondaHw honda_hw = HONDA_NIDEC;
@@ -195,7 +196,8 @@ static void honda_rx_hook(const CANPacket_t *msg) {
   // disable stock Honda AEB in alternative experience
   if (!(alternative_experience & ALT_EXP_DISABLE_STOCK_AEB)) {
     if ((msg->bus == 2U) && (msg->addr == 0x1FAU)) {
-      bool honda_stock_aeb = GET_BIT(msg, 29U);
+      // HONDA_ACCORD_9G_AU (SCM stand-down): stock-AEB flag lives at bit 43 on this platform
+      bool honda_stock_aeb = honda_elesys_scm_standdown ? GET_BIT(msg, 43U) : GET_BIT(msg, 29U);
       int honda_stock_brake = (msg->data[0] << 2) | (msg->data[1] >> 6);
 
       if (honda_nidec_hybrid) {
@@ -244,7 +246,10 @@ static bool honda_tx_hook(const CANPacket_t *msg) {
 
     bool violation = false;
     violation |= longitudinal_speed_checks(pcm_speed, HONDA_NIDEC_LONG_LIMITS);
-    violation |= longitudinal_gas_checks(pcm_gas, HONDA_NIDEC_LONG_LIMITS);
+    // HONDA_ACCORD_9G_AU (SCM stand-down): allow pcm_gas=198 while braking (pcm_speed=0), matching the factory camera
+    if (!honda_elesys_scm_standdown || (pcm_speed != 0) || (pcm_gas != 198)) {
+      violation |= longitudinal_gas_checks(pcm_gas, HONDA_NIDEC_LONG_LIMITS);
+    }
     if (violation) {
       tx = false;
     }
@@ -343,12 +348,33 @@ static safety_config honda_nidec_init(uint16_t param) {
   // 0x1FA is brake control, 0x30C is acc hud, 0x33D is lkas hud
   static CanMsg HONDA_N_TX_MSGS[] = {HONDA_N_COMMON_TX_MSGS};
 
+  // HONDA_ACCORD_9G_AU (Elesys radar) stock-ACC stand-down: 0x33D is the 4-byte LKAS_HUD (stock camera's is forwarded,
+  // so no relay check), plus SCM_BUTTONS on bus 2 (re-sent with MAIN_ON=0 to stand the stock ACC down).
+  static CanMsg HONDA_N_ELESYS_STANDDOWN_TX_MSGS[] = {
+    {0xE4,  0, 5, .check_relay = true},
+    {0x194, 0, 4, .check_relay = true},
+    {0x1FA, 0, 8, .check_relay = false},
+    {0x30C, 0, 8, .check_relay = true},
+    {0x1A6, 2, 8, .check_relay = false},
+  };
+
+  // stand-down + comma pedal: same list plus GAS_COMMAND. Keep in sync with the list above.
+  static CanMsg HONDA_N_ELESYS_STANDDOWN_INTERCEPTOR_TX_MSGS[] = {
+    {0xE4,  0, 5, .check_relay = true},
+    {0x194, 0, 4, .check_relay = true},
+    {0x1FA, 0, 8, .check_relay = false},
+    {0x30C, 0, 8, .check_relay = true},
+    {0x1A6, 2, 8, .check_relay = false},
+    {0x200, 0, 6, .check_relay = false},
+  };
+
   static CanMsg HONDA_N_INTERCEPTOR_TX_MSGS[] = {
     HONDA_N_COMMON_TX_MSGS
     {0x200, 0, 6, .check_relay = false},
   };
 
   const uint16_t HONDA_PARAM_NIDEC_ALT = 4;
+  const uint16_t HONDA_PARAM_ELESYS_SCM_STANDDOWN = 32;
 
   const uint16_t HONDA_PARAM_SP_NIDEC_HYBRID = 1;
   const uint16_t HONDA_PARAM_GAS_INTERCEPTOR = 2;
@@ -365,6 +391,7 @@ static safety_config honda_nidec_init(uint16_t param) {
   safety_config ret;
 
   bool enable_nidec_alt = GET_FLAG(param, HONDA_PARAM_NIDEC_ALT);
+  honda_elesys_scm_standdown = GET_FLAG(param, HONDA_PARAM_ELESYS_SCM_STANDDOWN);
 
   honda_nidec_hybrid = GET_FLAG(current_safety_param_sp, HONDA_PARAM_SP_NIDEC_HYBRID);
   enable_gas_interceptor = GET_FLAG(current_safety_param_sp, HONDA_PARAM_GAS_INTERCEPTOR);
@@ -387,7 +414,11 @@ static safety_config honda_nidec_init(uint16_t param) {
     SET_RX_CHECKS(honda_nidec_common_rx_checks, ret);
   }
 
-  SET_TX_MSGS(HONDA_N_TX_MSGS, ret);
+  if (honda_elesys_scm_standdown) {
+    SET_TX_MSGS(HONDA_N_ELESYS_STANDDOWN_TX_MSGS, ret);
+  } else {
+    SET_TX_MSGS(HONDA_N_TX_MSGS, ret);
+  }
 
   if (enable_gas_interceptor) {
     if (enable_nidec_alt) {
@@ -408,7 +439,12 @@ static safety_config honda_nidec_init(uint16_t param) {
       SET_RX_CHECKS(honda_nidec_common_interceptor_rx_checks, ret);
     }
 
-    SET_TX_MSGS(HONDA_N_INTERCEPTOR_TX_MSGS, ret);
+    // HONDA_ACCORD_9G_AU: don't clobber the stand-down TX list when the pedal is also present
+    if (honda_elesys_scm_standdown) {
+      SET_TX_MSGS(HONDA_N_ELESYS_STANDDOWN_INTERCEPTOR_TX_MSGS, ret);
+    } else {
+      SET_TX_MSGS(HONDA_N_INTERCEPTOR_TX_MSGS, ret);
+    }
   }
 
   return ret;
@@ -457,6 +493,7 @@ static safety_config honda_bosch_init(uint16_t param) {
 
   honda_hw = HONDA_BOSCH;
   honda_brake_switch_prev = false;
+  honda_elesys_scm_standdown = false;
   honda_bosch_radarless = GET_FLAG(param, HONDA_PARAM_RADARLESS);
   honda_bosch_canfd = GET_FLAG(param, HONDA_PARAM_BOSCH_CANFD);
   // Checking for alternate brake override from safety parameter
@@ -508,6 +545,13 @@ static bool honda_nidec_fwd_hook(int bus_num, int addr) {
     // forwarded if stock AEB is active
     bool is_brake_msg = addr == 0x1FA;
     block_msg = is_brake_msg && !honda_fwd_brake;
+  }
+
+  // HONDA_ACCORD_9G_AU: block stock SCM_BUTTONS to the ACC radar; OP re-sends it on bus 2 with MAIN_ON=0
+  // (master ACC switch off) so the radar stands the stock ACC down (stops the blocked ACC brake that trips
+  // TSA). CMBS is independent of MAIN, so collision braking / FCW still work.
+  if (honda_elesys_scm_standdown && (bus_num == 0) && (addr == 0x1A6)) {
+    block_msg = true;
   }
 
   return block_msg;

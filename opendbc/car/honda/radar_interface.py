@@ -2,12 +2,16 @@
 from opendbc.can import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.interfaces import RadarInterfaceBase
-from opendbc.car.honda.values import DBC
+from opendbc.car.honda.values import DBC, HONDA_ELESYS
 
 
 def _create_nidec_can_parser(car_fingerprint):
-  radar_messages = [0x400] + list(range(0x430, 0x43A)) + list(range(0x440, 0x446))
-  messages = [(m, 20) for m in radar_messages]
+  if car_fingerprint in HONDA_ELESYS:
+    radar_messages = [0x400] + list(range(0x410, 0x418)) + list(range(0x420, 0x425))
+    messages = [(m, 10) for m in radar_messages]
+  else:
+    radar_messages = [0x400] + list(range(0x430, 0x43A)) + list(range(0x440, 0x446))
+    messages = [(m, 20) for m in radar_messages]
   return CANParser(DBC[car_fingerprint][Bus.radar], messages, 1)
 
 
@@ -18,13 +22,14 @@ class RadarInterface(RadarInterfaceBase):
     self.radar_fault = False
     self.radar_wrong_config = False
     self.radar_off_can = CP.radarUnavailable
+    self.radar_type = 'Elesys' if CP.carFingerprint in HONDA_ELESYS else 'Nidec'
 
     # Nidec
     if self.radar_off_can:
       self.rcp = None
     else:
       self.rcp = _create_nidec_can_parser(CP.carFingerprint)
-    self.trigger_msg = 0x445
+    self.trigger_msg = 0x423 if (self.radar_type == 'Elesys') else 0x445
     self.updated_messages = set()
 
   def update(self, can_strings):
@@ -50,7 +55,10 @@ class RadarInterface(RadarInterfaceBase):
       cpt = self.rcp.vl[ii]
       if ii == 0x400:
         # check for radar faults
-        self.radar_fault = cpt['RADAR_STATE'] != 0x79
+        if self.radar_type == 'Elesys':
+          self.radar_fault = cpt['RADAR_STATE'] not in (104, 111, 125)
+        else:
+          self.radar_fault = cpt['RADAR_STATE'] != 0x79
         self.radar_wrong_config = cpt['RADAR_STATE'] == 0x69
       elif cpt['LONG_DIST'] < 255:
         if ii not in self.pts or cpt['NEW_TRACK']:

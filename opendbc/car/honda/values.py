@@ -56,6 +56,7 @@ class HondaSafetyFlags(IntFlag):
   NIDEC_ALT = 4
   RADARLESS = 8
   BOSCH_CANFD = 16
+  ELESYS_SCM_STANDDOWN = 32
 
 
 class HondaFlags(IntFlag):
@@ -76,7 +77,7 @@ class HondaFlags(IntFlag):
 
   HAS_ALL_DOOR_STATES = 256  # Some Hondas have all door states, others only driver door
   BOSCH_ALT_RADAR = 512
-  # 1024 is available
+  ELESYS = 1024
   HYBRID = 2048
   BOSCH_TJA_CONTROL = 4096
 
@@ -321,6 +322,15 @@ class CAR(Platforms):
     radar_dbc_dict('acura_ilx_2016_can_generated'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES | HondaFlags.HAS_ALL_DOOR_STATES,
   )
+  HONDA_ACCORD_9G_AU = HondaNidecPlatformConfig(
+    [
+      HondaCarDocs("Honda Accord 2013-15", "V6L & Tech", support_type=SupportType.COMMUNITY, support_link="#community"),
+    ],
+    CarSpecs(mass=3343 * CV.LB_TO_KG, wheelbase=2.78, steerRatio=17.5, centerToFrontRatio=0.37,
+             minSteerSpeed=99. * CV.MPH_TO_MS),  # as spec
+    {Bus.pt: 'honda_accord_au_2015_can_generated', Bus.radar: 'honda_accord_2015au_radar'},
+    flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES | HondaFlags.HAS_ALL_DOOR_STATES | HondaFlags.ELESYS,
+  )
   HONDA_CRV = HondaNidecPlatformConfig(
     [HondaCarDocs("Honda CR-V 2015-16", "Touring Trim", min_steer_speed=12. * CV.MPH_TO_MS)],
     CarSpecs(mass=3572 * CV.LB_TO_KG, wheelbase=2.62, steerRatio=16.89, centerToFrontRatio=0.41, tireStiffnessFactor=0.444),  # as spec
@@ -410,6 +420,7 @@ HONDA_BOSCH_RADARLESS = CAR.with_flags(HondaFlags.BOSCH_RADARLESS)
 HONDA_BOSCH_CANFD = CAR.with_flags(HondaFlags.BOSCH_CANFD)
 HONDA_BOSCH_ALT_RADAR = CAR.with_flags(HondaFlags.BOSCH_ALT_RADAR)
 HONDA_BOSCH_TJA_CONTROL = CAR.with_flags(HondaFlags.BOSCH_TJA_CONTROL)
+HONDA_ELESYS = CAR.with_flags(HondaFlags.ELESYS)
 
 
 DBC = CAR.create_dbc_map()
@@ -470,11 +481,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # Note that we still attempt to match with them when they are present
   # This is or'd with (ALL_ECUS - ESSENTIAL_ECUS) from fw_versions.py
   non_essential_ecus={
-    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_E, CAR.HONDA_E_ADVANCE, CAR.ACURA_MDX_4G, *HONDA_BOSCH_ALT_RADAR,
-              *HONDA_BOSCH_RADARLESS, *HONDA_BOSCH_CANFD],
+    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_E, CAR.HONDA_ACCORD_9G_AU, CAR.HONDA_E_ADVANCE, CAR.ACURA_MDX_4G,
+              *HONDA_BOSCH_ALT_RADAR, *HONDA_BOSCH_RADARLESS, *HONDA_BOSCH_CANFD],
     Ecu.vsa: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E,
-              CAR.HONDA_E_ADVANCE, CAR.HONDA_INSIGHT, CAR.HONDA_NBOX_2G, CAR.ACURA_MDX_4G, *HONDA_BOSCH_ALT_RADAR, *HONDA_BOSCH_RADARLESS,
-              *HONDA_BOSCH_CANFD],
+              CAR.HONDA_E_ADVANCE, CAR.HONDA_INSIGHT, CAR.HONDA_NBOX_2G, CAR.HONDA_ACCORD_9G_AU, CAR.ACURA_MDX_4G,
+              *HONDA_BOSCH_ALT_RADAR, *HONDA_BOSCH_RADARLESS, *HONDA_BOSCH_CANFD],
   },
   extra_ecus=[
     (Ecu.combinationMeter, 0x18da60f1, None),

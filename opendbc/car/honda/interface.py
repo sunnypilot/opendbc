@@ -4,7 +4,7 @@ from opendbc.car import get_safety_config, structs, uds
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.disable_ecu import disable_ecu
 from opendbc.car.honda.hondacan import CanBus
-from opendbc.car.honda.values import CarControllerParams, HondaFlags, CAR, HONDA_BOSCH, HONDA_BOSCH_CANFD, \
+from opendbc.car.honda.values import CarControllerParams, HondaFlags, CAR, HONDA_BOSCH, HONDA_BOSCH_CANFD, HONDA_ELESYS, \
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, HondaSafetyFlags
 from opendbc.car.honda.carcontroller import CarController
 from opendbc.car.honda.carstate import CarState
@@ -94,6 +94,10 @@ class CarInterface(CarInterfaceBase):
       # default longitudinal tuning for all hondas
       ret.longitudinalTuning.kiBP = [0., 5., 35.]
       ret.longitudinalTuning.kiV = [1.2, 0.8, 0.5]
+
+      if candidate in HONDA_ELESYS:
+        ret.longitudinalActuatorDelay = 0.6
+        ret.vEgoStopping = 0.8
 
     # Disable control if EPS mod detected
     for fw in car_fw:
@@ -231,6 +235,8 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.RADARLESS.value
     if candidate in HONDA_BOSCH_CANFD:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.BOSCH_CANFD.value
+    if candidate in HONDA_ELESYS and ret.openpilotLongitudinalControl:
+      ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.ELESYS_SCM_STANDDOWN.value
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
@@ -238,7 +244,7 @@ class CarInterface(CarInterfaceBase):
     ret.autoResumeSng = candidate in (HONDA_BOSCH | {CAR.HONDA_CIVIC})
     if ret.autoResumeSng:
       ret.minEnableSpeed = -1.
-    elif candidate == CAR.HONDA_ODYSSEY_TWN:
+    elif candidate in (CAR.HONDA_ODYSSEY_TWN, CAR.HONDA_ACCORD_9G_AU):
       ret.minEnableSpeed = 19. * CV.MPH_TO_MS
     else:
       ret.minEnableSpeed = 25.51 * CV.MPH_TO_MS

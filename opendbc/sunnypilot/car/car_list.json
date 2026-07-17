@@ -981,6 +981,18 @@
     ],
     "package": "Driver Alert Package II"
   },
+  "Honda Accord 2013-15": {
+    "platform": "HONDA_ACCORD_9G_AU",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Accord",
+    "year": [
+      "2013",
+      "2014",
+      "2015"
+    ],
+    "package": "V6L & Tech"
+  },
   "Honda Accord 2018-22": {
     "platform": "HONDA_ACCORD",
     "make": "Honda",

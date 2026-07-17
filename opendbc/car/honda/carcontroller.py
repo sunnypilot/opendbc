@@ -4,7 +4,7 @@ from opendbc.can import CANPacker
 from opendbc.car import Bus, DT_CTRL, rate_limit, make_tester_present_msg, structs
 from opendbc.car.honda import hondacan
 from opendbc.car.honda.values import CAR, CruiseButtons, HONDA_BOSCH, HONDA_BOSCH_CANFD, HONDA_BOSCH_RADARLESS, \
-                                     HONDA_BOSCH_TJA_CONTROL, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
+                                     HONDA_BOSCH_TJA_CONTROL, HONDA_ELESYS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.honda.mads import MadsCarController
@@ -30,9 +30,20 @@ def compute_gb_honda_nidec(accel, speed):
   return np.clip(gb, 0.0, 1.0), np.clip(-gb, 0.0, 1.0)
 
 
+def compute_gb_honda_elesys(accel, speed):
+  creep = float(np.interp(speed, [0., 0.75, 1.75, 3.0, 5.0], [1.15, 0.8, 0.45, 0.3, 0.0]))
+  creep *= float(np.clip(1. - max(float(accel), 0.) / 0.8, 0., 1.))
+  net = float(accel) - creep
+  gas = max(net, 0.) / 4.8
+  brake = max(-net, 0.) / 2.6
+  return float(np.clip(gas, 0.0, 1.0)), float(np.clip(brake, 0.0, 1.0))
+
+
 def compute_gas_brake(accel, speed, fingerprint):
   if fingerprint in HONDA_BOSCH:
     return compute_gb_honda_bosch(accel, speed)
+  elif fingerprint in HONDA_ELESYS:
+    return compute_gb_honda_elesys(accel, speed)
   else:
     return compute_gb_honda_nidec(accel, speed)
 
@@ -78,6 +89,47 @@ def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts):
   return pump_on, last_pump_ts
 
 
+def brake_pump_hysteresis_elesys(apply_brake, v_ego, brake_anchor, last_pump_ts, ts):
+  # FORK(HONDA_ELESYS): pressure bleeds with the pump off (decel fades ~+0.17 m/s^3 at steady
+  # command on this build; same signature on stock bus-2 data), so upstream's 20 s refresh
+  # under-pumps -- the original stop-overshoot bug. But re-priming on every +1 count made the
+  # pump stutter (75 starts/min). The audible part is the START of each run, so this shapes
+  # WHEN it runs, not just how much:
+  #  - final stop approach (0.15 <= v < 2.5, firm cb): run continuously -- one smooth whir that
+  #    fades into the hold instead of separate bursts (measured 1.1 starts/stop vs 1.6)
+  #  - saturated braking while moving (cb > 200 at v >= 2.5): run continuously. Once cb rails,
+  #    the rise-trigger is dead (nothing left to rise to) and only the 5 s backstop ran: ~3 s
+  #    pump-off gaps at max demand bled ~0.5-0.7 m/s^2 exactly during the hardest braking.
+  #    Routes e64ef42e91/2418f2eb2b: achieved/commanded decel slope 0.59-0.86 (worse the harder
+  #    the demand), PI wound to -4.0 for planner -2.5..-2.8, then bit +0.5-1.0 m/s^2 over target
+  #    entering the stop. Hard braking is rare and loud enough that the extra duty isn't audible.
+  #  - standstill hold: 30 s top-ups only (holds showed zero creep across every pump-off gap,
+  #    confirmed again on the Jul-14/15 drives incl. +2-3 deg grades);
+  #    any decay appears as motion, which re-primes immediately via the branches below
+  #  - moving braking: rise-trigger (+3 deadband) with a 2.5 s refractory after each 1.0 s run;
+  #    big rises (+15, real apply ramps) bypass the refractory so pressure build is never delayed.
+  #    Bleed is self-healing here: fading decel makes the PI raise the command past the deadband.
+  #  - periodic backstop 8.0 s light -> 5.0 s firm braking.
+  # Replayed on routes 55885a0ee9/dd8c602d69: moving duty 0.68, 7 starts/min, ramps 100% primed.
+  if (0.15 <= v_ego < 2.5 and apply_brake > 100) or (v_ego >= 2.5 and apply_brake > 200):
+    last_pump_ts = ts
+    brake_anchor = apply_brake
+  else:
+    refresh_period = 30.0 if v_ego < 0.15 else float(np.interp(apply_brake, [40., 200.], [8.0, 5.0]))
+    rise = apply_brake > brake_anchor + 3
+    big_rise = apply_brake > brake_anchor + 15
+    in_run = ts - last_pump_ts < 1.0
+    idle = ts - last_pump_ts > 3.5  # run (1.0 s) + refractory (2.5 s)
+    if (rise and (in_run or idle or big_rise)) or (ts - last_pump_ts > refresh_period and apply_brake > 0):
+      last_pump_ts = ts
+      brake_anchor = apply_brake
+    if apply_brake < brake_anchor - 6:  # follow real releases down, ignore jitter
+      brake_anchor = apply_brake
+
+  pump_on = (ts - last_pump_ts < 1.0) and apply_brake > 0
+  return pump_on, brake_anchor, last_pump_ts
+
+
 def process_hud_alert(hud_alert):
   alert_fcw = False
   alert_steer_required = False
@@ -108,6 +160,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     self.brake_last = 0.
     self.apply_brake_last = 0
     self.last_pump_ts = 0.
+    self.pump_brake_anchor = 0
     self.stopping_counter = 0
 
     self.accel = 0.0
@@ -216,16 +269,23 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
         else:
           apply_brake = np.clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(np.clip(apply_brake * self.params.NIDEC_BRAKE_MAX, 0, self.params.NIDEC_BRAKE_MAX - 1))
-          pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
+          if self.CP.carFingerprint in HONDA_ELESYS:
+            pump_on, self.pump_brake_anchor, self.last_pump_ts = brake_pump_hysteresis_elesys(
+              apply_brake, CS.out.vEgo, self.pump_brake_anchor, self.last_pump_ts, ts)
+          else:
+            pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
 
           pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, self.CAN, apply_brake, pump_on,
                                                          pcm_override, pcm_cancel_cmd, alert_fcw,
-                                                         self.CP.carFingerprint, CS.stock_brake, self.CP_SP))
+                                                         self.CP.carFingerprint, CS.stock_brake, CS.is_metric, self.CP_SP))
           self.apply_brake_last = apply_brake
           self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
 
           can_sends.extend(GasInterceptorCarController.update(self, CC, CS, gas, brake, wind_brake, self.packer, self.frame))
+
+    if self.CP.carFingerprint in HONDA_ELESYS and self.CP.openpilotLongitudinalControl and self.frame % 4 == 0:
+      can_sends.append(hondacan.create_scm_buttons_no_cruise(self.packer, self.CAN.camera, CS.scm_buttons))
 
     # Send dashboard UI commands.
     if self.frame % 10 == 0:
@@ -235,8 +295,10 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
                                                  hud_control, hud_v_cruise, CS.is_metric, CS.acc_hud))
 
       steering_available = CS.out.cruiseState.available and CS.out.vEgo > max(self.params.STEER_GLOBAL_MIN_SPEED, self.CP.minSteerSpeed)
-      can_sends.extend(hondacan.create_lkas_hud(self.packer, self.CAN.lkas, self.CP, hud_control, CC.latActive,
-                                                steering_available, alert_steer_required, CS.lkas_hud, self.dashed_lanes))
+      # HONDA_ELESYS: 4-byte LKAS_HUD with a different layout; stock camera's HUD is forwarded instead
+      if self.CP.carFingerprint not in HONDA_ELESYS:
+        can_sends.extend(hondacan.create_lkas_hud(self.packer, self.CAN.lkas, self.CP, hud_control, CC.latActive,
+                                                  steering_available, alert_steer_required, CS.lkas_hud, self.dashed_lanes))
 
       if self.CP.openpilotLongitudinalControl:
         # TODO: combining with create_acc_hud block above will change message order and will need replay logs regenerated
