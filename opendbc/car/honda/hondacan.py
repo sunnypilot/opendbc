@@ -69,6 +69,7 @@ def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_ca
     "AEB_REQ_1": 0,
     "AEB_REQ_2": 0,
     "AEB_STATUS": 0,
+    "SET_ME_X00": brakelights,
   }
 
   if CP_SP.flags & HondaFlagsSP.NIDEC_HYBRID:
