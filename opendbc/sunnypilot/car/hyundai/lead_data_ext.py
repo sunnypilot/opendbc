@@ -5,8 +5,74 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 from abc import ABC, abstractmethod
+import math
 from opendbc.car import structs
 from opendbc.car.hyundai.values import HyundaiFlags
+
+
+DBC_MOTION_MOVING = 2
+CLUSTER_TRACK_SLOTS = ("lead", "lead_left", "lead_right")
+
+
+class ClusterRadarTrackSelector:
+  CENTER_HALF_WIDTH = 1.75
+  MIN_TRACK_AGE = 2
+  SWITCH_DISTANCE_MARGIN = 3.0
+
+  def __init__(self):
+    self._track_ids = {slot: None for slot in CLUSTER_TRACK_SLOTS}
+
+  def reset(self) -> dict[str, structs.CarControlSP.RadarTrack]:
+    self._track_ids = {slot: None for slot in CLUSTER_TRACK_SLOTS}
+    return {}
+
+  @staticmethod
+  def _range(track: structs.CarControlSP.RadarTrack) -> float:
+    return abs(track.dRel)
+
+  def _select(self, slot: str, candidates: list[structs.CarControlSP.RadarTrack], used_ids: set[int],
+              preferred_ids: tuple[int, ...]):
+    available = [track for track in candidates if track.trackId not in used_ids]
+    if not available:
+      self._track_ids[slot] = None
+      return None
+
+    preferred = next((track for track_id in preferred_ids for track in available if track.trackId == track_id), None)
+    if preferred is not None:
+      selected = preferred
+    else:
+      closest = min(available, key=self._range)
+      current = next((track for track in available if track.trackId == self._track_ids[slot]), None)
+      selected = current if current is not None and self._range(current) <= self._range(closest) + self.SWITCH_DISTANCE_MARGIN else closest
+    self._track_ids[slot] = selected.trackId
+    used_ids.add(selected.trackId)
+    return selected
+
+  def update(self, tracks: list[structs.CarControlSP.RadarTrack],
+             preferred_ids: tuple[int, ...] = ()) -> dict[str, structs.CarControlSP.RadarTrack]:
+    display_tracks = [
+      track for track in tracks
+      if math.isfinite(track.dRel) and math.isfinite(track.yRel) and math.isfinite(track.vRel)
+      and track.motionState == DBC_MOTION_MOVING
+      and (track.age >= self.MIN_TRACK_AGE
+           or abs(track.yRel) > self.CENTER_HALF_WIDTH
+           or track.trackId in preferred_ids)
+    ]
+    center = [track for track in display_tracks if track.dRel >= 0 and abs(track.yRel) <= self.CENTER_HALF_WIDTH]
+    left = [track for track in display_tracks if track.dRel >= 0 and track.yRel > self.CENTER_HALF_WIDTH]
+    right = [track for track in display_tracks if track.dRel >= 0 and track.yRel < -self.CENTER_HALF_WIDTH]
+
+    used_ids: set[int] = set()
+    candidates = {
+      "lead": center,
+      "lead_left": left,
+      "lead_right": right,
+    }
+    selected = {
+      slot: self._select(slot, candidates[slot], used_ids, preferred_ids)
+      for slot in CLUSTER_TRACK_SLOTS
+    }
+    return {slot: track for slot, track in selected.items() if track is not None}
 
 
 class LeadData(ABC):
@@ -75,6 +141,9 @@ class LeadDataCarController:
     self.object_gap = 0
     self.lead_distance = 0
     self.lead_rel_speed = 0
+    self.radar_tracks_active = False
+    self.cluster_track_slots: dict[str, structs.CarControlSP.RadarTrack] = {}
+    self.cluster_track_selector = ClusterRadarTrackSelector()
 
   def _update_object_gap(self, lead_distance: float | None):
     new_gap = 5  # Default gap value if no lead distance is provided
@@ -103,6 +172,13 @@ class LeadDataCarController:
   def update(self, CC_SP: structs.CarControlSP) -> None:
     self.lead_one = CC_SP.leadOne
     self.lead_two = CC_SP.leadTwo
+    self.radar_tracks_active = CC_SP.radarTracksActive
+    matched_track_ids = tuple(
+      lead.radarTrackId for lead in (self.lead_one, self.lead_two)
+      if lead.status and lead.radar and lead.radarTrackId >= 0
+    )
+    self.cluster_track_slots = self.cluster_track_selector.update(CC_SP.radarTracks, matched_track_ids) \
+      if self.radar_tracks_active else self.cluster_track_selector.reset()
 
     self.lead_distance = self.lead_one.dRel
     self.lead_rel_speed = self.lead_one.vRel

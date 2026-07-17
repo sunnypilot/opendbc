@@ -148,6 +148,17 @@ class CarControlSP:
   leadOne: 'LeadData' = field(default_factory=lambda: LeadData())
   leadTwo: 'LeadData' = field(default_factory=lambda: LeadData())
   intelligentCruiseButtonManagement: 'IntelligentCruiseButtonManagement' = field(default_factory=lambda: IntelligentCruiseButtonManagement())
+  radarTracks: list['CarControlSP.RadarTrack'] = auto_field()
+  radarTracksActive: bool = auto_field()
+
+  @auto_dataclass
+  class RadarTrack:
+    trackId: int = auto_field()
+    dRel: float = auto_field()
+    yRel: float = auto_field()
+    vRel: float = auto_field()
+    motionState: int = auto_field()
+    age: int = auto_field()
 
   @auto_dataclass
   class Param:

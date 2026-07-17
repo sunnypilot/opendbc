@@ -434,6 +434,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
           pt.motionState = int(msg["MOTION_STATE"]) if radar_parser.spec.name == "RADAR_3A5_3C4" else 0
           pt.sourceAddress = addr
           pt.sourceBus = radar_parser.bus
+          pt.trackAge = min(pt.trackAge + 1, 65535)
         elif track_key in self.pts:
           del self.pts[track_key]
     return track_count

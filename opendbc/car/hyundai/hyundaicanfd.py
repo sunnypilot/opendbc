@@ -126,8 +126,47 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
 
+CCNC_CLUSTER_TRACK_SIGNALS = {
+  "lead": ("LEAD", "LEAD_DISTANCE", "LEAD_LATERAL"),
+  "lead_alt": ("LEAD_ALT", "LEAD_ALT_DISTANCE", "LEAD_ALT_LATERAL"),
+  "lead_left": ("LEAD_LEFT", "LEAD_LEFT_DISTANCE", "LEAD_LEFT_LATERAL"),
+  "lead_right": ("LEAD_RIGHT", "LEAD_RIGHT_DISTANCE", "LEAD_RIGHT_LATERAL"),
+  "lead_left_rear": ("LEAD_LEFT_REAR_STATUS", "LEAD_LEFT_REAR_DISTANCE", "LEAD_LEFT_REAR_LATERAL"),
+  "lead_right_rear": ("LEAD_RIGHT_REAR_STATUS", "LEAD_RIGHT_REAR_DISTANCE", "LEAD_RIGHT_REAR_LATERAL"),
+}
+CCNC_CLUSTER_ACTIVE_SLOTS = ("lead", "lead_left", "lead_right")
+CCNC_CLUSTER_TRACK_LATERAL = {
+  "lead": 0.0,
+  "lead_alt": 0.0,
+  "lead_left": 3.5,
+  "lead_right": 3.5,
+  "lead_left_rear": 3.5,
+  "lead_right_rear": 3.5,
+}
+
+
+def update_ccnc_cluster_tracks(msg_161, msg_162, cluster_track_slots, matched_track_ids):
+  msg_161["DISTANCE_LEAD"] = 0
+  for status_signal, distance_signal, lateral_signal in CCNC_CLUSTER_TRACK_SIGNALS.values():
+    msg_162.update({status_signal: 0, distance_signal: 0, lateral_signal: 0})
+
+  for slot, track in cluster_track_slots.items():
+    if slot not in CCNC_CLUSTER_ACTIVE_SLOTS:
+      continue
+    status_signal, distance_signal, lateral_signal = CCNC_CLUSTER_TRACK_SIGNALS[slot]
+    matched = track.trackId in matched_track_ids
+    status = 2 if matched else 1
+    max_distance = 25.5 if slot.endswith("rear") else 204.7
+    msg_162.update({
+      status_signal: status,
+      distance_signal: float(np.clip(abs(track.dRel), 0.0, max_distance)),
+      lateral_signal: CCNC_CLUSTER_TRACK_LATERAL[slot],
+    })
+
+
 def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBlinker, rightBlinker, msg_161, msg_162, msg_1b5,
-                is_metric, out, main_cruise_enabled, lfa_icon):
+                is_metric, out, main_cruise_enabled, lfa_icon, radar_tracks_active=False, cluster_track_slots=None,
+                matched_track_ids=None):
   for f in {"FAULT_LSS", "FAULT_HDA", "FAULT_DAS", "FAULT_LFA", "FAULT_DAW", "FAULT_ESS"}:
     msg_162[f] = 0
   if msg_161["ALERTS_2"] == 5:
@@ -220,6 +259,9 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
 
     msg_162["LEAD"] = 0 if not main_cruise_enabled else 2 if enabled else 1
     msg_162["LEAD_DISTANCE"] = msg_1b5["Longitudinal_Distance"]
+
+  if radar_tracks_active:
+    update_ccnc_cluster_tracks(msg_161, msg_162, cluster_track_slots or {}, matched_track_ids or set())
 
   return [packer.make_can_msg(msg, CAN.ECAN, data) for msg, data in [("CCNC_0x161", msg_161), ("CCNC_0x162", msg_162)]]
 
