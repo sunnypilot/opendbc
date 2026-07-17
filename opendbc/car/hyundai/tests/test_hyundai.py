@@ -259,6 +259,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     radar_3a5_3c4_msg = radar_3a5_3c4_parser.parser.vl[f"RADAR_TRACK_{RADAR_3A5_3C4.start_addr:x}"]
     radar_3a5_3c4_msg["STATE"] = 3
     radar_3a5_3c4_msg["MOTION_STATE"] = 2
+    radar_3a5_3c4_msg["AGE"] = 7
     radar_3a5_3c4_msg["LONG_DIST"] = 20
     radar_3a5_3c4_msg["LAT_DIST"] = 1
     radar_3a5_3c4_msg["REL_SPEED"] = 2
@@ -282,7 +283,15 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert RI.pts[("RADAR_500_51F", RADAR_500_51F.start_addr)].sourceBus == 1
     assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].sourceBus == 2
     assert RI.pts[("RADAR_500_51F", RADAR_500_51F.start_addr)].trackAge == 1
-    assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].trackAge == 1
+    assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].trackAge == 7
+    assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].measured
+
+    radar_3a5_3c4_msg["STATE"] = 4
+    radar_3a5_3c4_msg["AGE"] = 8
+    RI._update([])
+
+    assert not RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].measured
+    assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].trackAge == 8
 
   def test_radar_interface_duplicate_range_selects_populated_bus(self):
     fingerprint = gen_empty_fingerprint()

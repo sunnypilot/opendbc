@@ -138,10 +138,8 @@ CCNC_CLUSTER_ACTIVE_SLOTS = ("lead", "lead_left", "lead_right")
 CCNC_CLUSTER_TRACK_LATERAL = {
   "lead": 0.0,
   "lead_alt": 0.0,
-  "lead_left": 3.5,
-  "lead_right": 3.5,
-  "lead_left_rear": 3.5,
-  "lead_right_rear": 3.5,
+  "lead_left": 3.0,
+  "lead_right": 3.0,
 }
 
 
@@ -162,7 +160,6 @@ def update_ccnc_cluster_tracks(msg_161, msg_162, cluster_track_slots, matched_tr
       distance_signal: float(np.clip(abs(track.dRel), 0.0, max_distance)),
       lateral_signal: CCNC_CLUSTER_TRACK_LATERAL[slot],
     })
-
 
 def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBlinker, rightBlinker, msg_161, msg_162, msg_1b5,
                 is_metric, out, main_cruise_enabled, lfa_icon, radar_tracks_active=False, cluster_track_slots=None,
