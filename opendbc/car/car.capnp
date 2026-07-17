@@ -332,6 +332,10 @@ struct RadarData @0x888ad6581cf0aacb {
 
     # some radars flag measurements VS estimates
     measured @6 :Bool;
+
+    # optional radar-provided motion classification:
+    # 0 = unknown/unavailable, 1 = stationary, 2 = moving
+    motionState @7 :UInt8;
   }
 
   enum ErrorDEPRECATED {

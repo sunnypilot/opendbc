@@ -71,7 +71,7 @@ RADAR_235_248 = HyundaiRadarTrackSpec(
   frequency=33, message_size=32,
 )
 RADAR_3A5_3C4 = HyundaiRadarTrackSpec(
-  "RADAR_3A5_3C4", 0x3A5, 32, ("",), ("STATE", "LONG_DIST", "LAT_DIST", "REL_SPEED", "REL_ACCEL"),
+  "RADAR_3A5_3C4", 0x3A5, 32, ("",), ("STATE", "MOTION_STATE", "LONG_DIST", "LAT_DIST", "REL_SPEED", "REL_ACCEL"),
   frequency=20, message_size=24,
 )
 RADAR_602_617 = HyundaiRadarTrackSpec(
@@ -431,6 +431,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
           pt.vRel = v_rel
           pt.aRel = a_rel
           pt.yvRel = float('nan')
+          pt.motionState = int(msg["MOTION_STATE"]) if radar_parser.spec.name == "RADAR_3A5_3C4" else 0
         elif track_key in self.pts:
           del self.pts[track_key]
     return track_count
