@@ -432,6 +432,8 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
           pt.aRel = a_rel
           pt.yvRel = float('nan')
           pt.motionState = int(msg["MOTION_STATE"]) if radar_parser.spec.name == "RADAR_3A5_3C4" else 0
+          pt.sourceAddress = addr
+          pt.sourceBus = radar_parser.bus
         elif track_key in self.pts:
           del self.pts[track_key]
     return track_count

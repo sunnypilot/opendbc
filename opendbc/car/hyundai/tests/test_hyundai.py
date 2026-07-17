@@ -277,6 +277,10 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert ("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr) in RI.pts
     assert RI.pts[("RADAR_500_51F", RADAR_500_51F.start_addr)].motionState == 0
     assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].motionState == 2
+    assert RI.pts[("RADAR_500_51F", RADAR_500_51F.start_addr)].sourceAddress == RADAR_500_51F.start_addr
+    assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].sourceAddress == RADAR_3A5_3C4.start_addr
+    assert RI.pts[("RADAR_500_51F", RADAR_500_51F.start_addr)].sourceBus == 1
+    assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].sourceBus == 2
 
   def test_radar_interface_duplicate_range_selects_populated_bus(self):
     fingerprint = gen_empty_fingerprint()

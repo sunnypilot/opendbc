@@ -336,6 +336,10 @@ struct RadarData @0x888ad6581cf0aacb {
     # optional radar-provided motion classification:
     # 0 = unknown/unavailable, 1 = stationary, 2 = moving
     motionState @7 :UInt8;
+
+    # optional source metadata for radars that combine multiple CAN ranges
+    sourceAddress @8 :UInt16;
+    sourceBus @9 :UInt8;
   }
 
   enum ErrorDEPRECATED {
