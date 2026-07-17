@@ -71,7 +71,7 @@ RADAR_235_248 = HyundaiRadarTrackSpec(
   frequency=33, message_size=32,
 )
 RADAR_3A5_3C4 = HyundaiRadarTrackSpec(
-  "RADAR_3A5_3C4", 0x3A5, 32, ("",), ("STATE", "MOTION_STATE", "LONG_DIST", "LAT_DIST", "REL_SPEED", "REL_ACCEL"),
+  "RADAR_3A5_3C4", 0x3A5, 32, ("",), ("STATE", "MOTION_STATE", "AGE", "LONG_DIST", "LAT_DIST", "REL_SPEED", "REL_ACCEL"),
   frequency=20, message_size=24,
 )
 RADAR_602_617 = HyundaiRadarTrackSpec(
@@ -183,6 +183,12 @@ def is_radar_track_valid(radar_spec: HyundaiRadarTrackSpec, track_msg, track_pre
     return track_msg["STATE"] in (3, 4)
 
   return track_msg["STATE"] in (3, 4)
+
+
+def is_radar_track_measured(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> bool:
+  if radar_spec.name == "RADAR_602_617":
+    return True
+  return track_msg[f"{track_prefix}STATE"] == 3
 
 
 class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
@@ -425,7 +431,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
 
           d_rel, y_rel, v_rel, a_rel = decode_radar_track(radar_parser.spec, msg, track_prefix)
           pt = self.pts[track_key]
-          pt.measured = True
+          pt.measured = is_radar_track_measured(radar_parser.spec, msg, track_prefix)
           pt.dRel = d_rel
           pt.yRel = y_rel
           pt.vRel = v_rel
@@ -434,6 +440,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
           pt.motionState = int(msg["MOTION_STATE"]) if radar_parser.spec.name == "RADAR_3A5_3C4" else 0
           pt.sourceAddress = addr
           pt.sourceBus = radar_parser.bus
+          pt.trackAge = int(msg["AGE"]) if radar_parser.spec.name == "RADAR_3A5_3C4" else min(pt.trackAge + 1, 65535)
         elif track_key in self.pts:
           del self.pts[track_key]
     return track_count

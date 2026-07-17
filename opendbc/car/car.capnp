@@ -340,6 +340,9 @@ struct RadarData @0x888ad6581cf0aacb {
     # optional source metadata for radars that combine multiple CAN ranges
     sourceAddress @8 :UInt16;
     sourceBus @9 :UInt8;
+
+    # number of consecutive radar cycles this track ID has remained valid
+    trackAge @10 :UInt16;
   }
 
   enum ErrorDEPRECATED {
