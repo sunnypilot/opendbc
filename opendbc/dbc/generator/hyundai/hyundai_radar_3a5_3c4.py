@@ -5,7 +5,7 @@ def _comment(*parts: str) -> str:
   return " ".join(parts)
 
 
-whats RADAR_3A5_3C4_MESSAGE_COMMENT = _comment(
+RADAR_3A5_3C4_MESSAGE_COMMENT = _comment(
   "Common Hyundai/Kia/Genesis 3A5-3C4 track layout, validated across HDA1/HDA2 and CCNC/non-CCNC routes.",
   "Rich width, length, absolute-speed, orientation, and shape data was populated only on EV9/Ioniq 9 in the tested corpus;",
   "HDA2 alone does not imply support, and the extension attributes belong to the same 32 tracks rather than extra objects.",
