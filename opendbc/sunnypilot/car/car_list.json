@@ -2199,16 +2199,6 @@
     ],
     "package": "All"
   },
-    "Kia Niro Plus EV": {
-    "platform": "KIA_NIRO_PLUS_EV",
-    "make": "Kia",
-    "brand": "hyundai",
-    "model": "Niro Plus EV",
-    "year": [
-      "2023"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
   "Kia Niro EV (with HDA II) 2024-25": {
     "platform": "KIA_NIRO_EV_2ND_GEN",
     "make": "Kia",
@@ -2313,6 +2303,17 @@
       "2022"
     ],
     "package": "Smart Cruise Control (SCC)"
+  },
+  "Kia Niro Plus EV 2023-24": {
+    "platform": "KIA_NIRO_PLUS_EV",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Niro Plus EV",
+    "year": [
+      "2023",
+      "2024"
+    ],
+    "package": "Advanced Smart Cruise Control"
   },
   "Kia Optima 2017": {
     "platform": "KIA_OPTIMA_G4",
