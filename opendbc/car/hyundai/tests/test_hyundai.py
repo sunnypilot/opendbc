@@ -108,11 +108,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
       "STATE_ALT": 3,
       "MOTION_STATE": 2,
       "TRACK_COUNTER": 3,
-      "NEW_SIGNAL_2": -12,
+      "TRACK_QUALITY": 116,
       "AGE": 255,
       "COAST_AGE": 15,
       "STATE": 4,
-      "NEW_SIGNAL_8": -21,
+      "RCS": -21,
       "LONG_DIST": 409.55,
       "LAT_DIST": -61.55,
       "REL_SPEED": -66.79,
@@ -166,11 +166,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
       "COUNTER": 255,
       "1_STATE_ALT": 2,
       "1_MOTION_STATE": 4,
-      "1_NEW_SIGNAL_2": -60,
+      "1_TRACK_QUALITY": 68,
       "1_AGE": 255,
       "1_COAST_AGE": 15,
       "1_STATE": 4,
-      "1_NEW_SIGNAL_8": -30,
+      "1_RCS": -30,
       "1_LONG_DIST": 204.75,
       "1_LAT_DIST": -61.55,
       "1_REL_SPEED": -66.79,
@@ -183,11 +183,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
       "2_OBJECT_ID": 42,
       "2_STATE_ALT": 3,
       "2_MOTION_STATE": 2,
-      "2_NEW_SIGNAL_2": 31,
+      "2_TRACK_QUALITY": 31,
       "2_AGE": 127,
       "2_COAST_AGE": 7,
       "2_STATE": 3,
-      "2_NEW_SIGNAL_8": 42,
+      "2_RCS": 42,
       "2_LONG_DIST": 123.45,
       "2_LAT_DIST": 27.3,
       "2_REL_SPEED": 17.4,
@@ -215,7 +215,8 @@ class TestHyundaiFingerprint(unittest.TestCase):
     detailed = parser.vl["RADAR_TRACK_210"]
     assert detailed["1_STATE"] == 3
     assert detailed["1_STATE_ALT"] == 2
-    assert detailed["1_NEW_SIGNAL_8"] == -1
+    assert detailed["1_TRACK_QUALITY"] == 65
+    assert detailed["1_RCS"] == -1
     assert detailed["2_STATE"] == 4
     assert detailed["2_COAST_AGE"] == 1
     assert detailed["2_NEW_SIGNAL_4"] == 2
@@ -225,6 +226,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert compact["1_STATE"] == 0
     assert compact["1_STATE_ALT"] == 2
     assert compact["1_MOTION_STATE"] == 4
+    assert compact["1_TRACK_QUALITY"] == 68
     assert compact["1_OBJECT_ID"] == 28
     assert compact["1_NEW_SIGNAL_18"] == 1
     assert compact["1_LONG_DIST"] == 107.15

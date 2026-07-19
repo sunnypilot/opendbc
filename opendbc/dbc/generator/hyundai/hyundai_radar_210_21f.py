@@ -8,7 +8,7 @@ def _comment(*parts: str) -> str:
 RADAR_210_21F_MESSAGE_COMMENT = _comment(
   "Hyundai/Kia 210-21F radar-track layout: 16 messages with two target slots per 32-byte message (32 tracks total).",
   "Two related dialects share the same position, velocity, age, coast-age, and compressed-state core.",
-  "The detailed dialect also populates STATE, NEW_SIGNAL_8, and NEW_SIGNAL_4;",
+  "The detailed dialect also populates STATE, RCS, and NEW_SIGNAL_4;",
   "the compact Tucson/Sportage/Santa Cruz dialect leaves those fields zero and uses STATE_ALT.",
   "The dialect is independent of the logged raw bus and is not an HDA-level discriminator:",
   "HDA2-like routes carried the sustained stream on A-CAN mapped to bus 0, while non-HDA2 routes mapped A-CAN to bus 1.",
@@ -24,21 +24,26 @@ RADAR_210_21F_SIGNAL_COMMENTS = (
   ("STATE_ALT", "Compressed lifecycle state: 0=empty, 1=tentative, 2=measured, 3=coasted."),
   ("MOTION_STATE", _comment(
     "Ground-frame target-motion class: 0=unknown, 1=stationary, 2=moving,",
-    "3=an unconfirmed slow/transition class, and 4=oncoming. Values 3/4 were observed only on the compact dialect.",
+    "3=stopped, and 4=oncoming. The stopped label is independently supported by related Hyundai BN7 radar and HMVS4 object DBCs.",
+    "Values 3/4 were observed only on the compact dialect;",
+    "the detailed dialect has no dedicated oncoming value.",
   )),
-  ("NEW_SIGNAL_2", _comment(
-    "Unknown signed 7-bit vendor/quality attribute, observed -64 to 63.",
-    "Its distribution differs sharply by dialect and it has no strong position or velocity correlation.",
+  ("TRACK_QUALITY", _comment(
+    "Unsigned 7-bit track quality/existence score. Detailed platforms share the same lifecycle-dependent distribution",
+    "as the 3A5-3C4 layout; compact platforms use a higher calibration that falls as COAST_AGE increases.",
+    "A related Hyundai object layout defines its 7-bit quality level as reliability, validity, or probability evidence;",
+    "the raw radar scale is not confirmed to be a percentage.",
   )),
-  ("AGE", "Per-track age/update count, observed 0-255. It normally increments on an update and may hold."),
+  ("AGE", "Per-track alive age/lifetime count, observed 0-255. It normally increments on an update and may hold."),
   ("COAST_AGE", "Prediction age: normally 0 while measured, then increments from 1 to 15 while coasted."),
   ("STATE", _comment(
     "Detailed lifecycle state: 0=empty, 1/2=tentative acquisition, 3=measured, 4=coasted/predicted,",
     "7=unresolved tentative. Values 5 and 6 were not observed; compact platforms leave this field zero.",
   )),
-  ("NEW_SIGNAL_8", _comment(
-    "Unknown optional signed measurement, observed -30 to 42 in the forum corpus.",
-    "It is likely radar return strength or RCS-like but remains unproven; compact platforms leave it zero.",
+  ("RCS", _comment(
+    "Signed radar cross-section/return-strength value. Its distribution matches the 3A5-3C4 RCS field,",
+    "and distance-controlled samples consistently increase from small to passenger to large targets.",
+    "The raw unit is not calibrated; compact platforms leave it zero.",
   )),
   ("LONG_DIST", "Longitudinal distance from the ego radar. Empty compact slots may contain the 204.75 m endpoint sentinel."),
   ("LAT_DIST", "Lateral position relative to the ego axis."),
@@ -56,6 +61,7 @@ RADAR_210_21F_SIGNAL_COMMENTS = (
   ("OBJECT_ID", _comment(
     "Strongly inferred compact-dialect persistent object identifier, observed 0-63.",
     "It held through 99.9% of consecutive same-track updates and changed when a slot acquired a replacement target.",
+    "A related Hyundai BN7 radar DBC independently defines ObjectId as a global ID that remains constant while an object is tracked.",
     "Detailed platforms usually leave it zero.",
   )),
 )
@@ -109,11 +115,11 @@ BO_ {a} RADAR_TRACK_{a:x}: 32 RADAR
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
  SG_ 1_STATE_ALT : 25|2@0+ (1,0) [0|3] "" XXX
  SG_ 1_MOTION_STATE : 29|3@0+ (1,0) [0|4] "" XXX
- SG_ 1_NEW_SIGNAL_2 : 38|7@0- (1,0) [-64|63] "" XXX
+ SG_ 1_TRACK_QUALITY : 38|7@0+ (1,0) [0|127] "" XXX
  SG_ 1_AGE : 47|8@0+ (1,0) [0|255] "" XXX
  SG_ 1_COAST_AGE : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ 1_STATE : 54|3@0+ (1,0) [0|7] "" XXX
- SG_ 1_NEW_SIGNAL_8 : 63|8@0- (1,0) [-128|127] "" XXX
+ SG_ 1_RCS : 63|8@0- (1,0) [-128|127] "" XXX
  SG_ 1_LONG_DIST : 64|12@1+ (0.05,0) [0|204.75] "m" XXX
  SG_ 1_LAT_DIST : 76|12@1- (0.05,0) [-102.4|102.35] "m" XXX
  SG_ 1_REL_SPEED : 88|14@1- (0.01,0) [-81.92|81.91] "m/s" XXX
@@ -126,11 +132,11 @@ BO_ {a} RADAR_TRACK_{a:x}: 32 RADAR
  SG_ 2_OBJECT_ID : 143|6@0+ (1,0) [0|63] "" XXX
  SG_ 2_STATE_ALT : 153|2@0+ (1,0) [0|3] "" XXX
  SG_ 2_MOTION_STATE : 157|3@0+ (1,0) [0|4] "" XXX
- SG_ 2_NEW_SIGNAL_2 : 166|7@0- (1,0) [-64|63] "" XXX
+ SG_ 2_TRACK_QUALITY : 166|7@0+ (1,0) [0|127] "" XXX
  SG_ 2_AGE : 175|8@0+ (1,0) [0|255] "" XXX
  SG_ 2_COAST_AGE : 179|4@0+ (1,0) [0|15] "" XXX
  SG_ 2_STATE : 182|3@0+ (1,0) [0|7] "" XXX
- SG_ 2_NEW_SIGNAL_8 : 191|8@0- (1,0) [-128|127] "" XXX
+ SG_ 2_RCS : 191|8@0- (1,0) [-128|127] "" XXX
  SG_ 2_LONG_DIST : 192|12@1+ (0.05,0) [0|204.75] "m" XXX
  SG_ 2_LAT_DIST : 204|12@1- (0.05,0) [-102.4|102.35] "m" XXX
  SG_ 2_REL_SPEED : 216|14@1- (0.01,0) [-81.92|81.91] "m/s" XXX
@@ -140,8 +146,8 @@ BO_ {a} RADAR_TRACK_{a:x}: 32 RADAR
 
 VAL_ {a} 1_STATE_ALT 0 "EMPTY" 1 "TENTATIVE" 2 "MEASURED" 3 "COASTED" ;
 VAL_ {a} 2_STATE_ALT 0 "EMPTY" 1 "TENTATIVE" 2 "MEASURED" 3 "COASTED" ;
-VAL_ {a} 1_MOTION_STATE 0 "UNKNOWN" 1 "STATIONARY" 2 "MOVING" 3 "UNKNOWN_3" 4 "ONCOMING" ;
-VAL_ {a} 2_MOTION_STATE 0 "UNKNOWN" 1 "STATIONARY" 2 "MOVING" 3 "UNKNOWN_3" 4 "ONCOMING" ;
+VAL_ {a} 1_MOTION_STATE 0 "UNKNOWN" 1 "STATIONARY" 2 "MOVING" 3 "STOPPED" 4 "ONCOMING" ;
+VAL_ {a} 2_MOTION_STATE 0 "UNKNOWN" 1 "STATIONARY" 2 "MOVING" 3 "STOPPED" 4 "ONCOMING" ;
 VAL_ {a} 1_STATE 0 "EMPTY" 1 "TENTATIVE_1" 2 "TENTATIVE_2" 3 "MEASURED" 4 "COASTED" 7 "UNRESOLVED_TENTATIVE" ;
 VAL_ {a} 2_STATE 0 "EMPTY" 1 "TENTATIVE_1" 2 "TENTATIVE_2" 3 "MEASURED" 4 "COASTED" 7 "UNRESOLVED_TENTATIVE" ;
     """)

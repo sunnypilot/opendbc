@@ -9,27 +9,39 @@ RADAR_3A5_3C4_MESSAGE_COMMENT = _comment(
   "Common Hyundai/Kia/Genesis 3A5-3C4 track layout, validated across HDA1/HDA2 and CCNC/non-CCNC routes.",
   "Rich width, length, absolute-speed, orientation, and shape data was populated only on EV9/Ioniq 9 in the tested corpus;",
   "HDA2 alone does not imply support, and the extension attributes belong to the same 32 tracks rather than extra objects.",
+  "The HKG CAN-FD checksum uses the CAN address as its data ID.",
+  "No dedicated oncoming value or flag was found; bit 29 remained zero even for physics-based oncoming candidates.",
   "Bits 26, 29, 39, 55, 117, 136-137, 143, 171, and 188-191 remained zero and are reserved.",
   "The Sportage HEV 2026 route uses an incompatible overlapping layout and must not be decoded with this DBC.",
 )
 
 RADAR_3A5_3C4_SIGNAL_COMMENTS = (
-  ("CHECKSUM", "16-bit per-track-message checksum. The checksum algorithm and data ID are not yet identified."),
+  ("CHECKSUM", "16-bit HKG CAN-FD checksum using the CAN address as the data ID."),
   ("COUNTER", "8-bit transmit-cycle counter. It covers 0-255 and wraps; it is separate from the per-track update counter."),
   ("STATE_ALT", "Compressed STATE mirror: 0=empty, 1=tentative/unresolved, 2=measured, 3=coasted."),
-  ("MOTION_STATE", "Ground-frame target-motion class: 0=unknown, 1=stationary, 2=moving."),
-  ("TRACK_COUNTER", "Per-track modulo-4 update counter. It normally advances with AGE and may hold between updates."),
-  ("NEW_SIGNAL_2", _comment(
-    "Unknown signed 7-bit track attribute, observed -64 to 63. It usually holds or steps by one,",
-    "but has quantized clusters and jumps near 10, 20, and 30; no strong position or velocity correlation was found.",
+  ("MOTION_STATE", _comment(
+    "Ground-frame target-motion class: 0=unknown, 1=stationary, 2=moving.",
+    "Related Hyundai radar data defines the unused fourth 2-bit value as stopped, not oncoming;",
+    "that bit remained zero throughout the tested 3A5 corpus.",
   )),
-  ("AGE", "Per-track age/update count, observed 0-255. It normally increments by one on an update and may hold."),
+  ("TRACK_COUNTER", "Per-track modulo-4 update counter. It normally advances with AGE and may hold between updates."),
+  ("TRACK_QUALITY", _comment(
+    "Unsigned 7-bit track quality/existence score. Empty and tentative tracks are low, measured tracks are high,",
+    "and coasted tracks decline as COAST_AGE increases.",
+    "A related Hyundai object layout defines its 7-bit quality level as reliability, validity, or probability evidence;",
+    "the raw radar scale is not confirmed to be a percentage.",
+  )),
+  ("AGE", "Per-track alive age/lifetime count, observed 0-255. It normally increments by one on an update and may hold."),
   ("COAST_AGE", "Prediction age: normally 0 in measured STATE=3, starts at 1 in coasted STATE=4, and increments to 15."),
   ("STATE", _comment(
     "Track lifecycle: 0=empty, 1/2=tentative acquisition, 3=measured, 4=coasted/predicted,",
     "7=unresolved tentative. Values 5 and 6 were not observed.",
   )),
-  ("NEW_SIGNAL_8", "Likely radar return strength or RCS-like, but unproven. Observed -33 to 43 and changes smoothly."),
+  ("RCS", _comment(
+    "Signed radar cross-section/return-strength value. Distance-controlled samples consistently increase from small",
+    "to passenger to large targets, and its distribution closely matches the detailed 210-21F field.",
+    "The raw unit is not calibrated.",
+  )),
   ("LONG_DIST", _comment(
     "Longitudinal distance from the ego radar. The 13th bit continues through 204.8 m rather than being a flag.",
     "STATE=0 may carry endpoint sentinels.",
@@ -58,10 +70,14 @@ RADAR_3A5_3C4_SIGNAL_COMMENTS = (
   )),
   ("ORIENTATION_ANGLE", _comment(
     "Strongly inferred target orientation relative to the ego axis. Moving vehicles cluster near 0 degrees;",
-    "it is associated with dimension-bearing targets, and +/-180 is unavailable/default.",
+    "it is associated with dimension-bearing targets. Values near +/-180 can be real rearward orientation on rich tracks,",
+    "while non-rich platforms use +180 as an unavailable/default value.",
   )),
   ("NEW_SIGNAL_13", "Unknown optional 0-10 shape/geometry metric, nonzero only on dimension-bearing targets in tested routes."),
-  ("NEW_SIGNAL_12", "Unknown optional 0-10 shape/geometry metric. Values 10 and 0 dominate; exact meaning is unproven."),
+  ("NEW_SIGNAL_12", _comment(
+    "Strong geometry-age/maturity candidate: two Ioniq 9 routes progressed 0, 1, 2, ... 10 and saturated at 10.",
+    "Cross-platform confirmation is still insufficient for a semantic rename.",
+  )),
   ("NEW_SIGNAL_14", "Unknown optional geometry category, observed 0-3. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
   ("NEW_SIGNAL_15", "Unknown optional geometry category, observed 0-2. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
   ("NEW_SIGNAL_16", "Unknown optional geometry category, observed 0-3. The common NEW_SIGNAL_14-17 tuple is 2,2,2,1."),
@@ -118,11 +134,11 @@ BO_ {a} RADAR_TRACK_{a:x}: 24 RADAR
  SG_ STATE_ALT : 25|2@0+ (1,0) [0|3] "" XXX
  SG_ MOTION_STATE : 28|2@0+ (1,0) [0|2] "" XXX
  SG_ TRACK_COUNTER : 31|2@0+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_2 : 38|7@0- (1,0) [-64|63] "" XXX
+ SG_ TRACK_QUALITY : 38|7@0+ (1,0) [0|127] "" XXX
  SG_ AGE : 47|8@0+ (1,0) [0|255] "" XXX
  SG_ COAST_AGE : 51|4@0+ (1,0) [0|15] "" XXX
  SG_ STATE : 54|3@0+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_8 : 62|7@0- (1,0) [-33|43] "" XXX
+ SG_ RCS : 62|7@0- (1,0) [-64|63] "" XXX
  SG_ LONG_DIST : 63|13@1+ (0.05,0) [0|409.55] "m" XXX
  SG_ LAT_DIST : 76|12@1- (0.05,0) [-102.4|102.35] "m" XXX
  SG_ REL_SPEED : 88|14@1- (0.01,0) [-81.92|81.91] "m/s" XXX
