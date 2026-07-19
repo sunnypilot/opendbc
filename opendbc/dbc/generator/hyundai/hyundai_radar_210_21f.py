@@ -1,6 +1,66 @@
 #!/usr/bin/env python3
 
 
+def _comment(*parts: str) -> str:
+  return " ".join(parts)
+
+
+RADAR_210_21F_MESSAGE_COMMENT = _comment(
+  "Hyundai/Kia 210-21F radar-track layout: 16 messages with two target slots per 32-byte message (32 tracks total).",
+  "Two related dialects share the same position, velocity, age, coast-age, and compressed-state core.",
+  "The detailed dialect also populates STATE, NEW_SIGNAL_8, and NEW_SIGNAL_4;",
+  "the compact Tucson/Sportage/Santa Cruz dialect leaves those fields zero and uses STATE_ALT.",
+  "The dialect is independent of the logged raw bus and is not an HDA-level discriminator:",
+  "HDA2-like routes carried the sustained stream on A-CAN mapped to bus 0, while non-HDA2 routes mapped A-CAN to bus 1.",
+  "Compact targets populate per-slot NEW_SIGNAL_18/OBJECT_ID extension bytes at bytes 16 and 17;",
+  "detailed platforms usually leave them zero. Byte 18 and bits 26, 30-31, 39, 55, and 117 remained zero.",
+  "REL_LAT_SPEED has opposite sign conventions between the detailed and compact dialects.",
+  "The HKG CAN-FD checksum matched every one of 13,210,543 checked frames.",
+)
+
+RADAR_210_21F_SIGNAL_COMMENTS = (
+  ("CHECKSUM", "16-bit HKG CAN-FD checksum using the CAN address as the data ID."),
+  ("COUNTER", "8-bit transmit-cycle counter. It covers 0-255 and wraps."),
+  ("STATE_ALT", "Compressed lifecycle state: 0=empty, 1=tentative, 2=measured, 3=coasted."),
+  ("MOTION_STATE", _comment(
+    "Ground-frame target-motion class: 0=unknown, 1=stationary, 2=moving,",
+    "3=an unconfirmed slow/transition class, and 4=oncoming. Values 3/4 were observed only on the compact dialect.",
+  )),
+  ("NEW_SIGNAL_2", _comment(
+    "Unknown signed 7-bit vendor/quality attribute, observed -64 to 63.",
+    "Its distribution differs sharply by dialect and it has no strong position or velocity correlation.",
+  )),
+  ("AGE", "Per-track age/update count, observed 0-255. It normally increments on an update and may hold."),
+  ("COAST_AGE", "Prediction age: normally 0 while measured, then increments from 1 to 15 while coasted."),
+  ("STATE", _comment(
+    "Detailed lifecycle state: 0=empty, 1/2=tentative acquisition, 3=measured, 4=coasted/predicted,",
+    "7=unresolved tentative. Values 5 and 6 were not observed; compact platforms leave this field zero.",
+  )),
+  ("NEW_SIGNAL_8", _comment(
+    "Unknown optional signed measurement, observed -30 to 42 in the forum corpus.",
+    "It is likely radar return strength or RCS-like but remains unproven; compact platforms leave it zero.",
+  )),
+  ("LONG_DIST", "Longitudinal distance from the ego radar. Empty compact slots may contain the 204.75 m endpoint sentinel."),
+  ("LAT_DIST", "Lateral position relative to the ego axis."),
+  ("REL_SPEED", "Longitudinal speed relative to ego; negative means the target is moving longitudinally slower than ego."),
+  ("NEW_SIGNAL_4", "Unknown category, observed 0-2 on detailed platforms. Compact platforms leave it zero."),
+  ("REL_LAT_SPEED", _comment(
+    "Target lateral speed relative to the ego axis at 0.01 m/s per bit.",
+    "The detailed dialect uses the decoded sign; compact platforms use the opposite sign.",
+  )),
+  ("REL_ACCEL", "Target longitudinal acceleration relative to ego acceleration at 0.05 m/s^2 per bit."),
+  ("NEW_SIGNAL_18", _comment(
+    "Unknown compact-dialect per-target status area, observed only as 0/1; its second bit remained zero.",
+    "Detailed platforms leave it zero.",
+  )),
+  ("OBJECT_ID", _comment(
+    "Strongly inferred compact-dialect persistent object identifier, observed 0-63.",
+    "It held through 99.9% of consecutive same-track updates and changed when a slot acquired a replacement target.",
+    "Detailed platforms usually leave it zero.",
+  )),
+)
+
+
 def generate():
   parts = []
   parts.append("""
@@ -47,26 +107,56 @@ BU_: XXX
 BO_ {a} RADAR_TRACK_{a:x}: 32 RADAR
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ 1_STATE_ALT : 25|2@0+ (1,0) [0|3] "" XXX
+ SG_ 1_MOTION_STATE : 29|3@0+ (1,0) [0|4] "" XXX
+ SG_ 1_NEW_SIGNAL_2 : 38|7@0- (1,0) [-64|63] "" XXX
  SG_ 1_AGE : 47|8@0+ (1,0) [0|255] "" XXX
- SG_ 1_STATE_ALT : 51|4@0+ (1,0) [0|15] "" XXX
- SG_ 1_STATE : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ 1_NEW_SIGNAL_3 : 63|8@0- (1,0) [0|255] "" XXX
- SG_ 1_LONG_DIST : 64|12@1+ (0.05,0) [0|4095] "" XXX
- SG_ 1_LAT_DIST : 76|12@1- (0.05,0) [0|4095] "" XXX
- SG_ 1_REL_SPEED : 88|14@1- (0.01,0) [0|16383] "" XXX
- SG_ 1_NEW_SIGNAL_1 : 102|2@1+ (1,0) [0|3] "" XXX
- SG_ 1_LAT_ACCEL : 104|13@1- (1,0) [0|8191] "" XXX
- SG_ 1_REL_ACCEL : 118|10@1- (1,0) [0|1023] "" XXX
+ SG_ 1_COAST_AGE : 51|4@0+ (1,0) [0|15] "" XXX
+ SG_ 1_STATE : 54|3@0+ (1,0) [0|7] "" XXX
+ SG_ 1_NEW_SIGNAL_8 : 63|8@0- (1,0) [-128|127] "" XXX
+ SG_ 1_LONG_DIST : 64|12@1+ (0.05,0) [0|204.75] "m" XXX
+ SG_ 1_LAT_DIST : 76|12@1- (0.05,0) [-102.4|102.35] "m" XXX
+ SG_ 1_REL_SPEED : 88|14@1- (0.01,0) [-81.92|81.91] "m/s" XXX
+ SG_ 1_NEW_SIGNAL_4 : 102|2@1+ (1,0) [0|2] "" XXX
+ SG_ 1_REL_LAT_SPEED : 104|13@1- (0.01,0) [-40.96|40.95] "m/s" XXX
+ SG_ 1_REL_ACCEL : 118|10@1- (0.05,0) [-25.6|25.55] "m/s^2" XXX
+ SG_ 1_NEW_SIGNAL_18 : 129|2@0+ (1,0) [0|1] "" XXX
+ SG_ 1_OBJECT_ID : 135|6@0+ (1,0) [0|63] "" XXX
+ SG_ 2_NEW_SIGNAL_18 : 137|2@0+ (1,0) [0|1] "" XXX
+ SG_ 2_OBJECT_ID : 143|6@0+ (1,0) [0|63] "" XXX
+ SG_ 2_STATE_ALT : 153|2@0+ (1,0) [0|3] "" XXX
+ SG_ 2_MOTION_STATE : 157|3@0+ (1,0) [0|4] "" XXX
+ SG_ 2_NEW_SIGNAL_2 : 166|7@0- (1,0) [-64|63] "" XXX
  SG_ 2_AGE : 175|8@0+ (1,0) [0|255] "" XXX
- SG_ 2_STATE_ALT : 179|4@0+ (1,0) [0|15] "" XXX
- SG_ 2_STATE : 183|4@0+ (1,0) [0|15] "" XXX
- SG_ 2_NEW_SIGNAL_3 : 191|8@0- (1,0) [0|255] "" XXX
- SG_ 2_LONG_DIST : 192|12@1+ (0.05,0) [0|4095] "" XXX
- SG_ 2_LAT_DIST : 204|12@1- (0.05,0) [0|4095] "" XXX
- SG_ 2_REL_SPEED : 216|14@1- (0.01,0) [0|65535] "" XXX
- SG_ 2_NEW_SIGNAL_1 : 230|2@1+ (1,0) [0|3] "" XXX
- SG_ 2_LAT_ACCEL : 232|13@1- (1,0) [0|8191] "" XXX
- SG_ 2_REL_ACCEL : 246|10@1- (1,0) [0|1023] "" XXX
+ SG_ 2_COAST_AGE : 179|4@0+ (1,0) [0|15] "" XXX
+ SG_ 2_STATE : 182|3@0+ (1,0) [0|7] "" XXX
+ SG_ 2_NEW_SIGNAL_8 : 191|8@0- (1,0) [-128|127] "" XXX
+ SG_ 2_LONG_DIST : 192|12@1+ (0.05,0) [0|204.75] "m" XXX
+ SG_ 2_LAT_DIST : 204|12@1- (0.05,0) [-102.4|102.35] "m" XXX
+ SG_ 2_REL_SPEED : 216|14@1- (0.01,0) [-81.92|81.91] "m/s" XXX
+ SG_ 2_NEW_SIGNAL_4 : 230|2@1+ (1,0) [0|2] "" XXX
+ SG_ 2_REL_LAT_SPEED : 232|13@1- (0.01,0) [-40.96|40.95] "m/s" XXX
+ SG_ 2_REL_ACCEL : 246|10@1- (0.05,0) [-25.6|25.55] "m/s^2" XXX
+
+VAL_ {a} 1_STATE_ALT 0 "EMPTY" 1 "TENTATIVE" 2 "MEASURED" 3 "COASTED" ;
+VAL_ {a} 2_STATE_ALT 0 "EMPTY" 1 "TENTATIVE" 2 "MEASURED" 3 "COASTED" ;
+VAL_ {a} 1_MOTION_STATE 0 "UNKNOWN" 1 "STATIONARY" 2 "MOVING" 3 "UNKNOWN_3" 4 "ONCOMING" ;
+VAL_ {a} 2_MOTION_STATE 0 "UNKNOWN" 1 "STATIONARY" 2 "MOVING" 3 "UNKNOWN_3" 4 "ONCOMING" ;
+VAL_ {a} 1_STATE 0 "EMPTY" 1 "TENTATIVE_1" 2 "TENTATIVE_2" 3 "MEASURED" 4 "COASTED" 7 "UNRESOLVED_TENTATIVE" ;
+VAL_ {a} 2_STATE 0 "EMPTY" 1 "TENTATIVE_1" 2 "TENTATIVE_2" 3 "MEASURED" 4 "COASTED" 7 "UNRESOLVED_TENTATIVE" ;
     """)
+
+    parts.append(f'CM_ BO_ {a} "{RADAR_210_21F_MESSAGE_COMMENT}";\n')
+    for prefix in ("1_", "2_"):
+      parts.extend(
+        f'CM_ SG_ {a} {prefix}{signal} "{comment}";\n'
+        for signal, comment in RADAR_210_21F_SIGNAL_COMMENTS
+        if signal not in ("CHECKSUM", "COUNTER")
+      )
+    parts.extend(
+      f'CM_ SG_ {a} {signal} "{comment}";\n'
+      for signal, comment in RADAR_210_21F_SIGNAL_COMMENTS
+      if signal in ("CHECKSUM", "COUNTER")
+    )
 
   return {"hyundai_radar_210_21f.dbc": "".join(parts)}

@@ -63,7 +63,8 @@ RADAR_500_51F = HyundaiRadarTrackSpec(
 )
 RADAR_210_21F = HyundaiRadarTrackSpec(
   "RADAR_210_21F", 0x210, 16, ("1_", "2_"),
-  ("1_STATE", "1_LONG_DIST", "1_LAT_DIST", "1_REL_SPEED", "2_STATE", "2_LONG_DIST", "2_LAT_DIST", "2_REL_SPEED"),
+  ("1_STATE", "1_STATE_ALT", "1_MOTION_STATE", "1_AGE", "1_LONG_DIST", "1_LAT_DIST", "1_REL_SPEED", "1_REL_ACCEL",
+   "2_STATE", "2_STATE_ALT", "2_MOTION_STATE", "2_AGE", "2_LONG_DIST", "2_LAT_DIST", "2_REL_SPEED", "2_REL_ACCEL"),
   frequency=20, message_size=32,
 )
 RADAR_235_248 = HyundaiRadarTrackSpec(
@@ -143,7 +144,7 @@ def decode_radar_track(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefi
       track_msg[f"{track_prefix}LONG_DIST"],
       track_msg[f"{track_prefix}LAT_DIST"],
       track_msg[f"{track_prefix}REL_SPEED"],
-      float("nan"),
+      track_msg[f"{track_prefix}REL_ACCEL"],
     )
 
   if radar_spec.name == "RADAR_500_51F":
@@ -172,23 +173,29 @@ def decode_radar_track(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefi
   )
 
 
+def get_radar_track_state(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> int:
+  state = int(track_msg[f"{track_prefix}STATE"])
+  if radar_spec.name == "RADAR_210_21F" and state == 0:
+    # Compact-dialect platforms leave detailed STATE zero and use the shared
+    # compressed lifecycle field instead.
+    return {0: 0, 1: 1, 2: 3, 3: 4}[int(track_msg[f"{track_prefix}STATE_ALT"])]
+  return state
+
+
 def is_radar_track_valid(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> bool:
   if radar_spec.name == "RADAR_602_617":
     return 0 < track_msg[f"{track_prefix}DISTANCE"] < 255.75
 
-  if radar_spec.name == "RADAR_210_21F":
-    return track_msg[f"{track_prefix}STATE"] in (3, 4)
-
   if radar_spec.name == "RADAR_235_248":
     return track_msg["STATE"] in (3, 4)
 
-  return track_msg["STATE"] in (3, 4)
+  return get_radar_track_state(radar_spec, track_msg, track_prefix) in (3, 4)
 
 
 def is_radar_track_measured(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> bool:
   if radar_spec.name == "RADAR_602_617":
     return True
-  return track_msg[f"{track_prefix}STATE"] == 3
+  return get_radar_track_state(radar_spec, track_msg, track_prefix) == 3
 
 
 class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
@@ -437,10 +444,11 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
           pt.vRel = v_rel
           pt.aRel = a_rel
           pt.yvRel = float('nan')
-          pt.motionState = int(msg["MOTION_STATE"]) if radar_parser.spec.name == "RADAR_3A5_3C4" else 0
+          has_track_metadata = radar_parser.spec.name in ("RADAR_210_21F", "RADAR_3A5_3C4")
+          pt.motionState = int(msg[f"{track_prefix}MOTION_STATE"]) if has_track_metadata else 0
           pt.sourceAddress = addr
           pt.sourceBus = radar_parser.bus
-          pt.trackAge = int(msg["AGE"]) if radar_parser.spec.name == "RADAR_3A5_3C4" else min(pt.trackAge + 1, 65535)
+          pt.trackAge = int(msg[f"{track_prefix}AGE"]) if has_track_metadata else min(pt.trackAge + 1, 65535)
         elif track_key in self.pts:
           del self.pts[track_key]
     return track_count
