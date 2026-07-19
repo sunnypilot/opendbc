@@ -10,7 +10,7 @@ from opendbc.car.hyundai.interface import CarInterface
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.radar_interface import HYUNDAI_RADAR_TRACK_SPECS, RADAR_210_21F, RADAR_235_248, RADAR_3A5_3C4, \
                                                 RADAR_500_51F, RADAR_602_617, RadarInterface, get_detected_radar_tracks, \
-                                                is_radar_track_valid
+                                                is_radar_track_measured, is_radar_track_valid
 from opendbc.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
@@ -158,6 +158,91 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert dimensions["WIDTH"] == 2.7
     assert abs(dimensions["LENGTH"] - 15.2) < 1e-6
     assert dimensions["ORIENTATION_ANGLE"] == 10
+
+  def test_radar_210_signal_layout(self):
+    packer = CANPacker(RADAR_210_21F.dbc_name)
+    parser = CANParser(RADAR_210_21F.dbc_name, [("RADAR_TRACK_210", RADAR_210_21F.frequency)], 1)
+    values = {
+      "COUNTER": 255,
+      "1_STATE_ALT": 2,
+      "1_MOTION_STATE": 4,
+      "1_NEW_SIGNAL_2": -60,
+      "1_AGE": 255,
+      "1_COAST_AGE": 15,
+      "1_STATE": 4,
+      "1_NEW_SIGNAL_8": -30,
+      "1_LONG_DIST": 204.75,
+      "1_LAT_DIST": -61.55,
+      "1_REL_SPEED": -66.79,
+      "1_NEW_SIGNAL_4": 2,
+      "1_REL_LAT_SPEED": -3.25,
+      "1_REL_ACCEL": 25.55,
+      "1_NEW_SIGNAL_18": 1,
+      "1_OBJECT_ID": 63,
+      "2_NEW_SIGNAL_18": 1,
+      "2_OBJECT_ID": 42,
+      "2_STATE_ALT": 3,
+      "2_MOTION_STATE": 2,
+      "2_NEW_SIGNAL_2": 31,
+      "2_AGE": 127,
+      "2_COAST_AGE": 7,
+      "2_STATE": 3,
+      "2_NEW_SIGNAL_8": 42,
+      "2_LONG_DIST": 123.45,
+      "2_LAT_DIST": 27.3,
+      "2_REL_SPEED": 17.4,
+      "2_NEW_SIGNAL_4": 1,
+      "2_REL_LAT_SPEED": 4.5,
+      "2_REL_ACCEL": -25.6,
+    }
+
+    parser.update([(1, [packer.make_can_msg("RADAR_TRACK_210", 1, values)])])
+    parsed = parser.vl["RADAR_TRACK_210"]
+
+    for signal, expected in values.items():
+      assert abs(parsed[signal] - expected) < 1e-6
+
+  def test_radar_210_known_detailed_and_compact_frames(self):
+    parser = CANParser(RADAR_210_21F.dbc_name, [
+      ("RADAR_TRACK_210", RADAR_210_21F.frequency),
+      ("RADAR_TRACK_214", RADAR_210_21F.frequency),
+    ], 1)
+
+    detailed_frame = bytes.fromhex("0da6690a412630ff79e0fcba3f05c0f90000000b2420410671b101d3bf0080fc")
+    compact_frame = bytes.fromhex("af99c522440100005f78fb4e35f21f007100000000000000ff0f000000000000")
+    parser.update([(1, [(0x210, detailed_frame, 1), (0x214, compact_frame, 1)])])
+
+    detailed = parser.vl["RADAR_TRACK_210"]
+    assert detailed["1_STATE"] == 3
+    assert detailed["1_STATE_ALT"] == 2
+    assert detailed["1_NEW_SIGNAL_8"] == -1
+    assert detailed["2_STATE"] == 4
+    assert detailed["2_COAST_AGE"] == 1
+    assert detailed["2_NEW_SIGNAL_4"] == 2
+    assert abs(detailed["2_REL_ACCEL"] - -0.7) < 1e-6
+
+    compact = parser.vl["RADAR_TRACK_214"]
+    assert compact["1_STATE"] == 0
+    assert compact["1_STATE_ALT"] == 2
+    assert compact["1_MOTION_STATE"] == 4
+    assert compact["1_OBJECT_ID"] == 28
+    assert compact["1_NEW_SIGNAL_18"] == 1
+    assert compact["1_LONG_DIST"] == 107.15
+    assert compact["2_LONG_DIST"] == 204.75
+
+  def test_radar_210_compact_state_fallback(self):
+    for state, state_alt, valid, measured in (
+      (0, 0, False, False),
+      (0, 1, False, False),
+      (0, 2, True, True),
+      (0, 3, True, False),
+      (3, 0, True, True),
+      (4, 0, True, False),
+    ):
+      with self.subTest(state=state, state_alt=state_alt):
+        track = {"1_STATE": state, "1_STATE_ALT": state_alt}
+        assert is_radar_track_valid(RADAR_210_21F, track, "1_") == valid
+        assert is_radar_track_measured(RADAR_210_21F, track, "1_") == measured
 
   def test_feature_detection(self):
     # LKA steering
@@ -317,6 +402,33 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
     assert len(points) == 1
     assert RI.active_radar_buses[RADAR_210_21F.name] == 2
+
+  def test_radar_interface_210_compact_track_metadata(self):
+    fingerprint = gen_empty_fingerprint()
+    add_radar_range(fingerprint, RADAR_210_21F, 1)
+    CP = CarInterface.get_params(CAR.HYUNDAI_TUCSON_4TH_GEN, fingerprint, [], False, False, False)
+    CP_SP = CarParamsSP(flags=HyundaiFlagsSP.RADAR_FULL_RADAR.value)
+    RI = RadarInterface(CP, CP_SP)
+
+    parser = get_radar_parser(RI, RADAR_210_21F, 1).parser
+    msg = parser.vl[f"RADAR_TRACK_{RADAR_210_21F.start_addr:x}"]
+    msg["1_STATE"] = 0
+    msg["1_STATE_ALT"] = 2
+    msg["1_MOTION_STATE"] = 4
+    msg["1_AGE"] = 27
+    msg["1_LONG_DIST"] = 42
+    msg["1_LAT_DIST"] = -2
+    msg["1_REL_SPEED"] = -8
+    msg["1_REL_ACCEL"] = 1.5
+    mark_track_updated(parser, RADAR_210_21F, RADAR_210_21F.start_addr, "1_")
+
+    points = RI._update({(1, RADAR_210_21F.start_addr)}).points
+
+    assert len(points) == 1
+    assert points[0].measured
+    assert points[0].aRel == 1.5
+    assert points[0].motionState == 4
+    assert points[0].trackAge == 27
 
   def test_radar_interface_duplicate_range_selects_correct_cadence(self):
     fingerprint = gen_empty_fingerprint()
