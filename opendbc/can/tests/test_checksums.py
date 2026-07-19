@@ -99,6 +99,14 @@ class TestCanChecksums(unittest.TestCase):
       bytes.fromhex("af99c522440100005f78fb4e35f21f007100000000000000ff0f000000000000"),
     ])
 
+  def test_hyundai_radar_3a5_canfd_checksum(self):
+    self.verify_checksum("hyundai_radar_3a5_3c4_generated", "RADAR_TRACK_3af", 0x3AF, [
+      bytes.fromhex("d19ba383061f4d8004b8ee8303c7800000541f03cd271608"),
+    ])
+    self.verify_checksum("hyundai_radar_3a5_3c4_generated", "RADAR_TRACK_3c0", 0x3C0, [
+      bytes.fromhex("fb29791225ff3081a2400d313ffadffd016c98a728a0aa06"),
+    ])
+
   def verify_volkswagen_mqb_crc(self, msg_name: str, msg_addr: int, test_messages: list[bytes], counter_field: str = 'COUNTER'):
     """Test AUTOSAR E2E Profile 2 CRCs"""
     assert len(test_messages) == 16  # All counter values must be tested
