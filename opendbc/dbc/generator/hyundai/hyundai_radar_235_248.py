@@ -1,6 +1,43 @@
 #!/usr/bin/env python3
 
 
+def _comment(*parts: str) -> str:
+  return " ".join(parts)
+
+
+CAMERA_235_248_MESSAGE_COMMENT = _comment(
+  "Forward-camera object list, not a raw radar-track range.",
+  "The core through bit 123 exactly matches Hyundai/Veoneer FR_CMR object messages:",
+  "quality, age, motion class, persistent object ID, width, classification, relative position, velocity, and acceleration.",
+  "Twenty 32-byte messages provide one object slot each at approximately 33 Hz.",
+  "The extension at bits 125-160 remains unknown; the high-resolution azimuth at bit 176 is route-validated.",
+  "Some platforms use a checksum variant that is not the standard HKG CAN-FD checksum.",
+)
+
+CAMERA_235_248_SIGNAL_COMMENTS = (
+  ("CHECKSUM", "16-bit message checksum. HKG CAN-FD validates on some, but not all, observed platforms."),
+  ("COUNTER", "8-bit transmit-cycle counter."),
+  ("QUALITY", "Unsigned 7-bit camera-object quality level. The related FR_CMR definition uses a nominal 0-100 scale."),
+  ("AGE", "Per-object alive age."),
+  ("MOTION_STATE", _comment(
+    "Camera-object motion class: 0=undefined, 1=standing, 2=parked, 3=stopped, 4=unknown movable,",
+    "5=moving, 6=stopped oncoming, 7=unknown oncoming, 8=moving oncoming, 9=crossing bicycle.",
+  )),
+  ("OBJECT_ID", "Persistent 7-bit camera-object identifier. Zero denotes an unused slot in the observed routes."),
+  ("WIDTH", "Estimated object width."),
+  ("CLASSIFICATION", "0=unknown, 1=truck, 2=car, 3=motorcycle, 4=bicycle, 5=pedestrian, 6=undecided."),
+  ("LONG_DIST", "Camera-object longitudinal relative position."),
+  ("LAT_DIST", "Camera-object lateral relative position."),
+  ("REL_SPEED", "Camera-object longitudinal velocity relative to ego."),
+  ("REL_LAT_SPEED", "Camera-object lateral velocity relative to ego."),
+  ("REL_ACCEL", "Camera-object longitudinal acceleration relative to ego."),
+  ("UNKNOWN_1", "Active extension field with unknown semantics; preserve as raw."),
+  ("UNKNOWN_2", "Active extension field with unknown semantics; preserve as raw."),
+  ("UNKNOWN_3", "Active extension field with unknown semantics; preserve as raw."),
+  ("AZIMUTH", "High-resolution object azimuth over a full 360-degree unsigned encoding."),
+)
+
+
 def generate():
   parts = []
   parts.append("""
@@ -39,24 +76,43 @@ NS_ :
 
 BS_:
 
-BU_: XXX
+BU_: FR_CMR ADAS_DRV
     """)
 
   for a in range(0x235, 0x235 + 20):
     parts.append(f"""
-BO_ {a} RADAR_TRACK_{a:x}: 32 RADAR
- SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
- SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ STATE : 24|4@1+ (1,0) [0|15] "" XXX
- SG_ LONG_DIST : 64|12@1+ (0.05,0) [0|204.75] "m" XXX
- SG_ LAT_DIST : 78|12@1+ (0.05,-102.4) [-102.4|102.35] "m" XXX
- SG_ REL_SPEED : 91|12@1+ (0.05,-100) [-100|104.75] "m/s" XXX
- SG_ NEW_SIGNAL_4 : 104|10@1+ (1,0) [0|1023] "" XXX
- SG_ AZIMUTH : 115|9@1- (0.1,0) [-25.6|25.5] "deg" XXX
- SG_ NEW_SIGNAL_6 : 125|12@1+ (1,0) [0|4095] "" XXX
- SG_ NEW_SIGNAL_7 : 138|12@1+ (1,0) [0|4095] "" XXX
- SG_ NEW_SIGNAL_8 : 151|10@1+ (1,0) [0|1023] "" XXX
- SG_ AZIMUTH_HR : 176|14@1+ (0.0238,-195.05) [-195.05|195.07] "deg" XXX
+BO_ {a} RADAR_TRACK_{a:x}: 32 FR_CMR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" ADAS_DRV
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" ADAS_DRV
+ SG_ QUALITY : 24|7@1+ (1,0) [0|127] "" ADAS_DRV
+ SG_ AGE : 32|8@1+ (1,0) [0|255] "" ADAS_DRV
+ SG_ MOTION_STATE : 40|4@1+ (1,0) [0|9] "" ADAS_DRV
+ SG_ OBJECT_ID : 44|7@1+ (1,0) [0|127] "" ADAS_DRV
+ SG_ WIDTH : 52|7@1+ (0.05,0) [0|6.35] "m" ADAS_DRV
+ SG_ CLASSIFICATION : 60|3@1+ (1,0) [0|6] "" ADAS_DRV
+ SG_ LONG_DIST : 64|13@1+ (0.05,0) [0|409.55] "m" ADAS_DRV
+ SG_ LAT_DIST : 78|12@1+ (0.05,-102.4) [-102.4|102.35] "m" ADAS_DRV
+ SG_ REL_SPEED : 91|12@1+ (0.05,-100) [-100|104.75] "m/s" ADAS_DRV
+ SG_ REL_LAT_SPEED : 104|10@1+ (0.05,-25) [-25|26.15] "m/s" ADAS_DRV
+ SG_ REL_ACCEL : 115|9@1- (0.05,0) [-12.8|12.75] "m/s^2" ADAS_DRV
+ SG_ UNKNOWN_1 : 125|12@1+ (1,0) [0|4095] "" ADAS_DRV
+ SG_ UNKNOWN_2 : 138|12@1+ (1,0) [0|4095] "" ADAS_DRV
+ SG_ UNKNOWN_3 : 151|10@1+ (1,0) [0|1023] "" ADAS_DRV
+ SG_ AZIMUTH : 176|14@1+ (0.02197265625,-180) [-180|179.97802734375] "deg" ADAS_DRV
     """)
+
+  for a in range(0x235, 0x235 + 20):
+    parts.append(f'CM_ BO_ {a} "{CAMERA_235_248_MESSAGE_COMMENT}";\n')
+    for signal, comment in CAMERA_235_248_SIGNAL_COMMENTS:
+      parts.append(f'CM_ SG_ {a} {signal} "{comment}";\n')
+    parts.append(
+      f'VAL_ {a} MOTION_STATE 0 "Undefined" 1 "Standing" 2 "Parked" 3 "Stopped" '
+      '4 "Unknown movable" 5 "Moving" 6 "Stopped oncoming" 7 "Unknown oncoming" '
+      '8 "Moving oncoming" 9 "Crossing bicycle";\n'
+    )
+    parts.append(
+      f'VAL_ {a} CLASSIFICATION 0 "Unknown" 1 "Truck" 2 "Car" 3 "Motorcycle" '
+      '4 "Bicycle" 5 "Pedestrian" 6 "Undecided";\n'
+    )
 
   return {"hyundai_radar_235_248.dbc": "".join(parts)}
