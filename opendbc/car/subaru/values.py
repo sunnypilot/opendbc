@@ -51,6 +51,8 @@ class CarControllerParams:
   BRAKE_LOOKUP_BP = [-3.5, 0]
   BRAKE_LOOKUP_V = [BRAKE_MAX, BRAKE_MIN]
 
+  BRAKE_HOLD_PRESSURE = 600  # max pressure; ensures hold on slopes
+
 
 class SubaruSafetyFlags(IntFlag):
   GEN2 = 1
@@ -72,6 +74,7 @@ class SubaruFlags(IntFlag):
   PREGLOBAL = 16
   HYBRID = 32
   LKAS_ANGLE = 64
+  BRAKE_HOLD = 128  # ES_Brake intercept brake hold feature
 
 
 GLOBAL_ES_ADDR = 0x787

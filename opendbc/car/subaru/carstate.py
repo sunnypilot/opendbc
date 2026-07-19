@@ -19,6 +19,8 @@ class CarState(CarStateBase, MadsCarState, SnGCarState):
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
 
     self.angle_rate_calulator = CanSignalRateCalculator(50)
+    self.es_brake_msg = None  # populated on first update(); guards carcontroller startup window
+    self.brake_status_msg = None
 
   def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     cp = can_parsers[Bus.pt]
@@ -34,6 +36,7 @@ class CarState(CarStateBase, MadsCarState, SnGCarState):
     else:
       cp_brakes = cp_alt if self.CP.flags & SubaruFlags.GLOBAL_GEN2 else cp
       ret.brakePressed = cp_brakes.vl["Brake_Status"]["Brake"] == 1
+      self.brake_status_msg = copy.copy(cp_brakes.vl["Brake_Status"])
 
     cp_es_distance = cp_alt if self.CP.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID) else cp_cam
     if not (self.CP.flags & SubaruFlags.HYBRID):
