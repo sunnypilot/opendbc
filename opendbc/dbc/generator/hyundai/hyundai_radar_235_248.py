@@ -105,14 +105,14 @@ BO_ {a} RADAR_TRACK_{a:x}: 32 FR_CMR
     parts.append(f'CM_ BO_ {a} "{CAMERA_235_248_MESSAGE_COMMENT}";\n')
     for signal, comment in CAMERA_235_248_SIGNAL_COMMENTS:
       parts.append(f'CM_ SG_ {a} {signal} "{comment}";\n')
-    parts.append(
-      f'VAL_ {a} MOTION_STATE 0 "Undefined" 1 "Standing" 2 "Parked" 3 "Stopped" '
-      '4 "Unknown movable" 5 "Moving" 6 "Stopped oncoming" 7 "Unknown oncoming" '
-      '8 "Moving oncoming" 9 "Crossing bicycle";\n'
-    )
-    parts.append(
-      f'VAL_ {a} CLASSIFICATION 0 "Unknown" 1 "Truck" 2 "Car" 3 "Motorcycle" '
-      '4 "Bicycle" 5 "Pedestrian" 6 "Undecided";\n'
-    )
+    parts.append("".join((
+      f'VAL_ {a} MOTION_STATE 0 "Undefined" 1 "Standing" 2 "Parked" 3 "Stopped" ',
+      '4 "Unknown movable" 5 "Moving" 6 "Stopped oncoming" 7 "Unknown oncoming" ',
+      '8 "Moving oncoming" 9 "Crossing bicycle";\n',
+    )))
+    parts.append("".join((
+      f'VAL_ {a} CLASSIFICATION 0 "Unknown" 1 "Truck" 2 "Car" 3 "Motorcycle" ',
+      '4 "Bicycle" 5 "Pedestrian" 6 "Undecided";\n',
+    )))
 
   return {"hyundai_radar_235_248.dbc": "".join(parts)}

@@ -161,14 +161,12 @@ def get_track_ts_nanos(parser: CANParser, msg_name: str, radar_spec: HyundaiRada
   return parser.ts_nanos[msg_name]["LONG_DIST"]
 
 
-def decode_radar_track(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str,
-                       full_variant: bool = False) -> tuple[float, float, float, float]:
+def decode_radar_track(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> tuple[float, float, float]:
   if radar_spec.name == "RADAR_602_617":
     return (
       track_msg[f"{track_prefix}DISTANCE"],
       track_msg[f"{track_prefix}LATERAL"],
       track_msg[f"{track_prefix}SPEED"],
-      float("nan"),
     )
 
   if radar_spec.name == "RADAR_210_21F":
@@ -176,7 +174,6 @@ def decode_radar_track(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefi
       track_msg[f"{track_prefix}LONG_DIST"],
       track_msg[f"{track_prefix}LAT_DIST"],
       track_msg[f"{track_prefix}REL_SPEED"],
-      track_msg[f"{track_prefix}REL_ACCEL"],
     )
 
   if radar_spec.name == "RADAR_500_53F":
@@ -186,7 +183,6 @@ def decode_radar_track(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefi
       math.cos(azimuth) * long_dist,
       -math.sin(azimuth) * long_dist,
       track_msg["REL_SPEED"],
-      track_msg["REL_ACCEL_ESR"] if full_variant else track_msg["REL_ACCEL"],
     )
 
   if radar_spec.name == "RADAR_235_248":
@@ -194,14 +190,12 @@ def decode_radar_track(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefi
       track_msg["LONG_DIST"],
       track_msg["LAT_DIST"],
       track_msg["REL_SPEED"],
-      track_msg["REL_ACCEL"],
     )
 
   return (
     track_msg["LONG_DIST"],
     track_msg["LAT_DIST"],
     track_msg["REL_SPEED"],
-    track_msg["REL_ACCEL"],
   )
 
 
@@ -235,14 +229,6 @@ def is_radar_track_valid(radar_spec: HyundaiRadarTrackSpec, track_msg, track_pre
     return int(track_msg["OBJECT_ID"]) != 0
 
   return get_radar_track_state(radar_spec, track_msg, track_prefix) in (3, 4)
-
-
-def is_radar_track_measured(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> bool:
-  if radar_spec.name == "RADAR_602_617":
-    return True
-  if radar_spec.name == "RADAR_235_248":
-    return int(track_msg["OBJECT_ID"]) != 0
-  return get_radar_track_state(radar_spec, track_msg, track_prefix) == 3
 
 
 class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
@@ -508,19 +494,11 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
             self.track_id += 1
 
           full_variant = radar_parser.end_addr == radar_parser.spec.end_addr
-          d_rel, y_rel, v_rel, a_rel = decode_radar_track(radar_parser.spec, msg, track_prefix, full_variant)
+          d_rel, y_rel, v_rel = decode_radar_track(radar_parser.spec, msg, track_prefix)
           pt = self.pts[track_key]
-          pt.measured = is_radar_track_measured(radar_parser.spec, msg, track_prefix)
           pt.dRel = d_rel
           pt.yRel = y_rel
           pt.vRel = v_rel
-          pt.aRel = a_rel
-          if radar_parser.spec.name == "RADAR_500_53F":
-            pt.yvRel = float(msg["REL_LAT_SPEED_ESR"]) if full_variant else float('nan')
-          elif radar_parser.spec.name == "RADAR_235_248":
-            pt.yvRel = float(msg[f"{track_prefix}REL_LAT_SPEED"])
-          else:
-            pt.yvRel = float('nan')
           has_track_metadata = radar_parser.spec.name in ("RADAR_210_21F", "RADAR_235_248", "RADAR_3A5_3C4")
           if radar_parser.spec.name == "RADAR_500_53F":
             pt.motionState = 2 if full_variant and int(msg["ONCOMING_ESR"]) else 0
