@@ -11,7 +11,7 @@ from opendbc.car.hyundai.interface import CarInterface
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.radar_interface import HYUNDAI_RADAR_TRACK_SPECS, RADAR_210_21F, RADAR_235_248, RADAR_3A5_3C4, \
                                                 RADAR_500_53F, RADAR_602_617, RadarInterface, get_detected_radar_tracks, \
-                                                is_radar_track_measured, is_radar_track_valid
+                                                is_radar_track_valid
 from opendbc.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
@@ -250,7 +250,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for signal, expected in values.items():
       assert abs(decoded[signal] - expected) < 1e-6
     assert is_radar_track_valid(RADAR_235_248, decoded, "")
-    assert is_radar_track_measured(RADAR_235_248, decoded, "")
     decoded["OBJECT_ID"] = 0
     assert not is_radar_track_valid(RADAR_235_248, decoded, "")
 
@@ -397,18 +396,17 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert compact["2_LONG_DIST"] == 204.75
 
   def test_radar_210_compact_state_fallback(self):
-    for state, state_alt, valid, measured in (
-      (0, 0, False, False),
-      (0, 1, False, False),
-      (0, 2, True, True),
-      (0, 3, True, False),
-      (3, 0, True, True),
-      (4, 0, True, False),
+    for state, state_alt, valid in (
+      (0, 0, False),
+      (0, 1, False),
+      (0, 2, True),
+      (0, 3, True),
+      (3, 0, True),
+      (4, 0, True),
     ):
       with self.subTest(state=state, state_alt=state_alt):
         track = {"1_STATE": state, "1_STATE_ALT": state_alt}
         assert is_radar_track_valid(RADAR_210_21F, track, "1_") == valid
-        assert is_radar_track_measured(RADAR_210_21F, track, "1_") == measured
 
   def test_feature_detection(self):
     # LKA steering
@@ -565,7 +563,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
     radar_500_point = RI.pts[("RADAR_500_53F", RADAR_500_53F.start_addr)]
     assert math.isclose(radar_500_point.dRel, 8.660254, abs_tol=1e-6)
     assert math.isclose(radar_500_point.yRel, -5, abs_tol=1e-6)
-    assert radar_500_point.yvRel == -2
     assert radar_500_point.motionState == 2
     assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].motionState == 2
     assert RI.pts[("RADAR_500_53F", RADAR_500_53F.start_addr)].sourceAddress == RADAR_500_53F.start_addr
@@ -574,16 +571,14 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].sourceBus == 2
     assert RI.pts[("RADAR_500_53F", RADAR_500_53F.start_addr)].trackAge == 1
     assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].trackAge == 7
-    assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].measured
 
     radar_3a5_3c4_msg["STATE"] = 4
     radar_3a5_3c4_msg["AGE"] = 8
     RI._update([])
 
-    assert not RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].measured
     assert RI.pts[("RADAR_3A5_3C4", RADAR_3A5_3C4.start_addr)].trackAge == 8
 
-  def test_radar_500_32_track_dialect_does_not_publish_esr_metadata(self):
+  def test_radar_500_32_track_dialect_does_not_publish_esr_motion_state(self):
     fingerprint = gen_empty_fingerprint()
     add_radar_range(fingerprint, RADAR_500_53F, 1, end_addr=RADAR_500_53F.required_end_addr)
     CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
@@ -604,8 +599,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
     point = RI._update([]).points[0]
 
-    assert point.aRel == 2
-    assert math.isnan(point.yvRel)
     assert point.motionState == 0
 
   def test_radar_interface_duplicate_range_selects_populated_bus(self):
@@ -655,8 +648,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
     points = RI._update({(1, RADAR_210_21F.start_addr)}).points
 
     assert len(points) == 1
-    assert points[0].measured
-    assert points[0].aRel == 1.5
     assert points[0].motionState == 4
     assert points[0].trackAge == 27
 
@@ -727,8 +718,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert RI.active_radar_buses[RADAR_235_248.name] == 1
     assert points[0].motionState == 2
     assert points[0].trackAge == 7
-    assert points[0].yvRel == 0.5
-    assert points[0].aRel == 1.5
 
   def test_radar_interface_live_detection_requires_correct_message_size(self):
     fingerprint = gen_empty_fingerprint()
