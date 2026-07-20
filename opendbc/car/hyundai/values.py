@@ -15,8 +15,8 @@ Ecu = CarParams.Ecu
 
 
 class CarControllerParams:
-  ACCEL_MIN = -3.5 # m/s
-  ACCEL_MAX = 2.0 # m/s
+  ACCEL_MIN = -3.5 # m/s^2
+  ACCEL_MAX = 2.0 # m/s^2
 
   ANGLE_LIMITS: AngleSteeringLimitsVM = AngleSteeringLimitsVM(
     # Steering angle limits based on observed stock ADAS behavior:
@@ -818,6 +818,7 @@ PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z]
 
 # We've seen both ICE and hybrid for these platforms, and they have hybrid descriptors (e.g. MQ4 vs MQ4H)
 CANFD_FUZZY_WHITELIST = {CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_K8_HEV_1ST_GEN,
+                         CAR.KIA_SPORTAGE_5TH_GEN,
                          # TODO: the hybrid variant is not out yet
                          CAR.KIA_CARNIVAL_4TH_GEN}
 
