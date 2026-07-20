@@ -30,7 +30,7 @@ def auto_field():
 
 @dataclass_transform()
 def auto_dataclass(cls=None, /, **kwargs):
-  cls_annotations = cls.__dict__.get('__annotations__', {})
+  cls_annotations = cls.__annotations__
   for name, typ in cls_annotations.items():
     current_value = getattr(cls, name)
     if current_value is AUTO_OBJ:

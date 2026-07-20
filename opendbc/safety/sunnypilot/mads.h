@@ -120,6 +120,7 @@ inline void m_update_control_state(void) {
     } else if (m_mads_state.braking.current) {
       allowed = false;
     } else {
+      // no action: brake is neither rising, falling, nor currently pressed
     }
   }
 
