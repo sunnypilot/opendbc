@@ -116,7 +116,7 @@ class EnhancedBsmCarController(EnhancedBsm):
     self._left = _BsmSideController(LEFT_BLINDSPOT)
     self._right = _BsmSideController(RIGHT_BLINDSPOT)
 
-  def update(self, CS: structs.CarState, frame: int, e_bsm_rate: int = 20, always_on: bool = False) -> list[CanData]:
+  def update(self, CS: structs.CarState, frame: int, e_bsm_rate: int = 20, always_on: bool = True) -> list[CanData]:
     if frame <= 200:
       return []
 
