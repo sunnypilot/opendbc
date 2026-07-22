@@ -15,9 +15,13 @@ RIGHT_BLINDSPOT = b"\x42"
 LEFT_SIDE = LEFT_BLINDSPOT[0]
 RIGHT_SIDE = RIGHT_BLINDSPOT[0]
 
-# BLINDSPOTD1/D2 aren't real distances despite the DBC name: verified against a real route, D1 only
-# ever reads ~0 (idle) or ~50/52 (left/right occupied), D2 only ~0 or ~27/28 - two near-constant codes,
-# not a continuous measurement. Treated as a plain nonzero/occupied flag below, not a magnitude.
+# BLINDSPOTD1/D2 aren't real distances despite the DBC name: verified against 3 real routes, values
+# fall into 3 clean bands - idle (0), a small transitional-noise band (seen 1-31, rare: single-digit
+# occurrence counts, present during side/state transitions), and two real zone codes (~46-47 and
+# ~50-53, consistent across routes and cars - likely mirroring stock BSM's own ADJACENT/APPROACHING
+# split). A plain nonzero check lets the noise band through as false "occupied" hits; gate on the
+# real-zone floor instead - comfortably above every noise value seen, comfortably below neither zone code.
+BLINDSPOT_NOISE_FLOOR = 35
 
 # DEBUG also carries a 1-bit BLINDSPOT flag (byte 4) that isn't read here. Checked against the same
 # route: stayed 0 across all frames, including every confirmed real detection - not a usable signal.
@@ -44,7 +48,7 @@ class _BsmSideState:
   def update(self, distance_1, distance_2):
     # refresh the hold on every valid occupied reading, not just when the value changes - a firmware
     # that reports an unchanging occupied code every poll must not be read as "gone" after 100 frames
-    if distance_1 != 0 or distance_2 != 0:
+    if distance_1 > BLINDSPOT_NOISE_FLOOR or distance_2 > BLINDSPOT_NOISE_FLOOR:
       self.counter = 100
 
   def decay(self):
