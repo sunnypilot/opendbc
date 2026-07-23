@@ -26,9 +26,6 @@ BLINDSPOT_NOISE_FLOOR = 35
 # DEBUG also carries a 1-bit BLINDSPOT flag (byte 4) that isn't read here. Checked against the same
 # route: stayed 0 across all frames, including every confirmed real detection - not a usable signal.
 
-# no ack on the enable command, so re-send it periodically in case the ECU missed or forgot it
-ENABLE_REASSERT_FRAMES = 500  # ~5s @ 100Hz
-
 
 class EnhancedBsm:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
@@ -86,7 +83,6 @@ class _BsmSideController:
     self.addr_byte = addr_byte
     self.debug_enabled = False
     self.last_poll_frame = 0
-    self.last_enable_frame = 0
 
   def update(self, frame: int, poll_phase: int, e_bsm_rate: int, always_on: bool, vego_ok: bool) -> list[CanData]:
     can_sends = []
@@ -95,15 +91,15 @@ class _BsmSideController:
       if always_on or vego_ok:  # eagle eye camera will stop working if bsm is switched on under 6m/s
         can_sends.append(toyotacan.create_set_bsm_debug_mode(self.addr_byte, True))
         self.debug_enabled = True
-        self.last_enable_frame = frame
         self.last_poll_frame = frame  # give the poll loop a fresh baseline so the stale-poll disable check below can't fire before the first real poll
     else:
+      # no periodic re-assert: re-sending DiagnosticSessionControl(extendedSession) while already in that
+      # session appears to make the ECU intermittently drop its own detection state (confirmed against a
+      # real route - two reasserts landed inside an 8s window where the ECU went silent on that side).
+      # send it once and leave it alone, matching the original, proven-stable behavior.
       if not always_on and frame - self.last_poll_frame > 50:
         can_sends.append(toyotacan.create_set_bsm_debug_mode(self.addr_byte, False))
         self.debug_enabled = False
-      elif frame - self.last_enable_frame > ENABLE_REASSERT_FRAMES:
-        can_sends.append(toyotacan.create_set_bsm_debug_mode(self.addr_byte, True))
-        self.last_enable_frame = frame
 
       if frame % e_bsm_rate == poll_phase:
         can_sends.append(toyotacan.create_bsm_polling_status(self.addr_byte))
