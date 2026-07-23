@@ -43,14 +43,17 @@ class _BsmSideState:
     self.counter = 0
 
   def update(self, distance_1, distance_2):
-    # refresh the hold on every valid occupied reading, not just when the value changes - a firmware
-    # that reports an unchanging occupied code every poll must not be read as "gone" after 100 frames
-    if distance_1 > BLINDSPOT_NOISE_FLOOR or distance_2 > BLINDSPOT_NOISE_FLOOR:
-      self.counter = 100
+    # every fresh matching-side reading directly reflects the current occupancy check - this is not
+    # a latch. A drop to an idle/noise reading on this exact side clears it immediately, same as the
+    # original. The counter is purely a silence timeout for when this side stops responding entirely,
+    # not a "hold the last detection for a while" mechanism.
+    self.blindspot = distance_1 > BLINDSPOT_NOISE_FLOOR or distance_2 > BLINDSPOT_NOISE_FLOOR
+    self.counter = 100
 
   def decay(self):
     self.counter = max(0, self.counter - 1)
-    self.blindspot = self.counter > 0
+    if self.counter == 0:
+      self.blindspot = False
 
 
 # Enhanced BSM (@arne182, @rav4kumar)
@@ -61,9 +64,6 @@ class EnhancedBsmCarState(EnhancedBsm):
     self._sides = {LEFT_SIDE: _BsmSideState(), RIGHT_SIDE: _BsmSideState()}
 
   def update(self, cp, frame: int) -> tuple[bool, bool]:
-    if frame <= 199:
-      return False, False
-
     # Let's keep all the commented out code for easy debug purposes in the future.
     distance_1 = cp.vl["DEBUG"].get('BLINDSPOTD1')
     distance_2 = cp.vl["DEBUG"].get('BLINDSPOTD2')
