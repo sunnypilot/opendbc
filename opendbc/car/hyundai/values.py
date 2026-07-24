@@ -56,6 +56,10 @@ class CarControllerParams:
     else:
       self.STEER_MAX = 384
 
+     # These cars have been observed to do 10 Nm/sec stock. Conservatively, double their deltas (vs. CANFD).
+    if CP.carFingerprint == CAR.KIA_CARNIVAL_HEV_4TH_GEN:
+      self.STEER_DELTA_UP = 4
+      self.STEER_DELTA_DOWN = 6
 
 class HyundaiSafetyFlags(IntFlag):
   EV_GAS = 1
@@ -638,6 +642,13 @@ class CAR(Platforms):
     ],
     CarSpecs(mass=2087, wheelbase=3.09, steerRatio=14.23),
     flags=HyundaiFlags.CANFD_RADAR_SCC,
+  )
+  KIA_CARNIVAL_HEV_4TH_GEN = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia Carnival Hybrid (with HDA II) 2025-26", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_q]))
+    ],
+    CarSpecs(mass=2950, wheelbase=3.09, steerRatio=14.23),
+    flags=HyundaiFlags.CCNC,
   )
 
   # Genesis
