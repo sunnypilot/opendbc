@@ -32,9 +32,7 @@ CAR_SPECIFIC_CONFIGS = {
   CAR.KIA_NIRO_EV: CarTuningConfig(
     jerk_limits=3.3,
   ),
-    CAR.KIA_NIRO_PLUS_EV: CarTuningConfig(
-    v_ego_stopping=0.1,
-    stopping_decel_rate=0.3,
+  CAR.KIA_NIRO_PLUS_EV: CarTuningConfig(
     jerk_limits=3.3,
   ),
   CAR.KIA_NIRO_PHEV_2022: CarTuningConfig(
