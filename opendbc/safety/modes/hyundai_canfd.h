@@ -263,17 +263,27 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_LKA_STEER_ALT_ALT_BUTTONS_COMMON_TX_MSGS(0, 1)
   };
 
+#define HYUNDAI_CANFD_LKA_STEER_MSG_LONG_COMMON_TX_MSGS() \
+    HYUNDAI_CANFD_LKA_STEER_MSG_COMMON_TX_MSGS(0, 1) \
+    HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(1) \
+    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(1, true) \
+    {0x51,  0, 32, .check_relay = false},  /* ADRV_0x51 */ \
+    {0x730, 1,  8, .check_relay = false},  /* tester present for ADAS ECU disable */ \
+    {0x160, 1, 16, .check_relay = false},  /* ADRV_0x160 */ \
+    {0x1EA, 1, 32, .check_relay = false},  /* ADRV_0x1ea */ \
+    {0x200, 1,  8, .check_relay = false},  /* ADRV_0x200 */ \
+    {0x345, 1,  8, .check_relay = false},  /* ADRV_0x345 */ \
+    {0x1DA, 1, 32, .check_relay = false},  /* ADRV_0x1da */ \
+
   static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_LONG_TX_MSGS[] = {
-    HYUNDAI_CANFD_LKA_STEER_MSG_COMMON_TX_MSGS(0, 1)
-    HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(1)
-    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(1, true)
-    {0x51,  0, 32, .check_relay = false},  // ADRV_0x51
-    {0x730, 1,  8, .check_relay = false},  // tester present for ADAS ECU disable
-    {0x160, 1, 16, .check_relay = false},  // ADRV_0x160
-    {0x1EA, 1, 32, .check_relay = false},  // ADRV_0x1ea
-    {0x200, 1,  8, .check_relay = false},  // ADRV_0x200
-    {0x345, 1,  8, .check_relay = false},  // ADRV_0x345
-    {0x1DA, 1, 32, .check_relay = false},  // ADRV_0x1da
+    HYUNDAI_CANFD_LKA_STEER_MSG_LONG_COMMON_TX_MSGS()
+  };
+
+  // CCNC cars with LKA steering: HUD messages are sent on E-CAN (bus 1)
+  static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_LONG_CCNC_TX_MSGS[] = {
+    HYUNDAI_CANFD_LKA_STEER_MSG_LONG_COMMON_TX_MSGS()
+    {0x161, 1, 32, .check_relay = false},  // CCNC_0x161
+    {0x162, 1, 32, .check_relay = false},  // CCNC_0x162
   };
 
   static const CanMsg HYUNDAI_CANFD_LFA_STEERING_TX_MSGS[] = {
@@ -326,9 +336,15 @@ static safety_config hyundai_canfd_init(uint16_t param) {
       };
 
       if (hyundai_canfd_alt_buttons) {
-        ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_alt_buttons_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_TX_MSGS);
+        SET_RX_CHECKS(hyundai_canfd_lka_steer_alt_buttons_long_rx_checks, ret);
       } else {
-        ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_TX_MSGS);
+        SET_RX_CHECKS(hyundai_canfd_lka_steer_msg_long_rx_checks, ret);
+      }
+
+      if (get_hyundai_ccnc()) {
+        SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_LONG_CCNC_TX_MSGS, ret);
+      } else {
+        SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_LONG_TX_MSGS, ret);
       }
 
     } else {

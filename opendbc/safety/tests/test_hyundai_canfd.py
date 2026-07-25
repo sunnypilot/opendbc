@@ -249,6 +249,24 @@ class TestHyundaiCanfdLKASteeringLongEV(HyundaiLongitudinalBase, TestHyundaiCanf
     return self.packer.make_can_msg_safety("SCC_CONTROL", self.PT_BUS, values)
 
 
+# LKA steering cars with CCNC (e.g. Kia Carnival HEV 2025-26): HUD messages sent on E-CAN
+class TestHyundaiCanfdLKASteeringLongCCNC(TestHyundaiCanfdLKASteeringLongEV):
+
+  TX_MSGS = [[0x50, 0], [0x1CF, 1], [0x2A4, 0], [0x51, 0], [0x730, 1], [0x12a, 1], [0x160, 1],
+             [0x1e0, 1], [0x1a0, 1], [0x1ea, 1], [0x200, 1], [0x345, 1], [0x1da, 1], [0x161, 1], [0x162, 1]]
+
+  def setUp(self):
+    self.packer = CANPackerSafety("hyundai_canfd_generated")
+    self.safety = libsafety_py.libsafety
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.CANFD_LKA_STEER_MSG |
+                                 HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.EV_GAS | HyundaiSafetyFlags.CCNC)
+    self.safety.init_tests()
+
+  def test_ccnc(self):
+    self.assertTrue(self._tx(self.packer.make_can_msg_safety("CCNC_0x161", 1, {})))
+    self.assertTrue(self._tx(self.packer.make_can_msg_safety("CCNC_0x162", 1, {})))
+
+
 # Tests longitudinal for ICE, hybrid, EV cars with LFA steering
 class TestHyundaiCanfdLFASteeringLongBase(HyundaiLongitudinalBase, TestHyundaiCanfdLFASteeringBase):
 
