@@ -251,6 +251,13 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_LKA_STEER_MSG_COMMON_TX_MSGS(0, 1)
   };
 
+  // CCNC cars with LKA steering, stock longitudinal: HUD messages sent on E-CAN (bus 1)
+  static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_CCNC_TX_MSGS[] = {
+    HYUNDAI_CANFD_LKA_STEER_MSG_COMMON_TX_MSGS(0, 1)
+    {0x161, 1, 32, .check_relay = false},  // CCNC_0x161
+    {0x162, 1, 32, .check_relay = false},  // CCNC_0x162
+  };
+
   static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_ALT_TX_MSGS[] = {
     HYUNDAI_CANFD_LKA_STEER_MSG_ALT_COMMON_TX_MSGS(0, 1)
   };
@@ -408,6 +415,8 @@ static safety_config hyundai_canfd_init(uint16_t param) {
         SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_ALT_BUTTONS_TX_MSGS, ret);      // Alt buttons, std LKA
       } else if (hyundai_canfd_lka_steer_msg_alt) {
         SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_ALT_TX_MSGS, ret);          // Std buttons, alt LKA
+      } else if (get_hyundai_ccnc()) {
+        SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_CCNC_TX_MSGS, ret);         // Std buttons, std LKA, CCNC HUD
       } else {
         SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_TX_MSGS, ret);              // Std buttons, std LKA
       }

@@ -196,6 +196,23 @@ class TestHyundaiCanfdLKASteeringEV(TestHyundaiCanfdBase):
     self.safety.init_tests()
 
 
+# LKA steering cars with CCNC but stock longitudinal (e.g. Kia Carnival HEV 2025-26)
+class TestHyundaiCanfdLKASteeringCCNC(TestHyundaiCanfdLKASteeringEV):
+
+  TX_MSGS = [[0x50, 0], [0x1CF, 1], [0x2A4, 0], [0x161, 1], [0x162, 1]]
+
+  def setUp(self):
+    self.packer = CANPackerSafety("hyundai_canfd_generated")
+    self.safety = libsafety_py.libsafety
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, HyundaiSafetyFlags.CANFD_LKA_STEER_MSG |
+                                 HyundaiSafetyFlags.EV_GAS | HyundaiSafetyFlags.CCNC)
+    self.safety.init_tests()
+
+  def test_ccnc(self):
+    self.assertTrue(self._tx(self.packer.make_can_msg_safety("CCNC_0x161", 1, {})))
+    self.assertTrue(self._tx(self.packer.make_can_msg_safety("CCNC_0x162", 1, {})))
+
+
 # TODO: Handle ICE and HEV configurations once we see cars that use the new messages
 class TestHyundaiCanfdLKASteeringAltEV(TestHyundaiCanfdBase):
 

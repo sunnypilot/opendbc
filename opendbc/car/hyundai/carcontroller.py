@@ -211,7 +211,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
                                                         self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT))
 
     # LFA and HDA icons
-    if self.frame % 5 == 0 and (not lka_steering or lka_steering_long):
+    if self.frame % 5 == 0 and (not lka_steering or lka_steering_long or is_ccnc):
       if is_ccnc:
         matched_track_ids = {
           lead.radarTrackId for lead in (self.lead_one, self.lead_two)
