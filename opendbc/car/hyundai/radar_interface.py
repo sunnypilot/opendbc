@@ -246,7 +246,6 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.pending_radar_can: dict[tuple[str, int], list] = {}
     self.active_radar_buses: dict[str, int] = {}
     self.trigger_msg = DEFAULT_RADAR_TRIGGER_MSG
-    self.track_id = 0
 
     self.radar_off_can = True
     self.rcp: CANParser | None = None
