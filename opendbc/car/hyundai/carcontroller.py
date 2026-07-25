@@ -200,7 +200,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
     lka_steering = self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG
     lka_steering_long = lka_steering and self.CP.openpilotLongitudinalControl
-    is_ccnc = self.CP.flags & HyundaiFlags.CCNC
+    ccnc_non_hda2 = self.CP.flags & HyundaiFlags.CCNC and not lka_steering
 
     # steering control
     can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon))
@@ -211,8 +211,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
                                                         self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT))
 
     # LFA and HDA icons
-    if self.frame % 5 == 0 and (not lka_steering or lka_steering_long or is_ccnc):
-      if is_ccnc:
+    if self.frame % 5 == 0 and (not lka_steering or lka_steering_long):
+      if ccnc_non_hda2:
         matched_track_ids = {
           lead.radarTrackId for lead in (self.lead_one, self.lead_two)
           if lead.status and lead.radar and lead.radarTrackId >= 0
@@ -230,12 +230,12 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     if self.CP.openpilotLongitudinalControl:
       if lka_steering:
         can_sends.extend(hyundaicanfd.create_adrv_messages(self.packer, self.CAN, self.frame))
-      elif not is_ccnc:
+      elif not ccnc_non_hda2:
         can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))
       if self.frame % 2 == 0:
         can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
                                                          set_speed_in_units, hud_control, self.lead_data, CS.main_cruise_enabled, self.tuning,
-                                                         CS.cruise_info if is_ccnc else None))
+                                                         CS.cruise_info if ccnc_non_hda2 else None))
         self.accel_last = accel
     else:
       # button presses
