@@ -169,9 +169,9 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last)
       apply_steer_req = CC.latActive and apply_torque != 0
 
-      # Failsafe if we detected we'd violate safety
+      # Failsafe if we detected we'd violate safety - freeze gain so recovery is instant
       if apply_angle is None:
-        apply_torque = 0
+        apply_torque = self.apply_torque_last
         apply_angle = CS.out.steeringAngleDeg
         apply_steer_req = False
 
