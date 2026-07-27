@@ -3,7 +3,7 @@ from typing import cast
 from collections import defaultdict
 from math import cos, sin
 from dataclasses import dataclass
-from opendbc.can.parser import CANParser
+from opendbc.can import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.ford.fordcan import CanBus
@@ -97,7 +97,6 @@ class RadarInterface(RadarInterfaceBase):
     self.clusters: list[Cluster] = []
 
     self.updated_messages = set()
-    self.track_id = 0
     self.radar = DBC[CP.carFingerprint].get(Bus.radar)
     self.scan_index_invalid_cnt = 0
     self.radar_unavailable_cnt = 0
@@ -118,7 +117,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.rcp is None:
       return super().update(None)
 
-    vls = self.rcp.update_strings(can_strings)
+    vls = self.rcp.update(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:
@@ -161,9 +160,6 @@ class RadarInterface(RadarInterfaceBase):
         self.pts[ii].dRel = cpt['X_Rel']  # from front of car
         self.pts[ii].yRel = cpt['X_Rel'] * cpt['Angle'] * CV.DEG_TO_RAD  # in car frame's y axis, left is positive
         self.pts[ii].vRel = cpt['V_Rel']
-        self.pts[ii].aRel = float('nan')
-        self.pts[ii].yvRel = float('nan')
-        self.pts[ii].measured = True
       else:
         if ii in self.pts:
           del self.pts[ii]
@@ -257,7 +253,7 @@ class RadarInterface(RadarInterfaceBase):
       self.clusters.append(Cluster(dRel=dRel, yRel=yRel, vRel=vRel, trackId=track_id))
 
       if idx not in self.pts:
-        self.pts[idx] = structs.RadarData.RadarPoint(measured=True, aRel=float('nan'), yvRel=float('nan'))
+        self.pts[idx] = structs.RadarData.RadarPoint()
 
       self.pts[idx].dRel = min_dRel
       self.pts[idx].yRel = yRel

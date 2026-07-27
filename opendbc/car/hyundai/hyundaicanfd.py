@@ -1,7 +1,8 @@
-import copy
 import numpy as np
 from opendbc.car import CanBusBase
+from opendbc.car.crc import CRC16_XMODEM
 from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.sunnypilot.car.hyundai.lead_data_ext import CanFdLeadData
 
 
 class CanBus(CanBusBase):
@@ -9,7 +10,7 @@ class CanBus(CanBusBase):
     super().__init__(CP, fingerprint)
 
     if lka_steering is None:
-      lka_steering = CP.flags & HyundaiFlags.CANFD_LKA_STEERING.value if CP is not None else False
+      lka_steering = CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG.value if CP is not None else False
 
     # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. LKA steering cars
     # have a different harness than the LFA steering variants in order to split
@@ -35,34 +36,42 @@ class CanBus(CanBusBase):
     return self._cam
 
 
-def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon):
-  common_values = {
-    "LKA_MODE": 2,
-    "LKA_ICON": lkas_icon,
-    "TORQUE_REQUEST": apply_torque,
-    "LKA_ASSIST": 0,
-    "STEER_REQ": 1 if lat_active else 0,
-    "STEER_MODE": 0,
-    "HAS_LANE_SAFETY": 0,  # hide LKAS settings
-    "NEW_SIGNAL_2": 0,
+def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon):
+  values = {
+    "LKA_OptUsmSta": 2,
+    "LKA_SysIndReq": 2 if enabled else 1,
+    "StrTqReqVal": apply_torque,
+    "LKA_SysWrn": 0,
+    "ActToiSta": 1 if lat_active else 0,
+    "LKA_UsmMod": 0,  # hide LKAS settings
+    "LKA_RcgSta": 0,  # lane recognition status (0 for "not recognized")
+    "Damping_Gain": 100,  # can potentially tuned for better perf [3, 200]
   }
 
-  lkas_values = copy.copy(common_values)
-  lkas_values["LKA_AVAILABLE"] = 0
-
-  lfa_values = copy.copy(common_values)
-  lfa_values["NEW_SIGNAL_1"] = 0
+  # Angle control doesn't support using LFA yet
+  if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+    # LKAS messages take priority over LFA messages on HDA2.
+    values |= {
+      "LKA_OptUsmSta": 0,  # TODO: not used by the stock system
+      "StrTqReqVal": 0,  # we don't use torque
+      "ActToiSta": 0,  # we don't use torque
+      "LKA_RcgSta": 3 if lat_active else 0,
+      "ADAS_StrAnglReqVal": apply_angle,
+      "LKAS_ANGLE_ACTIVE": 2 if lat_active else 1,
+      "ADAS_ACIAnglTqRedcGainVal": apply_torque if lat_active else 0,
+    }
 
   ret = []
-  if CP.flags & HyundaiFlags.CANFD_LKA_STEERING:
-    lkas_msg = "LKAS_ALT" if CP.flags & HyundaiFlags.CANFD_LKA_STEERING_ALT else "LKAS"
+  if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+    lkas_msg = "LKAS_ALT" if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS"
     if CP.openpilotLongitudinalControl:
-      ret.append(packer.make_can_msg("LFA", CAN.ECAN, lfa_values))
-    ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, lkas_values))
+      ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
+    ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, values))
   else:
-    ret.append(packer.make_can_msg("LFA", CAN.ECAN, lfa_values))
+    ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
 
   return ret
+
 
 def create_suppress_lfa(packer, CAN, lfa_block_msg, lka_steering_alt):
   suppress_msg = "CAM_0x362" if lka_steering_alt else "CAM_0x2a4"
@@ -76,6 +85,7 @@ def create_suppress_lfa(packer, CAN, lfa_block_msg, lka_steering_alt):
   values["RIGHT_LANE_LINE"] = 0
   return packer.make_can_msg(suppress_msg, CAN.ACAN, values)
 
+
 def create_buttons(packer, CP, CAN, cnt, btn):
   values = {
     "COUNTER": cnt,
@@ -83,11 +93,14 @@ def create_buttons(packer, CP, CAN, cnt, btn):
     "CRUISE_BUTTONS": btn,
   }
 
-  bus = CAN.ECAN if CP.flags & HyundaiFlags.CANFD_LKA_STEERING else CAN.CAM
+  bus = CAN.ECAN if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG else CAN.CAM
   return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
 
+
 def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
-  # TODO: why do we copy different values here?
+  # CAN FD camera-based SCC requires additional signals to be preserved
+  # verbatim from the previous SCC_CONTROL frame to avoid checksum or
+  # state validation faults. Classic CAN SCC only validates a subset.
   if CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value:
     values = {s: cruise_info_copy[s] for s in [
       "COUNTER",
@@ -116,6 +129,7 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
   })
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
+
 def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
   values = {
     "HDA_ICON": 1 if enabled else 0,
@@ -125,7 +139,7 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
 
 
 def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed, hud_control,
-                       main_cruise_enabled, tuning):
+                       lead_data: CanFdLeadData, main_cruise_enabled, tuning):
   jerk = 5
   jn = jerk / 50
   if not enabled or gas_override:
@@ -144,9 +158,10 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "JerkLowerLimit": tuning.jerk_lower,
     "JerkUpperLimit": tuning.jerk_upper,
 
-    "ACC_ObjDist": 1,
-    "ObjValid": 0,
-    "OBJ_STATUS": 2,
+    "ACC_ObjDist": int(lead_data.lead_distance),
+    "ACC_ObjRelSpd": lead_data.lead_rel_speed,
+    "ObjValid": int(not lead_data.lead_visible),
+    "SCC_ObjSta": 0 if not (enabled and lead_data.lead_visible) else (1 if gas_override else 2),
     "SET_ME_2": 0x4,
     "SET_ME_3": 0x3,
     "SET_ME_TMP_64": 0x64,
@@ -232,3 +247,20 @@ def create_adrv_messages(packer, CAN, frame):
     ret.append(packer.make_can_msg("ADRV_0x1da", CAN.ECAN, values))
 
   return ret
+
+
+def hkg_can_fd_checksum(address: int, sig, d: bytearray) -> int:
+  crc = 0
+  for i in range(2, len(d)):
+    crc = ((crc << 8) ^ CRC16_XMODEM[(crc >> 8) ^ d[i]]) & 0xFFFF
+  crc = ((crc << 8) ^ CRC16_XMODEM[(crc >> 8) ^ ((address >> 0) & 0xFF)]) & 0xFFFF
+  crc = ((crc << 8) ^ CRC16_XMODEM[(crc >> 8) ^ ((address >> 8) & 0xFF)]) & 0xFFFF
+  if len(d) == 8:
+    crc ^= 0x5F29
+  elif len(d) == 16:
+    crc ^= 0x041D
+  elif len(d) == 24:
+    crc ^= 0x819D
+  elif len(d) == 32:
+    crc ^= 0x9F5B
+  return crc

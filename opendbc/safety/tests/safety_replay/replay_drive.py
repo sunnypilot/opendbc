@@ -11,13 +11,16 @@ from opendbc.safety.tests.safety_replay.helpers import package_can_msg, init_seg
 
 # Define debug variables and their getter methods
 DEBUG_VARS = {
-  'lat_active': lambda safety: safety.get_lat_active(),
   'controls_allowed': lambda safety: safety.get_controls_allowed(),
-  'controls_requested_lat': lambda safety: safety.get_controls_requested_lat(),
-  'controls_allowed_lat': lambda safety: safety.get_controls_allowed_lat(),
+  'controls_allowed_lateral': lambda safety: safety.get_controls_allowed_lateral(),
+  'longitudinal_tx_allowed': lambda safety: safety.get_longitudinal_allowed(),
+  'controls_requested_lateral': lambda safety: safety.get_controls_requested_lateral(),
   'current_disengage_reason': lambda safety: safety.mads_get_current_disengage_reason(),
   'stock_acc_main': lambda safety: safety.get_acc_main_on(),
   'mads_acc_main': lambda safety: safety.get_mads_acc_main(),
+  'desired_angle_last': lambda safety: safety.get_desired_angle_last(),
+  'angle_meas_min': lambda safety: safety.get_angle_meas_min(),
+  'angle_meas_max': lambda safety: safety.get_angle_meas_max(),
 }
 
 
@@ -42,7 +45,8 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
 
   init_segment(safety, msgs, safety_mode, param)
 
-  rx_tot, rx_invalid, tx_tot, tx_blocked, tx_controls, tx_controls_lat, tx_controls_blocked, tx_controls_lat_blocked, mads_mismatch = 0, 0, 0, 0, 0, 0, 0, 0, 0
+  rx_tot, rx_invalid, tx_tot, tx_blocked, tx_controls, tx_controls_lateral, tx_controls_blocked, tx_controls_lateral_blocked = 0, 0, 0, 0, 0, 0, 0, 0
+  mads_mismatch = 0
   safety_tick_rx_invalid = False
   blocked_addrs = Counter()
   invalid_addrs = set()
@@ -66,21 +70,20 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
 
     if msg.which() == 'sendcan':
       for canmsg in msg.sendcan:
-        to_send = package_can_msg(canmsg)
-        sent = safety.safety_tx_hook(to_send)
+        _msg = package_can_msg(canmsg)
+        sent = safety.safety_tx_hook(_msg)
 
-        # mismatched
-        if (safety.get_controls_allowed() and not safety.get_controls_allowed_lat()):
+        # mismatch: with MADS enabled, stock controls_allowed went true but MADS didn't follow on lateral
+        if safety.get_enable_mads() and safety.get_controls_allowed() and not safety.get_controls_allowed_lateral():
           mads_mismatch += 1
-          print(f"controls allowed but not controls allowed lat [{mads_mismatch}]")
+          print(f"controls_allowed but not controls_allowed_lateral [{mads_mismatch}]")
           print(f"msg:{canmsg.address} ({hex(canmsg.address)})")
           for var, getter in DEBUG_VARS.items():
             print(f"  {var}: {getter(safety)}")
-
         if not sent:
           tx_blocked += 1
           tx_controls_blocked += safety.get_controls_allowed()
-          tx_controls_lat_blocked += safety.get_controls_allowed_lat()
+          tx_controls_lateral_blocked += safety.get_controls_allowed_lateral()
           blocked_addrs[canmsg.address] += 1
 
           carlog.debug("blocked bus %d msg %d at %f" % (canmsg.src, canmsg.address, (msg.logMonoTime - start_t) / 1e9))
@@ -89,17 +92,27 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
             last_good = last_good_states[canmsg.address]
             print(f"\nBlocked message at {(msg.logMonoTime - start_t) / 1e9:.3f}s:")
             print(f"Address: {hex(canmsg.address)} (bus {canmsg.src})")
-            print("Current state:")
+
+            # Header with tab-separated columns
+            print("\nVariable\t\tLast Good State\t\tCurrent State")
+            print("-" * 80)
+
             for var, getter in DEBUG_VARS.items():
-              print(f"  {var}: {getter(safety)}")
+              current_val = getter(safety)
+              last_val = last_good[var] if last_good['timestamp'] is not None else "N/A"
+
+              # Align columns based on variable name length
+              tab_count = 1 if len(var) >= 16 else 2  # crude spacing control
+              tabs = '\t' * tab_count
+              print(f"{var}{tabs}\t{last_val}\t\t{current_val}")
 
             if last_good['timestamp'] is not None:
-              print(f"\nLast good state ({last_good['timestamp']:.3f}s):")
-              for var in DEBUG_VARS:
-                print(f"  {var}: {last_good[var]}")
+              print(f"\nLast good timestamp: {last_good['timestamp']:.3f}s")
             else:
               print("\nNo previous good state found for this address")
+
             print("-" * 80)
+
         else:  # Update last good state if message is allowed
           last_good_states[canmsg.address].update({
             'timestamp': (msg.logMonoTime - start_t) / 1e9,
@@ -107,14 +120,14 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
           })
 
         tx_controls += safety.get_controls_allowed()
-        tx_controls_lat += safety.get_controls_allowed_lat()
+        tx_controls_lateral += safety.get_controls_allowed_lateral()
         tx_tot += 1
     elif msg.which() == 'can':
       # ignore msgs we sent
       for canmsg in filter(lambda m: m.src < 128, msg.can):
         safety.safety_fwd_hook(canmsg.src, canmsg.address)
-        to_push = package_can_msg(canmsg)
-        recv = safety.safety_rx_hook(to_push)
+        _msg = package_can_msg(canmsg)
+        recv = safety.safety_rx_hook(_msg)
         if not recv:
           rx_invalid += 1
           invalid_addrs.add(canmsg.address)
@@ -127,15 +140,21 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
   print("invalid addrs:", invalid_addrs)
   print("\nTX")
   print("total openpilot msgs:", tx_tot)
-  print("total msgs with controls allowed:", tx_controls)
-  print("total msgs with controls_lat allowed:", tx_controls_lat)
+  print("total msgs with controls_allowed:", tx_controls)
+  print("total msgs with controls_allowed_lateral:", tx_controls_lateral)
   print("blocked msgs:", tx_blocked)
-  print("blocked with controls allowed:", tx_controls_blocked)
-  print("blocked with controls_lat allowed:", tx_controls_lat_blocked)
+  print("blocked with controls_allowed:", tx_controls_blocked)
+  print("blocked with controls_allowed_lateral:", tx_controls_lateral_blocked)
   print("blocked addrs:", blocked_addrs)
+  print("\nMADS")
   print("mads enabled:", safety.get_enable_mads())
+  print("controls_allowed_lateral (mads):", safety.get_controls_allowed_lateral())
+  print("longitudinal_tx_allowed (controls_allowed && !gas_pressed):", safety.get_longitudinal_allowed())
+  print("mads mismatch (mads_enabled && controls_allowed && !controls_allowed_lateral):", mads_mismatch)
 
-  return tx_controls_blocked == 0 and tx_controls_lat_blocked == 0 and rx_invalid == 0 and not safety_tick_rx_invalid
+  return tx_controls_blocked == 0 and tx_controls_lateral_blocked == 0 and rx_invalid == 0 and \
+         not safety_tick_rx_invalid and mads_mismatch == 0
+
 
 if __name__ == "__main__":
   from openpilot.tools.lib.logreader import LogReader

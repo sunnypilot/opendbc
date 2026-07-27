@@ -6,12 +6,8 @@ import os
 import capnp
 from opendbc.car.common.basedir import BASEDIR
 
-# TODO: remove car from cereal/__init__.py and always import from opendbc
-try:
-  from cereal import car
-except ImportError:
-  capnp.remove_import_hook()
-  car = capnp.load(os.path.join(BASEDIR, "car.capnp"))
+capnp.remove_import_hook()
+car = capnp.load(os.path.join(BASEDIR, "car.capnp"), imports=[BASEDIR])
 
 CarState = car.CarState
 RadarData = car.RadarData
@@ -63,6 +59,9 @@ class StrEnum(_StrEnum):
 class CarParamsSP:
   flags: int = auto_field()        # flags for car specific quirks
   safetyParam: int = auto_field()  # flags for custom safety flags
+  pcmCruiseSpeed: bool = auto_field()
+  intelligentCruiseButtonManagementAvailable: bool = auto_field()
+  enableGasInterceptor: bool = auto_field()
 
   neuralNetworkLateralControl: 'CarParamsSP.NeuralNetworkLateralControl' = field(default_factory=lambda: CarParamsSP.NeuralNetworkLateralControl())
 
@@ -95,16 +94,75 @@ class ModularAssistiveDrivingSystem:
 
 
 @auto_dataclass
+class IntelligentCruiseButtonManagement:
+  state: 'IntelligentCruiseButtonManagement.IntelligentCruiseButtonManagementState' = field(
+    default_factory=lambda: IntelligentCruiseButtonManagement.IntelligentCruiseButtonManagementState.inactive
+  )
+  sendButton: 'IntelligentCruiseButtonManagement.SendButtonState' = field(
+    default_factory=lambda: IntelligentCruiseButtonManagement.SendButtonState.none
+  )
+  vTarget: float = auto_field()
+
+  class IntelligentCruiseButtonManagementState(StrEnum):
+    inactive = auto()
+    preActive = auto()
+    increasing = auto()
+    decreasing = auto()
+    holding = auto()
+
+  class SendButtonState(StrEnum):
+    none = auto()
+    increase = auto()
+    decrease = auto()
+
+
+@auto_dataclass
+class LeadData:
+  dRel: float = auto_field()
+  yRel: float = auto_field()
+  vRel: float = auto_field()
+  aRel: float = auto_field()
+  vLead: float = auto_field()
+  dPath: float = auto_field()
+  vLat: float = auto_field()
+  vLeadK: float = auto_field()
+  aLeadK: float = auto_field()
+  fcw: bool = auto_field()
+  status: bool = auto_field()
+  aLeadTau: float = auto_field()
+  modelProb: float = auto_field()
+  radar: bool = auto_field()
+  radarTrackId: int = auto_field()
+
+  aLeadDEPRECATED: float = auto_field()
+
+
+@auto_dataclass
 class CarControlSP:
   mads: 'ModularAssistiveDrivingSystem' = field(default_factory=lambda: ModularAssistiveDrivingSystem())
   params: list['CarControlSP.Param'] = auto_field()
+  leadOne: 'LeadData' = field(default_factory=lambda: LeadData())
+  leadTwo: 'LeadData' = field(default_factory=lambda: LeadData())
+  intelligentCruiseButtonManagement: 'IntelligentCruiseButtonManagement' = field(default_factory=lambda: IntelligentCruiseButtonManagement())
 
   @auto_dataclass
   class Param:
     key: str = auto_field()
-    value: str = auto_field()
+    value: bytes = auto_field()
+    type: 'CarControlSP.ParamType' = field(
+      default_factory=lambda: CarControlSP.ParamType.string
+    )
+
+  class ParamType(StrEnum):
+    string = auto()
+    bool = auto()
+    int = auto()
+    float = auto()
+    time = auto()
+    json = auto()
+    bytes = auto()
 
 
 @auto_dataclass
 class CarStateSP:
-  pass
+  speedLimit: float = auto_field()

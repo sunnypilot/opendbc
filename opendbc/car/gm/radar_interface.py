@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import math
-from opendbc.can.parser import CANParser
+from opendbc.can import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.gm.values import DBC, CanBus
@@ -46,7 +46,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.rcp is None:
       return super().update(None)
 
-    vls = self.rcp.update_strings(can_strings)
+    vls = self.rcp.update(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:
@@ -87,8 +87,6 @@ class RadarInterface(RadarInterfaceBase):
         # From driver's pov, left is positive
         self.pts[targetId].yRel = math.sin(cpt['TrkAzimuth'] * CV.DEG_TO_RAD) * distance
         self.pts[targetId].vRel = cpt['TrkRangeRate']
-        self.pts[targetId].aRel = float('nan')
-        self.pts[targetId].yvRel = float('nan')
 
     for oldTarget in list(self.pts.keys()):
       if oldTarget not in currentTargets:

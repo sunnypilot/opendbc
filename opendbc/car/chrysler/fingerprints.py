@@ -1,7 +1,8 @@
+""" AUTO-FORMATTED USING opendbc/car/debug/format_fingerprints.py, EDIT STRUCTURE THERE."""
 from opendbc.car.structs import CarParams
 from opendbc.car.chrysler.values import CAR
 
-from opendbc.sunnypilot.car.fw_versions_ext import merge_fw_versions
+from opendbc.sunnypilot.car.fingerprints_ext import merge_fw_versions
 from opendbc.sunnypilot.car.chrysler.fingerprints_ext import FW_VERSIONS_EXT
 
 Ecu = CarParams.Ecu
@@ -211,6 +212,8 @@ FW_VERSIONS = {
       b'68529064AB',
       b'68594990AB',
       b'68594990AD',
+      b'68594990AE',
+      b'68594991AB',
     ],
     (Ecu.srs, 0x744, None): [
       b'68405567AB',
@@ -236,8 +239,10 @@ FW_VERSIONS = {
       b'68525339AA',
       b'68525339AB',
       b'68594341AB',
+      b'68594341AC',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'05190392AB ',
       b'68416680AD ',
       b'68416680AE ',
       b'68416680AF ',
@@ -273,6 +278,27 @@ FW_VERSIONS = {
       b'68597647AF',
       b'68632416AB',
       b'68632416AC',
+      b'68676877AB',
+    ],
+  },
+  CAR.JEEP_CHEROKEE_5TH_GEN: {
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'68492643AC',
+    ],
+    (Ecu.srs, 0x18dac0f1, None): [
+      b'68469498AA',
+    ],
+    (Ecu.abs, 0x18da28f1, None): [
+      b'68477674AB',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'68319152AJ',
+    ],
+    (Ecu.engine, 0x18da10f1, None): [
+      b'68493558AD ',
+    ],
+    (Ecu.transmission, 0x18da18f1, None): [
+      b'68492011AD',
     ],
   },
   CAR.JEEP_GRAND_CHEROKEE: {
@@ -288,11 +314,13 @@ FW_VERSIONS = {
       b'68331687AC',
       b'68331690AC',
       b'68340272AD',
+      b'68353314AD',
     ],
     (Ecu.srs, 0x744, None): [
       b'68309533AA',
       b'68316742AB',
       b'68355363AB',
+      b'68367618AA',
     ],
     (Ecu.abs, 0x747, None): [
       b'68252642AG',
@@ -312,9 +340,11 @@ FW_VERSIONS = {
       b'68321646AC',
       b'68321648AC',
       b'68321650AC',
+      b'68367342AA',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'05035920AE ',
+      b'05036124AE ',
       b'68252272AG ',
       b'68284455AI ',
       b'68284456AI ',
@@ -329,6 +359,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'05035517AH',
+      b'05035520AE',
       b'68253222AF',
       b'68311218AC',
       b'68311218AD',
@@ -348,6 +379,7 @@ FW_VERSIONS = {
       b'68402707AB',
       b'68402708AB',
       b'68402714AB',
+      b'68402736AB',
       b'68402971AD',
       b'68454144AD',
       b'68454145AB',
@@ -376,6 +408,7 @@ FW_VERSIONS = {
       b'68417279AA',
       b'68417280AA',
       b'68417281AA',
+      b'68417283AA',
       b'68453431AA',
       b'68453433AA',
       b'68453435AA',
@@ -388,7 +421,9 @@ FW_VERSIONS = {
       b'05035674AB ',
       b'68412635AE ',
       b'68412635AG ',
+      b'68412635AH ',
       b'68412660AD ',
+      b'68412660AF ',
       b'68422860AB',
       b'68449435AE ',
       b'68496223AA ',
@@ -400,6 +435,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'05035707AA',
       b'68419672AC',
+      b'68419675AC',
       b'68419678AB',
       b'68423905AB',
       b'68449258AC',

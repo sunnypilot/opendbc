@@ -1,6 +1,6 @@
 #pragma once
 
-#include "opendbc/safety/safety_declarations.h"
+#include "opendbc/safety/declarations.h"
 
 // Stock longitudinal
 #define TOYOTA_BASE_TX_MSGS \
@@ -14,7 +14,7 @@
 #define TOYOTA_COMMON_SECOC_TX_MSGS \
   TOYOTA_BASE_TX_MSGS \
   {0x2E4, 0, 8, .check_relay = true}, {0x131, 0, 8, .check_relay = true}, \
-  {0x343, 0, 8, .check_relay = false},  /* ACC cancel cmd */  \
+  {0x343, 0, 8, .check_relay = false},  /* ACC cancel cmd */ \
 
 #define TOYOTA_COMMON_LONG_TX_MSGS \
   TOYOTA_COMMON_TX_MSGS \
@@ -31,36 +31,39 @@
   /* ACC */                            \
   {0x343, 0, 8, .check_relay = true},  \
 
-#define TOYOTA_COMMON_SECOC_LONG_TX_MSGS                    \
-  TOYOTA_COMMON_SECOC_TX_MSGS                               \
-  {0x343, 0, 8, .check_relay = true},  /* ACC */            \
-  {0x183, 0, 8, .check_relay = true},  /* ACC_CONTROL_2 */  \
+#define TOYOTA_COMMON_SECOC_LONG_TX_MSGS \
+  TOYOTA_COMMON_SECOC_TX_MSGS \
+  {0x343, 0, 8, .check_relay = true}, \
+  {0x183, 0, 8, .check_relay = true},  /* ACC_CONTROL_2 */ \
 
 #define TOYOTA_COMMON_RX_CHECKS(lta)                                                                                                       \
-  {.msg = {{ 0xaa, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 83U}, { 0 }, { 0 }}},  \
-  {.msg = {{0x260, 0, 8, .ignore_counter = true, .ignore_quality_flag=!(lta), .frequency = 50U}, { 0 }, { 0 }}},                           \
+  {.msg = {{ 0xaa, 0, 8, 83U, .ignore_checksum = true, .ignore_counter = true}, { 0 }, { 0 }}},      \
+  {.msg = {{0x260, 0, 8, 50U, .ignore_counter = true, .ignore_quality_flag=!(lta)}, { 0 }, { 0 }}},  \
 
 #define TOYOTA_RX_CHECKS(lta)                                                                                                               \
   TOYOTA_COMMON_RX_CHECKS(lta)                                                                                                              \
-  {.msg = {{0x1D2, 0, 8, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 33U}, { 0 }, { 0 }}},                            \
-  {.msg = {{0x226, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 40U},  { 0 }, { 0 }}},  \
+  {.msg = {{0x1D2, 0, 8, 33U, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},                            \
+  {.msg = {{0x226, 0, 8, 40U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true},  { 0 }, { 0 }}},  \
 
 #define TOYOTA_ALT_BRAKE_RX_CHECKS(lta)                                                                                                    \
   TOYOTA_COMMON_RX_CHECKS(lta)                                                                                                             \
-  {.msg = {{0x1D2, 0, 8, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 33U}, { 0 }, { 0 }}},                           \
-  {.msg = {{0x224, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 40U}, { 0 }, { 0 }}},  \
+  {.msg = {{0x1D2, 0, 8, 33U, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},                           \
+  {.msg = {{0x224, 0, 8, 40U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
 
 #define TOYOTA_SECOC_RX_CHECKS                                                                                                             \
   TOYOTA_COMMON_RX_CHECKS(false)                                                                                                           \
-  {.msg = {{0x176, 0, 8, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 32U}, { 0 }, { 0 }}},                           \
-  {.msg = {{0x116, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 42U}, { 0 }, { 0 }}},  \
-  {.msg = {{0x101, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 50U}, { 0 }, { 0 }}},  \
+  {.msg = {{0x176, 0, 8, 32U, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},                           \
+  {.msg = {{0x116, 0, 8, 42U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
+  {.msg = {{0x101, 0, 8, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
 
 #define TOYOTA_PCM_CRUISE_2_ADDR_CHECK                                                                                                     \
   {.msg = {{0x1D3, 0, 8, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 33U}, { 0 }, { 0 }}},  \
 
 #define TOYOTA_DSU_CRUISE_ADDR_CHECK                                                                                                      \
-  {.msg = {{0x365, 0, 7, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 5U}, { 0 }, { 0 }}},  \
+  {.msg = {{0x365, 0, 7, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .frequency = 5U, .ignore_frequency_check = true}, { 0 }, { 0 }}},  \
+
+#define TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK                                                   \
+  {.msg = {{0x201, 0, 6, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
 
 static bool toyota_secoc = false;
 static bool toyota_alt_brake = false;
@@ -68,45 +71,52 @@ static bool toyota_stock_longitudinal = false;
 static bool toyota_lta = false;
 static int toyota_dbc_eps_torque_factor = 100;   // conversion factor for STEER_TORQUE_EPS in %: see dbc file
 
-static uint32_t toyota_compute_checksum(const CANPacket_t *to_push) {
-  int addr = GET_ADDR(to_push);
-  int len = GET_LEN(to_push);
-  uint8_t checksum = (uint8_t)(addr) + (uint8_t)((unsigned int)(addr) >> 8U) + (uint8_t)(len);
+static uint32_t toyota_compute_checksum(const CANPacket_t *msg) {
+  int len = GET_LEN(msg);
+  uint8_t checksum = (uint8_t)(msg->addr) + (uint8_t)((unsigned int)(msg->addr) >> 8U) + (uint8_t)(len);
   for (int i = 0; i < (len - 1); i++) {
-    checksum += (uint8_t)GET_BYTE(to_push, i);
+    checksum += (uint8_t)msg->data[i];
   }
   return checksum;
 }
 
-static uint32_t toyota_get_checksum(const CANPacket_t *to_push) {
-  int checksum_byte = GET_LEN(to_push) - 1U;
-  return (uint8_t)(GET_BYTE(to_push, checksum_byte));
+static uint32_t toyota_get_checksum(const CANPacket_t *msg) {
+  int checksum_byte = GET_LEN(msg) - 1U;
+  return (uint8_t)(msg->data[checksum_byte]);
 }
 
-static bool toyota_get_quality_flag_valid(const CANPacket_t *to_push) {
-  int addr = GET_ADDR(to_push);
-
+static bool toyota_get_quality_flag_valid(const CANPacket_t *msg) {
   bool valid = false;
-  if (addr == 0x260) {
-    valid = !GET_BIT(to_push, 3U);  // STEER_ANGLE_INITIALIZING
+  if (msg->addr == 0x260U) {
+    valid = !GET_BIT(msg, 3U);  // STEER_TORQUE_SENSOR.STEER_ANGLE_INITIALIZING
+  } else if (msg->addr == 0xaaU) {  // WHEEL_SPEEDS
+    // each wheel speed is 1-bit fault + 15-bit speed
+    valid = true;
+    for (uint8_t i = 0U; i < 4U; i += 1U) {
+      if (GET_BIT(msg, (i * 16U) + 7U)) {  // WHEEL_SPEED_xx_FAULT
+        valid = false;
+        break;
+      }
+    }
+  } else {
   }
   return valid;
 }
 
-static int toyota_get_longitudinal_desired_accel_tx(const CANPacket_t *to_send) {
-  int desired_accel = (GET_BYTE(to_send, 0) << 8) | GET_BYTE(to_send, 1);
-  desired_accel = to_signed(desired_accel, 16);
+static int TOYOTA_GET_INTERCEPTOR(const CANPacket_t *msg) {
+  uint16_t val1 = (uint16_t)((uint16_t)msg->data[0] << 8U) | (uint16_t)msg->data[1];
+  uint16_t val2 = (uint16_t)((uint16_t)msg->data[2] << 8U) | (uint16_t)msg->data[3];
+  uint16_t avg  = (uint16_t)((val1 + val2) / 2U);
 
-  return desired_accel;
+  return (int)avg;
 }
 
-static void toyota_rx_hook(const CANPacket_t *to_push) {
-  if (GET_BUS(to_push) == 0U) {
-    int addr = GET_ADDR(to_push);
+static void toyota_rx_hook(const CANPacket_t *msg) {
+  if (msg->bus == 0U) {
 
     // get eps motor torque (0.66 factor in dbc)
-    if (addr == 0x260) {
-      int torque_meas_new = (GET_BYTE(to_push, 5) << 8) | GET_BYTE(to_push, 6);
+    if (msg->addr == 0x260U) {
+      int torque_meas_new = (msg->data[5] << 8) | msg->data[6];
       torque_meas_new = to_signed(torque_meas_new, 16);
 
       // scale by dbc_factor
@@ -120,15 +130,15 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
       torque_meas.max++;
 
       // driver torque for angle limiting
-      int torque_driver_new = (GET_BYTE(to_push, 1) << 8) | GET_BYTE(to_push, 2);
+      int torque_driver_new = (msg->data[1] << 8) | msg->data[2];
       torque_driver_new = to_signed(torque_driver_new, 16);
       update_sample(&torque_driver, torque_driver_new);
 
       // LTA request angle should match current angle while inactive, clipped to max accepted angle.
       // note that angle can be relative to init angle on some TSS2 platforms, LTA has the same offset
-      bool steer_angle_initializing = GET_BIT(to_push, 3U);
+      bool steer_angle_initializing = GET_BIT(msg, 3U);
       if (!steer_angle_initializing) {
-        int angle_meas_new = (GET_BYTE(to_push, 3) << 8U) | GET_BYTE(to_push, 4);
+        int angle_meas_new = (msg->data[3] << 8U) | msg->data[4];
         angle_meas_new = to_signed(angle_meas_new, 16);
         update_sample(&angle_meas, angle_meas_new);
       }
@@ -138,36 +148,39 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
     // exit controls on rising edge of gas press, if not alternative experience
     // exit controls on rising edge of brake press
     if (toyota_secoc) {
-      if (addr == 0x176) {
-        bool cruise_engaged = GET_BIT(to_push, 5U);  // PCM_CRUISE.CRUISE_ACTIVE
+      if (msg->addr == 0x176U) {
+        bool cruise_engaged = GET_BIT(msg, 5U);  // PCM_CRUISE.CRUISE_ACTIVE
         pcm_cruise_check(cruise_engaged);
       }
-      if (addr == 0x116) {
-        gas_pressed = GET_BYTE(to_push, 1) != 0U;  // GAS_PEDAL.GAS_PEDAL_USER
+      if (msg->addr == 0x116U) {
+        gas_pressed = msg->data[1] != 0U;  // GAS_PEDAL.GAS_PEDAL_USER
       }
-      if (addr == 0x101) {
-        brake_pressed = GET_BIT(to_push, 3U);  // BRAKE_MODULE.BRAKE_PRESSED (toyota_rav4_prime_generated.dbc)
+      if (msg->addr == 0x101U) {
+        brake_pressed = GET_BIT(msg, 3U);  // BRAKE_MODULE.BRAKE_PRESSED (toyota_rav4_prime_generated.dbc)
       }
     } else {
-      if (addr == 0x1D2) {
-        bool cruise_engaged = GET_BIT(to_push, 5U);  // PCM_CRUISE.CRUISE_ACTIVE
+      if (msg->addr == 0x1D2U) {
+        bool cruise_engaged = GET_BIT(msg, 5U);  // PCM_CRUISE.CRUISE_ACTIVE
         pcm_cruise_check(cruise_engaged);
-        gas_pressed = !GET_BIT(to_push, 4U);  // PCM_CRUISE.GAS_RELEASED
+
+        if (!enable_gas_interceptor) {
+          gas_pressed = !GET_BIT(msg, 4U);  // PCM_CRUISE.GAS_RELEASED
+        }
       }
-      if (!toyota_alt_brake && (addr == 0x226)) {
-        brake_pressed = GET_BIT(to_push, 37U);  // BRAKE_MODULE.BRAKE_PRESSED (toyota_nodsu_pt_generated.dbc)
+      if (!toyota_alt_brake && (msg->addr == 0x226U)) {
+        brake_pressed = GET_BIT(msg, 37U);  // BRAKE_MODULE.BRAKE_PRESSED (toyota_nodsu_pt_generated.dbc)
       }
-      if (toyota_alt_brake && (addr == 0x224)) {
-        brake_pressed = GET_BIT(to_push, 5U);  // BRAKE_MODULE.BRAKE_PRESSED (toyota_new_mc_pt_generated.dbc)
+      if (toyota_alt_brake && (msg->addr == 0x224U)) {
+        brake_pressed = GET_BIT(msg, 5U);  // BRAKE_MODULE.BRAKE_PRESSED (toyota_new_mc_pt_generated.dbc)
       }
     }
 
     // sample speed
-    if (addr == 0xaa) {
+    if (msg->addr == 0xaaU) {
       int speed = 0;
       // sum 4 wheel speeds. conversion: raw * 0.01 - 67.67
       for (uint8_t i = 0U; i < 8U; i += 2U) {
-        int wheel_speed = (GET_BYTE(to_push, i) << 8U) | GET_BYTE(to_push, (i + 1U));
+        int wheel_speed = ((msg->data[i] & 0x7FU) << 8U) | msg->data[(i + 1U)];
         speed += wheel_speed - 6767;
       }
       // check that all wheel speeds are at zero value
@@ -176,17 +189,30 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
       UPDATE_VEHICLE_SPEED(speed / 4.0 * 0.01 * KPH_TO_MS);
     }
 
-    if (addr == 0x1D3) {
-      acc_main_on = GET_BIT(to_push, 15U);
+    if (msg->addr == 0x1D3U) {
+      acc_main_on = GET_BIT(msg, 15U);
     }
 
-    if (addr == 0x365) {
-      acc_main_on = GET_BIT(to_push, 0U);
+    if (msg->addr == 0x365U) {
+      acc_main_on = GET_BIT(msg, 0U);
+    }
+
+    // sample gas interceptor
+    if (msg->addr == 0x201U) {
+      // panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
+      // If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
+      // Threshold calculated from DBC gains: round((((15 + 75.555) / 0.159375) + ((15 + 151.111) / 0.159375)) / 2) = 805
+      const int toyota_gas_interceptor_thrsld = 805;
+
+      int gas_interceptor = TOYOTA_GET_INTERCEPTOR(msg);
+      gas_pressed = gas_interceptor > toyota_gas_interceptor_thrsld;
+
+      gas_interceptor_prev = gas_interceptor;
     }
   }
 }
 
-static bool toyota_tx_hook(const CANPacket_t *to_send) {
+static bool toyota_tx_hook(const CANPacket_t *msg) {
   const TorqueSteeringLimits TOYOTA_TORQUE_STEERING_LIMITS = {
     .max_torque = 1500,
     .max_rate_up = 15,          // ramp up slow
@@ -197,9 +223,9 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
 
     // the EPS faults when the steering angle rate is above a certain threshold for too long. to prevent this,
     // we allow setting STEER_REQUEST bit to 0 while maintaining the requested torque value for a single frame
-    .min_valid_request_frames = 18,
+    .min_valid_request_frames = 17,
     .max_invalid_request_frames = 1,
-    .min_valid_request_rt_interval = 171000,  // 171ms; a ~10% buffer on cutting every 19 frames
+    .min_valid_request_rt_interval = 162000,  // 162ms; a ~10% buffer on cutting every 18 frames
     .has_steer_req_tolerance = true,
   };
 
@@ -228,28 +254,27 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
   };
 
   bool tx = true;
-  int addr = GET_ADDR(to_send);
-  int bus = GET_BUS(to_send);
 
   // Check if msg is sent on BUS 0
-  if (bus == 0) {
+  if (msg->bus == 0U) {
     // ACCEL: safety check on byte 1-2
-    if (addr == 0x343) {
-      int desired_accel = toyota_get_longitudinal_desired_accel_tx(to_send);
+    if (msg->addr == 0x343U) {
+      int desired_accel = (msg->data[0] << 8) | msg->data[1];
+      desired_accel = to_signed(desired_accel, 16);
 
       bool violation = false;
+      if (toyota_secoc) {
+        // SecOC cars move accel to 0x183. Only allow inactive accel on 0x343 to match stock behavior
+        violation = desired_accel != TOYOTA_LONG_LIMITS.inactive_accel;
+      }
       violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
 
       // only ACC messages that cancel are allowed when openpilot is not controlling longitudinal
       if (toyota_stock_longitudinal) {
-        bool cancel_req = GET_BIT(to_send, 24U);
+        bool cancel_req = GET_BIT(msg, 24U);
         if (!cancel_req) {
           violation = true;
         }
-      }
-
-      // block ACC messages when openpilot is not controlling longitudinal or is a SecOC car
-      if (toyota_stock_longitudinal || toyota_secoc) {
         if (desired_accel != TOYOTA_LONG_LIMITS.inactive_accel) {
           violation = true;
         }
@@ -260,34 +285,29 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
       }
     }
 
-    // ACCEL: safety check on byte 1-2 for SecOC car
-    if (addr == 0x183) {
-      int desired_accel = toyota_get_longitudinal_desired_accel_tx(to_send);
+    if (msg->addr == 0x183U) {
+      int desired_accel = (msg->data[0] << 8) | msg->data[1];
+      desired_accel = to_signed(desired_accel, 16);
 
-      bool violation = false;
-      violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
-
-      if (violation) {
-        tx = false;
-      }
+      tx = !longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
     }
 
     // AEB: block all actuation. only used when DSU is unplugged
-    if (addr == 0x283) {
+    if (msg->addr == 0x283U) {
       // only allow the checksum, which is the last byte
-      bool block = (GET_BYTES(to_send, 0, 4) != 0U) || (GET_BYTE(to_send, 4) != 0U) || (GET_BYTE(to_send, 5) != 0U);
+      bool block = (GET_BYTES(msg, 0, 4) != 0U) || (msg->data[4] != 0U) || (msg->data[5] != 0U);
       if (block) {
         tx = false;
       }
     }
 
     // STEERING_LTA angle steering check
-    if (addr == 0x191) {
+    if (msg->addr == 0x191U) {
       // check the STEER_REQUEST, STEER_REQUEST_2, TORQUE_WIND_DOWN, STEER_ANGLE_CMD signals
-      bool lta_request = GET_BIT(to_send, 0U);
-      bool lta_request2 = GET_BIT(to_send, 25U);
-      int torque_wind_down = GET_BYTE(to_send, 5);
-      int lta_angle = (GET_BYTE(to_send, 1) << 8) | GET_BYTE(to_send, 2);
+      bool lta_request = GET_BIT(msg, 0U);
+      bool lta_request2 = GET_BIT(msg, 25U);
+      int torque_wind_down = msg->data[5];
+      int lta_angle = (msg->data[1] << 8) | msg->data[2];
       lta_angle = to_signed(lta_angle, 16);
 
       bool steer_control_enabled = lta_request || lta_request2;
@@ -317,12 +337,12 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
         }
 
         // check if we should wind down torque
-        int driver_torque = MIN(ABS(torque_driver.min), ABS(torque_driver.max));
+        int driver_torque = SAFETY_MIN(SAFETY_ABS(torque_driver.min), SAFETY_ABS(torque_driver.max));
         if ((driver_torque > TOYOTA_LTA_MAX_DRIVER_TORQUE) && (torque_wind_down != 0)) {
           tx = false;
         }
 
-        int eps_torque = MIN(ABS(torque_meas.min), ABS(torque_meas.max));
+        int eps_torque = SAFETY_MIN(SAFETY_ABS(torque_meas.min), SAFETY_ABS(torque_meas.max));
         if ((eps_torque > TOYOTA_LTA_MAX_MEAS_TORQUE) && (torque_wind_down != 0)) {
           tx = false;
         }
@@ -330,12 +350,12 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
     }
 
     // STEERING_LTA_2 angle steering check (SecOC)
-    if (toyota_secoc && (addr == 0x131)) {
+    if (toyota_secoc && (msg->addr == 0x131U)) {
       // SecOC cars block any form of LTA actuation for now
-      bool lta_request = GET_BIT(to_send, 3U);  // STEERING_LTA_2.STEER_REQUEST
-      bool lta_request2 = GET_BIT(to_send, 0U);  // STEERING_LTA_2.STEER_REQUEST_2
-      int lta_angle_msb = GET_BYTE(to_send, 2);  // STEERING_LTA_2.STEER_ANGLE_CMD (MSB)
-      int lta_angle_lsb = GET_BYTE(to_send, 3);  // STEERING_LTA_2.STEER_ANGLE_CMD (LSB)
+      bool lta_request = GET_BIT(msg, 3U);  // STEERING_LTA_2.STEER_REQUEST
+      bool lta_request2 = GET_BIT(msg, 0U);  // STEERING_LTA_2.STEER_REQUEST_2
+      int lta_angle_msb = msg->data[2];  // STEERING_LTA_2.STEER_ANGLE_CMD (MSB)
+      int lta_angle_lsb = msg->data[3];  // STEERING_LTA_2.STEER_ANGLE_CMD (LSB)
 
       bool actuation = lta_request || lta_request2 || (lta_angle_msb != 0) || (lta_angle_lsb != 0);
       if (actuation) {
@@ -344,10 +364,10 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
     }
 
     // STEER: safety check on bytes 2-3
-    if (addr == 0x2E4) {
-      int desired_torque = (GET_BYTE(to_send, 1) << 8) | GET_BYTE(to_send, 2);
+    if (msg->addr == 0x2E4U) {
+      int desired_torque = (msg->data[1] << 8) | msg->data[2];
       desired_torque = to_signed(desired_torque, 16);
-      bool steer_req = GET_BIT(to_send, 0U);
+      bool steer_req = GET_BIT(msg, 0U);
       // When using LTA (angle control), assert no actuation on LKA message
       if (!toyota_lta) {
         if (steer_torque_cmd_checks(desired_torque, steer_req, TOYOTA_TORQUE_STEERING_LIMITS)) {
@@ -359,14 +379,21 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
         }
       }
     }
+
+    // GAS PEDAL: safety check
+    if (msg->addr == 0x200U) {
+      if (longitudinal_interceptor_checks(msg)) {
+        tx = false;
+      }
+    }
   }
 
   // UDS: Only tester present ("\x0F\x02\x3E\x00\x00\x00\x00\x00") allowed on diagnostics address
-  if (addr == 0x750) {
+  if (msg->addr == 0x750U) {
     // this address is sub-addressed. only allow tester present to radar (0xF)
-    bool invalid_uds_msg = (GET_BYTES(to_send, 0, 4) != 0x003E020FU) || (GET_BYTES(to_send, 4, 4) != 0x0U);
+    bool invalid_uds_msg = (GET_BYTES(msg, 0, 4) != 0x003E020FU) || (GET_BYTES(msg, 4, 4) != 0x0U);
     if (invalid_uds_msg) {
-      tx = 0;
+      tx = false;
     }
   }
 
@@ -390,6 +417,11 @@ static safety_config toyota_init(uint16_t param) {
     TOYOTA_COMMON_SECOC_LONG_TX_MSGS
   };
 
+  static const CanMsg TOYOTA_INTERCEPTOR_TX_MSGS[] = {
+    TOYOTA_COMMON_LONG_TX_MSGS
+    {0x200, 0, 6, .check_relay = false},  // gas interceptor
+  };
+
   // safety param flags
   // first byte is for EPS factor, second is for flags
   const uint32_t TOYOTA_PARAM_OFFSET = 8U;
@@ -398,7 +430,8 @@ static safety_config toyota_init(uint16_t param) {
   const uint32_t TOYOTA_PARAM_STOCK_LONGITUDINAL = 2UL << TOYOTA_PARAM_OFFSET;
   const uint32_t TOYOTA_PARAM_LTA = 4UL << TOYOTA_PARAM_OFFSET;
 
-  const int TOYOTA_PARAM_SP_UNSUPPORTED_DSU = 1;
+  const uint16_t TOYOTA_PARAM_SP_UNSUPPORTED_DSU = 1;
+  const uint16_t TOYTOA_PARAM_SP_GAS_INTERCEPTOR = 2;
 
 #ifdef ALLOW_DEBUG
   const uint32_t TOYOTA_PARAM_SECOC = 8UL << TOYOTA_PARAM_OFFSET;
@@ -411,6 +444,12 @@ static safety_config toyota_init(uint16_t param) {
   toyota_dbc_eps_torque_factor = param & TOYOTA_EPS_FACTOR;
 
   const bool toyota_unsupported_dsu = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_UNSUPPORTED_DSU);
+  enable_gas_interceptor = GET_FLAG(current_safety_param_sp, TOYTOA_PARAM_SP_GAS_INTERCEPTOR);
+
+  // gas interceptor should not be used if openpilot is not controlling longitudinal or is a TSK car
+  if (toyota_stock_longitudinal || toyota_secoc) {
+    enable_gas_interceptor = false;
+  }
 
   safety_config ret;
   if (toyota_secoc) {
@@ -471,6 +510,55 @@ static safety_config toyota_init(uint16_t param) {
         SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_rx_checks, ret);
       } else {
         SET_RX_CHECKS(toyota_lka_alt_brake_rx_checks, ret);
+      }
+    }
+  }
+
+  if (enable_gas_interceptor) {
+    SET_TX_MSGS(TOYOTA_INTERCEPTOR_TX_MSGS, ret);
+
+    if (toyota_lta) {
+      static RxCheck toyota_lta_interceptor_rx_checks[] = {
+        TOYOTA_RX_CHECKS(true)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+
+      SET_RX_CHECKS(toyota_lta_interceptor_rx_checks, ret);
+    } else {
+      static RxCheck toyota_lka_interceptor_rx_checks[] = {
+        TOYOTA_RX_CHECKS(false)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+      static RxCheck toyota_lka_alt_brake_interceptor_rx_checks[] = {
+        TOYOTA_ALT_BRAKE_RX_CHECKS(false)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+      static RxCheck toyota_lka_unsupported_dsu_interceptor_rx_checks[] = {
+        TOYOTA_RX_CHECKS(false)
+        TOYOTA_DSU_CRUISE_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+      static RxCheck toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks[] = {
+        TOYOTA_ALT_BRAKE_RX_CHECKS(false)
+        TOYOTA_DSU_CRUISE_ADDR_CHECK
+        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+      };
+
+      if (!toyota_alt_brake) {
+        if (toyota_unsupported_dsu) {
+          SET_RX_CHECKS(toyota_lka_unsupported_dsu_interceptor_rx_checks, ret);
+        } else {
+          SET_RX_CHECKS(toyota_lka_interceptor_rx_checks, ret);
+        }
+      } else {
+        if (toyota_unsupported_dsu) {
+          SET_RX_CHECKS(toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks, ret);
+        } else {
+          SET_RX_CHECKS(toyota_lka_alt_brake_interceptor_rx_checks, ret);
+        }
       }
     }
   }

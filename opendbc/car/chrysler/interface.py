@@ -3,8 +3,9 @@ from opendbc.car import get_safety_config, structs
 from opendbc.car.chrysler.carcontroller import CarController
 from opendbc.car.chrysler.carstate import CarState
 from opendbc.car.chrysler.radar_interface import RadarInterface
-from opendbc.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags, ChryslerSafetyFlags
+from opendbc.car.chrysler.values import CAR, CUSW_CARS, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags, ChryslerSafetyFlags
 from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.sunnypilot.car.chrysler.values_ext import ChryslerFlagsSP
 
 
 class CarInterface(CarInterfaceBase):
@@ -12,10 +13,14 @@ class CarInterface(CarInterfaceBase):
   CarController = CarController
   RadarInterface = RadarInterface
 
+  DRIVABLE_GEARS = (structs.CarState.GearShifter.low,)
+
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
     ret.brand = "chrysler"
-    ret.dashcamOnly = candidate in RAM_HD
+
+    # TODO: Chrysler CUSW in dashcam pending comma safety validation and a fix for LKAS fault on disengage
+    ret.dashcamOnly = candidate in (RAM_HD | CUSW_CARS)
 
     # radar parsing needs some work, see https://github.com/commaai/openpilot/issues/26842
     ret.radarUnavailable = True # Bus.radar not in DBC[candidate][Bus.radar]
@@ -28,6 +33,8 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= ChryslerSafetyFlags.RAM_HD.value
     elif candidate in RAM_DT:
       ret.safetyConfigs[0].safetyParam |= ChryslerSafetyFlags.RAM_DT.value
+    elif candidate in CUSW_CARS:
+      ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.chryslerCusw)]
 
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     if candidate not in RAM_CARS:
@@ -46,6 +53,9 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     # Jeep
+    elif candidate == CAR.JEEP_CHEROKEE_5TH_GEN:
+      ret.steerActuatorDelay = 0.15
+
     elif candidate in (CAR.JEEP_GRAND_CHEROKEE, CAR.JEEP_GRAND_CHEROKEE_2019):
       ret.steerActuatorDelay = 0.2
 
@@ -57,14 +67,12 @@ class CarInterface(CarInterfaceBase):
     # Ram
     elif candidate == CAR.RAM_1500_5TH_GEN:
       ret.steerActuatorDelay = 0.2
-      ret.wheelbase = 3.88
       # Older EPS FW allow steer to zero
       if any(fw.ecu == 'eps' and b"68" < fw.fwVersion[:4] <= b"6831" for fw in car_fw):
         ret.minSteerSpeed = 0.
 
     elif candidate == CAR.RAM_HD_5TH_GEN:
       ret.steerActuatorDelay = 0.2
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, 1.0, False)
 
     else:
       raise ValueError(f"Unsupported car: {candidate}")
@@ -75,18 +83,33 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
 
     ret.centerToFront = ret.wheelbase * 0.44
-    ret.enableBsm = 720 in fingerprint[0]
+    ret.enableBsm = (0x62cc033 if candidate in CUSW_CARS else 0x2d0) in fingerprint[0]
 
     return ret
 
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
-                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, docs: bool) -> structs.CarParamsSP:
+                     car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
     if candidate == CAR.RAM_1500_5TH_GEN:
-      stock_cp.minSteerSpeed = 0.5
+      if stock_cp.minSteerSpeed != 0.:
+        stock_cp.minSteerSpeed = 0.5
       stock_cp.minEnableSpeed = 14.5
+      if any(fw.ecu == 'eps' and fw.fwVersion in (b"68273275AF", b"68273275AG", b"68312176AE", b"68312176AG",) for fw in car_fw):
+        stock_cp.minEnableSpeed = 0.
 
     if candidate == CAR.RAM_HD_5TH_GEN:
       stock_cp.dashcamOnly = False
+      # https://github.com/commaai/openpilot/issues/25389
+      stock_cp.tireStiffnessFactor = 1.0
+      stock_cp.tireStiffnessFront = 65155.
+      stock_cp.tireStiffnessRear = 80926.
+      stock_cp.wheelbase = 3.79
+      stock_cp.steerRatio = 19.
+
+    if 0x4FF in fingerprint[0]:
+      ret.flags |= ChryslerFlagsSP.NO_MIN_STEERING_SPEED.value
+      stock_cp.minSteerSpeed = 0.
+
+    ret.intelligentCruiseButtonManagementAvailable = True
 
     return ret

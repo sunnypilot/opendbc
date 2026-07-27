@@ -1,19 +1,20 @@
-from opendbc.can.parser import CANParser
-from opendbc.can.can_define import CANDefine
+from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, create_button_events, structs
-from opendbc.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
+from opendbc.car.chrysler.values import CUSW_CARS, DBC, STEER_THRESHOLD, RAM_CARS
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarStateBase
 
+from opendbc.sunnypilot.car.chrysler.carstate_ext import CarStateExt
 from opendbc.sunnypilot.car.chrysler.mads import MadsCarState
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
 
-class CarState(CarStateBase, MadsCarState):
+class CarState(CarStateBase, MadsCarState, CarStateExt):
   def __init__(self, CP, CP_SP):
     CarStateBase.__init__(self, CP, CP_SP)
     MadsCarState.__init__(self, CP, CP_SP)
+    CarStateExt.__init__(self, CP, CP_SP)
     self.CP = CP
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
 
@@ -32,6 +33,9 @@ class CarState(CarStateBase, MadsCarState):
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 
+    if self.CP.carFingerprint in CUSW_CARS:
+      return self.update_cusw(cp, cp_cam)
+
     ret = structs.CarState()
     ret_sp = structs.CarStateSP()
 
@@ -46,12 +50,10 @@ class CarState(CarStateBase, MadsCarState):
     ret.seatbeltUnlatched = cp.vl["ORC_1"]["SEATBELT_DRIVER_UNLATCHED"] == 1
 
     # brake pedal
-    ret.brake = 0
     ret.brakePressed = cp.vl["ESP_1"]['Brake_Pedal_State'] == 1  # Physical brake pedal switch
 
     # gas pedal
-    ret.gas = cp.vl["ECM_5"]["Accelerator_Position"]
-    ret.gasPressed = ret.gas > 1e-5
+    ret.gasPressed = cp.vl["ECM_5"]["Accelerator_Position"] > 1e-5
 
     # car speed
     if self.CP.carFingerprint in RAM_CARS:
@@ -62,13 +64,6 @@ class CarState(CarStateBase, MadsCarState):
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["GEAR"]["PRNDL"], None))
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = not ret.vEgoRaw > 0.001
-    ret.wheelSpeeds = self.get_wheel_speeds(
-      cp.vl["ESP_6"]["WHEEL_SPEED_FL"],
-      cp.vl["ESP_6"]["WHEEL_SPEED_FR"],
-      cp.vl["ESP_6"]["WHEEL_SPEED_RL"],
-      cp.vl["ESP_6"]["WHEEL_SPEED_RR"],
-      unit=1,
-    )
 
     # button presses
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(200, cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 1,
@@ -109,63 +104,67 @@ class CarState(CarStateBase, MadsCarState):
     self.button_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
 
     MadsCarState.update_mads(self, ret, can_parsers)
+    CarStateExt.update(self, ret, ret_sp, can_parsers)
 
     ret.buttonEvents = [
       *create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise}),
       *create_button_events(self.lkas_button, self.prev_lkas_button, {1: ButtonType.lkas}),
+      *self.button_events,
     ]
 
     return ret, ret_sp
 
-  @staticmethod
-  def get_cruise_messages():
-    messages = [
-      ("DAS_3", 50),
-      ("DAS_4", 50),
-    ]
-    return messages
+  def update_cusw(self, cp, cp_cam):
+    ret = structs.CarState()
+    ret_sp = structs.CarStateSP()
+
+    ret.doorOpen = any([cp.vl["DOORS"]["DOOR_OPEN_FL"],
+                        cp.vl["DOORS"]["DOOR_OPEN_FR"],
+                        cp.vl["DOORS"]["DOOR_OPEN_RL"],
+                        cp.vl["DOORS"]["DOOR_OPEN_RR"]])
+    ret.seatbeltUnlatched = bool(cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_UNLATCHED"])
+
+    ret.brakePressed = bool(cp.vl["BRAKE_3"]["DRIVER_BRAKE_SWITCH"])
+    ret.gasPressed = cp.vl["ACCEL_GAS"]["GAS_HUMAN"] > 0
+
+    ret.espDisabled = bool(cp.vl["TRACTION_BUTTON"]["TRACTION_OFF"])
+
+    ret.vEgoRaw = cp.vl["BRAKE_1"]["VEHICLE_SPEED"]
+    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    ret.standstill = not ret.vEgoRaw > 0.001
+    self.parse_wheel_speeds(ret,
+      cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FL"],
+      cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RR"],
+      cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RL"],
+      cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FR"],
+      unit=1,
+    )
+
+    ret.leftBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 1
+    ret.rightBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 2
+    ret.steeringAngleDeg = cp.vl["STEERING"]["STEER_ANGLE"]
+    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["GEAR"]["PRNDL"], None))
+
+    ret.cruiseState.speed = cp.vl["ACC_HUD"]["ACC_SET_SPEED_KMH"] * CV.KPH_TO_MS
+    ret.cruiseState.available = bool(cp.vl["ACC_CONTROL"]["ACC_MAIN_ON"])
+    ret.cruiseState.enabled = bool(cp.vl["ACC_CONTROL"]["ACC_ACTIVE"])
+
+    ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
+    ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
+    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
+    ret.steerFaultPermanent = bool(cp.vl["EPS_STATUS"]["LKAS_FAULT"])
+
+    if self.CP.enableBsm:
+      ret.leftBlindspot = bool(cp.vl["BSM_LEFT"]["LEFT_DETECTED"])
+      ret.rightBlindspot = bool(cp.vl["BSM_RIGHT"]["RIGHT_DETECTED"])
+
+    self.lkas_car_model = cp_cam.vl["DAS_6"]["CAR_MODEL"]
+
+    return ret, ret_sp
 
   @staticmethod
   def get_can_parsers(CP, CP_SP):
-    pt_messages = [
-      # sig_address, frequency
-      ("ESP_1", 50),
-      ("EPS_2", 100),
-      ("ESP_6", 50),
-      ("STEERING", 100),
-      ("ECM_5", 50),
-      ("CRUISE_BUTTONS", 50),
-      ("STEERING_LEVERS", 10),
-      ("ORC_1", 2),
-      ("BCM_1", 1),
-    ]
-
-    if CP.enableBsm:
-      pt_messages.append(("BSM_1", 2))
-
-    if CP.carFingerprint in RAM_CARS:
-      pt_messages += [
-        ("ESP_8", 50),
-        ("EPS_3", 50),
-        ("Transmission_Status", 50),
-      ]
-    else:
-      pt_messages += [
-        ("GEAR", 50),
-        ("SPEED_1", 100),
-      ]
-      pt_messages += CarState.get_cruise_messages()
-
-    cam_messages = [
-      ("DAS_6", 4),
-    ]
-
-    if CP.carFingerprint in RAM_CARS:
-      cam_messages += CarState.get_cruise_messages()
-
-    MadsCarState.get_parser(CP, pt_messages, cam_messages)
-
     return {
-      Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
-      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, 2),
+      Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 0),
+      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 2),
     }
