@@ -233,6 +233,9 @@ class CarInterface(CarInterfaceBase):
 
     ret.intelligentCruiseButtonManagementAvailable = not (stock_cp.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
 
+    if stock_cp.openpilotLongitudinalControl:
+      stock_cp.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.LONG.value
+
     return ret
 
   @staticmethod
