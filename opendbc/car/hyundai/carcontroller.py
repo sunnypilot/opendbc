@@ -36,9 +36,9 @@ CANCEL_BUTTON_DELAY_FRAMES = 10
 MAX_ANGLE_RATE = 5
 ANGLE_SAFETY_BASELINE_MODEL = "HYUNDAI_IONIQ_5_PE"
 
-MAX_ANGLE_LV2 = 180
-MAX_ANGLE_LV2_FRAMES = 10      # ~70ms active before preemptive cut (timer fires at ~100ms)
-MAX_ANGLE_LV2_OFF_FRAMES = 1   # ~10ms inactive to reset the MDPS timer
+MAX_ANGLE_LV2 = 177
+MAX_ANGLE_LV2_FRAMES = 7       # ~70ms active before preemptive cut (timer fires at ~100ms)
+MAX_ANGLE_LV2_OFF_FRAMES = 2   # ~20ms inactive to reset the MDPS timer
 
 
 def get_baseline_safety_cp():
