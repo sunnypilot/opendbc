@@ -4,8 +4,9 @@ from opendbc.sunnypilot.car.hyundai.interceptors.ecu_interceptor import EcuInter
   EcuInterceptorCarStateBase, EcuInterceptorCarControllerBase, EcuInterceptorRadarInterfaceBase
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
-SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR = 5 # This value is the safety mode and it's embedded on the panda interceptor.
+SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR = 5  # This value is the safety mode and it's embedded on the panda interceptor.
 ADAS_INTERCEPTOR_HEARTBEAT_MSG = 0x258
+
 
 class AdasDrvEcuInterceptor(EcuInterceptorBase):
   @property
@@ -22,7 +23,6 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
       "REQUESTED_SAFETY_PARAM": HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR if long_enabled else 0,
     }
     return [packer.make_can_msg("ADAS_DRV_INTERCEPT_OPT", CAN.ACAN, values)]
-
 
 
 # VERY LIKELY NOT NEEDED AS WE DON'T KEEP A STATE ABOUT THE INTERCEPTOR, SINCE WE PASS MSGS AS-IS
