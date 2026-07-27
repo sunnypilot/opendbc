@@ -36,6 +36,7 @@ CANCEL_BUTTON_DELAY_FRAMES = 10
 MAX_ANGLE_RATE = 5
 ANGLE_SAFETY_BASELINE_MODEL = "KIA_SPORTAGE_HEV_2026"
 
+MAX_ANGLE_LV2 = 170
 MAX_ANGLE_LV2_FRAMES = 7       # ~70ms active before preemptive cut (timer fires at ~100ms)
 MAX_ANGLE_LV2_OFF_FRAMES = 2   # ~20ms inactive to reset the MDPS timer
 
@@ -174,9 +175,9 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
         apply_angle = CS.out.steeringAngleDeg
         apply_steer_req = False
 
-      self.angle_lv2_limit_counter, apply_steer_req = common_fault_avoidance(CC.latActive, apply_steer_req,
-                                                                              self.angle_lv2_limit_counter, MAX_ANGLE_LV2_FRAMES,
-                                                                              MAX_ANGLE_LV2_OFF_FRAMES)
+      self.angle_lv2_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_ANGLE_LV2, apply_steer_req,
+                                                                             self.angle_lv2_limit_counter, MAX_ANGLE_LV2_FRAMES,
+                                                                             MAX_ANGLE_LV2_OFF_FRAMES)
 
       # After we've used the last angle wherever we needed it, we now update it.
       self.apply_angle_last = apply_angle
