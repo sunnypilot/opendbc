@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass, field
-from enum import IntFlag, Enum
+from enum import IntFlag
 
 from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
 from opendbc.car.lateral import AngleSteeringLimitsVM
@@ -236,7 +236,7 @@ class CAR(Platforms):
     ],
     CarSpecs(mass=1720, wheelbase=2.895, steerRatio=13.5),
     flags=HyundaiFlags.CANFD_ANGLE_STEERING,
-  )
+  ) 
   HYUNDAI_ELANTRA = HyundaiPlatformConfig(
     [
       # TODO: 2017-18 could be Hyundai G
@@ -984,14 +984,3 @@ UNSUPPORTED_LONGITUDINAL_CAR = {
 NON_SCC_CAR = CAR.with_sp_flags(HyundaiFlagsSP.NON_SCC)
 
 DBC = CAR.create_dbc_map()
-
-
-class ActvACISta(Enum):
-  INIT = 0
-  INACTIVE = 1
-  ACTIVE35_ACTIVE = 2
-
-
-class ESA_ActvSta(Enum):
-  INACTIVE = 0
-  ACTIVE = 1

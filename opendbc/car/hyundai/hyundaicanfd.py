@@ -1,7 +1,7 @@
 import numpy as np
 from opendbc.car import CanBusBase
 from opendbc.car.crc import CRC16_XMODEM
-from opendbc.car.hyundai.values import HyundaiFlags, ActvACISta, ESA_ActvSta
+from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.lead_data_ext import CanFdLeadData
 
 
@@ -48,16 +48,6 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     "Damping_Gain": 100,  # can potentially tuned for better perf [3, 200]
   }
 
-  ActvACILvl2Sta = ActvACISta.ACTIVE35_ACTIVE if lat_active else ActvACISta.INACTIVE if enabled else ActvACISta.INACTIVE
-  LFA_ALT_values = {
-    "ADAS_ActvACISta": ActvACISta.INIT.value,
-    "ADAS_ActvACILvl2Sta": ActvACILvl2Sta.value,
-    "ADAS_StrAnglReqVal": apply_angle,
-    "ADAS_ACIAnglTqRedcGainVal": apply_torque if lat_active else 0,
-    "FCA_ESA_ActvSta": ESA_ActvSta.INACTIVE.value,
-    "FCA_ESA_TqBstGainVal": 0
-  }
-
   # Angle control doesn't support using LFA yet
   if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
     # LKAS messages take priority over LFA messages on HDA2.
@@ -75,7 +65,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
     lkas_msg = "LKAS_ALT" if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS"
     if CP.openpilotLongitudinalControl:
-      ret.append(packer.make_can_msg("LFA_ALT", CAN.ECAN, LFA_ALT_values))
+      ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
     ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, values))
   else:
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
