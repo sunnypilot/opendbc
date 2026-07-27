@@ -36,6 +36,9 @@ CANCEL_BUTTON_DELAY_FRAMES = 10
 MAX_ANGLE_RATE = 5
 ANGLE_SAFETY_BASELINE_MODEL = "KIA_SPORTAGE_HEV_2026"
 
+MAX_ANGLE_LV2_FRAMES = 7       # ~70ms active before preemptive cut (timer fires at ~100ms)
+MAX_ANGLE_LV2_OFF_FRAMES = 2   # ~20ms inactive to reset the MDPS timer
+
 
 def get_baseline_safety_cp():
   from opendbc.car.hyundai.interface import CarInterface
@@ -112,6 +115,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.angle_limit_counter = 0
+    self.angle_lv2_limit_counter = 0
     self.angle_filter = FirstOrderFilter(0.0, 0.2, DT_CTRL)
 
     # Vehicle model used for lateral limiting
@@ -169,6 +173,10 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
         apply_torque = 0
         apply_angle = CS.out.steeringAngleDeg
         apply_steer_req = False
+
+      self.angle_lv2_limit_counter, apply_steer_req = common_fault_avoidance(CC.latActive, apply_steer_req,
+                                                                              self.angle_lv2_limit_counter, MAX_ANGLE_LV2_FRAMES,
+                                                                              MAX_ANGLE_LV2_OFF_FRAMES)
 
       # After we've used the last angle wherever we needed it, we now update it.
       self.apply_angle_last = apply_angle
@@ -290,7 +298,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       can_sends.extend(self.interceptor.create_adas_drv_intercept_msg(self.packer, self.CAN, self.CP.openpilotLongitudinalControl))
 
     # steering control
-    can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CP_SP, self.CAN, CC.enabled, apply_steer_req, apply_torque,
+    can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CP_SP, self.CAN, CC.enabled, CC.latActive, apply_steer_req, apply_torque,
                                                            self.apply_angle_last, self.lkas_icon))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU
