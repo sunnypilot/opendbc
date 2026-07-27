@@ -179,6 +179,10 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
                                                                              self.angle_lv2_limit_counter, MAX_ANGLE_LV2_FRAMES,
                                                                              MAX_ANGLE_LV2_OFF_FRAMES)
 
+      # Freeze gain during fault avoidance off-frames so it's immediately ready when re-engaging
+      if CC.latActive and not apply_steer_req:
+        apply_torque = self.apply_torque_last
+
       # After we've used the last angle wherever we needed it, we now update it.
       self.apply_angle_last = apply_angle
 
