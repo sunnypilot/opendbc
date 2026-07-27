@@ -36,7 +36,7 @@ class CanBus(CanBusBase):
     return self._cam
 
 
-def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon):
+def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon):
   values = {
     "LKA_OptUsmSta": 2,
     "LKA_SysIndReq": 2 if enabled else 1,
@@ -74,8 +74,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   ret = []
   if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
     lkas_msg = "LKAS_ALT" if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS"
-    if CP.openpilotLongitudinalControl:
-      ret.append(packer.make_can_msg("LFA_ALT", CAN.ECAN, LFA_ALT_values))
+    ret.append(packer.make_can_msg("LFA_ALT", CAN.ECAN, LFA_ALT_values))
     ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, values))
   else:
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))

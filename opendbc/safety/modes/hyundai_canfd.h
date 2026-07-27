@@ -14,6 +14,7 @@
 #define HYUNDAI_CANFD_LKA_STEER_MSG_ALT_COMMON_TX_MSGS(a_can, e_can) \
   HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(e_can)                        \
   {0x110, a_can, 32, .check_relay = (a_can) == 0},  /* LKAS_ALT */  \
+  {0xCB,  e_can, 24, .check_relay = (e_can) == 0},  /* LFA_ALT */   \
   {0x362, a_can, 32, .check_relay = (a_can) == 0},  /* CAM_0x362 */ \
 
 #define HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(e_can)  \
@@ -208,6 +209,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
     };
 
   bool tx = true;
+  return tx;
 
   // steering
   const unsigned int steer_addr = (hyundai_canfd_lka_steer_msg && !hyundai_longitudinal) ? hyundai_canfd_get_lka_addr() : 0x12aU;
@@ -258,7 +260,6 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
       tx = false;
     }
   }
-  return tx;
 
   // ACCEL: safety check
   if (msg->addr == 0x1a0U) {
