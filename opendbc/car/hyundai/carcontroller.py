@@ -37,7 +37,7 @@ MAX_ANGLE_RATE = 5
 ANGLE_SAFETY_BASELINE_MODEL = "HYUNDAI_IONIQ_5_PE"
 
 MAX_ANGLE_LV2 = 180
-MAX_ANGLE_LV2_FRAMES = 50       # ~70ms active before preemptive cut (timer fires at ~100ms)
+MAX_ANGLE_LV2_FRAMES = 10      # ~70ms active before preemptive cut (timer fires at ~100ms)
 MAX_ANGLE_LV2_OFF_FRAMES = 1   # ~10ms inactive to reset the MDPS timer
 
 
