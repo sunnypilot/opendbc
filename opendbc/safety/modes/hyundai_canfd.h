@@ -304,7 +304,6 @@ static safety_config hyundai_canfd_init(uint16_t param) {
 
   static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_ALT_TX_MSGS[] = {
     HYUNDAI_CANFD_LKA_STEER_MSG_ALT_COMMON_TX_MSGS(0, 1)
-    HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)
   };
 
   static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_LONG_TX_MSGS[] = {
@@ -319,6 +318,12 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     {0x200, 1,  8, .check_relay = false},  // ADRV_0x200
     {0x345, 1,  8, .check_relay = false},  // ADRV_0x345
     {0x1DA, 1, 32, .check_relay = false},  // ADRV_0x1da
+  };
+
+  static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_TX_MSGS[] = {
+    HYUNDAI_CANFD_LKA_STEER_MSG_ALT_COMMON_TX_MSGS(0, 1)
+    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(1, true)
+    HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)
   };
 
   static const CanMsg HYUNDAI_CANFD_LFA_STEERING_TX_MSGS[] = {
@@ -358,7 +363,13 @@ static safety_config hyundai_canfd_init(uint16_t param) {
         HYUNDAI_CANFD_STD_BUTTONS_RX_CHECKS(1)
       };
 
-      ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_TX_MSGS);
+      if (hyundai_canfd_adas_drv_interceptor) {
+        SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_TX_MSGS, ret);
+      } else {
+        SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_LONG_TX_MSGS, ret);
+      }
+
+      SET_RX_CHECKS(hyundai_canfd_lka_steer_msg_long_rx_checks, ret);
 
     } else {
       // Longitudinal checks for LFA steering
