@@ -5,12 +5,35 @@ BO_ 598 ADAS_DRV_INTERCEPT_OPT: 8 SP
  SG_ REQUESTED_SAFETY_PARAM : 47|16@0+ (1,0) [0|65535] "" interceptor
 
 
-BO_ 600 INTERCEPTOR_HEARTBEAT: 8 interceptor
+BO_ 600 INTERCEPTOR_HEARTBEAT: 64 interceptor
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|0] "0" SP
  SG_ COUNTER : 16|8@1+ (1,0) [0|0] "0" SP
  SG_ CURRENT_SAFETY_MODE : 31|16@0+ (1,0) [0|65535] "" SP
  SG_ CURRENT_SAFETY_PARAM : 47|16@0+ (1,0) [0|65535] "" SP
  SG_ SP_SEEN_RECENTLY : 57|2@0+ (1,0) [0|3] "" SP
+ SG_ CAN_RX_R : 71|16@0+ (1,0) [0|65535] "" SP
+ SG_ CAN_RX_W : 87|16@0+ (1,0) [0|65535] "" SP
+ SG_ CAN_TX1_R : 103|16@0+ (1,0) [0|65535] "" SP
+ SG_ CAN_TX1_W : 119|16@0+ (1,0) [0|65535] "" SP
+ SG_ CAN_TX2_R : 135|16@0+ (1,0) [0|65535] "" SP
+ SG_ CAN_TX2_W : 151|16@0+ (1,0) [0|65535] "" SP
+ SG_ CAN_TX3_R : 167|16@0+ (1,0) [0|65535] "" SP
+ SG_ CAN_TX3_W : 183|16@0+ (1,0) [0|65535] "" SP
+ SG_ TAMPER_HOOK_CALL_COUNT : 199|32@0+ (1,0) [0|4294967295] "" SP
+ SG_ RX_HOOK_BUS_0_COUNT : 231|32@0+ (1,0) [0|4294967295] "" SP
+ SG_ RX_HOOK_BUS_1_COUNT : 263|32@0+ (1,0) [0|4294967295] "" SP
+ SG_ RX_HOOK_BUS_2_COUNT : 295|32@0+ (1,0) [0|4294967295] "" SP
+ SG_ CAN_0_TEC : 327|8@0+ (1,0) [0|255] "" SP
+ SG_ CAN_0_REC : 335|8@0+ (1,0) [0|255] "" SP
+ SG_ CAN_0_BUS_OFF_CNT : 343|16@0+ (1,0) [0|65535] "" SP
+ SG_ CAN_1_TEC : 359|8@0+ (1,0) [0|255] "" SP
+ SG_ CAN_1_REC : 367|8@0+ (1,0) [0|255] "" SP
+ SG_ CAN_1_BUS_OFF_CNT : 375|16@0+ (1,0) [0|65535] "" SP
+ SG_ CAN_2_TEC : 391|8@0+ (1,0) [0|255] "" SP
+ SG_ CAN_2_REC : 399|8@0+ (1,0) [0|255] "" SP
+ SG_ CAN_2_BUS_OFF_CNT : 407|16@0+ (1,0) [0|65535] "" SP
+ SG_ CAN_0_TX_LOST : 423|32@0+ (1,0) [0|4294967295] "" SP
+ SG_ CAN_2_TX_LOST : 455|32@0+ (1,0) [0|4294967295] "" SP
 
 CM_ BO_ 598 "Message sent by SP to the interceptor";
-CM_ BO_ 600 "Message sent from the interceptor to SP";
+CM_ BO_ 600 "Message sent from the interceptor to SP (CAN FD)";
