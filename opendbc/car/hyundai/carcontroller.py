@@ -86,17 +86,27 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
     # steering torque
     new_torque = int(round(actuators.torque * self.params.STEER_MAX))
-    apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
+    lfa_camera_sync = bool(self.CP.flags & HyundaiFlags.CANFD_LFA_CAMERA_SYNC)
+    lfa_msg_available = bool(CS.lfa_msg)
+    camera_steering = lfa_camera_sync and lfa_msg_available and CS.lfa_msg["ActToiSta"] == 1
+
+    steering_msg_available = not lfa_camera_sync or lfa_msg_available
+    apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params) \
+      if steering_msg_available else self.apply_torque_last
 
     # >90 degree steering fault prevention
     self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_ANGLE, CC.latActive,
                                                                        self.angle_limit_counter, MAX_ANGLE_FRAMES,
                                                                        MAX_ANGLE_CONSECUTIVE_FRAMES)
 
-    if not CC.latActive:
+    if lfa_camera_sync and lfa_msg_available and not (camera_steering and CC.latActive):
+      # Track the exact stock command so the first modified frame starts from the same torque.
+      apply_torque = round(CS.lfa_msg["StrTqReqVal"])
+    elif not CC.latActive:
       apply_torque = 0
 
-    self.apply_torque_last = apply_torque
+    if steering_msg_available:
+      self.apply_torque_last = apply_torque
 
     # accel + longitudinal
     accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
@@ -200,12 +210,16 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
     lka_steering = self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG
     lka_steering_long = lka_steering and self.CP.openpilotLongitudinalControl
-    lfa_passthrough = self.CP.flags & HyundaiFlags.CANFD_LFA_PASSTHROUGH
+    lfa_camera_sync = self.CP.flags & HyundaiFlags.CANFD_LFA_CAMERA_SYNC
 
     # steering control
-    if not lfa_passthrough:
+    if not lfa_camera_sync:
       can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon,
                                                              CS.lfa_msg))
+    elif CS.lfa_msg:
+      camera_steering = CS.lfa_msg["ActToiSta"] == 1
+      can_sends.append(hyundaicanfd.create_lfa_steering_command(self.CAN, CC.latActive and camera_steering,
+                                                                apply_steer_req, apply_torque))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU
     if self.frame % 5 == 0 and lka_steering:

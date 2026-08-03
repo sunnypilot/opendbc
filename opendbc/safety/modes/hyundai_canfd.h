@@ -20,7 +20,8 @@
   {0x12A, e_can, 16, .check_relay = (e_can) == 0},  /* LFA */            \
   {0x1E0, e_can, 16, .check_relay = (e_can) == 0},  /* LFAHDA_CLUSTER */ \
 
-#define HYUNDAI_CANFD_LFA_PASSTHROUGH_COMMON_TX_MSGS(e_can) \
+#define HYUNDAI_CANFD_LFA_CAMERA_SYNC_COMMON_TX_MSGS(e_can) \
+  {HYUNDAI_CANFD_LFA_COMMAND_ADDR, e_can, 8, .check_relay = false},  /* internal LFA command */ \
   {0x1E0, e_can, 16, .check_relay = (e_can) == 0},  /* LFAHDA_CLUSTER */ \
 
 #define HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(e_can, longitudinal) \
@@ -48,9 +49,45 @@
 #define HYUNDAI_CANFD_SCC_ADDR_CHECK(scc_bus)                                                                            \
   {.msg = {{0x1a0, (scc_bus), 32, 50U, .max_counter = 0xffU, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
 
+#define HYUNDAI_CANFD_LFA_CAMERA_SYNC_RX_CHECKS \
+  {.msg = {{0x12a, 2, 16, 100U, .max_counter = 0xffU, .ignore_quality_flag = true}, { 0 }, { 0 }}}, \
+
+#define HYUNDAI_CANFD_LFA_COMMAND_ADDR 0x7FFU
+#define HYUNDAI_CANFD_LFA_COMMAND_MAGIC 0xA5U
+#define HYUNDAI_CANFD_LFA_COMMAND_TIMEOUT 50000U
+
+#define HYUNDAI_CANFD_LFA_COMMAND_PASSTHROUGH 0U
+#define HYUNDAI_CANFD_LFA_COMMAND_LANE_ACTIVE 1U
+#define HYUNDAI_CANFD_LFA_COMMAND_LANE_CUT 2U
+#define HYUNDAI_CANFD_LFA_COMMAND_FORCE_ACTIVE 3U
+#define HYUNDAI_CANFD_LFA_COMMAND_FORCE_CUT 4U
+
 static bool hyundai_canfd_alt_buttons = false;
 static bool hyundai_canfd_lka_steer_msg_alt = false;
-static bool hyundai_canfd_lfa_passthrough = false;
+static bool hyundai_canfd_lfa_camera_sync = false;
+static uint8_t hyundai_canfd_lfa_command_mode = HYUNDAI_CANFD_LFA_COMMAND_PASSTHROUGH;
+static int hyundai_canfd_lfa_command_torque = 0;
+static uint32_t hyundai_canfd_lfa_command_ts = 0U;
+
+static int hyundai_canfd_get_lfa_torque(const CANPacket_t *msg) {
+  return (((msg->data[6] & 0xFU) << 7U) | (msg->data[5] >> 1U)) - 1024U;
+}
+
+static uint8_t hyundai_canfd_get_lfa_request(const CANPacket_t *msg) {
+  return (msg->data[6] >> 4U) & 0x3U;
+}
+
+static void hyundai_canfd_sync_lfa_safety_state(const CANPacket_t *msg) {
+  const uint32_t ts = microsecond_timer_get();
+  const int stock_torque = hyundai_canfd_get_lfa_torque(msg);
+
+  desired_torque_last = stock_torque;
+  rt_torque_last = stock_torque;
+  ts_torque_check_last = ts;
+  valid_steer_req_count = 0;
+  invalid_steer_req_count = 0;
+  ts_steer_req_mismatch_last = ts;
+}
 
 static unsigned int hyundai_canfd_get_lka_addr(void) {
   return hyundai_canfd_lka_steer_msg_alt ? 0x110U : 0x50U;
@@ -164,10 +201,40 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
 
   bool tx = true;
 
-  // steering
+  // LFA camera-sync mode uses a virtual command which Panda consumes internally. The real
+  // camera LFA is modified later in the hardware forwarding path, preserving its exact cadence.
+  if (hyundai_canfd_lfa_camera_sync && (msg->addr == HYUNDAI_CANFD_LFA_COMMAND_ADDR)) {
+    const uint8_t mode = msg->data[2];
+    const int desired_torque = to_signed(GET_BYTES(msg, 0, 2), 16);
+    const bool command_format_valid = (msg->data[3] == HYUNDAI_CANFD_LFA_COMMAND_MAGIC) &&
+                                      (GET_BYTES(msg, 4, 4) == 0U) &&
+                                      (mode <= HYUNDAI_CANFD_LFA_COMMAND_FORCE_CUT);
+
+    // Any malformed or unsafe update immediately returns the forwarder to stock pass-through.
+    hyundai_canfd_lfa_command_mode = HYUNDAI_CANFD_LFA_COMMAND_PASSTHROUGH;
+    safety_tx_consumed = true;
+
+    if (command_format_valid && (mode == HYUNDAI_CANFD_LFA_COMMAND_PASSTHROUGH)) {
+      tx = desired_torque == 0;
+    } else if (command_format_valid) {
+      const bool steer_req = (mode == HYUNDAI_CANFD_LFA_COMMAND_LANE_ACTIVE) ||
+                             (mode == HYUNDAI_CANFD_LFA_COMMAND_FORCE_ACTIVE);
+      tx = !steer_torque_cmd_checks(desired_torque, steer_req, HYUNDAI_CANFD_STEERING_LIMITS);
+    } else {
+      tx = false;
+    }
+
+    if (tx) {
+      hyundai_canfd_lfa_command_torque = desired_torque;
+      hyundai_canfd_lfa_command_mode = mode;
+      hyundai_canfd_lfa_command_ts = microsecond_timer_get();
+    }
+  }
+
+  // steering messages sent directly by openpilot on all other CAN-FD configurations
   const unsigned int steer_addr = (hyundai_canfd_lka_steer_msg && !hyundai_longitudinal) ? hyundai_canfd_get_lka_addr() : 0x12aU;
-  if (msg->addr == steer_addr) {
-    int desired_torque = (((msg->data[6] & 0xFU) << 7U) | (msg->data[5] >> 1U)) - 1024U;
+  if (!hyundai_canfd_lfa_camera_sync && (msg->addr == steer_addr)) {
+    int desired_torque = hyundai_canfd_get_lfa_torque(msg);
     bool steer_req = GET_BIT(msg, 52U);
 
     if (steer_torque_cmd_checks(desired_torque, steer_req, HYUNDAI_CANFD_STEERING_LIMITS)) {
@@ -229,14 +296,58 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
 }
 
 static bool hyundai_canfd_fwd_hook(int bus_num, int addr) {
-  // In passthrough mode, camera LFA is forwarded unchanged to E-CAN. Never forward an E-CAN LFA back to the camera.
-  return hyundai_canfd_lfa_passthrough && (bus_num == 0) && (addr == 0x12AU);
+  // The physical camera LFA travels camera bus 2 -> car bus 0. Never allow a bus 0
+  // copy to travel back toward the camera in camera-sync mode.
+  return hyundai_canfd_lfa_camera_sync && (bus_num == 0) && (addr == 0x12A);
+}
+
+static void hyundai_canfd_fwd_modify(CANPacket_t *msg) {
+  const bool is_camera_lfa = hyundai_canfd_lfa_camera_sync && (msg->bus == 2U) &&
+                             (msg->addr == 0x12AU) && (GET_LEN(msg) == 16U);
+  if (is_camera_lfa) {
+    const uint16_t checksum = msg->data[0] | (msg->data[1] << 8U);
+    if (checksum != hyundai_common_canfd_compute_checksum(msg)) {
+      // Do not transform a source frame whose payload checksum is invalid.
+      hyundai_canfd_lfa_command_mode = HYUNDAI_CANFD_LFA_COMMAND_PASSTHROUGH;
+    } else {
+      const uint32_t command_age = safety_get_ts_elapsed(microsecond_timer_get(), hyundai_canfd_lfa_command_ts);
+      const bool command_fresh = (hyundai_canfd_lfa_command_mode != HYUNDAI_CANFD_LFA_COMMAND_PASSTHROUGH) &&
+                                 (command_age < HYUNDAI_CANFD_LFA_COMMAND_TIMEOUT);
+      const bool camera_active = hyundai_canfd_get_lfa_request(msg) == 1U;
+      const bool force_active = (hyundai_canfd_lfa_command_mode == HYUNDAI_CANFD_LFA_COMMAND_FORCE_ACTIVE) ||
+                                (hyundai_canfd_lfa_command_mode == HYUNDAI_CANFD_LFA_COMMAND_FORCE_CUT);
+      const bool modify = command_fresh && (controls_allowed || controls_allowed_lateral) && (camera_active || force_active);
+
+      if (modify) {
+        const int raw_torque_signed = hyundai_canfd_lfa_command_torque + 1024;
+        const uint16_t raw_torque = (uint16_t)raw_torque_signed;
+        const bool steer_req = (hyundai_canfd_lfa_command_mode == HYUNDAI_CANFD_LFA_COMMAND_LANE_ACTIVE) ||
+                               (hyundai_canfd_lfa_command_mode == HYUNDAI_CANFD_LFA_COMMAND_FORCE_ACTIVE);
+
+        // StrTqReqVal: bits 41..51. Preserve byte 5 bit 0 and byte 6 bits 4..7.
+        msg->data[5] = (msg->data[5] & 0x1U) | ((raw_torque & 0x7FU) << 1U);
+        msg->data[6] = (msg->data[6] & 0xF0U) | ((raw_torque >> 7U) & 0xFU);
+
+        // ActToiSta: bits 52..53. Active is 1; request-cut is 0.
+        msg->data[6] = (msg->data[6] & 0xCFU) | (steer_req ? 0x10U : 0U);
+
+        const uint16_t modified_checksum = hyundai_common_canfd_compute_checksum(msg);
+        msg->data[0] = modified_checksum & 0xFFU;
+        msg->data[1] = modified_checksum >> 8U;
+      } else {
+        // Stock pass-through is always permitted. Sync the safety baseline so the next
+        // openpilot command must transition safely from the torque actually reaching EPS.
+        hyundai_canfd_sync_lfa_safety_state(msg);
+        hyundai_canfd_lfa_command_mode = HYUNDAI_CANFD_LFA_COMMAND_PASSTHROUGH;
+      }
+    }
+  }
 }
 
 static safety_config hyundai_canfd_init(uint16_t param) {
   const uint16_t HYUNDAI_PARAM_CANFD_LKA_STEER_MSG_ALT = 128;
   const uint16_t HYUNDAI_PARAM_CANFD_ALT_BUTTONS = 32;
-  const uint16_t HYUNDAI_PARAM_CANFD_LFA_PASSTHROUGH = 1024;
+  const uint16_t HYUNDAI_PARAM_CANFD_LFA_CAMERA_SYNC = 1024;
 
   static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_TX_MSGS[] = {
     HYUNDAI_CANFD_LKA_STEER_MSG_COMMON_TX_MSGS(0, 1)
@@ -281,9 +392,9 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
     {0x160, 0, 16, .check_relay = (longitudinal)}, /* ADRV_0x160 */ \
 
-#define HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_PASSTHROUGH_TX_MSGS(longitudinal) \
+#define HYUNDAI_CANFD_LFA_CAMERA_SYNC_TX_MSGS(longitudinal) \
     HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(2) \
-    HYUNDAI_CANFD_LFA_PASSTHROUGH_COMMON_TX_MSGS(0) \
+    HYUNDAI_CANFD_LFA_CAMERA_SYNC_COMMON_TX_MSGS(0) \
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
     {0x160, 0, 16, .check_relay = (longitudinal)}, /* ADRV_0x160 */ \
 
@@ -292,7 +403,10 @@ static safety_config hyundai_canfd_init(uint16_t param) {
   gen_crc_lookup_table_16(0x1021, hyundai_canfd_crc_lut);
   hyundai_canfd_alt_buttons = GET_FLAG(param, HYUNDAI_PARAM_CANFD_ALT_BUTTONS);
   hyundai_canfd_lka_steer_msg_alt = GET_FLAG(param, HYUNDAI_PARAM_CANFD_LKA_STEER_MSG_ALT);
-  hyundai_canfd_lfa_passthrough = GET_FLAG(param, HYUNDAI_PARAM_CANFD_LFA_PASSTHROUGH);
+  hyundai_canfd_lfa_camera_sync = GET_FLAG(param, HYUNDAI_PARAM_CANFD_LFA_CAMERA_SYNC);
+  hyundai_canfd_lfa_command_mode = HYUNDAI_CANFD_LFA_COMMAND_PASSTHROUGH;
+  hyundai_canfd_lfa_command_torque = 0;
+  hyundai_canfd_lfa_command_ts = 0U;
 
   safety_config ret;
   if (hyundai_longitudinal) {
@@ -313,23 +427,37 @@ static safety_config hyundai_canfd_init(uint16_t param) {
         HYUNDAI_CANFD_ALT_BUTTONS_RX_CHECKS(0)
       };
 
+      static RxCheck hyundai_canfd_lfa_camera_sync_long_rx_checks[] = {
+        HYUNDAI_CANFD_STD_BUTTONS_RX_CHECKS(0)
+        HYUNDAI_CANFD_LFA_CAMERA_SYNC_RX_CHECKS
+      };
+
+      static RxCheck hyundai_canfd_lfa_camera_sync_alt_buttons_long_rx_checks[] = {
+        HYUNDAI_CANFD_ALT_BUTTONS_RX_CHECKS(0)
+        HYUNDAI_CANFD_LFA_CAMERA_SYNC_RX_CHECKS
+      };
+
       static CanMsg hyundai_canfd_lfa_steering_camera_scc_tx_msgs[] = {
         HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_TX_MSGS(true)
       };
 
-      static CanMsg hyundai_canfd_lfa_steering_camera_scc_passthrough_tx_msgs[] = {
-        HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_PASSTHROUGH_TX_MSGS(true)
+      static CanMsg hyundai_canfd_lfa_camera_sync_tx_msgs[] = {
+        HYUNDAI_CANFD_LFA_CAMERA_SYNC_TX_MSGS(true)
       };
 
-      if (hyundai_canfd_alt_buttons) {
+      if (hyundai_canfd_lfa_camera_sync && hyundai_canfd_alt_buttons) {
+        SET_RX_CHECKS(hyundai_canfd_lfa_camera_sync_alt_buttons_long_rx_checks, ret);
+      } else if (hyundai_canfd_lfa_camera_sync) {
+        SET_RX_CHECKS(hyundai_canfd_lfa_camera_sync_long_rx_checks, ret);
+      } else if (hyundai_canfd_alt_buttons) {
         SET_RX_CHECKS(hyundai_canfd_alt_buttons_long_rx_checks, ret);
       } else {
         SET_RX_CHECKS(hyundai_canfd_long_rx_checks, ret);
       }
 
       if (hyundai_camera_scc) {
-        if (hyundai_canfd_lfa_passthrough) {
-          SET_TX_MSGS(hyundai_canfd_lfa_steering_camera_scc_passthrough_tx_msgs, ret);
+        if (hyundai_canfd_lfa_camera_sync) {
+          SET_TX_MSGS(hyundai_canfd_lfa_camera_sync_tx_msgs, ret);
         } else {
           SET_TX_MSGS(hyundai_canfd_lfa_steering_camera_scc_tx_msgs, ret);
         }
@@ -389,21 +517,37 @@ static safety_config hyundai_canfd_init(uint16_t param) {
         HYUNDAI_CANFD_SCC_ADDR_CHECK(2)
       };
 
+      static RxCheck hyundai_canfd_lfa_camera_sync_rx_checks[] = {
+        HYUNDAI_CANFD_STD_BUTTONS_RX_CHECKS(0)
+        HYUNDAI_CANFD_SCC_ADDR_CHECK(2)
+        HYUNDAI_CANFD_LFA_CAMERA_SYNC_RX_CHECKS
+      };
+
+      static RxCheck hyundai_canfd_lfa_camera_sync_alt_buttons_rx_checks[] = {
+        HYUNDAI_CANFD_ALT_BUTTONS_RX_CHECKS(0)
+        HYUNDAI_CANFD_SCC_ADDR_CHECK(2)
+        HYUNDAI_CANFD_LFA_CAMERA_SYNC_RX_CHECKS
+      };
+
       static CanMsg hyundai_canfd_lfa_steering_camera_scc_tx_msgs[] = {
         HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_TX_MSGS(false)
       };
 
-      static CanMsg hyundai_canfd_lfa_steering_camera_scc_passthrough_tx_msgs[] = {
-        HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_PASSTHROUGH_TX_MSGS(false)
+      static CanMsg hyundai_canfd_lfa_camera_sync_tx_msgs[] = {
+        HYUNDAI_CANFD_LFA_CAMERA_SYNC_TX_MSGS(false)
       };
 
-      if (hyundai_canfd_lfa_passthrough) {
-        SET_TX_MSGS(hyundai_canfd_lfa_steering_camera_scc_passthrough_tx_msgs, ret);
+      if (hyundai_canfd_lfa_camera_sync) {
+        SET_TX_MSGS(hyundai_canfd_lfa_camera_sync_tx_msgs, ret);
       } else {
         SET_TX_MSGS(hyundai_canfd_lfa_steering_camera_scc_tx_msgs, ret);
       }
 
-      if (hyundai_canfd_alt_buttons) {
+      if (hyundai_canfd_lfa_camera_sync && hyundai_canfd_alt_buttons) {
+        SET_RX_CHECKS(hyundai_canfd_lfa_camera_sync_alt_buttons_rx_checks, ret);
+      } else if (hyundai_canfd_lfa_camera_sync) {
+        SET_RX_CHECKS(hyundai_canfd_lfa_camera_sync_rx_checks, ret);
+      } else if (hyundai_canfd_alt_buttons) {
         SET_RX_CHECKS(hyundai_canfd_alt_buttons_rx_checks, ret);
       } else {
         SET_RX_CHECKS(hyundai_canfd_rx_checks, ret);
@@ -419,6 +563,7 @@ const safety_hooks hyundai_canfd_hooks = {
   .rx = hyundai_canfd_rx_hook,
   .tx = hyundai_canfd_tx_hook,
   .fwd = hyundai_canfd_fwd_hook,
+  .fwd_modify = hyundai_canfd_fwd_modify,
   .get_counter = hyundai_canfd_get_counter,
   .get_checksum = hyundai_canfd_get_checksum,
   .compute_checksum = hyundai_common_canfd_compute_checksum,

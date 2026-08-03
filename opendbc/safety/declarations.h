@@ -219,12 +219,14 @@ typedef safety_config (*safety_hook_init)(uint16_t param);
 typedef void (*rx_hook)(const CANPacket_t *msg);
 typedef bool (*tx_hook)(const CANPacket_t *msg);  // returns true if the message is allowed
 typedef bool (*fwd_hook)(int bus_num, int addr);      // returns true if the message should be blocked from forwarding
+typedef void (*fwd_modify_hook)(CANPacket_t *msg);    // optionally modifies a forwarded message in place
 
 typedef struct {
   safety_hook_init init;
   rx_hook rx;
   tx_hook tx;
   fwd_hook fwd;
+  fwd_modify_hook fwd_modify;
   get_checksum_t get_checksum;
   compute_checksum_t compute_checksum;
   get_counter_t get_counter;
@@ -233,6 +235,7 @@ typedef struct {
 
 bool safety_rx_hook(const CANPacket_t *msg);
 bool safety_tx_hook(CANPacket_t *msg);
+void safety_fwd_modify(CANPacket_t *msg);
 int to_signed(int d, int bits);
 void update_sample(struct sample_t *sample, int sample_new);
 bool get_longitudinal_allowed(void);
@@ -257,6 +260,7 @@ void safety_tick(const safety_config *safety_config);
 
 // This can be set by the safety hooks
 extern bool controls_allowed;
+extern bool safety_tx_consumed;
 extern bool relay_malfunction;
 extern bool gas_pressed;
 extern bool gas_pressed_prev;

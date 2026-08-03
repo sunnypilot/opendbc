@@ -1,11 +1,14 @@
 from hypothesis import settings, given, strategies as st
 
 import unittest
+from types import SimpleNamespace
 
+from opendbc.can import CANPacker
 from opendbc.car import gen_empty_fingerprint
 from opendbc.car.structs import CarParams
 from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.hyundai.interface import CarInterface
+from opendbc.car.hyundai import hyundaicanfd
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.radar_interface import RADAR_START_ADDR
 from opendbc.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
@@ -45,6 +48,28 @@ CANFD_EXPECTED_ECUS = {Ecu.fwdCamera, Ecu.fwdRadar}
 
 
 class TestHyundaiFingerprint(unittest.TestCase):
+  def test_canfd_lfa_camera_sync_command(self):
+    packer = CANPacker("hyundai_canfd_generated")
+    CP = SimpleNamespace(flags=HyundaiFlags.CANFD)
+    CAN = SimpleNamespace(ECAN=0)
+    lfa_msg = {"COUNTER": 41, "ActToiSta": 1, "StrTqReqVal": 17}
+
+    _, dat, _ = hyundaicanfd.create_steering_messages(packer, CP, CAN, False, False, 0, 0, lfa_msg)[0]
+    _, stock_dat, _ = packer.make_can_msg("LFA", CAN.ECAN, lfa_msg)
+    assert dat == stock_dat
+
+    addr, dat, bus = hyundaicanfd.create_lfa_steering_command(CAN, True, True, -25)
+    assert (addr, bus) == (0x7FF, CAN.ECAN)
+    assert int.from_bytes(dat[:2], byteorder="little", signed=True) == -25
+    assert dat[2:] == bytes([hyundaicanfd.LFA_COMMAND_LANE_ACTIVE, hyundaicanfd.LFA_COMMAND_MAGIC, 0, 0, 0, 0])
+
+    _, dat, _ = hyundaicanfd.create_lfa_steering_command(CAN, True, False, 25, force=True)
+    assert int.from_bytes(dat[:2], byteorder="little", signed=True) == 25
+    assert dat[2] == hyundaicanfd.LFA_COMMAND_FORCE_CUT
+
+    _, dat, _ = hyundaicanfd.create_lfa_steering_command(CAN, False, True, 25)
+    assert dat == bytes([0, 0, hyundaicanfd.LFA_COMMAND_PASSTHROUGH, hyundaicanfd.LFA_COMMAND_MAGIC, 0, 0, 0, 0])
+
   def test_feature_detection(self):
     # LKA steering
     for lka_steering in (True, False):

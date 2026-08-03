@@ -43,6 +43,7 @@ const int MAX_WRONG_COUNTERS = 5;
 
 // This can be set by the safety hooks
 bool controls_allowed = false;
+bool safety_tx_consumed = false;
 bool relay_malfunction = false;
 bool gas_pressed = false;
 bool gas_pressed_prev = false;
@@ -238,6 +239,7 @@ static bool tx_msg_safety_check(const CANPacket_t *msg, const CanMsg msg_list[],
 }
 
 bool safety_tx_hook(CANPacket_t *msg) {
+  safety_tx_consumed = false;
   bool whitelisted = tx_msg_safety_check(msg, current_safety_config.tx_msgs, current_safety_config.tx_msgs_len);
   if ((current_safety_mode == SAFETY_ALLOUTPUT) || (current_safety_mode == SAFETY_ELM327)) {
     whitelisted = true;
@@ -249,6 +251,12 @@ bool safety_tx_hook(CANPacket_t *msg) {
   }
 
   return !relay_malfunction && whitelisted && safety_allowed;
+}
+
+void safety_fwd_modify(CANPacket_t *msg) {
+  if (current_hooks->fwd_modify != NULL) {
+    current_hooks->fwd_modify(msg);
+  }
 }
 
 static int get_fwd_bus(int bus_num) {

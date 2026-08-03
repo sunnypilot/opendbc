@@ -36,6 +36,15 @@ class CanBus(CanBusBase):
     return self._cam
 
 
+LFA_COMMAND_ADDR = 0x7FF
+LFA_COMMAND_MAGIC = 0xA5
+LFA_COMMAND_PASSTHROUGH = 0
+LFA_COMMAND_LANE_ACTIVE = 1
+LFA_COMMAND_LANE_CUT = 2
+LFA_COMMAND_FORCE_ACTIVE = 3
+LFA_COMMAND_FORCE_CUT = 4
+
+
 def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon, lfa_msg):
   values = {
     "LKA_OptUsmSta": 2,
@@ -58,6 +67,19 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, lfa_msg))
 
   return ret
+
+
+def create_lfa_steering_command(CAN, lat_active, steer_req, apply_torque, force=False):
+  if not lat_active:
+    mode = LFA_COMMAND_PASSTHROUGH
+    apply_torque = 0
+  elif force:
+    mode = LFA_COMMAND_FORCE_ACTIVE if steer_req else LFA_COMMAND_FORCE_CUT
+  else:
+    mode = LFA_COMMAND_LANE_ACTIVE if steer_req else LFA_COMMAND_LANE_CUT
+
+  dat = int(apply_torque).to_bytes(2, byteorder="little", signed=True) + bytes([mode, LFA_COMMAND_MAGIC, 0, 0, 0, 0])
+  return LFA_COMMAND_ADDR, dat, CAN.ECAN
 
 
 def create_suppress_lfa(packer, CAN, lfa_block_msg, lka_steering_alt):

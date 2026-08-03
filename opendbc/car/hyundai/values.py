@@ -68,7 +68,7 @@ class HyundaiSafetyFlags(IntFlag):
   CANFD_LKA_STEER_MSG_ALT = 128
   FCEV_GAS = 256
   ALT_LIMITS_2 = 512
-  CANFD_LFA_PASSTHROUGH = 1024
+  CANFD_LFA_CAMERA_SYNC = 1024
 
 
 # Hyundai/Kia/Genesis SCC (Smart Cruise Control) and steering architecture:
@@ -149,8 +149,7 @@ class HyundaiFlags(IntFlag):
   FCEV = 2 ** 25
 
   ALT_LIMITS_2 = 2 ** 26
-
-  CANFD_LFA_PASSTHROUGH = 2 ** 27
+  CANFD_LFA_CAMERA_SYNC = 2 ** 27
 
 
 @dataclass
@@ -380,7 +379,7 @@ class CAR(Platforms):
   HYUNDAI_SONATA_HEV_2024 = HyundaiCanFDPlatformConfig(
     [HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_a]))],
     CarSpecs(mass=1616, wheelbase=2.84, steerRatio=13.27),
-    flags=HyundaiFlags.CANFD_LFA_PASSTHROUGH,
+    flags=HyundaiFlags.CANFD_LFA_CAMERA_SYNC,
   )
   HYUNDAI_IONIQ_5 = HyundaiCanFDPlatformConfig(
     [

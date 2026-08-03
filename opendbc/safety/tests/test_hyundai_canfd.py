@@ -123,6 +123,120 @@ class TestHyundaiCanfdLFASteering(TestHyundaiCanfdLFASteeringBase):
   pass
 
 
+class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
+  TX_MSGS = [[0x7FF, 0], [0x1A0, 1], [0x1CF, 0], [0x1E0, 0]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x1E0,)}  # LFAHDA_CLUSTER; physical LFA is forwarded from camera
+  FWD_BLACKLISTED_ADDRS = {0: [0x12A], 2: [0x1E0]}
+
+  GAS_MSG = ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL")
+  SAFETY_PARAM = HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CANFD_LFA_CAMERA_SYNC
+
+  @staticmethod
+  def _command(torque, mode, magic=0xA5):
+    dat = int(torque).to_bytes(2, byteorder="little", signed=True) + bytes([mode, magic, 0, 0, 0, 0])
+    return libsafety_py.make_CANPacket(0x7FF, 0, dat)
+
+  def _torque_cmd_msg(self, torque, steer_req=1):
+    return self._command(torque, 1 if steer_req else 2)
+
+  def _camera_lfa(self, torque=0, request=1, counter=0, **kwargs):
+    values = {"COUNTER": counter, "ActToiSta": request, "StrTqReqVal": torque, **kwargs}
+    return self.packer.make_can_msg_safety("LFA", 2, values)
+
+  @staticmethod
+  def _data(msg):
+    return bytes(msg[0].data[0:16])
+
+  def _modify(self, msg):
+    self.safety.safety_fwd_modify(msg)
+    return self._data(msg)
+
+  def _prime_stock_torque(self, torque=0, request=1):
+    self._modify(self._camera_lfa(torque, request))
+
+  def test_lfa_forwarding_direction(self):
+    self.assertEqual(self.safety.safety_fwd_hook(2, 0x12A), 0)
+    self.assertEqual(self.safety.safety_fwd_hook(0, 0x12A), -1)
+
+  def test_virtual_command_is_consumed(self):
+    self.safety.set_controls_allowed(True)
+    self.assertTrue(self._tx(self._command(0, 1)))
+    self.assertTrue(self.safety.safety_tx_consumed)
+
+    self.assertFalse(self._tx(self._command(0, 1, magic=0)))
+    self.assertTrue(self.safety.safety_tx_consumed)
+
+  def test_stock_lfa_passes_through_byte_for_byte(self):
+    msg = self._camera_lfa(37, 1, 41, NEW_SIGNAL_1=5, NEW_SIGNAL_2=3, NEW_SIGNAL_3=42,
+                           NEW_SIGNAL_4=2, NEW_SIGNAL_5=1, NEW_SIGNAL_6=17,
+                           NEW_SIGNAL_7=0xA6, NEW_SIGNAL_8=0x5B)
+    original = self._data(msg)
+    self.assertEqual(self._modify(msg), original)
+
+  def test_lane_active_command_modifies_only_torque_request_and_checksum(self):
+    self._prime_stock_torque()
+    self.safety.set_controls_allowed(True)
+    self.assertTrue(self._tx(self._command(2, 1)))
+
+    msg = self._camera_lfa(0, 1, 7, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
+    original = self._data(msg)
+    modified = self._modify(msg)
+
+    self.assertEqual(modified[2], original[2])  # physical camera counter
+    self.assertEqual(modified[3:5], original[3:5])
+    self.assertEqual(modified[7:], original[7:])
+    self.assertEqual(((int.from_bytes(modified, "little") >> 41) & 0x7FF) - 1024, 2)
+    self.assertEqual((int.from_bytes(modified, "little") >> 52) & 0x3, 1)
+
+    expected = self._camera_lfa(2, 1, 7, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
+    self.assertEqual(modified, self._data(expected))  # includes the recomputed Hyundai CRC16
+
+  def test_lane_command_does_not_force_camera_ownership(self):
+    self._prime_stock_torque(request=0)
+    self.safety.set_controls_allowed(True)
+    self.assertTrue(self._tx(self._command(2, 1)))
+
+    msg = self._camera_lfa(0, 0, 8)
+    original = self._data(msg)
+    self.assertEqual(self._modify(msg), original)
+
+    # Once an inactive source frame falls back to stock, a later active frame needs a
+    # newly safety-checked host command; it must not reuse the previous cached torque.
+    msg = self._camera_lfa(0, 1, 9)
+    original = self._data(msg)
+    self.assertEqual(self._modify(msg), original)
+
+  def test_force_command_can_request_steering_without_lane_lines(self):
+    self._prime_stock_torque(request=0)
+    self.safety.set_controls_allowed(True)
+    self.assertTrue(self._tx(self._command(2, 3)))
+
+    msg = self._camera_lfa(0, 0, 9)
+    modified = self._modify(msg)
+    self.assertEqual(((int.from_bytes(modified, "little") >> 41) & 0x7FF) - 1024, 2)
+    self.assertEqual((int.from_bytes(modified, "little") >> 52) & 0x3, 1)
+    self.assertEqual(modified, self._data(self._camera_lfa(2, 1, 9)))
+
+  def test_stale_disengaged_and_unsafe_commands_fall_back_to_stock(self):
+    for reason in ("stale", "disengaged", "unsafe"):
+      with self.subTest(reason=reason):
+        self._reset_safety_hooks()
+        self.safety.set_timer(0)
+        self._prime_stock_torque()
+        self.safety.set_controls_allowed(True)
+
+        allowed = self._tx(self._command(3 if reason == "unsafe" else 2, 1))
+        self.assertEqual(allowed, reason != "unsafe")
+        if reason == "stale":
+          self.safety.set_timer(50001)
+        elif reason == "disengaged":
+          self.safety.set_controls_allowed(False)
+
+        msg = self._camera_lfa(0, 1, 10)
+        original = self._data(msg)
+        self.assertEqual(self._modify(msg), original)
+
+
 class TestHyundaiCanfdLFASteeringAltButtonsBase(TestHyundaiCanfdLFASteeringBase):
 
   SAFETY_PARAM: int
@@ -169,21 +283,6 @@ class TestHyundaiCanfdLFASteeringAltButtonsBase(TestHyundaiCanfdLFASteeringBase)
 @parameterized_class(ALL_GAS_EV_HYBRID_COMBOS)
 class TestHyundaiCanfdLFASteeringAltButtons(TestHyundaiCanfdLFASteeringAltButtonsBase):
   pass
-
-
-class TestHyundaiCanfdLFAPassthrough(unittest.TestCase):
-
-  def setUp(self):
-    self.safety = libsafety_py.libsafety
-    param = HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CANFD_ALT_BUTTONS | \
-            HyundaiSafetyFlags.CANFD_LFA_PASSTHROUGH
-    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, param)
-    self.safety.init_tests()
-
-  def test_lfa_is_forwarded_from_camera_only(self):
-    self.assertEqual(self.safety.safety_fwd_hook(2, 0x12A), 0)
-    self.assertEqual(self.safety.safety_fwd_hook(0, 0x12A), -1)
-    self.assertFalse(self.safety.safety_tx_hook(libsafety_py.make_CANPacket(0x12A, 0, bytes(16))))
 
 
 class TestHyundaiCanfdLKASteeringEV(TestHyundaiCanfdBase):
