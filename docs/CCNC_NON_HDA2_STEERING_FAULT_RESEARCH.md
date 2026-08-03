@@ -1,6 +1,6 @@
 # CCNC non-HDA2 steering-fault investigation
 
-Status: active research; Panda-timed transformer implemented and bench-tested, road validation pending
+Status: active research; Panda-timed lane-gated transformer passed initial road validation, force-ownership validation pending
 Vehicle: 2024 Hyundai Sonata Hybrid without HDA II (`HYUNDAI_SONATA_HEV_2024`)
 Branch: `ccnc-port-lite`
 Last updated: 2026-08-03
@@ -19,7 +19,9 @@ The next design therefore does not generate or replay `LFA` in openpilot. Panda 
 
 The physical camera counter, every other defined signal, every currently unknown bit, and the physical arrival cadence remain camera-owned. A small safety-checked command from openpilot is consumed inside Panda and never transmitted on CAN. Invalid, stale, disengaged, or unsafe commands revert immediately to unmodified stock pass-through. Nothing suppresses or edits the CCNC fault message `0x162`.
 
-This implementation is intentionally lane-gated for the first road validation. The Panda protocol already supports a second, disabled-by-default force-ownership mode for steering without lane lines. That mode must be tested only after the timing fix is proven fault-free while the camera is requesting steering.
+The lane-gated implementation subsequently passed an initial moving road validation: a continuous 90-second window contained 8,988 source frames and 8,988 physical outputs, no counter discontinuities, 9,002 healthy MDPS samples, and 1,797 clear CCNC fault samples. A separate corrected 20-second byte-pairing capture included two request handoffs and showed 218 exact frames, 1,777 modified frames, and zero changes outside torque, request, and checksum. This exceeds the prior 7-second, 26-second, and 30-plus-second false-clean windows.
+
+The Panda protocol already supports a second, disabled-by-default force-ownership mode for steering without lane lines. That remains the next experiment. The global Panda blocked-transmission counter increased by two during the handoff capture even though physical forwarding and every vehicle fault channel remained clean; this boundary behavior must be attributed before the implementation is considered production-ready.
 
 ## Goal and non-goals
 
@@ -536,6 +538,39 @@ The vehicle was powered down for this parked deployment. Consequently, active sa
 
 The newly started updater process reported that the existing overlay updater already owned its lock and exited. It was not a second manager, `card`, `controlsd`, or other driving stack and does not change the steering conclusion.
 
+### Stage 0 and Stage 1 live validation on 2026-08-03
+
+The vehicle was powered and driven after the parked deployment. Live state confirmed:
+
+- Panda type `cuatro` running `hyundaiCanfd` safety with parameter 1034;
+- ignition line active;
+- one manager and driving-process stack;
+- no Panda firmware fault, RX buffer overflow, TX buffer overflow, or invalid safety RX state;
+- valid vehicle CAN and no temporary or permanent steering fault in `carState`;
+- no attempt was made to change or diagnose upstream loop lag beyond checking that duplicate driving stacks were absent.
+
+Three moving captures were taken without blocking or rewriting `0xEA` or `0x162`:
+
+| Capture | Physical LFA result | Steering substitution | Fault result |
+|---|---|---|---|
+| Initial 15 seconds | 1,498 camera inputs and 1,498 bus-0 outputs; zero missing/extra frames and zero counter discontinuities | 829 byte-identical frames and 669 modified frames; every difference confined to torque, request, and checksum | All 300 sampled `0x162` source messages had `FAULT_LSS=0`, `FAULT_LFA=0`, and `FAULT_DAS=0`; `carState` remained fault-free |
+| Continuous 90 seconds | 8,988 inputs and 8,988 outputs; zero source or output counter discontinuities | Source and output request state matched for 6,069 active and 2,919 inactive frames | All 9,002 MDPS samples had fault/fail `(0, 0)`; all 1,797 CCNC samples had fault tuple `(0, 0, 0)` |
+| Corrected 20-second handoff capture | 1,995 inputs paired with all 1,995 outputs at zero sequence offset; zero counter discontinuities | Two request-state transitions; 218 exact frames and 1,777 modified frames; zero unexpected changed bits | All 2,001 MDPS samples had fault/fail `(0, 0)`; all 398 CCNC samples had fault tuple `(0, 0, 0)` |
+
+The first streaming implementation of the 90-second diagnostic paired a returned output only when its source copy had already appeared in host event order. Panda can report the returned output to the host before the source copy in the same cycle, which left 256 frames offset by one counter wrap and produced false `unexpected_diff` counts in that diagnostic. This was an observer-order bug, not a bus error. The follow-up capture stored both complete sequences, aligned them by counter occurrence, paired every frame at offset zero, and found zero unexpected differences.
+
+No physical `0x7FF` internal command appeared during the initial capture. The physical source and output torque ranges differed while substitution was active, proving this was not merely stock forwarding, while request states and all non-steering payload bits remained camera-owned.
+
+The Panda-wide `safetyTxBlocked` counter was 3 before the requested handoff exercise and 5 afterward. Because the counter is global and the live capture did not record the rejected address, the two increments cannot yet be assigned conclusively to the virtual steering command. Their timing is consistent with a safety-baseline boundary at the two handoffs, but another host command remains possible. In either case, the rejection path preserved the physical source frame, did not create a counter hole, and did not trigger MDPS or CCNC faults. The next instrumentation should identify the rejected address and reason rather than infer it from the aggregate counter.
+
+Initial Stage 1 result: the Panda interrupt-time transformer resolves the fault condition that consistently affected application-layer replay. It has now remained clean beyond every previously observed failure interval and across two request transitions. This is strong single-vehicle evidence for the physical-cadence root cause, not yet a production-readiness claim. Longer-duration repetition, explicit stock LKA lane-departure testing, attribution of the two blocked transmissions, and force-ownership testing remain open.
+
+The proven checkpoint was committed as:
+
+- opendbc `296c67ab` (`hyundai: sync CCNC LFA steering in Panda`);
+- Panda `9af46280` (`can: support safety-modified forwarded frames`);
+- Sunnypilot parent `aa4663ba33` (`hyundai: checkpoint CCNC LFA camera sync`).
+
 ## Road-validation plan
 
 ### Stage 0: parked deployment and fail-safe checks
@@ -555,7 +590,7 @@ The newly started updater process reported that the existing overlay updater alr
 
 ### Stage 1: moving, lane-gated openpilot substitution
 
-Start with the force modes disabled.
+Status: initial validation passed on 2026-08-03; longer repetition remains required. Force modes were disabled for these captures.
 
 1. Begin on a straight, low-complexity road with stable lane lines and room for a safe manual takeover.
 2. Record camera `0x12A`, forwarded/returned bus-0 `0x12A`, MDPS `0xEA`, CCNC `0x162`, `carControl`, `carState`, Panda health, speed, angle, and driver torque.
