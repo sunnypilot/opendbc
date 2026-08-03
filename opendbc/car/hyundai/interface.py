@@ -85,6 +85,8 @@ class CarInterface(CarInterfaceBase):
         ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CANFD_ALT_BUTTONS.value
       if ret.flags & HyundaiFlags.CANFD_CAMERA_SCC:
         ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CAMERA_SCC.value
+      if ret.flags & HyundaiFlags.CANFD_LFA_PASSTHROUGH:
+        ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CANFD_LFA_PASSTHROUGH.value
 
     else:
       # Shared configuration for non CAN-FD cars

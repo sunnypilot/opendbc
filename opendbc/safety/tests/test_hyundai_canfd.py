@@ -171,6 +171,21 @@ class TestHyundaiCanfdLFASteeringAltButtons(TestHyundaiCanfdLFASteeringAltButton
   pass
 
 
+class TestHyundaiCanfdLFAPassthrough(unittest.TestCase):
+
+  def setUp(self):
+    self.safety = libsafety_py.libsafety
+    param = HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CANFD_ALT_BUTTONS | \
+            HyundaiSafetyFlags.CANFD_LFA_PASSTHROUGH
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, param)
+    self.safety.init_tests()
+
+  def test_lfa_is_forwarded_from_camera_only(self):
+    self.assertEqual(self.safety.safety_fwd_hook(2, 0x12A), 0)
+    self.assertEqual(self.safety.safety_fwd_hook(0, 0x12A), -1)
+    self.assertFalse(self.safety.safety_tx_hook(libsafety_py.make_CANPacket(0x12A, 0, bytes(16))))
+
+
 class TestHyundaiCanfdLKASteeringEV(TestHyundaiCanfdBase):
 
   TX_MSGS = [[0x50, 0], [0x1CF, 1], [0x2A4, 0]]
