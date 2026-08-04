@@ -69,6 +69,7 @@ static bool toyota_secoc = false;
 static bool toyota_alt_brake = false;
 static bool toyota_stock_longitudinal = false;
 static bool toyota_lta = false;
+static bool toyota_cruise_engaged = false;  // SP: PCM_CRUISE.CRUISE_ACTIVE, narrows the auto brake hold AEB window below
 static int toyota_dbc_eps_torque_factor = 100;   // conversion factor for STEER_TORQUE_EPS in %: see dbc file
 
 static uint32_t toyota_compute_checksum(const CANPacket_t *msg) {
@@ -151,6 +152,7 @@ static void toyota_rx_hook(const CANPacket_t *msg) {
       if (msg->addr == 0x176U) {
         bool cruise_engaged = GET_BIT(msg, 5U);  // PCM_CRUISE.CRUISE_ACTIVE
         pcm_cruise_check(cruise_engaged);
+        toyota_cruise_engaged = cruise_engaged;
       }
       if (msg->addr == 0x116U) {
         gas_pressed = msg->data[1] != 0U;  // GAS_PEDAL.GAS_PEDAL_USER
@@ -162,6 +164,7 @@ static void toyota_rx_hook(const CANPacket_t *msg) {
       if (msg->addr == 0x1D2U) {
         bool cruise_engaged = GET_BIT(msg, 5U);  // PCM_CRUISE.CRUISE_ACTIVE
         pcm_cruise_check(cruise_engaged);
+        toyota_cruise_engaged = cruise_engaged;
 
         if (!enable_gas_interceptor) {
           gas_pressed = !GET_BIT(msg, 4U);  // PCM_CRUISE.GAS_RELEASED
@@ -386,6 +389,13 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
         tx = false;
       }
     }
+
+    // SP: auto brake hold https://github.com/AlexandreSato
+    if ((msg->addr == 0x344U) && (alternative_experience & ALT_EXP_ALLOW_AEB)) {
+      if (vehicle_moving || gas_pressed || !acc_main_on || toyota_cruise_engaged) {
+        tx = false;
+      }
+    }
   }
 
   // UDS: Only tester present ("\x0F\x02\x3E\x00\x00\x00\x00\x00") allowed on diagnostics address
@@ -581,10 +591,27 @@ static safety_config toyota_init(uint16_t param) {
   return ret;
 }
 
+static bool toyota_fwd_hook(int bus_num, int addr) {
+  bool block_msg = false;
+  if (bus_num == 2) {
+    // SP: block AEB when auto brake hold is active, unblock AEB when auto brake hold is not active.
+    // Narrowed to match auto brake hold's own precondition (cruise must be off) - previously this
+    // blocked native AEB forwarding, forcing a slower software relay, any time the car was simply
+    // stopped with the gas released and ACC main on, even while cruise was actively engaged and
+    // auto brake hold couldn't be active at all.
+    bool is_aeb_msg = (addr == 0x344);
+    block_msg = (is_aeb_msg && (alternative_experience & ALT_EXP_ALLOW_AEB) && !vehicle_moving && !gas_pressed && acc_main_on &&
+                 !toyota_cruise_engaged);
+  }
+
+  return block_msg;
+}
+
 const safety_hooks toyota_hooks = {
   .init = toyota_init,
   .rx = toyota_rx_hook,
   .tx = toyota_tx_hook,
+  .fwd = toyota_fwd_hook,
   .get_checksum = toyota_get_checksum,
   .compute_checksum = toyota_compute_checksum,
   .get_quality_flag_valid = toyota_get_quality_flag_valid,
