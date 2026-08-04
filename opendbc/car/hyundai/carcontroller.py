@@ -28,6 +28,11 @@ MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 # and triggers the "SCC Conditions Not Met" alert. Delaying the button send lets factory SCC disengage
 # naturally on brake press. We send ~100 ms later if it fails to do so, or if we want to cancel for another reason.
 CANCEL_BUTTON_DELAY_FRAMES = 10
+LFA_CAMERA_SYNC_ZERO_FRAMES = 5
+LFA_CAMERA_SYNC_ZERO_TIMEOUT_FRAMES = 50
+LFA_SYNC_IDLE = 0
+LFA_SYNC_PASSTHROUGH = 1
+LFA_SYNC_ZERO_ACTIVE = 2
 
 
 def process_hud_alert(enabled, fingerprint, hud_control):
@@ -73,6 +78,11 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
     self.cancel_counter = 0
+    self.lfa_camera_active_prev = False
+    self.lfa_camera_sync_lat_active_prev = False
+    self.lfa_camera_sync_phase = LFA_SYNC_IDLE
+    self.lfa_camera_sync_phase_frames = 0
+    self.lfa_camera_sync_passthrough = False
 
   def update(self, CC, CC_SP, CS, now_nanos):
     EsccCarController.update(self, CS)
@@ -88,22 +98,55 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     new_torque = int(round(actuators.torque * self.params.STEER_MAX))
     lfa_camera_sync = bool(self.CP.flags & HyundaiFlags.CANFD_LFA_CAMERA_SYNC)
     lfa_msg_available = bool(CS.lfa_msg)
-    camera_steering = lfa_camera_sync and lfa_msg_available and CS.lfa_msg["ActToiSta"] == 1
+    camera_steering = lfa_msg_available and CS.lfa_msg["ActToiSta"] == 1
 
     steering_msg_available = not lfa_camera_sync or lfa_msg_available
     apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params) \
       if steering_msg_available else self.apply_torque_last
 
-    # >90 degree steering fault prevention
+    # The CCNC MDPS faults after roughly 0.9 seconds of an active request above
+    # 85 degrees, so this request-bit guard is required on the camera-sync path too.
     self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_ANGLE, CC.latActive,
                                                                        self.angle_limit_counter, MAX_ANGLE_FRAMES,
                                                                        MAX_ANGLE_CONSECUTIVE_FRAMES)
 
-    if lfa_camera_sync and lfa_msg_available and not (camera_steering and CC.latActive):
+    if lfa_camera_sync and lfa_msg_available and not CC.latActive:
       # Track the exact stock command so the first modified frame starts from the same torque.
       apply_torque = round(CS.lfa_msg["StrTqReqVal"])
     elif not CC.latActive:
       apply_torque = 0
+
+    if lfa_camera_sync:
+      self.lfa_camera_sync_passthrough = False
+      if not CC.latActive:
+        self.lfa_camera_sync_phase = LFA_SYNC_IDLE
+      elif not camera_steering and (self.lfa_camera_active_prev or not self.lfa_camera_sync_lat_active_prev):
+        self.lfa_camera_sync_phase = LFA_SYNC_PASSTHROUGH
+        self.lfa_camera_sync_phase_frames = LFA_CAMERA_SYNC_ZERO_FRAMES
+
+      if self.lfa_camera_sync_phase == LFA_SYNC_PASSTHROUGH:
+        if camera_steering:
+          self.lfa_camera_sync_phase = LFA_SYNC_IDLE
+        else:
+          apply_torque = 0
+          self.lfa_camera_sync_passthrough = True
+          if self.lfa_camera_sync_phase_frames > 0:
+            self.lfa_camera_sync_phase_frames -= 1
+          elif not CS.mdps_lka_active:
+            self.lfa_camera_sync_phase = LFA_SYNC_ZERO_ACTIVE
+            self.lfa_camera_sync_phase_frames = LFA_CAMERA_SYNC_ZERO_TIMEOUT_FRAMES
+      elif self.lfa_camera_sync_phase == LFA_SYNC_ZERO_ACTIVE:
+        apply_torque = 0
+        if CS.mdps_lka_active:
+          self.lfa_camera_sync_phase = LFA_SYNC_IDLE
+        elif self.lfa_camera_sync_phase_frames > 0:
+          self.lfa_camera_sync_phase_frames -= 1
+        else:
+          self.lfa_camera_sync_phase = LFA_SYNC_PASSTHROUGH
+          self.lfa_camera_sync_phase_frames = LFA_CAMERA_SYNC_ZERO_FRAMES
+
+      self.lfa_camera_active_prev = camera_steering
+      self.lfa_camera_sync_lat_active_prev = CC.latActive
 
     if steering_msg_available:
       self.apply_torque_last = apply_torque
@@ -217,9 +260,13 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon,
                                                              CS.lfa_msg))
     elif CS.lfa_msg:
-      camera_steering = CS.lfa_msg["ActToiSta"] == 1
-      can_sends.append(hyundaicanfd.create_lfa_steering_command(self.CAN, CC.latActive and camera_steering,
-                                                                apply_steer_req, apply_torque))
+      # Pre-arm the camera's companion state in Panda before requesting the MDPS
+      # torque interface without relying on stock lane lines.
+      force_camera_active = CS.lfa_msg["ActToiSta"] != 1
+      can_sends.append(hyundaicanfd.create_lfa_steering_command(self.CAN, CC.latActive and not self.lfa_camera_sync_passthrough,
+                                                                apply_steer_req, apply_torque, force=force_camera_active,
+                                                                mdps_experiment=hyundaicanfd.MDPS_EXPERIMENT_CLEAR_ACTIVE if force_camera_active
+                                                                else hyundaicanfd.MDPS_EXPERIMENT_NONE))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU
     if self.frame % 5 == 0 and lka_steering:
@@ -227,7 +274,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
                                                         self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT))
 
     # LFA and HDA icons
-    if self.frame % 5 == 0 and (not lka_steering or lka_steering_long):
+    if self.frame % 5 == 0 and (not lka_steering or lka_steering_long) and not lfa_camera_sync:
       can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
 
     # blinkers

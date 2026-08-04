@@ -67,6 +67,14 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert int.from_bytes(dat[:2], byteorder="little", signed=True) == 25
     assert dat[2] == hyundaicanfd.LFA_COMMAND_FORCE_CUT
 
+    _, dat, _ = hyundaicanfd.create_lfa_steering_command(CAN, True, True, 0, force=True,
+                                                          mdps_experiment=hyundaicanfd.MDPS_EXPERIMENT_VALID_ZERO)
+    assert dat[4] == hyundaicanfd.MDPS_EXPERIMENT_VALID_ZERO
+
+    _, dat, _ = hyundaicanfd.create_lfa_steering_command(CAN, True, True, 0, force=True,
+                                                          mdps_experiment=hyundaicanfd.MDPS_EXPERIMENT_CLEAR_ACTIVE)
+    assert dat[4] == hyundaicanfd.MDPS_EXPERIMENT_CLEAR_ACTIVE
+
     _, dat, _ = hyundaicanfd.create_lfa_steering_command(CAN, False, True, 25)
     assert dat == bytes([0, 0, hyundaicanfd.LFA_COMMAND_PASSTHROUGH, hyundaicanfd.LFA_COMMAND_MAGIC, 0, 0, 0, 0])
 
