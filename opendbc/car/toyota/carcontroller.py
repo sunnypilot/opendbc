@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from openpilot.common.params import Params
 from opendbc.car import Bus, make_tester_present_msg, rate_limit, structs, ACCELERATION_DUE_TO_GRAVITY, DT_CTRL
 from opendbc.car.lateral import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance
 from opendbc.car.carlog import carlog
@@ -40,8 +41,16 @@ MAX_USER_TORQUE = 500
 
 def get_long_tune(CP, params):
   if CP.carFingerprint in TSS2_CAR:
-    kiBP = [2., 5.]
-    kiV = [0.5, 0.25]
+    if Params().get_bool("ToyotaTSS2Long"):
+      #kiBP = [0.,   2.0,  9.0,  14.,  20.,  27.]
+      #kiV =  [0.25, 0.25, 0.15, 0.12, 0.12, 0.12]
+      #kiBP= [0.,  1.0,  2.0,   3.0,   4.0,   5.0,   7.,  20.,  27.,  36.]
+      #kiV  = [0.31, 0.32, 0.301, 0.280,  0.259, 0.226, 0.15, 0.15, 0.101, 0.10]
+      kiBP= [0.3,   0.9,   1.0,  2.0,   5.0,   27.,  36.]
+      kiV  = [0.46, 0.46,  0.50, 0.50, 0.244, 0.10, 0.09]
+    else:
+      kiBP = [2., 5.]
+      kiV = [0.5, 0.25]
   else:
     kiBP = [0., 5., 35.]
     kiV = [3.6, 2.4, 1.5]
