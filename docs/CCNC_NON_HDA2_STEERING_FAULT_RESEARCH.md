@@ -1,6 +1,6 @@
 # CCNC non-HDA2 steering-fault investigation
 
-Status: active research; Panda-timed lane-gated transformer passed initial road validation, force-ownership validation pending
+Status: active research; Panda-timed lane-gated transformer passed road validation, `0x12A`-only force ownership was rejected by CCNC, cross-message ownership test pending
 Vehicle: 2024 Hyundai Sonata Hybrid without HDA II (`HYUNDAI_SONATA_HEV_2024`)
 Branch: `ccnc-port-lite`
 Last updated: 2026-08-03
@@ -21,7 +21,14 @@ The physical camera counter, every other defined signal, every currently unknown
 
 The lane-gated implementation subsequently passed an initial moving road validation: a continuous 90-second window contained 8,988 source frames and 8,988 physical outputs, no counter discontinuities, 9,002 healthy MDPS samples, and 1,797 clear CCNC fault samples. A separate corrected 20-second byte-pairing capture included two request handoffs and showed 218 exact frames, 1,777 modified frames, and zero changes outside torque, request, and checksum. This exceeds the prior 7-second, 26-second, and 30-plus-second false-clean windows.
 
-The Panda protocol already supports a second, disabled-by-default force-ownership mode for steering without lane lines. That remains the next experiment. The global Panda blocked-transmission counter increased by two during the handoff capture even though physical forwarding and every vehicle fault channel remained clean; this boundary behavior must be attributed before the implementation is considered production-ready.
+The disabled-by-default force-ownership mode was subsequently tested. It proved that the EPS can steer without lane lines: MDPS accepted the forced request and never set its unable, fault, or fail fields, even with requested torque spanning -270 through 270. CCNC nevertheless raised LSS/DAS and sometimes LFA faults immediately whenever the camera itself was lane-inactive. Recognition-only and recognition-plus-cached-damping variants failed the same way. These results separate two problems:
+
+- the original application-relay failure was an MDPS timing/continuity failure, solved by Panda-timed transformation;
+- forced no-line ownership is a CCNC cross-message consistency failure, not an EPS torque limitation.
+
+The final clean stock capture found the strongest current explanation for the second problem. Natural steering activation changes `0x161` and `0x1E0` together with `0x12A`: `0x161` changes its centerline, left/right lane-line states, and `LFA_ICON`, while `0x1E0` changes its `LFA_ICON`. `0x1B5` simultaneously carries valid lane quality and geometry. The force experiments changed only `0x12A`, leaving the rest of the camera-owned state inactive. A narrowly scoped synchronized transformation of the display/ownership fields is the next experiment; fault reporting remains untouched.
+
+The global Panda blocked-transmission counter increased by two during one handoff capture even though physical forwarding and every vehicle fault channel remained clean; this boundary behavior must still be attributed before the implementation is considered production-ready.
 
 ## Goal and non-goals
 
@@ -69,7 +76,7 @@ Application replay (faults)
                                                 |
   bus 0 MDPS <-- Panda <-- USB <-- rebuilt/replayed 0x12A
 
-Panda-timed transform (next road test)
+Panda-timed transform (validated for lane-gated steering)
 
   openpilot -- safety-checked desired torque command --> Panda internal state
                                                            |
@@ -116,6 +123,50 @@ The fully mapped payload also contains `LKA_OptUsmSta`, `LKA_RcgSta`, lane warni
 
 The source definition is in `opendbc/dbc/generator/hyundai/hyundai_canfd.dbc` under `BO_ 298 LFA`.
 
+#### Complete observed `LFA` field inventory
+
+The added definitions cover 128 of 128 payload bits. A decode-and-repack sweep over 8,434 synchronized stock frames reproduced all 8,434 payloads exactly; a separate live sample also reproduced all 16 bytes exactly. This validates bit position, width, endianness, scaling, and preservation for the states exercised. It does not prove that every provisional signal name is semantically correct.
+
+The following inventory combines the 50,851-frame low/local-road capture with the earlier higher-speed reference. `Boundary` means the value appeared briefly while recognition and torque-overlay states changed at slightly different instants.
+
+| Signal | Bits / endian | Observed stock value(s) | Current interpretation |
+|---|---|---|---|
+| `CHECKSUM` | 0:16 LE | dynamic 16-bit value | Validated Hyundai CAN-FD CRC |
+| `COUNTER` | 16:8 LE | every value 0..255 | Camera-owned 100 Hz rolling counter |
+| `LKA_OptUsmSta` | 24:3 LE | 0 | Constant in tested configuration |
+| `LKA_RcgSta` | 27:3 LE | 0 or 3 | Lane recognition; normally 3 during active steering, with boundary overlap |
+| `LKA_LHLnWrnSta` | 30:2 LE | 0 | No left lane warning in captures |
+| `LKA_RHLnWrnSta` | 32:2 LE | 0 | No right lane warning in captures |
+| `LKA_HndsoffSnd` | 34:2 LE | 0 | No hands-off sound in captures |
+| `LKA_StrSnd` | 36:2 LE | 0 | No steering sound in captures |
+| `LKA_SysIndReq` | 38:3 LE | 0 | Constant in captures |
+| `StrTqReqVal` | 41:11 LE, offset -1024 | 0 inactive; -232..209 active | Camera torque request |
+| `ActToiSta` | 52:2 LE | 0 inactive, 1 active | EPS torque-overlay request |
+| `ToiFltSta` | 54:2 LE | 0 | Camera-side overlay fault remained clear |
+| `LFA_BUTTON` | 56:1 BE | 0 | Not the physical steering-wheel LFA button on this car |
+| `BCA_Rear_WrnSta` | 57:3 LE | 0 | Constant in captures |
+| `LKA_SysWrn` | 60:4 LE | 0 | LKA warning remained clear |
+| `FCA_LO_WrnSta` | 64:1 LE | 0 | Constant in captures |
+| `NEW_SIGNAL_1` | 67:3 BE | 0 | Structurally validated; semantics unknown |
+| `FCA_LS_WrnSta` | 68:1 LE | 0 | Constant in captures |
+| `NEW_SIGNAL_2` | 71:3 BE | 0 | Structurally validated; semantics unknown |
+| `LKA_OnOffEquip2Sta` | 72:2 LE | 1 | Equipment/configuration state |
+| `NEW_SIGNAL_3` | 79:6 BE | 2 | Structurally validated; semantics unknown |
+| `LKA_UsmMod` | 80:2 LE | 0 | Constant in captures |
+| `Info_PedtrnDst` | 84:3 BE | 0 | Constant in captures |
+| `ELK_SysFlrSta` | 85:5 LE | 0 | ELK fault remained clear |
+| `ELK_SymbDisp` | 90:3 LE | 0 | Constant in captures |
+| `FCA_ESA_WrnSta` | 93:1 LE | 0 | Constant in captures |
+| `NEW_SIGNAL_4` | 95:2 BE | 0 | Structurally validated; semantics unknown |
+| `NEW_SIGNAL_6` | 100:5 BE | 0 | Structurally validated; semantics unknown |
+| `FCA_ESA_CtrlSta` | 101:1 LE | 0 | Constant in captures |
+| `NEW_SIGNAL_5` | 103:2 BE | 0 | Structurally validated; semantics unknown |
+| `Damping_Gain` | 104:8 LE | 100 inactive; 10..82 active | Predominantly a speed-indexed EPS damping parameter |
+| `NEW_SIGNAL_7` | 119:8 BE | 0 | Structurally validated; semantics unknown |
+| `NEW_SIGNAL_8` | 127:8 BE | 0 | Structurally validated; semantics unknown |
+
+The physical LFA button was independently found on `CRUISE_BUTTONS` (`0x1CF`) as `LDA_BTN` at bit 23. Its edge emits `ButtonType.lkas` and toggles sunnypilot's lateral-only `latActive` state. This explains why the main UI/control state can report `enabled=false` while the vehicle and `carControl.latActive` still permit lateral control; it is a MADS state distinction, not an LFA DBC mismatch.
+
 ### MDPS status (`0xEA`)
 
 The decisive MDPS fields are:
@@ -143,6 +194,37 @@ The visible faults correlated in this work are:
 | `FAULT_DAS` | 246..248 | Check driver assistance system |
 
 These signals are observed only. They are not blocked or changed by the proposed solution.
+
+### Complete camera-segment inventory
+
+A 448-second raw capture found exactly 11 recurring addresses on Panda bus 2. The capture is exhaustive for that interval, not a claim that no optional message can ever appear.
+
+| Address | Rate | Current DBC name | Frames | Defined-bit result |
+|---:|---:|---|---:|---|
+| `0x11A` | 100 Hz | `FR_CMR_01_10ms` | 44,868 | 96/128 bits defined; live undefined bits 72 and 74 were always set (`byte 9 = 0x05`) |
+| `0x12A` | 100 Hz | `LFA` | 44,868 | 128/128 bits defined; no payload bit outside the DBC |
+| `0x160` | 50 Hz | `ADRV_0x160` | 22,434 | 58/128 bits defined; live undefined bits 99 and 116 were set |
+| `0x1A0` | 50 Hz | `SCC_CONTROL` | 22,434 | 247/256 bits defined; all undefined bits were zero |
+| `0x161` | 20 Hz | `CCNC_0x161` | 8,974 | 256/256 bits defined; exact decode/repack sample |
+| `0x200` | 20 Hz | `ADRV_0x200` | 8,974 | 40/64 bits defined; live undefined bits 41, 43, and 44 formed the constant missing value in byte 5 |
+| `0x1B5` | 20 Hz | `FR_CMR_03_50ms` | 8,974 | 178/256 bits defined; all undefined bits were zero; exact decode/repack sample |
+| `0x162` | 20 Hz | `CCNC_0x162` | 8,974 | 256/256 bits defined; exact decode/repack sample |
+| `0x1E0` | 20 Hz | `LFAHDA_CLUSTER` | 8,973 | 34/128 bits defined; all undefined bits were zero; exact decode/repack sample |
+| `0x1FA` | 10 Hz | `FR_CMR_02_100ms` | 4,487 | 146/256 bits defined; live undefined bits 171 and 173 were set (`byte 21 = 0x28`) |
+| `0x38C` | 5 Hz | not defined | 2,244 | 32-byte frame: CRC in bytes 0..1, gap-free byte-2 counter, constant bytes 3..4=`f3 0f`, remaining bytes zero |
+
+The DBC sender labels are not proof of physical origin on this topology; this table describes what arrived from the isolated bus-2 side. In particular, `0x161` and `0x162` are named `CCNC_*` in the DBC but are present on the camera-side segment.
+
+Natural `ActToiSta` activation had near-deterministic companions:
+
+| Message | Inactive state | Natural active state | Evidence |
+|---|---|---|---|
+| `0x12A` | `ActToiSta=0`, torque 0, damping 100 | `ActToiSta=1`, nonzero-capable torque, active damping | Direct steering command |
+| `0x161` | `CENTERLINE=0`, `LANELINE_LEFT=0`, `LANELINE_RIGHT=0`, `LFA_ICON=1` | `CENTERLINE=1`, both lane lines=2, `LFA_ICON=2` | 2,807 active vs 6,167 inactive aligned samples; 97-100% separation outside transition boundaries |
+| `0x1B5` | lane-quality/geometry fields invalid or degraded | both lane qualities normally 3 with live geometry | Camera lane model; transitions can lead/lag torque-overlay state |
+| `0x1E0` | `LFA_ICON=1` | `LFA_ICON=2` | 2,808 active vs 6,165 inactive aligned samples; approximately 98-100% separation |
+
+`0x162` showed no steering-ownership field in the clean data. Its small speed-limit correlations followed the road segment, while all LSS/LFA/DAS fault fields stayed zero. `0x11A`, `0x160`, `0x1A0`, `0x1FA`, `0x200`, and `0x38C` did not expose a comparably deterministic steering-activation bit after accounting for route/time confounding.
 
 ## Checksum result
 
@@ -406,6 +488,138 @@ Every listed segment had zero CAN-error delta.
 
 `cumLagMs` is accumulated phase error, not proof that every outgoing frame was 155 ms old. Direct source-to-host output age remained roughly 2-20 ms because `card` drained current packets. The important implication is that a slightly-below-100-Hz host loop cannot preserve a strict, lossless 100 Hz physical stream indefinitely. The Panda-timed design removes that dependency from the steering stream without changing the upstream scheduler.
 
+### 16. Validate Panda-timed lane-gated openpilot torque
+
+**Question:** Does substituting openpilot torque inside each physical camera frame avoid the original active-steering fault without suppressing diagnostics?
+
+**Method:** Deploy the interrupt-time transformer, leave force modes disabled, and compare every camera input to the physical bus-0 output while monitoring MDPS `0xEA` and CCNC `0x162`.
+
+**Results:**
+
+- 15-second capture: 1,498 inputs / 1,498 outputs, 829 exact and 669 modified, no missing or extra frames, and no changes outside checksum/torque/request.
+- 90-second capture: 8,988 / 8,988, zero counter gaps, 6,069 active and 2,919 inactive requests, 9,002 healthy MDPS samples, and 1,797 clear CCNC samples.
+- corrected 20-second handoff capture: 1,995 / 1,995 at zero sequence offset, 218 exact and 1,777 modified, two request transitions, zero unexpected bit changes, 2,001 healthy MDPS samples, and 398 clear CCNC samples.
+
+**Conclusion:** The Panda-timed transformer fixes the original MDPS stream-integrity failure for lane-gated steering on this vehicle. It does so without changing `0x162` or hiding any MDPS status.
+
+### 17. Force `0x12A` steering ownership without camera lanes
+
+**Question:** Can the EPS steer when the camera has no lane solution if Panda forces only the `0x12A` request and openpilot torque?
+
+**Method:** Enable the disabled force mode. Preserve the physical source frame/counter/cadence, replace torque and `ActToiSta`, recompute checksum, and keep every fault channel visible.
+
+**75-second result:**
+
+- 7,479 inputs and 7,479 outputs with zero counter gaps and no unexpected changes outside the permitted `0x12A` fields.
+- 4,823 frames were forced active while the source camera request was inactive.
+- Output torque covered -270 through 270.
+- MDPS reported active on 7,203 samples and never set unable, fault, or fail.
+- CCNC fault tuples `(FAULT_LSS, FAULT_LFA, FAULT_DAS)` were `(0,0,0)` for 534 samples, `(1,1,0)` for 248, `(1,0,0)` for 250, and `(1,0,1)` for 464.
+- The first CCNC fault appeared about 25 ms after forced ownership began. Faults cleared when the camera naturally became active and returned when it became inactive.
+
+**Conclusion:** The EPS is physically capable of steering without lane lines and accepted the request/torque. CCNC rejected the semantic ownership state. This is distinct from the earlier MDPS timing failure.
+
+### 18. Force natural recognition state with zero requested torque
+
+**Question:** Is `LKA_RcgSta=3` the missing CCNC ownership prerequisite?
+
+**Method:** During camera-inactive intervals, force `ActToiSta=1`, `LKA_RcgSta=3`, and zero target torque while preserving every other source field.
+
+**Result:** CCNC faulted at the first transition sample with LSS/DAS `(1,0,1)`. MDPS remained healthy.
+
+**Conclusion:** Recognition state alone is insufficient, and torque magnitude is not required to trigger the CCNC rejection.
+
+### 19. Force recognition plus the last natural active damping
+
+**Question:** Does CCNC require the active damping state as well as recognition?
+
+**Method:** Cache the last damping value observed while the camera was naturally active. During a later inactive interval, force request active, recognition 3, zero target torque, and the cached active damping.
+
+**Result:** The camera's inactive damping was 100; the cached active value at the tested transition was 64. CCNC still faulted immediately with `(1,0,1)`, while MDPS remained healthy. In the 70-second monitor, all 5,656 active MDPS samples were fault-free, while CCNC produced 803 clear, 301 `(1,0,1)`, and 292 `(1,0,0)` samples.
+
+**Conclusion:** `0x12A` recognition and damping exhaust the natural `0x12A` fields that distinguish ordinary active from inactive steering in the observed route, but they do not satisfy CCNC. The missing state is outside `0x12A` or depends on a relationship to MDPS acknowledgement.
+
+### 20. Validate every defined `LFA` bit and study natural transitions
+
+**Question:** Are the newly defined empty bits correct, and does any other `0x12A` signal participate in activation?
+
+**Method:** Decode and repack a 90-second synchronized stock reference, enumerate all signal values, and compare natural active/inactive transitions.
+
+**Results:**
+
+- 8,983 source and 8,983 output frames; zero forced or unexpected changes.
+- 8,434 fully decoded source frames repacked byte-for-byte with `roundtrip_bad=0`.
+- In a separate 4,299-frame transition set, only `LKA_RcgSta` and `Damping_Gain` changed with activation beyond checksum/counter/torque/`ActToiSta`.
+- `LKA_RcgSta` was normally 0 inactive and 3 active, but the larger local-road capture proved boundary overlap: recognition can drop to 0 for roughly 0.1-1.5 seconds while `ActToiSta` remains 1, and one transition briefly showed recognition 3 before activation.
+- Every `NEW_SIGNAL_*`, warning, FCA, ELK, pedestrian, and sound field stayed at the values shown in the complete inventory above.
+
+**Conclusion:** The 128-bit mapping is structurally correct for all observed values. `LKA_RcgSta` is a recognition indicator, not a strict torque-ownership prerequisite, and the provisional semantic names for constant unknown fields remain unproven.
+
+### 21. Determine what controls `Damping_Gain`
+
+**Question:** Is damping set only by speed, or also by requested torque, wheel position, steering rate, driver/EPS torque, acceleration, or lane curvature?
+
+**Method:** Synchronize each active camera `0x12A` with `carState`, `carControl`, and the latest `0x1B5` lane geometry. Measure direct correlations, then remove a cubic speed fit and inspect residual correlations so that curves at different speeds do not create false relationships.
+
+**High-speed reference:** Active damping was 74..82. Direct Pearson correlation with speed was 0.9128. The next-largest simple correlations were absolute wheel angle 0.2570, absolute camera torque 0.2496, absolute EPS torque 0.2136, and signed driver torque -0.2334. Acceleration was 0.0824 and steering rate -0.0147. Yaw/curvature fields from `carState` were unpopulated in that integration and were not treated as evidence.
+
+**Local-road reference:** 11,246 active samples covered approximately 0..14.19 m/s and damping 10..35.
+
+- Damping was exactly 10 for every sufficiently populated 0.5 m/s bin from standstill through 5.5 m/s.
+- At 10.0, 10.5, 11.0, 11.5, 12.0, 12.5, 13.0, and 13.5 m/s, mean damping was respectively 20.23, 22.13, 24.77, 26.58, 28.83, 30.35, 31.86, and 33.97.
+- Direct damping/speed correlation was 0.9332.
+- A cubic speed-only model left 0.841 damping-count RMS residual, close to one integer count.
+- After removing that speed curve, correlations were: acceleration 0.024, absolute wheel angle 0.009, absolute steering rate -0.012, signed requested torque -0.063, absolute requested torque 0.111, absolute driver torque -0.119, absolute EPS torque 0.074, absolute lane curvature 0.123, absolute lane heading 0.140, and lane-width estimate 0.150.
+
+**Conclusion:** Speed is overwhelmingly the dominant input, with a floor of 10 at low speed and a nonlinear rise toward the high-speed 70s/low 80s. The present data does not support the hypothesis that damping materially increases merely because the wheel is farther from center. Small residual lane/torque relationships remain research-only because they are near the quantization/model error and are confounded by route segments and camera filtering.
+
+A final independent 398.75-second capture added 9,525 active samples at 0.16..11.14 m/s and damping 10..24. Its speed-only cubic residual was smaller at 0.661 counts. Residual correlations were acceleration -0.070, absolute wheel angle -0.039, absolute steering rate 0.004, absolute driver torque -0.002, absolute EPS torque 0.051, signed requested torque -0.082, and absolute requested torque 0.087. This second route segment strengthens the speed-dominant conclusion and weakens the apparent wheel-angle/driver-torque effects seen in uncorrected correlations.
+
+### 22. Inventory and correlate every camera-segment message
+
+**Question:** What state outside `0x12A` distinguishes natural active steering from a forced request?
+
+**Method:** Record every bus-2 frame, align it to 50,851 synchronized `0x12A`/vehicle-state samples, and compare each non-checksum/non-counter bit between natural active and inactive intervals.
+
+**Result:** Only the lane-model/display family gave near-deterministic activation separation:
+
+- `0x161`: `CENTERLINE` 0 to 1; left/right lane-line values 0 to 2; `LFA_ICON` 1 to 2.
+- `0x1E0`: `LFA_ICON` 1 to 2.
+- `0x1B5`: both lane quality values normally become 3 and geometry becomes valid.
+- `0x162`: every monitored fault bit stayed zero; no separate ownership field was found.
+
+**Conclusion:** The strongest current root-cause hypothesis for no-line force faults is a contradiction among camera-owned messages. The next test should synchronize only the confirmed ownership/display fields first, without fabricating geometry or touching fault fields, and observe whether CCNC accepts the request.
+
+Natural transition timing further constrains that test. Across seven captured activations, `0x161` reached its active tuple between 9.6 ms before and 37.9 ms after the `0x12A` activation; `0x1E0` changed between 19.0 ms before and 44.3 ms after. `0x1B5` quality was already valid or changing within the same 20 Hz interval. Deactivation was intentionally phased: lane lines/icons moved through transitional values and the final inactive display tuple could lag `0x12A` by roughly 0.3-1.45 seconds. This asymmetry argues for a two-phase force experiment that pre-arms the active ownership/display state before asserting the torque-overlay request, then uses a separately observed natural-style release sequence.
+
+### 23. Resolve the apparent car/openpilot engagement mismatch
+
+**Question:** Why can the car appear engaged and steer while openpilot reports disengaged?
+
+**Method:** Correlate the physical LFA button, `selfdrived` state, `carControl.enabled`, and `carControl.latActive`.
+
+**Result:** The steering-wheel LFA button toggles sunnypilot MADS lateral-only state. Captures repeatedly showed `enabled=false` with `latActive=true`; they also showed the stock camera continuing clean steering while `latActive=false`. This is expected separation between full openpilot engagement and lateral availability/stock camera behavior.
+
+**Conclusion:** The UI mismatch was not a CAN state parsing error and does not explain the faults.
+
+### 24. Final stock/pass-through wrap capture
+
+**Question:** Can the expanded camera-message and damping dataset be collected without changing vehicle behavior, and does the proven forwarding path remain healthy through the final drive interval?
+
+**Method:** Run one streaming recorder only, with no firmware or control change and no in-memory frame history. Record every camera-segment frame plus bus-0 MDPS, physical bus-0 LFA output, and synchronized state. `carControl.latActive` was false for almost the entire interval, making this a stock/pass-through reference rather than an openpilot-torque validation.
+
+**398.75-second result:**
+
+- 39,738 camera `0x12A` inputs and 39,738 physical outputs.
+- Zero source counter gaps, zero output counter gaps, zero sequence offset, and 39,738/39,738 byte-exact payloads.
+- 9,525 active source frames: 8,928 with recognition 3 and 597 with recognition 0 during natural boundary/grace behavior.
+- 30,191 inactive frames with recognition 0 plus 22 brief inactive/recognition-3 boundary frames.
+- MDPS states: 30,306 inactive healthy and 9,567 active healthy; unable/fault/fail were always zero.
+- All 7,947 `0x162` samples had `(FAULT_LSS, FAULT_LFA, FAULT_DAS)=(0,0,0)`.
+- All 11 expected camera-segment addresses remained present at their established rates.
+
+**Conclusion:** The final reference is internally consistent, fault-free, and long enough to support the signal/correlation findings. Because it is byte-exact stock pass-through, it supplements rather than replaces the modified-torque Stage 1 evidence.
+
 ## Evidence hierarchy and present conclusion
 
 ### Direct observations
@@ -418,10 +632,18 @@ Every listed segment had zero CAN-error delta.
 - Faults occurred at small steering angle, modest driver torque, and modest MDPS output torque.
 - Application replay produces bursts/gaps; single-frame application pacing drops counters.
 - No duplicate openpilot driving process stack was present during the audited runs.
+- Panda-timed lane-gated substitution preserves one physical output per source frame and remains free of MDPS and CCNC faults across windows longer than every prior replay failure.
+- `0x12A`-only forced ownership makes MDPS active and produces physical steering without MDPS fault/fail, but CCNC faults immediately when the camera is otherwise lane-inactive.
+- Forcing `LKA_RcgSta` and cached natural active damping does not prevent that CCNC fault.
+- Natural activation changes `0x161` and `0x1E0` icon/lane state and `0x1B5` lane validity together with `0x12A`.
+- `Damping_Gain` is dominated by vehicle speed: inactive is 100, active floors at 10 at low speed and rises nonlinearly into the low 80s at highway speed.
 
 ### Strong inference
 
-This MDPS enforces a continuity, freshness, timing, or source-stream rule that is violated when the camera's 100 Hz LFA traffic is terminated and recreated through the host application path. The exact internal timer or acceptance rule is not yet known, so this should not be stated as a proven specific timeout value.
+The original relay fault and the no-line force fault have different reporters and should not be conflated:
+
+- MDPS enforces a continuity, freshness, timing, or source-stream rule that is violated when the camera's 100 Hz LFA traffic is terminated and recreated through the host application path. The Panda-timed lane-gated result strongly validates this causal model, although the exact internal timer is still unknown.
+- CCNC enforces semantic consistency among the camera's steering request, lane/display state, and possibly MDPS acknowledgement. The exact compared fields are not proven, but `0x161`/`0x1E0`/`0x1B5` are now concrete candidates rather than an unspecified checksum or torque problem.
 
 ### Responsibility assessment
 
@@ -624,27 +846,31 @@ Failure protocol:
 
 ### Stage 2: steering without lane lines
 
-Steering without lane lines is technically possible from openpilot's planning/control perspective. The remaining vehicle question is whether this MDPS accepts `ActToiSta=1` when the camera itself is not asserting ownership, and whether other LFA state bits form an additional ownership handshake.
+Status: the `0x12A`-only phase is complete and rejected by CCNC. MDPS accepted forced ownership and torque, proving that no-line steering is physically possible. `0x12A` recognition-only and recognition-plus-damping variants were also rejected. All experimental force changes were reverted, and the clean lane-gated checkpoint was redeployed.
 
-Only after Stage 1 is clean:
+The next phase should isolate the smallest cross-message consistency set:
 
-1. Enable force mode in the Python sender while leaving all `0x162` diagnostics intact.
-2. Begin with zero requested torque and confirm whether MDPS acknowledges the forced request.
-3. Ramp by the normal 2-count safety limit to a very small torque.
-4. Observe `MDPS_LkaToiActvSta`, `MDPS_LkaToiUnblSta`, `MDPS_LkaToiFltSta`, and `MDPS_LkaFailSta` before increasing duration or torque.
-5. Test force-mode request cuts after the 89-frame/810-ms safety prerequisites.
-6. If MDPS rejects force ownership while lane-gated substitution is clean, compare every source state field around stock activation. The missing requirement would then be an ownership/state handshake, not the original stream-cadence problem.
+1. Keep the proven physical `0x12A` cadence and every `0x162` diagnostic unchanged.
+2. Re-enable force mode with zero target torque first.
+3. Enter a pre-arm phase: on physical `0x161`, change only `CENTERLINE=1`, `LANELINE_LEFT=2`, `LANELINE_RIGHT=2`, and `LFA_ICON=2`; on physical `0x1E0`, change only `LFA_ICON=2`. Preserve both messages' physical counter, timing, every other bit, and checksum behavior.
+4. After Panda has physically forwarded at least one transformed copy of both messages, assert a zero-torque `0x12A` request. This avoids exposing CCNC to the exact long-lived contradiction produced by the failed force tests.
+5. Do not fabricate `0x1B5` lane geometry in the first test. This distinguishes a display/ownership consistency check from a requirement for a false lane model.
+6. Confirm whether CCNC remains clear and whether MDPS stays active at zero torque. Only then ramp a very small safety-limited torque.
+7. Release in a controlled phase rather than instantly dropping every companion state; record the natural transitional icon values before choosing the final release sequence.
+8. If CCNC still faults, add controlled instrumentation around `0x1B5` quality transitions and the forwarded MDPS `0xEA` acknowledgement. Do not block either message.
+9. Revert immediately to exact stock pass-through on a stale command, invalid source checksum, disengagement, or any fault.
 
-The code supports modes 3 and 4 now, but `CarController` deliberately sends only mode 0, 1, or 2 in the first deployment.
+This sequence tests one hypothesis at a time and avoids jumping directly to invented lane geometry. Modes 3 and 4 remain disabled in normal `CarController` operation.
 
 ## Open questions
 
 1. What exact MDPS monitor triggers the failure: maximum inter-frame gap, source-clock jitter, duplicate arrival, missing counter deadline, bus-level transmitter identity assumptions, or a combination?
-2. Does the Panda-timed transform remain clean across many minutes and repeated moving handoffs?
-3. Does CCNC/non-HDA2 force ownership require changing any field besides `StrTqReqVal` and `ActToiSta` when the camera has no lane solution?
-4. Does MDPS expect a particular relationship between camera state and its own `MDPS_LkaToiActvSta` transition?
+2. Which exact `0x161`/`0x1E0` field or field set does CCNC require for forced ownership?
+3. Can CCNC accept active ownership with `0x1B5` lane quality/geometry left honest and inactive, or is that camera-model state also checked?
+4. Does CCNC compare camera-owned state directly to forwarded `MDPS_LkaToiActvSta` on `0xEA`?
 5. Are other recent CCNC non-HDA2 Hyundai/Kia/Genesis platforms subject to the same strict stream behavior?
-6. Can a Panda-side diagnostic counter be added later without changing the safety boundary, so raw, transformed, stale-fallback, and invalid-source frames are observable directly?
+6. What are the semantics of the still-unnamed live bits in `0x11A`, `0x160`, `0x200`, `0x1FA`, and the undefined `0x38C` message?
+7. Can a Panda-side diagnostic counter be added later without changing the safety boundary, so raw, transformed, stale-fallback, and invalid-source frames are observable directly?
 
 ## How others can contribute
 
@@ -661,6 +887,22 @@ Useful independent evidence should include all of the following, not only a dash
 - duration of the clean interval before declaring success.
 
 Short clean windows should be labeled as such. A result should not be called fixed until it exceeds the prior 7-second, 26-second, and 30-plus-second misleading windows and survives repeated handoffs.
+
+## Preserved research artifacts
+
+The live data was copied off-device before any optional reboot to:
+
+`/Users/samaritan/ccnc-research/2026-08-03-live/`
+
+| File | Purpose | SHA-256 |
+|---|---|---|
+| `lfa_timeline.csv` | 13 MB transition timeline for camera/output `0x12A`, MDPS `0xEA`, CCNC `0x162`, and control state | `046f095156332361e3e3625b7ae2a9960f6455a23f283141c98f9a7e625eb7a4` |
+| `ccnc_lfa_recognition_20260803.jsonl.gz` | high-speed synchronized LFA/vehicle reference and decode/repack validation | `b80fa33fa9715a0c217b1b4e8108e7db02561496f222d983e5ba4a1684f29fa0` |
+| `ccnc_lfa_speed_sweep_20260803.jsonl.gz` | low-speed synchronized LFA, lane geometry, MDPS/CCNC, `carState`, and `carControl` | `f968e1f94ec060d8218a79777d31b103f4fb5c70ec0410f190f8287fa1cec0ab` |
+| `ccnc_camera_bus_20260803.jsonl.gz` | exhaustive 11-address raw camera-segment capture | `e6b9adfb6a9696887eb8ba24482be707537abf57d6742fcf1a9b19ae75778815` |
+| `ccnc_final8_20260803.jsonl.gz` | final 398.75-second all-camera-message plus synchronized vehicle/control/MDPS reference | `66eb9cbbb86782286555736ab0f0b3deb91ee3f407635c3e34e15bed6a0bc250` |
+
+All four gzip files passed `gzip -t` before and after copy. The custom recorders streamed to disk and retained no frame history in RAM. During an attempted live correlation, one temporary reader accumulated decoded JSON objects and reached 425 MB RSS; it was terminated and is not part of openpilot. A subsequent process audit found one driving stack, no duplicate `controlsd`/`modeld`/`pandad`/`loggerd`, about 661 MB RAM available, no swap, and `/data` at 90% usage with 8.9 GB free. The user-reported restart/lag issue remains an upstream validity concern and was not modified here.
 
 ## Current implementation files
 
@@ -688,4 +930,9 @@ Panda:
 
 ## Bottom line
 
-The evidence no longer supports treating this as a mysterious checksum or undefined-bit problem. The MDPS rejects even exact stock content when openpilot recreates the stream through the application path. The most defensible next experiment is to preserve the camera's original physical 100 Hz frames and timing inside Panda, substitute only safety-checked steering bits, and leave every fault channel visible. If that remains clean, it solves the underlying integration problem rather than hiding its consequences.
+The evidence no longer supports one undifferentiated “Hyundai steering fault.” There are two independently observed enforcement layers:
+
+1. MDPS rejects a camera stream recreated through the host even when its bytes, counter, and checksum are correct. Preserving the original physical 100 Hz stream and transforming it inside Panda fixes that lane-gated failure without hiding diagnostics.
+2. CCNC rejects forced steering when `0x12A` claims active ownership while the camera's other lane/display messages remain inactive, even though MDPS accepts and performs the steering. Natural activation identifies `0x161`, `0x1E0`, and `0x1B5` as the next consistency boundary to test.
+
+The next defensible experiment is therefore not broader fault suppression or more `0x12A` guessing. It is a minimal, synchronized Panda-side test of the confirmed `0x161` and `0x1E0` ownership/display fields, leaving `0x162`, MDPS `0xEA`, source timing/counters, and initially `0x1B5` geometry untouched.
