@@ -72,7 +72,21 @@ class CarInterface(CarInterfaceBase):
     if 0x184 in fingerprint[CAN.pt]:
       ret.flags |= HondaFlags.HYBRID.value
 
-    if all(msg not in fingerprint[CAN.pt] for msg in (0x191, 0x1A3)):
+    # FORK(HONDA_ELESYS): this car's gearbox is the LEGACY GEARBOX_AUTO, 0x188 (392), from
+    # _gearbox_legacy.dbc -- the only platform that imports it. The check below only looks for
+    # 0x191 / 0x1A3, so the car fell through to `manual`, and carstate.py then hardcodes
+    # gearShifter = drive|reverse off REVERSE_LIGHT. Confirmed on route 15646e8515eda1a7: 0x188
+    # is on bus 0 at 100 Hz and decodes cleanly (GEAR_SHIFTER 27|4 and GEAR 36|5 agree on
+    # P/R/N/D across 43.7 min of driving), so the gear was on the wire and simply not read.
+    # Consequences of leaving it: the car reported "drive" while sitting in PARK, and S was
+    # invisible -- which is what the dynamic tuner needs in order not to learn the pedal map of
+    # one gear against another.
+    # Scoped to HONDA_ELESYS on purpose. ACURA_RDX also has 392 with neither 0x191 nor 0x1A3 and
+    # is misdetected the same way, but that is an upstream platform with no data here; widening
+    # this test would silently change its gear reporting too.
+    if candidate in HONDA_ELESYS and 0x188 in fingerprint[CAN.pt]:
+      ret.transmissionType = TransmissionType.automatic
+    elif all(msg not in fingerprint[CAN.pt] for msg in (0x191, 0x1A3)):
       ret.transmissionType = TransmissionType.manual
     elif 0x191 in fingerprint[CAN.pt] and candidate != CAR.ACURA_RDX:
       # Traditional CVTs, gearshift position in GEARBOX_CVT
@@ -98,6 +112,14 @@ class CarInterface(CarInterfaceBase):
       if candidate in HONDA_ELESYS:
         ret.longitudinalActuatorDelay = 0.6
         ret.vEgoStopping = 0.8
+        # FORK(HONDA_ELESYS): the default -2.0 lands on top of the ~1.15 m/s^2 creep offset that
+        # compute_gb_honda_elesys already adds, so the standstill hold commanded cb 253 of 255 --
+        # near max hydraulic pressure, held for 7.8 min of a 65 min drive. The car does not need
+        # it: 32 frames of motion in 46,815 hold frames (routes 15646e8515eda1a7 1f+20, incl.
+        # graded stops). -0.8 lands the hold near cb 192 and still leaves ~0.8 m/s^2 of holding
+        # margin ON TOP of the creep cancellation, which covers roughly an 8% grade.
+        # If a stop ever creeps, raise this back toward -1.2 before touching the creep table.
+        ret.stopAccel = -0.8
 
     # Disable control if EPS mod detected
     for fw in car_fw:

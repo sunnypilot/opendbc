@@ -19,8 +19,18 @@ BO_ 401 GEARBOX_CVT: 8 PCM
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
 
-VAL_ 392 GEAR_SHIFTER 0 "S" 1 "P" 2 "R" 4 "N" 8 "D" ;
+VAL_ 392 GEAR_SHIFTER 1 "P" 2 "R" 4 "N" 8 "D" ;
 VAL_ 392 GEAR 26 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
+
+CM_ SG_ 392 GEAR_SHIFTER "One-hot lever position: P=1, R=2, N=4, D=8. Raw 0 is AMBIGUOUS --
+it means BOTH Sport AND the lever passing BETWEEN detents, confirmed by the owner of a 2015
+Accord (HONDA_ELESYS). That is why 0 has no VAL entry here: a decoder that maps it straight
+to Sport emits a phantom Sport on every single shift. Measured over 473k frames, every 0 run
+in that recording was a transient -- 47 of them, median 3 frames (30 ms), max 520 ms, all
+below 0.5 m/s -- because Sport was never selected during it. Only DURATION separates the two
+cases, so carstate.py resolves it with a 1.0 s dwell (see update_gear_elesys). GEAR (36|5) is
+documented as carrying 26 for Sport and is used as a fast path, but that value has never been
+observed on this car, so the dwell is what is actually relied on.";
 
 CM_ SG_ 401 CVT_UNKNOWN_1 "Probably measured/actual CVT ratio";
 CM_ SG_ 401 CVT_UNKNOWN_2 "Probably target/commanded CVT ratio";

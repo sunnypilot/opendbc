@@ -31,6 +31,14 @@ class CarState(CarStateBase, CarStateExt):
       if CP.transmissionType == TransmissionType.cvt:
         self.gearbox_msg = "GEARBOX_CVT"
       self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
+    self.gear_shifter_last = GearShifter.unknown
+    # GEAR_SHIFTER raw 0 is Sport AND between-detents on HONDA_ELESYS; only time
+    # separates them. 100 frames @ 100 Hz = 1.0 s, ~2x the longest shift transient
+    # ever observed (520 ms over 473k frames).
+    self.gear_zero_frames = 0
+    self.SPORT_DWELL = 100
+    # None = not observable on this platform, which is what the tuner gates on
+    self.econ_on = None
 
     self.car_state_scm_msg = "SCM_FEEDBACK"
     if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES:
@@ -53,6 +61,18 @@ class CarState(CarStateBase, CarStateExt):
     self.dash_speed_seen = False
     self.is_metric = False
     self.v_cruise_factor = 1.
+
+  def update_gear_elesys(self, raw: int, gear_raw: int):
+    """Resolve GEARBOX_AUTO's ambiguous raw 0 into a gear. Split out from update()
+    so the dwell can be tested without a full CAN stream -- see test_elesys.py."""
+    if raw in (1, 2, 4, 8):
+      self.gear_shifter_last = self.parse_gear_shifter(self.shifter_values.get(raw, None))
+      self.gear_zero_frames = 0
+    elif raw == 0:
+      self.gear_zero_frames += 1
+      if gear_raw == 26 or self.gear_zero_frames >= self.SPORT_DWELL:
+        self.gear_shifter_last = GearShifter.sport
+    return self.gear_shifter_last
 
   def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     cp = can_parsers[Bus.pt]
@@ -160,6 +180,24 @@ class CarState(CarStateBase, CarStateExt):
 
     if self.CP.transmissionType == TransmissionType.manual:
       ret.gearShifter = GearShifter.reverse if bool(cp.vl[self.car_state_scm_msg]["REVERSE_LIGHT"]) else GearShifter.drive
+    elif self.CP.carFingerprint in HONDA_ELESYS:
+      # FORK(HONDA_ELESYS): 0x188 codes the lever one-hot -- P=1, R=2, N=4, D=8 -- and raw 0 means
+      # BOTH "Sport" AND "between detents", confirmed by the owner. The signal cannot tell them
+      # apart on its own, so it needs time: across 473k logged frames every 0 run was a shift
+      # transient, 47 of them, median 3 frames (30 ms) and max 520 ms, all below 0.5 m/s and none
+      # while engaged -- because S was simply never selected during the recording. A held S is by
+      # definition sustained, so anything past SPORT_DWELL is the mode and anything shorter is the
+      # lever passing through.
+      #
+      # Without the dwell, taking the VAL table at face value emits a phantom GearShifter.sport on
+      # every single shift, which trips wrongGear, suppresses always-on DM, and freezes the dynamic
+      # tuner's learners for the duration.
+      #
+      # GEAR (36|5) is supposed to carry 26 for Sport, which would make this instant -- but that
+      # value has never been observed on this car, so it is used as a fast path only and the dwell
+      # remains the thing that is actually relied on.
+      ret.gearShifter = self.update_gear_elesys(int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"]),
+                                                int(cp.vl[self.gearbox_msg]["GEAR"]))
     else:
       gear_position = self.shifter_values.get(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"], None)
       ret.gearShifter = self.parse_gear_shifter(gear_position)
@@ -215,11 +253,29 @@ class CarState(CarStateBase, CarStateExt):
       if self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
         ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
     elif self.CP.carFingerprint in HONDA_ELESYS:
-      # stock AEB actively braking: FCW alarm (==2) OR the radar AEB state machine engaged (AEB_STATUS
-      # != 0 = prepare/ready/braking, valid now that MAIN_ON=0 keeps the stock ACC off), AND a real
-      # brake command -- the pre-brake prepare(3)/ready(2) frames are gated out (they stand down w/o braking).
+      # FORK(HONDA_ELESYS): the stock CMBS is braking. openpilot stands down and lets the factory
+      # system have the car. These four are the bits confirmed on THIS car by bit-level analysis
+      # of a real CMBS event -- the generic Nidec guesswork is deliberately gone:
+      #   CMBS_BRAKE (10)     CMBS actively braking
+      #   AEB_REQ_3  (27)     the request bit that actually asserts here. AEB_REQ_1 at bit 29 is
+      #                       the generic Nidec position and never asserts on this car.
+      #   AEB_REQ_2  (26|3)   goes to 1 during the event
+      #   AEB_STATUS (41|2)   == 1 is "aeb_braking" per the VAL table
+      #
+      # ORed, not ANDed: over-triggering only stands openpilot down for a moment, under-triggering
+      # means fighting the car's emergency braking. And unlike the old test these do not wait on
+      # COMPUTER_BRAKE having already risen, so the event is caught a frame or two earlier.
+      #
+      # What was dropped and why it costs nothing: the old test was
+      # (FCW >= 2 or AEB_STATUS != 0) and COMPUTER_BRAKE > 0. Over 351,809 stock BRAKE_COMMAND
+      # frames on bus 2, FCW >= 2 and AEB_STATUS != 0 each fired on exactly 110 frames -- every
+      # one of them AEB_STATUS=3 (aeb_prepare) and/or FCW=2 with COMPUTER_BRAKE = 0. So they were
+      # warnings, never braking, and the old test never actually triggered on them either.
+      # Meanwhile all four bits below read 0 across all 351,809 frames, so there is no
+      # false-trigger risk from adding them.
       brake_cmd = cp_cam.vl["BRAKE_COMMAND"]
-      ret.stockAeb = bool((brake_cmd["FCW"] >= 2 or brake_cmd["AEB_STATUS"] != 0) and brake_cmd["COMPUTER_BRAKE"] > 1e-5)
+      ret.stockAeb = bool(brake_cmd["CMBS_BRAKE"] or brake_cmd["AEB_REQ_3"] or
+                          brake_cmd["AEB_REQ_2"] or brake_cmd["AEB_STATUS"] == 1)
       if ret.stockAeb and bool(cp_cam.vl["ACC_HUD"]["ACC_ON"] == 0):
         ret.carFaultedNonCritical = True  # disengage cruise if stock ACC disengages during AEB
     else:
@@ -233,6 +289,11 @@ class CarState(CarStateBase, CarStateExt):
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
       if self.CP.carFingerprint in HONDA_ELESYS:
         self.scm_buttons = cp.vl["SCM_BUTTONS"]  # for re-sending on bus 2 with MAIN_ON=0 (stock-ACC stand-down)
+        # ECON remaps the throttle, so the dynamic tuner has to know about it or it
+        # learns one pedal map against another. Not a CarState field: it is a
+        # sunnypilot-only concept, and HondaDynamicTuner reads it off the CarState
+        # object directly (see _econ_state there).
+        self.econ_on = bool(cp.vl["ECON_STATUS"]["ECON_ON"])
     if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
       self.lkas_hud = cp_cam.vl["LKAS_HUD"]
 

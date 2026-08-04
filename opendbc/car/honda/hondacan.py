@@ -52,24 +52,25 @@ def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_ca
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
   pcm_fault_cmd = False
-  # HONDA_ELESYS: SET_ME_1 is the cluster units flag (0 = metric, 1 = imperial); reserved constant 1 elsewhere
-  set_me_1 = 1
-  if car_fingerprint in HONDA_ELESYS and is_metric:
-    set_me_1 = 0
+  # HONDA_ELESYS: this bit is the cluster units flag, 0 = metric / 1 = imperial -- the same
+  # meaning as ACC_HUD's IMPERIAL_UNIT below, so it is derived the same way. On every other
+  # Nidec Honda it is a reserved constant 1, which is why the shared _nidec_common.dbc still
+  # names it SET_ME_1; renaming it there would reach platforms this has not been checked on.
+  # is_metric comes from CAR_SPEED.IMPERIAL_UNIT via carstate, i.e. from the cluster itself.
+  imperial_unit = int(not is_metric) if car_fingerprint in HONDA_ELESYS else 1
 
   values = {
     "CRUISE_OVERRIDE": pcm_override,
     "CRUISE_FAULT_CMD": pcm_fault_cmd,
     "CRUISE_CANCEL_CMD": pcm_cancel_cmd,
     "COMPUTER_BRAKE_REQUEST": brake_rq,
-    "SET_ME_1": set_me_1,
+    "SET_ME_1": imperial_unit,   # ELESYS: units flag; reserved 1 elsewhere
     "BRAKE_LIGHTS": brakelights,
     "CHIME": stock_brake["CHIME"] if fcw else 0,  # send the chime for stock fcw
     "FCW": fcw << 1,  # TODO: Why are there two bits for fcw?
     "AEB_REQ_1": 0,
     "AEB_REQ_2": 0,
-    "AEB_STATUS": 0,
-    "SET_ME_X00": brakelights,
+    "AEB_STATUS": 0
   }
 
   if CP_SP.flags & HondaFlagsSP.NIDEC_HYBRID:

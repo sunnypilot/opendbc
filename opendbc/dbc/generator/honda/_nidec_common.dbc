@@ -15,7 +15,9 @@ BO_ 487 BRAKE_PRESSURE: 4 VSA
 BO_ 506 BRAKE_COMMAND: 8 ADAS
  SG_ COMPUTER_BRAKE : 7|10@0+ (1,0) [0|1] "" EBCM
  SG_ BRAKE_PUMP_REQUEST : 8|1@0+ (1,0) [0|1] "" EBCM
+ SG_ CMBS_BRAKE : 10|1@0+ (1,0) [0|1] "" XXX
  SG_ BRAKE_PUMP_REQUEST_HYBRID : 11|1@0+ (1,0) [0|1] "" EBCM
+ SG_ CMBS_DISABLED : 12|1@0+ (1,0) [0|1] "" XXX
  SG_ SET_ME_X00 : 23|3@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_OVERRIDE : 20|1@0+ (1,0) [0|1] "" EBCM
  SG_ SET_ME_X00_2 : 19|1@0+ (1,0) [0|1] "" EBCM
@@ -25,6 +27,7 @@ BO_ 506 BRAKE_COMMAND: 8 ADAS
  SG_ SET_ME_1 : 31|1@0+ (1,0) [0|1] "" EBCM
  SG_ AEB_REQ_1 : 29|1@0+ (1,0) [0|1] "" XXX
  SG_ AEB_REQ_2 : 26|3@0+ (1,0) [0|7] "" XXX
+ SG_ AEB_REQ_3 : 27|1@0+ (1,0) [0|1] "" XXX
  SG_ BRAKE_LIGHTS : 39|1@0+ (1,0) [0|1] "" EBCM
  SG_ CRUISE_STATES : 38|7@0+ (1,0) [0|1] "" EBCM
  SG_ CHIME : 47|3@0+ (1,0) [0|7] "" EBCM
@@ -53,6 +56,13 @@ BO_ 927 RADAR_HUD: 8 ADAS
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" BDY
 
 CM_ SG_ 506 AEB_REQ_1 "set for duration of suspected AEB event";
+CM_ SG_ 506 AEB_REQ_2 "HONDA_ELESYS: observed going to 1 during a real CMBS event on a 2015 Accord.";
+CM_ SG_ 506 AEB_REQ_3 "HONDA_ELESYS: bit 27, previously unmapped. On a 2015 Accord this is the bit that
+actually asserts during a CMBS event -- AEB_REQ_1 at bit 29 does not. Read-only: openpilot never sets it,
+so defining it does not change what any platform transmits.";
+CM_ SG_ 506 CMBS_BRAKE "HONDA_ELESYS: bit 10, previously unmapped. Believed to be CMBS actively braking --
+observed 0 for an entire 7 h of logging and first seen as 1 during a real CMBS event. Read-only.";
+CM_ SG_ 506 CMBS_DISABLED "HONDA_ELESYS: bit 12, previously unmapped. Read-only.";
 CM_ SG_ 506 COMPUTER_BRAKE_HYBRID "Used by Hybrid Nidec";
 CM_ SG_ 506 BRAKE_PUMP_REQUEST_HYBRID "Used by Hybrid Nidec";
 
