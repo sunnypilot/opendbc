@@ -1,4 +1,3 @@
-from openpilot.common.params import Params
 from opendbc.car import Bus, structs, get_safety_config, uds
 from opendbc.car.toyota.carstate import CarState
 from opendbc.car.toyota.carcontroller import CarController
@@ -135,10 +134,6 @@ class CarInterface(CarInterfaceBase):
 
     if candidate == CAR.TOYOTA_PRIUS_TSS2:
       ret.flags |= ToyotaFlagsSP.SP_NEED_DEBUG_BSM.value
-
-    sp_toyota_auto_brake_hold = Params().get_bool("ToyotaAutoHold")
-    if sp_toyota_auto_brake_hold and candidate in (TSS2_CAR - RADAR_ACC_CAR - SECOC_CAR):
-      ret.flags |= ToyotaFlagsSP.SP_AUTO_BRAKE_HOLD.value
 
     # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
     # 0x2AA is sent by a similar device which intercepts the radar instead of DSU on NO_DSU_CARs
