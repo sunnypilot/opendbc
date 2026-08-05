@@ -3,7 +3,6 @@ from opendbc.testing import parameterized_class
 import unittest
 
 from opendbc.car.hyundai.values import HyundaiSafetyFlags
-from opendbc.car.hyundai.hyundaicanfd import hkg_can_fd_checksum
 from opendbc.car.structs import CarParams
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
@@ -133,30 +132,19 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
   SAFETY_PARAM = HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CANFD_LFA_CAMERA_SYNC
 
   @staticmethod
-  def _command(torque, mode, magic=0xA5, mdps_experiment=0):
-    dat = int(torque).to_bytes(2, byteorder="little", signed=True) + bytes([mode, magic, mdps_experiment, 0, 0, 0])
+  def _command(torque, request, magic=0xA5, reserved=0):
+    dat = int(torque).to_bytes(2, byteorder="little", signed=True) + bytes([request, magic, reserved, 0, 0, 0])
     return libsafety_py.make_CANPacket(0x7FF, 0, dat)
 
   def _torque_cmd_msg(self, torque, steer_req=1):
-    return self._command(torque, 1 if steer_req else 2)
+    return self._command(torque, steer_req)
 
   def _camera_lfa(self, torque=0, request=1, counter=0, **kwargs):
     values = {"COUNTER": counter, "ActToiSta": request, "StrTqReqVal": torque, **kwargs}
     return self.packer.make_can_msg_safety("LFA", 2, values)
 
-  def _camera_161(self, counter=0, **kwargs):
-    return self.packer.make_can_msg_safety("CCNC_0x161", 2, {"COUNTER": counter, **kwargs})
-
   def _camera_1e0(self, counter=0, **kwargs):
     return self.packer.make_can_msg_safety("LFAHDA_CLUSTER", 2, {"COUNTER": counter, **kwargs})
-
-  def _camera_1b5(self, counter=0, **kwargs):
-    msg = self.packer.make_can_msg_safety("FR_CMR_03_50ms", 2, {"FR_CMR_AlvCnt3Val": counter, **kwargs})
-    dat = bytearray(msg[0].data[0:32])
-    checksum = hkg_can_fd_checksum(0x1B5, None, dat)
-    msg[0].data[0] = checksum & 0xFF
-    msg[0].data[1] = checksum >> 8
-    return msg
 
   def _mdps(self, counter=0, **kwargs):
     return self.packer.make_can_msg_safety("MDPS", 0, {"COUNTER": counter, **kwargs})
@@ -173,9 +161,6 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
     self.safety.safety_fwd_modify(msg)
     return bytes(msg[0].data[0:length])
 
-  def _prime_stock_torque(self, torque=0, request=1):
-    self._modify(self._camera_lfa(torque, request))
-
   def test_lfa_forwarding_direction(self):
     self.assertEqual(self.safety.safety_fwd_hook(2, 0x12A), 0)
     self.assertEqual(self.safety.safety_fwd_hook(0, 0x12A), -1)
@@ -189,87 +174,31 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
     self.assertFalse(self._tx(self._command(0, 1, magic=0)))
     self.assertTrue(self.safety.safety_tx_consumed)
 
-  def test_stock_lfa_passes_through_byte_for_byte(self):
-    msg = self._camera_lfa(37, 1, 41, NEW_SIGNAL_1=5, NEW_SIGNAL_2=3, NEW_SIGNAL_3=42,
-                           NEW_SIGNAL_4=2, NEW_SIGNAL_5=1, NEW_SIGNAL_6=17,
-                           NEW_SIGNAL_7=0xA6, NEW_SIGNAL_8=0x5B)
-    original = self._data(msg)
-    self.assertEqual(self._modify(msg), original)
+  def test_disengaged_always_suppresses_stock_steering(self):
+    msg = self._camera_lfa(37, 1, 41, Damping_Gain=47, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
+    modified = self._modify(msg)
+    expected = self._camera_lfa(0, 0, 41, Damping_Gain=100, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
+    self.assertEqual(modified, self._data(expected))
 
-  def test_lane_active_command_modifies_only_torque_request_and_checksum(self):
-    self._prime_stock_torque()
+  def test_command_owns_steering_with_or_without_camera_lanes(self):
     self.safety.set_controls_allowed(True)
     self.assertTrue(self._tx(self._command(2, 1)))
 
-    msg = self._camera_lfa(0, 1, 7, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
+    for camera_request, damping in ((0, 10), (1, 47)):
+      with self.subTest(camera_request=camera_request):
+        msg = self._camera_lfa(91, camera_request, 7, Damping_Gain=47, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
+        modified = self._modify(msg)
+        expected = self._camera_lfa(2, 1, 7, Damping_Gain=damping, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
+        self.assertEqual(modified, self._data(expected))
+
+  def test_camera_companion_messages_pass_unchanged(self):
+    msg = self._camera_1e0(5, LFA_ICON=1)
     original = self._data(msg)
-    modified = self._modify(msg)
+    self.assertEqual(self._modify(msg), original)
 
-    self.assertEqual(modified[2], original[2])  # physical camera counter
-    self.assertEqual(modified[3:5], original[3:5])
-    self.assertEqual(modified[7:], original[7:])
-    self.assertEqual(((int.from_bytes(modified, "little") >> 41) & 0x7FF) - 1024, 2)
-    self.assertEqual((int.from_bytes(modified, "little") >> 52) & 0x3, 1)
-
-    expected = self._camera_lfa(2, 1, 7, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
-    self.assertEqual(modified, self._data(expected))  # includes the recomputed Hyundai CRC16
-
-  def test_lane_command_does_not_force_camera_ownership(self):
-    self._prime_stock_torque(request=0)
+  def test_active_damping_uses_speed_schedule_without_lanes(self):
     self.safety.set_controls_allowed(True)
     self.assertTrue(self._tx(self._command(2, 1)))
-
-    msg = self._camera_lfa(0, 0, 8)
-    original = self._data(msg)
-    self.assertEqual(self._modify(msg), original)
-
-    # Once an inactive source frame falls back to stock, a later active frame needs a
-    # newly safety-checked host command; it must not reuse the previous cached torque.
-    msg = self._camera_lfa(0, 1, 9)
-    original = self._data(msg)
-    self.assertEqual(self._modify(msg), original)
-
-  def test_force_command_can_request_steering_without_lane_lines(self):
-    self._prime_stock_torque(request=0)
-    self.safety.set_controls_allowed(True)
-    self.assertTrue(self._tx(self._command(2, 3)))
-
-    # The torque request stays stock until both physical camera status messages have
-    # crossed Panda in their active state.
-    msg = self._camera_lfa(0, 0, 9)
-    original = self._data(msg)
-    self.assertEqual(self._modify(msg), original)
-
-    msg_161 = self._camera_161(4, CENTERLINE=0, LANELINE_LEFT=0, LANELINE_RIGHT=0, LFA_ICON=1)
-    modified_161 = self._modify_len(msg_161, 32)
-    expected_161 = self._camera_161(4, CENTERLINE=1, LANELINE_LEFT=2, LANELINE_RIGHT=2, LFA_ICON=2)
-    self.assertEqual(modified_161, bytes(expected_161[0].data[0:32]))
-
-    msg_1e0 = self._camera_1e0(5, LFA_ICON=1)
-    modified_1e0 = self._modify(msg_1e0)
-    expected_1e0 = self._camera_1e0(5, LFA_ICON=2)
-    self.assertEqual(modified_1e0, self._data(expected_1e0))
-
-    msg_1b5 = self._camera_1b5(6, ID_CIPV=11, Longitudinal_Distance=25)
-    modified_1b5 = self._modify_len(msg_1b5, 32)
-    expected_1b5 = self._camera_1b5(6, Info_LftLnQualSta=3, Info_LftLnPosVal=-1.63255,
-                                    Info_RtLnQualSta=3, Info_RtLnPosVal=1.5493375,
-                                    ID_CIPV=11, Longitudinal_Distance=25)
-    self.assertEqual(modified_1b5, bytes(expected_1b5[0].data[0:32]))
-
-    msg = self._camera_lfa(0, 0, 10)
-    modified = self._modify(msg)
-    self.assertEqual(((int.from_bytes(modified, "little") >> 41) & 0x7FF) - 1024, 2)
-    self.assertEqual((int.from_bytes(modified, "little") >> 52) & 0x3, 1)
-    self.assertEqual(modified, self._data(self._camera_lfa(2, 1, 10, Damping_Gain=10)))
-
-  def test_force_command_uses_speed_based_active_damping(self):
-    self._prime_stock_torque(request=0)
-    self.safety.set_controls_allowed(True)
-    self.assertTrue(self._tx(self._command(2, 3)))
-    self._modify_len(self._camera_161(), 32)
-    self._modify(self._camera_1e0())
-    self._modify_len(self._camera_1b5(), 32)
 
     for speed_kph, expected_damping in ((0, 10), (30, 10), (40, 25), (50, 35), (60, 40),
                                         (80, 60), (100, 80), (104, 81), (108, 82), (130, 82)):
@@ -282,13 +211,9 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
         modified = self._modify(self._camera_lfa(0, 0, counter=2, Damping_Gain=100))
         self.assertEqual(modified[13], expected_damping)
 
-  def test_force_damping_only_updates_on_even_lfa_counters(self):
-    self._prime_stock_torque(request=0)
+  def test_damping_only_updates_on_even_lfa_counters(self):
     self.safety.set_controls_allowed(True)
-    self.assertTrue(self._tx(self._command(2, 3)))
-    self._modify_len(self._camera_161(), 32)
-    self._modify(self._camera_1e0())
-    self._modify_len(self._camera_1b5(), 32)
+    self.assertTrue(self._tx(self._command(2, 1)))
 
     for speed_kph in (40, 80):
       for _ in range(100):
@@ -299,37 +224,20 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
       modified = self._modify(self._camera_lfa(0, 0, counter=counter, Damping_Gain=100))
       self.assertEqual(modified[13], 25)
 
-  def test_lane_active_command_preserves_camera_damping(self):
-    self._prime_stock_torque(request=1)
-    self.safety.set_controls_allowed(True)
-    self.assertTrue(self._tx(self._command(2, 1)))
-    modified = self._modify(self._camera_lfa(0, 1, Damping_Gain=47))
-    self.assertEqual(modified[13], 47)
-
-  def test_mdps_empty_experiments_only_change_camera_copy(self):
-    self._prime_stock_torque(request=0)
-    self.safety.set_controls_allowed(True)
-
-    for experiment in (1, 2, 3):
-      with self.subTest(experiment=experiment):
-        self.assertTrue(self._tx(self._command(0, 3, mdps_experiment=experiment)))
-        msg = self._mdps(19, MDPS_LkaToiActvSta=1, MDPS_LkaPlgInSta=1)
+  def test_camera_sees_acknowledgement_matching_its_request(self):
+    for camera_request in (0, 1):
+      with self.subTest(camera_request=camera_request):
+        self._modify(self._camera_lfa(0, camera_request))
+        msg = self._mdps(19, MDPS_LkaToiActvSta=1 - camera_request, MDPS_LkaPlgInSta=1)
         modified = self._modify_len(msg, 24)
-        if experiment == 1:
-          self.assertEqual(modified, bytes(24))
-        elif experiment == 2:
-          expected = self._mdps(19)
-          self.assertEqual(modified, bytes(expected[0].data[0:24]))
-        else:
-          expected = self._mdps(19, MDPS_LkaPlgInSta=1)
-          self.assertEqual(modified, bytes(expected[0].data[0:24]))
+        expected = self._mdps(19, MDPS_LkaToiActvSta=camera_request, MDPS_LkaPlgInSta=1)
+        self.assertEqual(modified, bytes(expected[0].data[0:24]))
 
-  def test_stale_disengaged_and_unsafe_commands_fall_back_to_stock(self):
+  def test_stale_disengaged_and_unsafe_commands_fail_closed(self):
     for reason in ("stale", "disengaged", "unsafe"):
       with self.subTest(reason=reason):
         self._reset_safety_hooks()
         self.safety.set_timer(0)
-        self._prime_stock_torque()
         self.safety.set_controls_allowed(True)
 
         allowed = self._tx(self._command(3 if reason == "unsafe" else 2, 1))
@@ -339,9 +247,9 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
         elif reason == "disengaged":
           self.safety.set_controls_allowed(False)
 
-        msg = self._camera_lfa(0, 1, 10)
-        original = self._data(msg)
-        self.assertEqual(self._modify(msg), original)
+        msg = self._camera_lfa(91, 1, 10, Damping_Gain=47)
+        expected = self._camera_lfa(0, 0, 10, Damping_Gain=100)
+        self.assertEqual(self._modify(msg), self._data(expected))
 
 
 class TestHyundaiCanfdLFASteeringAltButtonsBase(TestHyundaiCanfdLFASteeringBase):

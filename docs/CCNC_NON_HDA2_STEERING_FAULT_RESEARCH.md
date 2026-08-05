@@ -993,31 +993,24 @@ Failure protocol:
 
 ### Stage 2: steering without lane lines
 
-Status: the `0x12A`-only, recognition/damping, companion-display, and fabricated-geometry phases were rejected. Whole-frame `0xEA` hiding was also rejected. Clearing only the forwarded camera-side copy of `MDPS_LkaToiActvSta`, restoring authentic acknowledgement during natural camera-active state, and performing a real `PASS_THROUGH -> ZERO_ACTIVE -> RAMP` handoff passed the 163.808-second/20-transition moving validation. The next simplification is to remove the now-unproven companion-state transforms one group at a time; the high-angle request-cut bypass also requires moving validation.
+Status: passed on 2026-08-05 with the cleaned full-control design. The runtime no longer has lane/force/pass-through modes, companion-message fabrication, pre-arm delays, or a stock/openpilot handoff. While the camera-sync safety mode is selected, Panda always owns the rack-facing physical `0x12A`: a fresh safety-approved openpilot command supplies torque/request, and every disengaged, stale, malformed, or disallowed state supplies torque zero/request off. Stock steering is never the fallback.
 
-The next phase should isolate the smallest cross-message consistency set:
+The camera and car receive two internally consistent views:
 
-1. Keep the proven physical `0x12A` cadence and every `0x162` diagnostic unchanged.
-2. Re-enable force mode with zero target torque first.
-3. Enter a pre-arm phase: on physical `0x161`, change only `CENTERLINE=1`, `LANELINE_LEFT=2`, `LANELINE_RIGHT=2`, and `LFA_ICON=2`; on physical `0x1E0`, change only `LFA_ICON=2`. Preserve both messages' physical counter, timing, every other bit, and checksum behavior.
-4. After Panda has physically forwarded at least one transformed copy of both messages, assert a zero-torque `0x12A` request. This avoids exposing CCNC to the exact long-lived contradiction produced by the failed force tests.
-5. Do not fabricate `0x1B5` lane geometry in the first test. This distinguishes a display/ownership consistency check from a requirement for a false lane model.
-6. Confirm whether CCNC remains clear and whether MDPS stays active at zero torque. Only then ramp a very small safety-limited torque.
-7. Release in a controlled phase rather than instantly dropping every companion state; record the natural transitional icon values before choosing the final release sequence.
-8. If CCNC still faults, add controlled instrumentation around `0x1B5` quality transitions and the forwarded MDPS `0xEA` acknowledgement. Do not block either message.
-9. Revert immediately to exact stock pass-through on a stale command, invalid source checksum, disengagement, or any fault.
+- Car side: the physical camera's exact 100 Hz cadence/counter and unrelated payload, with only openpilot-owned torque/request/damping and the checksum changed. The real MDPS `0xEA` remains visible to the car.
+- Camera side: the physical `0xEA` is preserved except `MDPS_LkaToiActvSta`, which is set to match the camera's original physical `0x12A ActToiSta`. Thus the camera receives the acknowledgement it expects even when its stock command is suppressed or openpilot steers without camera lanes.
+- `0x161`, `0x1E0`, `0x1B5`, and `0x162` are not modified.
 
-This sequence tests one hypothesis at a time and avoids jumping directly to invented lane geometry. Modes 3 and 4 remain disabled in normal `CarController` operation.
+The first moving checkpoint covered 301.293 seconds after the initial engagement, 14 openpilot lateral transitions, 29 physical camera active-state transitions, and normalized openpilot torque reaching both full-scale directions. Every sampled `MDPS_LkaToiFltSta`, `MDPS_LkaFailSta`, `carState.steerFaultTemporary`, `FAULT_LSS`, `FAULT_LFA`, and `FAULT_DAS` value remained zero. Approximately 34 sampled seconds specifically covered the previously untested quadrant where the stock camera requested steering while openpilot was disengaged: physical camera torque continued changing, but real `MDPS_LkaToiActvSta` remained zero and the driver confirmed steering assistance disappeared immediately. Openpilot also steered with `ActToiSta=0`, proving lane-independent ownership.
+
+The two-frame high-angle request reset remains enabled. During high-torque turns, the captured real MDPS acknowledgement briefly dropped and recovered without any fault, matching the separately validated guard behavior.
 
 ## Open questions
 
 1. What exact MDPS monitor triggers the original host-relay failure: maximum inter-frame gap, source-clock jitter, duplicate arrival, missing counter deadline, bus-level transmitter identity assumptions, or a combination?
-2. Are the `0x161`/`0x1E0`/`0x1B5` transforms needed at all once only the camera-side MDPS active acknowledgement is hidden?
-3. Which internal command is responsible for each isolated handoff increment in Panda's global blocked counter?
-4. Does removing the legacy >85-degree periodic request cut remain fault-free through repeated sustained turns?
-5. Are other recent CCNC non-HDA2 Hyundai/Kia/Genesis platforms subject to the same strict stream behavior?
-6. What are the semantics of the still-unnamed live bits in `0x11A`, `0x160`, `0x200`, `0x1FA`, and the undefined `0x38C` message?
-7. What exact fixed-point filter phase/offset explains the last one-count damping residual when measured entirely inside Panda rather than across host-observed buses?
+2. Are other recent CCNC non-HDA2 Hyundai/Kia/Genesis platforms subject to the same strict stream behavior and camera-facing MDPS consistency check?
+3. What are the semantics of the still-unnamed live bits in `0x11A`, `0x160`, `0x200`, `0x1FA`, and the undefined `0x38C` message?
+4. What exact fixed-point filter phase/offset explains the last one-count damping residual when measured entirely inside Panda rather than across host-observed buses?
 
 ## How others can contribute
 
@@ -1096,4 +1089,4 @@ The evidence no longer supports one undifferentiated â€œHyundai steering fault.â
 1. MDPS rejects a camera stream recreated through the host even when its bytes, counter, and checksum are correct. Preserving the original physical 100 Hz stream and transforming it inside Panda fixes that lane-gated failure without hiding diagnostics.
 2. The camera-side segment rejects forced steering when it sees the stock camera's inactive/no-line request locally but receives `MDPS_LkaToiActvSta=1` from the car side. Fabricating outward `0x161`, `0x1E0`, and `0x1B5` state did not solve it. Whole-frame `0xEA` replacement added faults. Preserving the authentic `0xEA` and clearing only its two-bit active acknowledgement produced two fault-free forced engagements while the real MDPS remained active and healthy.
 
-The next defensible experiment is to remove the now-disproven broad geometry/whole-frame variants, retain the targeted two-bit camera-facing transformation, correct or characterize the stock-to-openpilot torque handoff, and validate sustained nonzero steering across repeated long engagements. `0x162` must remain completely untouched.
+The 2026-08-05 clean full-control run removed the disproven geometry, whole-frame, pre-arm, pass-through, and handoff variants. The minimal working behavior is now: retain Panda-timed physical `0x12A`, always replace its rack-facing steering fields with openpilot-or-zero, and make only the camera-facing two-bit MDPS active acknowledgement match the camera's original request. This provided steering with and without camera lanes, suppressed stock steering while disengaged, survived repeated camera/openpilot transitions and full torque, and kept every sampled MDPS and `0x162` fault clear. `0x162` remains completely untouched.

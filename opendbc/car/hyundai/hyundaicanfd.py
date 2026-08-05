@@ -38,15 +38,6 @@ class CanBus(CanBusBase):
 
 LFA_COMMAND_ADDR = 0x7FF
 LFA_COMMAND_MAGIC = 0xA5
-LFA_COMMAND_PASSTHROUGH = 0
-LFA_COMMAND_LANE_ACTIVE = 1
-LFA_COMMAND_LANE_CUT = 2
-LFA_COMMAND_FORCE_ACTIVE = 3
-LFA_COMMAND_FORCE_CUT = 4
-MDPS_EXPERIMENT_NONE = 0
-MDPS_EXPERIMENT_ALL_ZERO = 1
-MDPS_EXPERIMENT_VALID_ZERO = 2
-MDPS_EXPERIMENT_CLEAR_ACTIVE = 3
 
 
 def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon, lfa_msg):
@@ -73,16 +64,8 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   return ret
 
 
-def create_lfa_steering_command(CAN, lat_active, steer_req, apply_torque, force=False, mdps_experiment=MDPS_EXPERIMENT_NONE):
-  if not lat_active:
-    mode = LFA_COMMAND_PASSTHROUGH
-    apply_torque = 0
-  elif force:
-    mode = LFA_COMMAND_FORCE_ACTIVE if steer_req else LFA_COMMAND_FORCE_CUT
-  else:
-    mode = LFA_COMMAND_LANE_ACTIVE if steer_req else LFA_COMMAND_LANE_CUT
-
-  dat = int(apply_torque).to_bytes(2, byteorder="little", signed=True) + bytes([mode, LFA_COMMAND_MAGIC, mdps_experiment, 0, 0, 0])
+def create_lfa_steering_command(CAN, steer_req, apply_torque):
+  dat = int(apply_torque).to_bytes(2, byteorder="little", signed=True) + bytes([steer_req, LFA_COMMAND_MAGIC, 0, 0, 0, 0])
   return LFA_COMMAND_ADDR, dat, CAN.ECAN
 
 

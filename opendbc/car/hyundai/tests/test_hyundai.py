@@ -58,25 +58,14 @@ class TestHyundaiFingerprint(unittest.TestCase):
     _, stock_dat, _ = packer.make_can_msg("LFA", CAN.ECAN, lfa_msg)
     assert dat == stock_dat
 
-    addr, dat, bus = hyundaicanfd.create_lfa_steering_command(CAN, True, True, -25)
+    addr, dat, bus = hyundaicanfd.create_lfa_steering_command(CAN, True, -25)
     assert (addr, bus) == (0x7FF, CAN.ECAN)
     assert int.from_bytes(dat[:2], byteorder="little", signed=True) == -25
-    assert dat[2:] == bytes([hyundaicanfd.LFA_COMMAND_LANE_ACTIVE, hyundaicanfd.LFA_COMMAND_MAGIC, 0, 0, 0, 0])
+    assert dat[2:] == bytes([1, hyundaicanfd.LFA_COMMAND_MAGIC, 0, 0, 0, 0])
 
-    _, dat, _ = hyundaicanfd.create_lfa_steering_command(CAN, True, False, 25, force=True)
+    _, dat, _ = hyundaicanfd.create_lfa_steering_command(CAN, False, 25)
     assert int.from_bytes(dat[:2], byteorder="little", signed=True) == 25
-    assert dat[2] == hyundaicanfd.LFA_COMMAND_FORCE_CUT
-
-    _, dat, _ = hyundaicanfd.create_lfa_steering_command(CAN, True, True, 0, force=True,
-                                                          mdps_experiment=hyundaicanfd.MDPS_EXPERIMENT_VALID_ZERO)
-    assert dat[4] == hyundaicanfd.MDPS_EXPERIMENT_VALID_ZERO
-
-    _, dat, _ = hyundaicanfd.create_lfa_steering_command(CAN, True, True, 0, force=True,
-                                                          mdps_experiment=hyundaicanfd.MDPS_EXPERIMENT_CLEAR_ACTIVE)
-    assert dat[4] == hyundaicanfd.MDPS_EXPERIMENT_CLEAR_ACTIVE
-
-    _, dat, _ = hyundaicanfd.create_lfa_steering_command(CAN, False, True, 25)
-    assert dat == bytes([0, 0, hyundaicanfd.LFA_COMMAND_PASSTHROUGH, hyundaicanfd.LFA_COMMAND_MAGIC, 0, 0, 0, 0])
+    assert dat[2:] == bytes([0, hyundaicanfd.LFA_COMMAND_MAGIC, 0, 0, 0, 0])
 
   def test_feature_detection(self):
     # LKA steering
