@@ -1,6 +1,6 @@
 import copy
 
-from cereal import custom
+from openpilot.cereal import custom
 from openpilot.common.params import Params
 from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, DT_CTRL, create_button_events, structs
