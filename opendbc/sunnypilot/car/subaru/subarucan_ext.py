@@ -66,3 +66,16 @@ def create_brake_pedal(packer, CP, brake_pedal_msg, send_resume):
     values["Speed"] = 1 if CP.flags & SubaruFlags.PREGLOBAL else 3
 
   return packer.make_can_msg("Brake_Pedal", CanBus.camera, values)
+
+
+def create_brake_status_hold(packer, brake_status_msg: dict):
+  """Send Brake_Status to camera bus with ES_Brake cleared so Eyesight never sees the
+  braking module's ES_Brake feedback during a hold (else its ~566ms fault watchdog trips).
+  Reuses the received COUNTER since we replace a forwarded-unmodified frame.
+  """
+  values = {
+    s: brake_status_msg[s]
+    for s in ["CHECKSUM", "COUNTER", "Signal1", "ES_Brake", "Signal2", "Brake", "Signal3"]
+  }
+  values["ES_Brake"] = 0  # hide braking-module feedback from Eyesight
+  return packer.make_can_msg("Brake_Status", CanBus.camera, values)

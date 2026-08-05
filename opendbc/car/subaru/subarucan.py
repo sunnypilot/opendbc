@@ -208,6 +208,35 @@ def create_es_brake(packer, frame, es_brake_msg, long_enabled, long_active, brak
   return packer.make_can_msg("ES_Brake", CanBus.main, values)
 
 
+def create_es_brake_hold(packer, frame, es_brake_msg, long_enabled, brake_value):
+  values = {s: es_brake_msg[s] for s in [
+    "CHECKSUM",
+    "Signal1",
+    "Brake_Pressure",
+    "AEB_Status",
+    "Cruise_Brake_Lights",
+    "Cruise_Brake_Fault",
+    "Cruise_Brake_Active",
+    "Cruise_Activated",
+    "Signal3",
+  ]}
+  values["COUNTER"] = frame % 0x10
+
+  # Override the brake-relevant fields; all others pass through from Eyesight. Cruise_Activated
+  # is forwarded verbatim — forcing it to 1 during manual driving risks Eyesight fault detection.
+  values["Brake_Pressure"] = brake_value
+  values["Cruise_Brake_Active"] = brake_value > 0
+  values["Cruise_Brake_Lights"] = brake_value >= 70  # mirrors create_es_brake threshold
+
+  # When alpha-long ACC engages, Eyesight latches Cruise_Brake_Fault for the rest of the drive
+  # and ignores any ES_Brake pressure carrying it; clear it only on the long path (mirrors
+  # create_es_brake). On stock Eyesight it can't be that latch, so forward it verbatim.
+  if long_enabled:
+    values["Cruise_Brake_Fault"] = 0
+
+  return packer.make_can_msg("ES_Brake", CanBus.main, values)
+
+
 def create_es_status(packer, frame, es_status_msg, long_enabled, long_active, cruise_rpm):
   values = {s: es_status_msg[s] for s in [
     "CHECKSUM",

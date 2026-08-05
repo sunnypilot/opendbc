@@ -10,6 +10,7 @@ from enum import IntFlag
 
 class SubaruSafetyFlagsSP:
   STOP_AND_GO = 1
+  BRAKE_INTERCEPT = 4  # bit 2 (bit 1 reserved/unused)
 
 
 class SubaruFlagsSP(IntFlag):
