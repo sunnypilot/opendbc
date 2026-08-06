@@ -9,6 +9,7 @@ from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.radar_interface import RadarInterface
 
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
+from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import ADAS_INTERCEPTOR_HEARTBEAT_MSG
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
@@ -44,6 +45,10 @@ class CarInterface(CarInterfaceBase):
       ret.alphaLongitudinalAvailable = not (ret.flags & HyundaiFlags.CANFD_NO_RADAR_DISABLE)
       if lka_steering and Ecu.adas not in [fw.ecu for fw in car_fw]:
         # this needs to be figured out for cars without an ADAS ECU
+        ret.alphaLongitudinalAvailable = False
+
+      # no longitudinal for all lka_steering angle steering
+      if lka_steering and ret.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
         ret.alphaLongitudinalAvailable = False
 
       ret.enableBsm = 0x1ba in fingerprint[CAN.ECAN]
@@ -85,6 +90,9 @@ class CarInterface(CarInterfaceBase):
         ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CANFD_ALT_BUTTONS.value
       if ret.flags & HyundaiFlags.CANFD_CAMERA_SCC:
         ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CAMERA_SCC.value
+      if ret.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+        ret.steerControlType = structs.CarParams.SteerControlType.angle
+        ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CANFD_ANGLE_STEERING.value
 
     else:
       # Shared configuration for non CAN-FD cars
@@ -117,7 +125,9 @@ class CarInterface(CarInterfaceBase):
     ret.centerToFront = ret.wheelbase * 0.4
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
-    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    if not (ret.flags & HyundaiFlags.CANFD_ANGLE_STEERING):
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     if ret.flags & HyundaiFlags.ALT_LIMITS:
       ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.ALT_LIMITS.value
@@ -172,10 +182,19 @@ class CarInterface(CarInterfaceBase):
       # TODO-SP: add route with ESCC message for process replay
       if ESCC_MSG in fingerprint[0]:
         ret.flags |= HyundaiFlagsSP.ENHANCED_SCC.value
+    else:
+      if ADAS_INTERCEPTOR_HEARTBEAT_MSG in fingerprint[0]:
+        ret.flags |= HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR.value
+        stock_cp.alphaLongitudinalAvailable = True
+        stock_cp.openpilotLongitudinalControl = True
+        stock_cp.pcmCruise = False
 
     if ret.flags & HyundaiFlagsSP.ENHANCED_SCC:
       ret.safetyParam |= HyundaiSafetyFlagsSP.ESCC
       stock_cp.radarUnavailable = False
+
+    if alpha_long and ret.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
+      ret.safetyParam |= HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR
 
     if stock_cp.flags & HyundaiFlags.HAS_LDA_BUTTON:
       ret.safetyParam |= HyundaiSafetyFlagsSP.HAS_LDA_BUTTON
@@ -214,6 +233,9 @@ class CarInterface(CarInterfaceBase):
 
     ret.intelligentCruiseButtonManagementAvailable = not (stock_cp.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
 
+    if stock_cp.openpilotLongitudinalControl:
+      stock_cp.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.LONG.value
+
     return ret
 
   @staticmethod
@@ -230,7 +252,7 @@ class CarInterface(CarInterfaceBase):
       communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, 0x80 | uds.CONTROL_TYPE.DISABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
 
     if CP.openpilotLongitudinalControl and not ((CP.flags & (HyundaiFlags.CANFD_CAMERA_SCC | HyundaiFlags.CAMERA_SCC)) or
-                                                (CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC)):
+                                                (CP_SP.flags & (HyundaiFlagsSP.ENHANCED_SCC | HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR))):
       addr, bus = 0x7d0, CanBus(CP).ECAN if CP.flags & HyundaiFlags.CANFD else 0
       if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG.value:
         addr, bus = 0x730, CanBus(CP).ECAN
