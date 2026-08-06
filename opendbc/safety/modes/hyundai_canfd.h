@@ -3,24 +3,30 @@
 #include "opendbc/safety/declarations.h"
 #include "opendbc/safety/modes/hyundai_common.h"
 
+#define HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(a_can) \
+  {0x256, a_can, 8, .check_relay = false},  /* */ \
+
 #define HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(bus) \
   {0x1CF, bus, 8, .check_relay = false},  /* CRUISE_BUTTON */   \
 
 #define HYUNDAI_CANFD_LKA_STEER_MSG_COMMON_TX_MSGS(a_can, e_can) \
+  HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)                        \
   HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(e_can)                        \
   {0x50,  a_can, 16, .check_relay = (a_can) == 0},  /* LKAS */      \
   {0x2A4, a_can, 24, .check_relay = (a_can) == 0},  /* CAM_0x2A4 */ \
 
 #define HYUNDAI_CANFD_LKA_STEER_MSG_ALT_COMMON_TX_MSGS(a_can, e_can) \
+  HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)                        \
   HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(e_can)                        \
-  {0x110, a_can, 32, .check_relay = (a_can) == 0},  /* LKAS_ALT */  \
-  {0x362, a_can, 32, .check_relay = (a_can) == 0},  /* CAM_0x362 */ \
+  {0xCB, e_can, 32, .check_relay = (e_can) == 1},  /* LFA_ALT */  \
 
 #define HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(e_can)  \
+  HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)                            \
   {0x12A, e_can, 16, .check_relay = (e_can) == 0},  /* LFA */            \
   {0x1E0, e_can, 16, .check_relay = (e_can) == 0},  /* LFAHDA_CLUSTER */ \
 
 #define HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(e_can, longitudinal) \
+  HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)                            \
   {0x1A0, e_can, 32, .check_relay = (longitudinal)},  /* SCC_CONTROL */ \
 
 // *** Addresses checked in rx hook ***
@@ -50,7 +56,7 @@ static bool hyundai_canfd_angle_steering = false;
 static bool hyundai_canfd_lka_steer_msg_alt = false;
 
 static unsigned int hyundai_canfd_get_lka_addr(void) {
-  return hyundai_canfd_lka_steer_msg_alt ? 0x110U : 0x50U;
+  return /* hyundai_canfd_lka_steer_msg_alt ? 0x110U : */ 0x50U;
 }
 
 static uint8_t hyundai_canfd_get_counter(const CANPacket_t *msg) {
@@ -177,11 +183,11 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   // HYUNDAI_SANTA_FE_HEV_5TH_GEN: -0.00059689759884299
 
   // IONIQ 5 PE values.
-  // const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
-  //   .slip_factor = -0.0008688329819908074,  // calc_slip_factor(VM)
-  //   .steer_ratio = 14.26,
-  //   .wheelbase = 2.97,
-  // };
+   const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
+     .slip_factor = -0.0008688329819908074,  // calc_slip_factor(VM)
+     .steer_ratio = 14.26,
+     .wheelbase = 2.97,
+   };
 
   // // GENESIS_GV80_2025 values. (values can be found on values.py)
   // const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
@@ -198,15 +204,27 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   // };
 
   // KIA_SPORTAGE_HEV_2026 values. (most conservative for now) (values can be found on values.py)
-  const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
-      .slip_factor = -0.0006085930193026732,  // calc_slip_factor(VM)
-      .steer_ratio = 13.7,
-      .wheelbase = 2.756,
-    };
-
+//  const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
+//      .slip_factor = -0.0006085930193026732,  // calc_slip_factor(VM)
+//      .steer_ratio = 13.7,
+//      .wheelbase = 2.756,
+//    };
 
   bool tx = true;
 
+  // HDA1 steering
+  if ((msg->addr == 0xCBU) && hyundai_canfd_angle_steering) {
+    const int lfa_angle_active = (msg->data[3] >> 4U);
+    const bool steer_angle_req = lfa_angle_active == 2;
+
+    int desired_angle = (((uint32_t)(msg->data[5] & 0x3FU)) << 8) | (uint32_t)msg->data[4];
+    desired_angle = to_signed(desired_angle, 14);
+
+    if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, HYUNDAI_STEERING_PARAMS)) {
+      tx = false;
+    }
+  }
+  
   // steering
   const unsigned int steer_addr = (hyundai_canfd_lka_steer_msg && !hyundai_longitudinal) ? hyundai_canfd_get_lka_addr() : 0x12aU;
   if (msg->addr == steer_addr) {
