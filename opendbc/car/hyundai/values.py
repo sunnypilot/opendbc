@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass, field
-from enum import IntFlag
+from enum import IntFlag, Enum
 
 from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
 from opendbc.car.lateral import AngleSteeringLimitsVM
@@ -984,3 +984,13 @@ UNSUPPORTED_LONGITUDINAL_CAR = {
 NON_SCC_CAR = CAR.with_sp_flags(HyundaiFlagsSP.NON_SCC)
 
 DBC = CAR.create_dbc_map()
+
+class ActvACISta(Enum):
+  INIT = 0
+  INACTIVE = 1
+  ACTIVE35_ACTIVE = 2
+
+
+class ESA_ActvSta(Enum):
+  INACTIVE = 0
+  ACTIVE = 1

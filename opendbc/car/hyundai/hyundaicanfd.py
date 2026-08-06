@@ -1,7 +1,7 @@
 import numpy as np
 from opendbc.car import CanBusBase
 from opendbc.car.crc import CRC16_XMODEM
-from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.car.hyundai.values import HyundaiFlags, ActvACISta, ESA_ActvSta
 from opendbc.sunnypilot.car.hyundai.lead_data_ext import CanFdLeadData
 
 
@@ -61,13 +61,13 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
       "ADAS_ACIAnglTqRedcGainVal": apply_torque if lat_active else 0,
     }
 
-  ActvACILvl2Sta = 2 if lat_active else 1 if enabled else 1
+  ActvACILvl2Sta = ActvACISta.ACTIVE35_ACTIVE if lat_active else ActvACISta.INACTIVE if enabled else ActvACISta.INACTIVE
   LFA_ALT_values = {
-    "ADAS_ActvACISta": 0,
-    "ADAS_ActvACILvl2Sta": ActvACILvl2Sta,
+    "ADAS_ActvACISta": ActvACISta.INIT.value,
+    "ADAS_ActvACILvl2Sta": ActvACILvl2Sta.value,
     "ADAS_StrAnglReqVal": apply_angle,
     "ADAS_ACIAnglTqRedcGainVal": apply_torque if lat_active else 0,
-    "FCA_ESA_ActvSta": 0,
+    "FCA_ESA_ActvSta": ESA_ActvSta.INACTIVE.value,
     "FCA_ESA_TqBstGainVal": 0
   }
 
