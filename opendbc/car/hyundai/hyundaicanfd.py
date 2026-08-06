@@ -64,8 +64,8 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   return ret
 
 
-def create_lfa_steering_command(CAN, steer_req, apply_torque):
-  dat = int(apply_torque).to_bytes(2, byteorder="little", signed=True) + bytes([steer_req, LFA_COMMAND_MAGIC, 0, 0, 0, 0])
+def create_lfa_steering_command(CAN, lat_active, steer_req, apply_torque):
+  dat = int(apply_torque).to_bytes(2, byteorder="little", signed=True) + bytes([steer_req, LFA_COMMAND_MAGIC, lat_active, 0, 0, 0])
   return LFA_COMMAND_ADDR, dat, CAN.ECAN
 
 

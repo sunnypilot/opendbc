@@ -132,8 +132,8 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
   SAFETY_PARAM = HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CANFD_LFA_CAMERA_SYNC
 
   @staticmethod
-  def _command(torque, request, magic=0xA5, reserved=0):
-    dat = int(torque).to_bytes(2, byteorder="little", signed=True) + bytes([request, magic, reserved, 0, 0, 0])
+  def _command(torque, request, ui_active=0, magic=0xA5, reserved=0):
+    dat = int(torque).to_bytes(2, byteorder="little", signed=True) + bytes([request, magic, ui_active, reserved, 0, 0])
     return libsafety_py.make_CANPacket(0x7FF, 0, dat)
 
   def _torque_cmd_msg(self, torque, steer_req=1):
@@ -145,6 +145,12 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
 
   def _camera_1e0(self, counter=0, **kwargs):
     return self.packer.make_can_msg_safety("LFAHDA_CLUSTER", 2, {"COUNTER": counter, **kwargs})
+
+  def _camera_161(self, counter=0, **kwargs):
+    return self.packer.make_can_msg_safety("CCNC_0x161", 2, {"COUNTER": counter, **kwargs})
+
+  def _camera_162(self, counter=0, **kwargs):
+    return self.packer.make_can_msg_safety("CCNC_0x162", 2, {"COUNTER": counter, **kwargs})
 
   def _mdps(self, counter=0, **kwargs):
     return self.packer.make_can_msg_safety("MDPS", 0, {"COUNTER": counter, **kwargs})
@@ -195,6 +201,20 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
     msg = self._camera_1e0(5, LFA_ICON=1)
     original = self._data(msg)
     self.assertEqual(self._modify(msg), original)
+
+  def test_camera_ui_tracks_openpilot_without_touching_faults(self):
+    self.safety.set_controls_allowed(True)
+    for ui_active in (False, True):
+      with self.subTest(ui_active=ui_active):
+        self.assertTrue(self._tx(self._command(0, 0, ui_active)))
+        msg = self._camera_161(9, LFA_ICON=3, CENTERLINE=2, ALERTS_2=5, LANELINE_LEFT=6)
+        expected = self._camera_161(9, LFA_ICON=2 if ui_active else 0, CENTERLINE=1 if ui_active else 0,
+                                    ALERTS_2=5, LANELINE_LEFT=6)
+        self.assertEqual(self._modify_len(msg, 32), bytes(expected[0].data[0:32]))
+
+    faults = self._camera_162(11, FAULT_LSS=1, FAULT_LFA=2, FAULT_DAS=3)
+    original = bytes(faults[0].data[0:32])
+    self.assertEqual(self._modify_len(faults, 32), original)
 
   def test_active_damping_uses_speed_schedule_without_lanes(self):
     self.safety.set_controls_allowed(True)
