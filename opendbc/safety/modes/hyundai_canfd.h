@@ -177,11 +177,11 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   // HYUNDAI_SANTA_FE_HEV_5TH_GEN: -0.00059689759884299
 
   // IONIQ 5 PE values.
-  // const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
-  //   .slip_factor = -0.0008688329819908074,  // calc_slip_factor(VM)
-  //   .steer_ratio = 14.26,
-  //   .wheelbase = 2.97,
-  // };
+  const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
+    .slip_factor = -0.0008688329819908074,  // calc_slip_factor(VM)
+    .steer_ratio = 14.26,
+    .wheelbase = 2.97,
+  };
 
   // // GENESIS_GV80_2025 values. (values can be found on values.py)
   // const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
@@ -198,11 +198,11 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   // };
 
   // KIA_SPORTAGE_HEV_2026 values. (most conservative for now) (values can be found on values.py)
-  const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
-      .slip_factor = -0.0006085930193026732,  // calc_slip_factor(VM)
-      .steer_ratio = 13.7,
-      .wheelbase = 2.756,
-    };
+  // const AngleSteeringParams HYUNDAI_STEERING_PARAMS = {
+  //     .slip_factor = -0.0006085930193026732,  // calc_slip_factor(VM)
+  //     .steer_ratio = 13.7,
+  //     .wheelbase = 2.756,
+  //   };
 
 
   bool tx = true;
