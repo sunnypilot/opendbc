@@ -170,7 +170,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   };
 
   const AngleSteeringLimits HYUNDAI_CANFD_ANGLE_STEERING_LIMITS = {
-    .max_angle = 3600,
+    .max_angle = 1800, //MDPS faults if beyond for the time being
     .angle_deg_to_can = 10,
     .frequency = 100U,
   };
