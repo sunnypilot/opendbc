@@ -109,12 +109,6 @@ static bool nissan_tx_hook(const CANPacket_t *msg) {
     }
   }
 
-  // acc button check, only allow cancel button to be sent
-  if (msg->addr == 0x20bU) {
-    // Violation of any button other than cancel is pressed
-    violation |= ((msg->data[1] & 0x3dU) > 0U);
-  }
-
   if (violation) {
     tx = false;
   }
@@ -135,7 +129,7 @@ static safety_config nissan_init(uint16_t param) {
     {0x169, 0, 8, .check_relay = true},   // LKAS
     {0x2b1, 0, 8, .check_relay = true},   // PROPILOT_HUD
     {0x4cc, 0, 8, .check_relay = true},   // PROPILOT_HUD_INFO_MSG
-    {0x20b, 2, 6, .check_relay = false}   // CRUISE_THROTTLE (X-Trail)
+    {0x20b, 2, 6, .check_relay = true}    // CRUISE_THROTTLE (X-Trail)
   };
 
   static const CanMsg NISSAN_TX_MSGS_ALTIMA[] = {
