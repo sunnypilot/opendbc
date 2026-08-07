@@ -32,15 +32,84 @@ class LatControlInputs(NamedTuple):
 TorqueFromLateralAccelCallbackTypeTorqueSpace = Callable[[LatControlInputs, structs.CarParams.LateralTorqueTuning, bool], float]
 
 
+def _get_speed_dep_config():
+  """Load speed-dependent torque config from toml. Cached after first call."""
+  if not hasattr(_get_speed_dep_config, '_cache'):
+    import os
+    import tomllib
+    from opendbc.car.common.basedir import BASEDIR
+    path = os.path.join(BASEDIR, 'torque_data/speed_dependent.toml')
+    with open(path, 'rb') as f:
+      _get_speed_dep_config._cache = tomllib.load(f)
+  return _get_speed_dep_config._cache
+
+
 class CarInterfaceBaseSP:
+  # --- Speed-dependent torque ---
+  # Provides per-speed LAF and friction interpolation for cars with entries in
+  # speed_dependent.toml. The tables start at seed values from the toml and are
+  # updated live by torqued via update_speed_dep_laf() as bins become valid.
+  #
+  # Data flow:
+  #   speed_dependent.toml → _ensure_speed_dep_init() (seeds tables)
+  #   torqued → update_speed_dep_laf() (overwrites valid bins, ±30% sanity)
+  #   latcontrol_torque → torque_from_lateral_accel callback (reads tables per-frame)
+  #
+  # Cars without a toml entry have _speed_dep=False. For those, torqued still
+  # learns per-bin values, but latcontrol_torque_ext handles interpolation
+  # directly using torqued's output (see update_speed_dep_torque in that file).
+
+  def _ensure_speed_dep_init(self):
+    """Lazy init: load speed-dep config on first access."""
+    if hasattr(self, '_speed_dep'):
+      return
+    self._speed_dep = False
+    cfg = _get_speed_dep_config().get(self.CP.carFingerprint)
+    if cfg is not None:
+      self._speed_dep = True
+      self._speed_dep_speed_bp = list(cfg['speed_bp'])         # bin centers (m/s)
+      self._speed_dep_laf_v = list(cfg['laf_bp'])              # current LAF per bin (mutable)
+      self._speed_dep_friction_v = list(cfg.get('friction_bp', [0.1] * len(cfg['speed_bp'])))  # current friction per bin (mutable)
+      self._speed_dep_original_laf_v = list(cfg['laf_bp'])     # seed LAF (immutable, defines sanity bounds)
+      self._speed_dep_original_friction_v = list(self._speed_dep_friction_v)  # seed friction (immutable)
+
   @staticmethod
   def torque_from_lateral_accel_linear_in_torque_space(latcontrol_inputs: LatControlInputs, torque_params: structs.CarParams.LateralTorqueTuning,
                                                         gravity_adjusted: bool) -> float:
-    # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     return latcontrol_inputs.lateral_acceleration / float(torque_params.latAccelFactor)
 
+  def _torque_from_lateral_accel_speed_dep_torque_space(self, latcontrol_inputs, torque_params, gravity_adjusted):
+    """Interpolate LAF by current speed instead of using a single scalar."""
+    laf = float(np.interp(latcontrol_inputs.vego, self._speed_dep_speed_bp, self._speed_dep_laf_v))
+    return latcontrol_inputs.lateral_acceleration / laf
+
   def torque_from_lateral_accel_in_torque_space(self) -> TorqueFromLateralAccelCallbackTypeTorqueSpace:
+    """Returns the appropriate torque callback — speed-dep if configured, linear otherwise."""
+    self._ensure_speed_dep_init()
+    if self._speed_dep:
+      return self._torque_from_lateral_accel_speed_dep_torque_space
     return self.torque_from_lateral_accel_linear_in_torque_space
+
+  def update_speed_dep_laf(self, speed_bp, laf_bp, friction_bp, valid_bp):
+    """Called by latcontrol_torque_ext with torqued's learned values.
+    Only overwrites bins where valid_bp[i] is True and the value is within
+    ±30% of the seed. Invalid bins retain their seed values."""
+    self._ensure_speed_dep_init()
+    if not self._speed_dep:
+      return
+    n = len(self._speed_dep_laf_v)
+    if len(laf_bp) != n or len(valid_bp) != n or len(friction_bp) != n:
+      return
+    for i in range(n):
+      if valid_bp[i]:
+        laf_lo = self._speed_dep_original_laf_v[i] * 0.7
+        laf_hi = self._speed_dep_original_laf_v[i] * 1.3
+        if laf_lo <= laf_bp[i] <= laf_hi:
+          self._speed_dep_laf_v[i] = laf_bp[i]
+        fric_lo = self._speed_dep_original_friction_v[i] * 0.7
+        fric_hi = self._speed_dep_original_friction_v[i] * 1.3
+        if fric_lo <= friction_bp[i] <= fric_hi:
+          self._speed_dep_friction_v[i] = friction_bp[i]
 
 
 class NanoFFModel:
