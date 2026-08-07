@@ -656,23 +656,31 @@
     ],
     "package": "Co-Pilot360 Assist 2.0"
   },
-  "Ford Focus 2018": {
+  "Ford Focus 2018-22": {
     "platform": "FORD_FOCUS_MK4",
     "make": "Ford",
     "brand": "ford",
     "model": "Focus",
     "year": [
-      "2018"
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022"
     ],
     "package": "Adaptive Cruise Control with Lane Centering"
   },
-  "Ford Focus Hybrid 2018": {
+  "Ford Focus Hybrid 2018-22": {
     "platform": "FORD_FOCUS_MK4",
     "make": "Ford",
     "brand": "ford",
     "model": "Focus Hybrid",
     "year": [
-      "2018"
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022"
     ],
     "package": "Adaptive Cruise Control with Lane Centering"
   },
@@ -1013,7 +1021,7 @@
     ],
     "package": "All"
   },
-  "Honda Accord Hybrid 2023-25": {
+  "Honda Accord Hybrid 2023-26": {
     "platform": "HONDA_ACCORD_11G",
     "make": "Honda",
     "brand": "honda",
@@ -1021,17 +1029,20 @@
     "year": [
       "2023",
       "2024",
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "All"
   },
-  "Honda City (Brazil only) 2023": {
+  "Honda City (Brazil only) 2023-25": {
     "platform": "HONDA_CITY_7G",
     "make": "Honda",
     "brand": "honda",
     "model": "City (Brazil only)",
     "year": [
-      "2023"
+      "2023",
+      "2024",
+      "2025"
     ],
     "package": "All"
   },
@@ -1149,7 +1160,7 @@
       "2020",
       "2021"
     ],
-    "package": "Honda Sensing"
+    "package": "All"
   },
   "Honda CR-V 2015-16": {
     "platform": "HONDA_CRV",
@@ -1605,6 +1616,17 @@
       "2024"
     ],
     "package": "Highway Driving Assist II"
+  },
+  "Hyundai Ioniq 6 (without HDA II) 2023-24": {
+    "platform": "HYUNDAI_IONIQ_6",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Ioniq 6 (without HDA II)",
+    "year": [
+      "2023",
+      "2024"
+    ],
+    "package": "Highway Driving Assist"
   },
   "Hyundai Ioniq Electric 2019": {
     "platform": "HYUNDAI_IONIQ_EV_LTD",
@@ -2799,7 +2821,7 @@
     ],
     "package": "All"
   },
-  "Nissan Altima 2019-20, 2024": {
+  "Nissan Altima 2019-24": {
     "platform": "NISSAN_ALTIMA",
     "make": "Nissan",
     "brand": "nissan",
@@ -2807,6 +2829,9 @@
     "year": [
       "2019",
       "2020",
+      "2021",
+      "2022",
+      "2023",
       "2024"
     ],
     "package": "ProPILOT Assist"
@@ -2816,6 +2841,21 @@
     "make": "Nissan",
     "brand": "nissan",
     "model": "Leaf",
+    "year": [
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023"
+    ],
+    "package": "ProPILOT Assist"
+  },
+  "Nissan Leaf IC 2018-23": {
+    "platform": "NISSAN_LEAF_IC",
+    "make": "Nissan",
+    "brand": "nissan",
+    "model": "Leaf IC",
     "year": [
       "2018",
       "2019",
