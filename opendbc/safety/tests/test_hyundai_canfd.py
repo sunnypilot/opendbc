@@ -127,6 +127,9 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
   TX_MSGS = [[0x7FF, 0], [0x1A0, 1], [0x1CF, 0], [0x1E0, 0]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x1E0,)}
   FWD_BLACKLISTED_ADDRS = {0: [0x12A]}
+  MAX_TORQUE_LOOKUP = [0], [384]
+  MAX_RATE_UP = 4
+  MAX_RATE_DOWN = 7
 
   GAS_MSG = ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL")
   SAFETY_PARAM = HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.CANFD_LFA_CAMERA_SYNC
@@ -216,6 +219,26 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
     original = bytes(faults[0].data[0:32])
     self.assertEqual(self._modify_len(faults, 32), original)
 
+  def test_camera_hands_off_warning_is_suppressed_while_active(self):
+    self.safety.set_controls_allowed(True)
+    self.assertTrue(self._tx(self._command(0, 0, ui_active=1)))
+
+    for alerts_2, alerts_5, sounds_2 in ((1, 0, 0), (2, 0, 3), (4, 1, 6), (0, 1, 0)):
+      with self.subTest(alerts_2=alerts_2, alerts_5=alerts_5, sounds_2=sounds_2):
+        msg = self._camera_161(9, ALERTS_2=alerts_2, ALERTS_5=alerts_5, SOUNDS_2=sounds_2, ALERTS_3=7)
+        expected = self._camera_161(9, ALERTS_2=0, ALERTS_5=0, SOUNDS_2=0, ALERTS_3=7, LFA_ICON=2, CENTERLINE=1)
+        self.assertEqual(self._modify_len(msg, 32), bytes(expected[0].data[0:32]))
+
+    # Other warnings, and the hands-off values while openpilot is inactive, pass through.
+    unrelated = self._camera_161(10, ALERTS_2=5, ALERTS_5=3, SOUNDS_2=4)
+    expected = self._camera_161(10, ALERTS_2=5, ALERTS_5=3, SOUNDS_2=4, LFA_ICON=2, CENTERLINE=1)
+    self.assertEqual(self._modify_len(unrelated, 32), bytes(expected[0].data[0:32]))
+
+    self.assertTrue(self._tx(self._command(0, 0, ui_active=0)))
+    inactive = self._camera_161(11, ALERTS_2=4, ALERTS_5=1, SOUNDS_2=6)
+    expected = self._camera_161(11, ALERTS_2=4, ALERTS_5=1, SOUNDS_2=6)
+    self.assertEqual(self._modify_len(inactive, 32), bytes(expected[0].data[0:32]))
+
   def test_active_damping_uses_speed_schedule_without_lanes(self):
     self.safety.set_controls_allowed(True)
     self.assertTrue(self._tx(self._command(2, 1)))
@@ -260,7 +283,7 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
         self.safety.set_timer(0)
         self.safety.set_controls_allowed(True)
 
-        allowed = self._tx(self._command(3 if reason == "unsafe" else 2, 1))
+        allowed = self._tx(self._command(self.MAX_RATE_UP + 1 if reason == "unsafe" else 2, 1))
         self.assertEqual(allowed, reason != "unsafe")
         if reason == "stale":
           self.safety.set_timer(50001)

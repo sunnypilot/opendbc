@@ -235,10 +235,10 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *msg) {
 
 static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   const TorqueSteeringLimits HYUNDAI_CANFD_STEERING_LIMITS = {
-    .max_torque = 270,
+    .max_torque = hyundai_canfd_lfa_camera_sync ? 384 : 270,
     .max_rt_delta = 112,
-    .max_rate_up = 2,
-    .max_rate_down = 3,
+    .max_rate_up = hyundai_canfd_lfa_camera_sync ? 4 : 2,
+    .max_rate_down = hyundai_canfd_lfa_camera_sync ? 7 : 3,
     .driver_torque_allowance = 250,
     .driver_torque_multiplier = 2,
     .type = TorqueDriverLimited,
@@ -396,6 +396,21 @@ static void hyundai_canfd_fwd_modify(CANPacket_t *msg) {
                            (controls_allowed || controls_allowed_lateral) && hyundai_canfd_lfa_ui_active;
     msg->data[8] = (msg->data[8] & 0xFCU) | (ui_active ? 1U : 0U);   // CENTERLINE
     msg->data[28] = (msg->data[28] & 0xF0U) | (ui_active ? 2U : 0U); // LFA_ICON
+
+    // The camera's stock hands-off escalation cancels SCC even though openpilot
+    // remains the steering owner. Suppress only the observed three-stage sequence.
+    const uint8_t alerts_2 = (msg->data[16] >> 6U) | ((msg->data[17] & 0x7U) << 2U);
+    const uint8_t alerts_5 = msg->data[19] & 0x1FU;
+    const uint8_t sounds_2 = msg->data[20] >> 4U;
+    const bool hands_off_warning = ((alerts_2 == 1U) && (sounds_2 == 0U)) ||
+                                   ((alerts_2 == 2U) && (sounds_2 == 3U)) ||
+                                   ((alerts_2 == 4U) && (sounds_2 == 6U)) || (alerts_5 == 1U);
+    if (ui_active && hands_off_warning) {
+      msg->data[16] &= 0x3FU;
+      msg->data[17] &= 0xF8U;
+      msg->data[19] &= 0xE0U;
+      msg->data[20] &= 0x0FU;
+    }
     hyundai_canfd_update_checksum(msg);
   }
 
