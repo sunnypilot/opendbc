@@ -124,9 +124,6 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
 
       # Tuning for experimental long
       ret.longitudinalTuning.kiV = [2.0, 1.5]
-      ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
-      ret.vEgoStopping = 0.25
-      ret.vEgoStarting = 0.25
 
       if alpha_long:
         ret.pcmCruise = False
@@ -260,9 +257,8 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       stock_cp.minSteerSpeed = 3.0   # ~6 mph
 
     # dashcamOnly platforms: untested platforms, need user validations
-    if candidate in (CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN,
-                     CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN,
-                     CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
+    if candidate in (CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN,
+                     CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN, CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
       stock_cp.dashcamOnly = True
 
     return ret

@@ -13,11 +13,12 @@ from opendbc.car import structs
 from opendbc.car.can_definitions import CanRecvCallable, CanSendCallable
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.car.subaru.values import SubaruFlags
+from opendbc.car.toyota.values import ToyotaSafetyFlags
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks as hyundai_enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.sunnypilot.car.subaru.values_ext import SubaruFlagsSP, SubaruSafetyFlagsSP
-from opendbc.sunnypilot.car.tesla.values import TeslaFlagsSP
+from opendbc.sunnypilot.car.tesla.values import MadsScreenButtonType, TeslaFlagsSP, TeslaSafetyFlagsSP
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
 
@@ -84,6 +85,7 @@ def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
 
   _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
   _initialize_coop_steering(CP, CP_SP, params_dict)
+  _initialize_tesla_mads_screen_button(CP, CP_SP, params_dict)
   _initialize_radar_tracks(CP, CP_SP, can_recv, can_send)
   _initialize_stop_and_go(CP, CP_SP, params_dict)
   _initialize_toyota(CP, CP_SP, params_dict)
@@ -111,6 +113,21 @@ def _initialize_coop_steering(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
       CP_SP.flags |= TeslaFlagsSP.COOP_STEERING.value
 
 
+def _initialize_tesla_mads_screen_button(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
+                                         params_dict: dict[str, str]) -> None:
+  if CP.brand == 'tesla' and CP_SP.flags & TeslaFlagsSP.HAS_VEHICLE_BUS:
+    selection = int(params_dict.get("TeslaMadsScreenButton", MadsScreenButtonType.OFF))
+    if selection == MadsScreenButtonType.THREE_FINGER:
+      CP_SP.flags |= TeslaFlagsSP.MADS_SCREEN_BUTTON_3_FINGER.value
+      CP_SP.safetyParam |= TeslaSafetyFlagsSP.MADS_SCREEN_BUTTON_3_FINGER
+    elif selection == MadsScreenButtonType.FOUR_FINGER:
+      CP_SP.flags |= TeslaFlagsSP.MADS_SCREEN_BUTTON_4_FINGER.value
+      CP_SP.safetyParam |= TeslaSafetyFlagsSP.MADS_SCREEN_BUTTON_4_FINGER
+    elif selection == MadsScreenButtonType.FIVE_FINGER:
+      CP_SP.flags |= TeslaFlagsSP.MADS_SCREEN_BUTTON_5_FINGER.value
+      CP_SP.safetyParam |= TeslaSafetyFlagsSP.MADS_SCREEN_BUTTON_5_FINGER
+
+
 def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
                              can_recv: CanRecvCallable | None = None, can_send: CanSendCallable | None = None) -> None:
   if CP.brand == 'hyundai':
@@ -135,6 +152,13 @@ def _initialize_stop_and_go(CP: structs.CarParams, CP_SP: structs.CarParamsSP, p
 def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
   if CP.brand == 'toyota':
     toyota_stock_long = int(params_dict.get("ToyotaEnforceStockLongitudinal", 0)) == 1
+    toyota_stop_and_go_hack = int(params_dict.get("ToyotaStopAndGoHack", 0)) == 1
 
     if toyota_stock_long:
       CP_SP.flags |= ToyotaFlagsSP.STOCK_LONGITUDINAL.value
+      CP.alphaLongitudinalAvailable = False
+      CP.openpilotLongitudinalControl = False
+      CP.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.STOCK_LONGITUDINAL.value
+
+    if toyota_stop_and_go_hack and CP.openpilotLongitudinalControl:
+      CP_SP.flags |= ToyotaFlagsSP.STOP_AND_GO_HACK.value
