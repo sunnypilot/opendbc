@@ -13,7 +13,7 @@ from opendbc.car.subaru.subarucan import subaru_checksum
 from opendbc.car.chrysler.chryslercan import chrysler_checksum, fca_giorgio_checksum
 from opendbc.car.hyundai.hyundaicanfd import hkg_can_fd_checksum
 from opendbc.car.volkswagen.mlbcan import volkswagen_mlb_checksum
-from opendbc.car.volkswagen.mqbcan import volkswagen_mqb_meb_checksum, xor_checksum
+from opendbc.car.volkswagen.mqbcan import volkswagen_meb_alt_crc_checksum, volkswagen_mqb_meb_checksum, xor_checksum
 from opendbc.car.tesla.teslacan import tesla_checksum
 from opendbc.car.body.bodycan import body_checksum
 from opendbc.car.psa.psacan import psa_checksum
@@ -81,15 +81,12 @@ class DBC:
       self._parse_file(name)
     else:
       dbc_path = os.path.join(DBC_PATH, name + ".dbc")
-      if os.path.exists(dbc_path):
+      if content := get_generated_dbcs().get(name):
+        self._parse_content(name, content)
+      elif os.path.exists(dbc_path):
         self._parse_file(dbc_path)
       else:
-        # try in-memory generated DBC
-        generated = get_generated_dbcs()
-        content = generated.get(name)
-        if content is None:
-          raise FileNotFoundError(f"DBC not found: {name}")
-        self._parse_content(name, content)
+        raise FileNotFoundError(f"DBC not found: {name}")
 
   def _parse_file(self, path: str):
     self.name = os.path.basename(path).replace(".dbc", "")
@@ -197,6 +194,8 @@ def get_checksum_state(dbc_name: str) -> ChecksumState | None:
     return ChecksumState(8, -1, 7, -1, False, SignalType.TOYOTA_CHECKSUM, toyota_checksum)
   elif dbc_name.startswith("hyundai_canfd_generated"):
     return ChecksumState(16, -1, 0, -1, True, SignalType.HKG_CAN_FD_CHECKSUM, hkg_can_fd_checksum)
+  elif dbc_name.startswith("vw_meb_2024"):
+    return ChecksumState(8, 4, 0, 0, True, SignalType.VOLKSWAGEN_MQB_MEB_CHECKSUM, volkswagen_meb_alt_crc_checksum)
   elif dbc_name.startswith(("vw_mqb", "vw_mqbevo", "vw_meb")):
     return ChecksumState(8, 4, 0, 0, True, SignalType.VOLKSWAGEN_MQB_MEB_CHECKSUM, volkswagen_mqb_meb_checksum)
   elif dbc_name.startswith("vw_mlb"):
