@@ -8,6 +8,12 @@ See the LICENSE.md file in the root directory for more details.
 from enum import IntFlag
 
 
+class RadarType:
+  OFF = 0
+  LEAD_ONLY = 1
+  FULL_RADAR = 2
+
+
 class HyundaiSafetyFlagsSP:
   DEFAULT = 0
   ESCC = 1
@@ -31,3 +37,5 @@ class HyundaiFlagsSP(IntFlag):
   NON_SCC_NO_FCA = 2 ** 8  # not all have FCA
   SPEED_LIMIT_AVAILABLE = 2 ** 9  # platforms with speed limit data available
   HAS_LKAS12 = 2 ** 10
+  RADAR_LEAD_ONLY = 2 ** 12
+  RADAR_FULL_RADAR = 2 ** 13

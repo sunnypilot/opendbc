@@ -650,6 +650,22 @@ BO_ 837 ADRV_0x345: 8 ADRV
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
  SG_ SET_ME_15 : 24|8@1+ (1,0) [0|255] "" XXX
 
+BO_ 864 CAM_0x360: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ UNKNOWN_03_07 : 24|40@1+ (1,0) [0|1099511627775] "" XXX
+ SG_ UNKNOWN_08_15 : 64|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_16_23 : 128|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_24_31 : 192|64@1+ (1,0) [0|18446744073709551615] "" XXX
+
+BO_ 865 CAM_0x361: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ UNKNOWN_03_07 : 24|40@1+ (1,0) [0|1099511627775] "" XXX
+ SG_ UNKNOWN_08_15 : 64|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_16_23 : 128|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_24_31 : 192|64@1+ (1,0) [0|18446744073709551615] "" XXX
+
 BO_ 866 CAM_0x362: 32 CAMERA
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
@@ -685,6 +701,38 @@ BO_ 866 CAM_0x362: 32 CAMERA
  SG_ BYTE29 : 232|8@1+ (1,0) [0|255] "" XXX
  SG_ BYTE30 : 240|8@1+ (1,0) [0|255] "" XXX
  SG_ BYTE31 : 248|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 867 CAM_0x363: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ UNKNOWN_03_07 : 24|40@1+ (1,0) [0|1099511627775] "" XXX
+ SG_ UNKNOWN_08_15 : 64|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_16_23 : 128|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_24_31 : 192|64@1+ (1,0) [0|18446744073709551615] "" XXX
+
+BO_ 868 CAM_0x364: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ UNKNOWN_03_07 : 24|40@1+ (1,0) [0|1099511627775] "" XXX
+ SG_ UNKNOWN_08_15 : 64|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_16_23 : 128|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_24_31 : 192|64@1+ (1,0) [0|18446744073709551615] "" XXX
+
+BO_ 869 CAM_0x365: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ UNKNOWN_03_07 : 24|40@1+ (1,0) [0|1099511627775] "" XXX
+ SG_ UNKNOWN_08_15 : 64|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_16_23 : 128|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_24_31 : 192|64@1+ (1,0) [0|18446744073709551615] "" XXX
+
+BO_ 870 CAM_0x366: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ UNKNOWN_03_07 : 24|40@1+ (1,0) [0|1099511627775] "" XXX
+ SG_ UNKNOWN_08_15 : 64|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_16_23 : 128|64@1+ (1,0) [0|18446744073709551615] "" XXX
+ SG_ UNKNOWN_24_31 : 192|64@1+ (1,0) [0|18446744073709551615] "" XXX
 
 BO_ 874 BLINDSPOTS_FRONT_CORNER_2: 16 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -943,9 +991,15 @@ CM_ SG_ 698 IFSref_VehDst8Val "IFSref_VehicleDistance8Value";
 CM_ SG_ 698 IFSref_VehDst9Val "IFSref_VehicleDistance9Value";
 CM_ SG_ 698 IFSref_VehDst10Val "IFSref_VehicleDistance10Value";
 CM_ SG_ 736 MAX_SPEED "Display units. Restricts car from driving above this speed unless accelerator pedal is depressed beyond pressure point";
+CM_ BO_ 864 "Forward-camera lane/path geometry. Payload is active but fields beyond checksum and counter remain under investigation.";
+CM_ BO_ 865 "Forward-camera lane/path geometry. Payload is active but fields beyond checksum and counter remain under investigation.";
 CM_ BO_ 866 "Contains signals with detailed lane line information. Used by ADAS ECU on HDA 2 vehicles to operate LFA. Used on cars that use message 272.";
 CM_ SG_ 866 LEFT_LANE_LINE "Left lane line confidence";
 CM_ SG_ 866 RIGHT_LANE_LINE "Right lane line confidence";
+CM_ BO_ 867 "Additional forward-camera lane/path geometry. Payload is active on some platforms and otherwise default-filled.";
+CM_ BO_ 868 "Additional forward-camera lane/path geometry. Payload is active on some platforms and otherwise default-filled.";
+CM_ BO_ 869 "Optional forward-camera lane slot. Observed routes usually carry a constant default/not-detected payload.";
+CM_ BO_ 870 "Optional forward-camera lane slot. Observed routes usually carry a constant default/not-detected payload.";
 CM_ SG_ 961 COUNTER_ALT "only increments on change";
 CM_ SG_ 1041 COUNTER_ALT "only increments on change";
 CM_ BO_ 1043 "Lamp signals do not seem universal on cars that use LKAS_ALT, but stalk signals do.";
