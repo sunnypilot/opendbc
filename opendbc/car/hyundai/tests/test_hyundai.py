@@ -11,7 +11,7 @@ from opendbc.car.hyundai.interface import CarInterface
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.radar_interface import HYUNDAI_RADAR_TRACK_SPECS, RADAR_210_21F, RADAR_235_248, RADAR_3A5_3C4, \
                                                 RADAR_500_53F, RADAR_602_617, RadarInterface, get_detected_radar_tracks, \
-                                                is_radar_track_valid
+                                                get_radar_track_motion_state, is_radar_track_valid
 from opendbc.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
@@ -225,8 +225,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     values = {
       "QUALITY": 87,
       "AGE": 42,
-      "MOTION_STATE": 8,
-      "OBJECT_ID": 73,
+      "OBJECT_ID": 1196,
       "WIDTH": 2.05,
       "CLASSIFICATION": 2,
       "LONG_DIST": 210.35,
@@ -234,7 +233,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
       "REL_SPEED": -12.5,
       "REL_LAT_SPEED": 3.25,
       "REL_ACCEL": -1.5,
-      "UNKNOWN_1": 1234,
+      "ABS_SPEED": 12.5,
       "UNKNOWN_2": 2345,
       "UNKNOWN_3": 678,
       "AZIMUTH": 45,
@@ -248,6 +247,14 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert is_radar_track_valid(RADAR_235_248, decoded, "")
     decoded["OBJECT_ID"] = 0
     assert not is_radar_track_valid(RADAR_235_248, decoded, "")
+
+  def test_camera_235_oncoming_classification(self):
+    assert get_radar_track_motion_state(RADAR_235_248, {"CLASSIFICATION": 4, "ABS_SPEED": 0}, "") == 4
+
+  def test_camera_235_other_classifications_remain_unknown(self):
+    for classification in range(8):
+      if classification != 4:
+        assert get_radar_track_motion_state(RADAR_235_248, {"CLASSIFICATION": classification}, "") == 0
 
   def test_corner_radar_research_signal_layout(self):
     dbc_name = "hyundai_corner_radar_240_28f_generated"
@@ -700,7 +707,8 @@ class TestHyundaiFingerprint(unittest.TestCase):
     msg = radar_parser.parser.vl[f"RADAR_TRACK_{RADAR_235_248.start_addr:x}"]
     msg["OBJECT_ID"] = 3
     msg["AGE"] = 7
-    msg["MOTION_STATE"] = 5
+    msg["CLASSIFICATION"] = 4
+    msg["ABS_SPEED"] = -12
     msg["LONG_DIST"] = 10
     msg["LAT_DIST"] = 1
     msg["REL_SPEED"] = 2
@@ -712,7 +720,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
     assert len(points) == 1
     assert RI.active_radar_buses[RADAR_235_248.name] == 1
-    assert points[0].motionState == 2
+    assert points[0].motionState == 4
     assert points[0].trackAge == 7
 
   def test_radar_interface_live_detection_requires_correct_message_size(self):

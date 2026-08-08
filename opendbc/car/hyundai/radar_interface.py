@@ -96,7 +96,7 @@ RADAR_210_21F = HyundaiRadarTrackSpec(
 )
 RADAR_235_248 = HyundaiRadarTrackSpec(
   "RADAR_235_248", 0x235, 20, ("",),
-  ("QUALITY", "AGE", "MOTION_STATE", "OBJECT_ID", "LONG_DIST", "LAT_DIST", "REL_SPEED", "REL_LAT_SPEED", "REL_ACCEL"),
+  ("QUALITY", "AGE", "CLASSIFICATION", "OBJECT_ID", "LONG_DIST", "LAT_DIST", "REL_SPEED", "REL_LAT_SPEED", "REL_ACCEL"),
   frequency=33, message_size=32, source_kind="camera",
 )
 RADAR_3A5_3C4 = HyundaiRadarTrackSpec(
@@ -209,16 +209,9 @@ def get_radar_track_state(radar_spec: HyundaiRadarTrackSpec, track_msg, track_pr
 
 
 def get_radar_track_motion_state(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> int:
-  motion_state = int(track_msg[f"{track_prefix}MOTION_STATE"])
   if radar_spec.name == "RADAR_235_248":
-    # Normalize the camera-object enum to RadarPoint's common
-    # 0=unknown, 1=stationary, 2=moving representation.
-    if motion_state in (1, 2, 3, 6):
-      return 1
-    if motion_state in (5, 8, 9):
-      return 2
-    return 0
-  return motion_state
+    return 4 if int(track_msg["CLASSIFICATION"]) == 4 else 0
+  return int(track_msg[f"{track_prefix}MOTION_STATE"])
 
 
 def is_radar_track_valid(radar_spec: HyundaiRadarTrackSpec, track_msg, track_prefix: str) -> bool:
