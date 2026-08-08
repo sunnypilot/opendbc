@@ -81,6 +81,20 @@ FW_VERSIONS_EXT = {
     #   b'\xf1\x87CXLQAM0906975JB0\x89\x88\xa6\x8aVfug\xba\x87\x94yffuxgfo\xff\x8b\xff\xff\xff\x91\x82\xf1\x816V2C1051\x00\x00\xf1\x006V2B0_C2\x00\x006V2C1051\x00\x00CBD0N20NS8q\xc1&\xd2',  # noqa: E501
     # ],
   },
+  CAR.HYUNDAI_SANTA_FE_2022_NON_SCC: {
+    (Ecu.abs, 0x7d1, None): [
+      b"\xf1\x00TM ESC \r 103!\x03' 58910-S1CA0",
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00TM  MDPS C 1.00 1.01 56310-S1EB0 4TSDC101',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00TM  MFC  AT GEN RHD 1.00 1.05 99211-S1500 220126',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00T02601BL  T02832A1  VTMPD22XXX832KS9\x95\xd6\xbb\xbc',
+    ],
+  },
   CAR.KIA_SELTOS_2023_NON_SCC: {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00SP ESC \t 101"\t\x01 58910-Q5510',
