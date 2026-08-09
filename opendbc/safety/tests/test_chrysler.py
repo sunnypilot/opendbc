@@ -157,14 +157,14 @@ class TestChryslerRamHDSafety(TestChryslerSafety):
 
 class TestChryslerRamHDAltButtonSafety(TestChryslerRamHDSafety):
   def setUp(self):
-    self.packer = CANPackerPanda("chrysler_ram_hd_generated")
+    self.packer = CANPackerSafety("chrysler_ram_hd_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.chrysler, ChryslerSafetyFlags.RAM_HD | ChryslerSafetyFlags.RAM_HD_ALT_BUTTONS)
     self.safety.init_tests()
 
-  def _button_msg(self, cancel=False, resume=False):
-    values = {"ACC_Cancel": cancel, "ACC_Resume": resume}
-    return self.packer.make_can_msg_panda("CRUISE_BUTTONS_ALT", self.DAS_BUS, values)
+  def _button_msg(self, cancel=False, resume=False, accel=False, decel=False):
+    values = {"ACC_Cancel": cancel, "ACC_Resume": resume, "ACC_Accel": accel, "ACC_Decel": decel}
+    return self.packer.make_can_msg_safety("CRUISE_BUTTONS_ALT", self.DAS_BUS, values)
 
 
 if __name__ == "__main__":
