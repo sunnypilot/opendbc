@@ -4,30 +4,32 @@
 #include "opendbc/safety/modes/chrysler_common.h"
 
 // Chrysler Pacifica/Jeep addresses
-#define CHRYSLER_EPS_2            0x220  // EPS driver input torque
-#define CHRYSLER_ESP_1            0x140  // Brake pedal and vehicle speed
-#define CHRYSLER_ESP_8            0x11C  // Brake pedal and vehicle speed
-#define CHRYSLER_ECM_5            0x22F  // Throttle position sensor
-#define CHRYSLER_DAS_3            0x1F4  // ACC engagement states from DASM
-#define CHRYSLER_DAS_6            0x2A6  // LKAS HUD and auto headlight control from DASM
-#define CHRYSLER_LKAS_COMMAND     0x292  // LKAS controls from DASM
-#define CHRYSLER_CRUISE_BUTTONS   0x23B  // Cruise control buttons
-#define CHRYSLER_LKAS_HEARTBIT    0x2D9  // LKAS HEARTBIT from DASM
-#define CHRYSLER_TRACTION_BUTTON  0x330  // Traction control button
-#define CHRYSLER_Center_Stack_2   0x000  // Placeholder, does not exist
+#define CHRYSLER_EPS_2               0x220  // EPS driver input torque
+#define CHRYSLER_ESP_1               0x140  // Brake pedal and vehicle speed
+#define CHRYSLER_ESP_8               0x11C  // Brake pedal and vehicle speed
+#define CHRYSLER_ECM_5               0x22F  // Throttle position sensor
+#define CHRYSLER_DAS_3               0x1F4  // ACC engagement states from DASM
+#define CHRYSLER_DAS_6               0x2A6  // LKAS HUD and auto headlight control from DASM
+#define CHRYSLER_LKAS_COMMAND        0x292  // LKAS controls from DASM
+#define CHRYSLER_CRUISE_BUTTONS      0x23B  // Cruise control buttons
+#define CHRYSLER_CRUISE_BUTTONS_ALT  0x000  // Placeholder, does not exist
+#define CHRYSLER_LKAS_HEARTBIT       0x2D9  // LKAS HEARTBIT from DASM
+#define CHRYSLER_TRACTION_BUTTON     0x330  // Traction control button
+#define CHRYSLER_Center_Stack_2      0x000  // Placeholder, does not exist
 
 // RAM DT addresses
-#define CHRYSLER_RAM_DT_EPS_2            0x31
-#define CHRYSLER_RAM_DT_ESP_1            0x83
-#define CHRYSLER_RAM_DT_ESP_8            0x79
-#define CHRYSLER_RAM_DT_ECM_5            0x9D
-#define CHRYSLER_RAM_DT_DAS_3            0x99
-#define CHRYSLER_RAM_DT_DAS_6            0xFA
-#define CHRYSLER_RAM_DT_LKAS_COMMAND     0xA6
-#define CHRYSLER_RAM_DT_CRUISE_BUTTONS   0xB1
-#define CHRYSLER_RAM_DT_LKAS_HEARTBIT    0x00  // Placeholder, does not exist
-#define CHRYSLER_RAM_DT_TRACTION_BUTTON  0x00  // Placeholder, does not exist
-#define CHRYSLER_RAM_DT_Center_Stack_2   0x28A
+#define CHRYSLER_RAM_DT_EPS_2               0x31
+#define CHRYSLER_RAM_DT_ESP_1               0x83
+#define CHRYSLER_RAM_DT_ESP_8               0x79
+#define CHRYSLER_RAM_DT_ECM_5               0x9D
+#define CHRYSLER_RAM_DT_DAS_3               0x99
+#define CHRYSLER_RAM_DT_DAS_6               0xFA
+#define CHRYSLER_RAM_DT_LKAS_COMMAND        0xA6
+#define CHRYSLER_RAM_DT_CRUISE_BUTTONS      0xB1
+#define CHRYSLER_RAM_DT_CRUISE_BUTTONS_ALT  0x00  // Placeholder, does not exist
+#define CHRYSLER_RAM_DT_LKAS_HEARTBIT       0x00  // Placeholder, does not exist
+#define CHRYSLER_RAM_DT_TRACTION_BUTTON     0x00  // Placeholder, does not exist
+#define CHRYSLER_RAM_DT_Center_Stack_2      0x28A
 
 // RAM HD addresses
 #define CHRYSLER_RAM_HD_EPS_2               0x220
@@ -46,7 +48,7 @@
 #ifdef ALLOW_DEBUG
 #define CHRYSLER_RAM_HD_COMMON_TX_MSGS                       \
   {CHRYSLER_RAM_HD_LKAS_COMMAND, 0, 8, .check_relay = true}, \
-  {CHRYSLER_RAM_HD_DAS_6, 0, 8, .check_relay = true},        \
+  {CHRYSLER_RAM_HD_DAS_6, 0, 8, .check_relay = true},
 #endif
 
 typedef enum {
@@ -213,12 +215,6 @@ static safety_config chrysler_init(uint16_t param) {
     {.msg = {{CHRYSLER_RAM_HD_ECM_5, 0, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
     {.msg = {{CHRYSLER_RAM_HD_DAS_3, 2, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
     {.msg = {{CHRYSLER_RAM_HD_Center_Stack_2, 0, 8, 1U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .ignore_frequency_check = true}, { 0 }, { 0 }}},
-  };
-
-  static const CanMsg CHRYSLER_RAM_HD_TX_MSGS[] = {
-    {CHRYSLER_RAM_HD_CRUISE_BUTTONS, 2, 3, .check_relay = false},
-    {CHRYSLER_RAM_HD_LKAS_COMMAND, 0, 8, .check_relay = true},
-    {CHRYSLER_RAM_HD_DAS_6, 0, 8, .check_relay = true},
   };
 
   const uint32_t CHRYSLER_PARAM_RAM_HD = 2U;  // set for Ram HD platform

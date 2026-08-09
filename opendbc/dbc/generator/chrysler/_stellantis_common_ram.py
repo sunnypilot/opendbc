@@ -60,7 +60,7 @@ def generate():
             continue
 
           if not cur_msg[0].startswith('BO_'):
-            out_f.write(''.join(cur_msg))
+            parts.extend(cur_msg)
             cur_msg = []
             continue
 
@@ -77,12 +77,10 @@ def generate():
               sl[2] = sl[2][:-1] + '_ALT:'
             sl[1] = str(new_addr)
             cur_msg[0] = ' '.join(sl)
-            out_f.write(''.join(cur_msg))
+            parts.extend(cur_msg)
 
           wrote_addrs.add(addr)
-          sl[1] = str(addr_lookup.get(addr, addr))
-          line = ' '.join(sl)
-        parts.append(line)
+          cur_msg = []
 
       missing_addrs = set(addr_lookup.keys()) - wrote_addrs
       assert len(missing_addrs) == 0, f"Missing addrs from {src}: {missing_addrs}"
