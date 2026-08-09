@@ -18,7 +18,7 @@
 #define HYUNDAI_CANFD_LKA_STEER_MSG_ALT_COMMON_TX_MSGS(a_can, e_can) \
   HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)                        \
   HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(e_can)                        \
-  {0xCB, e_can, 24, .check_relay = (e_can) == 0},  /* LFA_ALT */  \
+  {0xCB, e_can, 24, .check_relay = (e_can) == 1},  /* LFA_ALT */  \
 
 #define HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(e_can)  \
   HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)                            \
