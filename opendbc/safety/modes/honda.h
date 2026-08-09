@@ -23,9 +23,11 @@
 #define HONDA_N_COMMON_TX_MSGS \
   {0xE4,  0, 5, .check_relay = true},   \
   {0x194, 0, 4, .check_relay = true},   \
+  {0x33D, 0, 5, .check_relay = true},   \
+
+#define HONDA_N_COMMON_LONG_TX_MSGS \
   {0x1FA, 0, 8, .check_relay = false},  \
   {0x30C, 0, 8, .check_relay = true},   \
-  {0x33D, 0, 5, .check_relay = true},   \
 
 enum {
   HONDA_BTN_NONE = 0,
@@ -43,6 +45,7 @@ static bool honda_bosch_long = false;
 static bool honda_bosch_radarless = false;
 static bool honda_bosch_canfd = false;
 static bool honda_nidec_hybrid = false;
+static bool honda_stock_longitudinal = false;
 typedef enum {HONDA_NIDEC, HONDA_BOSCH} HondaHw;
 static HondaHw honda_hw = HONDA_NIDEC;
 
@@ -314,7 +317,7 @@ static bool honda_tx_hook(const CANPacket_t *msg) {
   // FORCE CANCEL: safety check only relevant when spamming the cancel button in Bosch HW
   // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
-  if ((msg->addr == 0x296U) && !controls_allowed && (msg->bus == bus_buttons)) {
+  if (((msg->addr == 0x1A6U) || (msg->addr == 0x296U)) && !controls_allowed && (msg->bus == bus_buttons)) {
     if (((msg->data[0] >> 5) & 0x7U) != 2U) {
       tx = false;
     }
@@ -341,10 +344,19 @@ static safety_config honda_nidec_init(uint16_t param) {
   // 0x1FA is dynamically forwarded based on stock AEB
   // 0xE4 is steering on all cars except CRV and RDX, 0x194 for CRV and RDX,
   // 0x1FA is brake control, 0x30C is acc hud, 0x33D is lkas hud
-  static CanMsg HONDA_N_TX_MSGS[] = {HONDA_N_COMMON_TX_MSGS};
+  static CanMsg HONDA_N_TX_MSGS[] = {
+    HONDA_N_COMMON_TX_MSGS
+    HONDA_N_COMMON_LONG_TX_MSGS
+  };
+
+  static CanMsg HONDA_N_STOCK_LONGITUDINAL_TX_MSGS[] = {
+    HONDA_N_COMMON_TX_MSGS
+    {0x1A6, 0, 8, .check_relay = false},
+  };
 
   static CanMsg HONDA_N_INTERCEPTOR_TX_MSGS[] = {
     HONDA_N_COMMON_TX_MSGS
+    HONDA_N_COMMON_LONG_TX_MSGS
     {0x200, 0, 6, .check_relay = false},
   };
 
@@ -352,6 +364,7 @@ static safety_config honda_nidec_init(uint16_t param) {
 
   const uint16_t HONDA_PARAM_SP_NIDEC_HYBRID = 1;
   const uint16_t HONDA_PARAM_GAS_INTERCEPTOR = 2;
+  const uint16_t HONDA_PARAM_STOCK_LONGITUDINAL = 4;
 
   honda_hw = HONDA_NIDEC;
   honda_brake = 0;
@@ -368,6 +381,7 @@ static safety_config honda_nidec_init(uint16_t param) {
 
   honda_nidec_hybrid = GET_FLAG(current_safety_param_sp, HONDA_PARAM_SP_NIDEC_HYBRID);
   enable_gas_interceptor = GET_FLAG(current_safety_param_sp, HONDA_PARAM_GAS_INTERCEPTOR);
+  honda_stock_longitudinal = GET_FLAG(current_safety_param_sp, HONDA_PARAM_STOCK_LONGITUDINAL);
 
   if (enable_nidec_alt) {
     // For Nidecs with main on signal on an alternate msg (missing 0x326)
@@ -387,7 +401,11 @@ static safety_config honda_nidec_init(uint16_t param) {
     SET_RX_CHECKS(honda_nidec_common_rx_checks, ret);
   }
 
-  SET_TX_MSGS(HONDA_N_TX_MSGS, ret);
+  if (honda_stock_longitudinal) {
+    SET_TX_MSGS(HONDA_N_STOCK_LONGITUDINAL_TX_MSGS, ret);
+  } else {
+    SET_TX_MSGS(HONDA_N_TX_MSGS, ret);
+  }
 
   if (enable_gas_interceptor) {
     if (enable_nidec_alt) {
@@ -461,6 +479,7 @@ static safety_config honda_bosch_init(uint16_t param) {
   honda_bosch_canfd = GET_FLAG(param, HONDA_PARAM_BOSCH_CANFD);
   // Checking for alternate brake override from safety parameter
   honda_alt_brake_msg = GET_FLAG(param, HONDA_PARAM_ALT_BRAKE);
+  honda_stock_longitudinal = false;
 
   // radar disabled so allow gas/brakes
 #ifdef ALLOW_DEBUG
