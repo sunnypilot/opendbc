@@ -1,6 +1,6 @@
 from opendbc.car import structs
 from opendbc.car.crc import CRC8J1850
-from opendbc.car.chrysler.values import CUSW_CARS, RAM_CARS
+from opendbc.car.chrysler.values import ChryslerFlags, CUSW_CARS, RAM_CARS
 
 GearShifter = structs.CarState.GearShifter
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
@@ -67,7 +67,7 @@ def create_lkas_command(packer, CP, apply_torque, lkas_control_bit):
   return packer.make_can_msg("LKAS_COMMAND", 0, values)
 
 
-def create_cruise_buttons(packer, frame, bus, cancel=False, resume=False, accel=False, decel=False):
+def create_cruise_buttons(packer, CP, frame, bus, cancel=False, resume=False, accel=False, decel=False):
   values = {
     "ACC_Cancel": cancel,
     "ACC_Resume": resume,
@@ -75,7 +75,8 @@ def create_cruise_buttons(packer, frame, bus, cancel=False, resume=False, accel=
     "ACC_Decel": decel,
     "COUNTER": frame % 0x10,
   }
-  return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
+  msg = "CRUISE_BUTTONS_ALT" if CP.flags & ChryslerFlags.RAM_HD_ALT_BUTTONS else "CRUISE_BUTTONS"
+  return packer.make_can_msg(msg, bus, values)
 
 
 def chrysler_checksum(address: int, sig, d: bytearray) -> int:
