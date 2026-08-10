@@ -35,7 +35,6 @@ non_tested_cars = [
   TOYOTA.TOYOTA_RAV4H,
 
   # port extensions
-  HYUNDAI.KIA_CEED_PHEV_2022_NON_SCC,
   HYUNDAI.HYUNDAI_KONA_EV_NON_SCC,
   HYUNDAI.HYUNDAI_BAYON_1ST_GEN_NON_SCC,
   HYUNDAI.HYUNDAI_ELANTRA_2022_NON_SCC,
@@ -377,4 +376,7 @@ routes = [
   # Segments that test specific issues
   # Controls mismatch due to standstill threshold
   CarTestRoute("bec2dcfde6a64235/2022-04-08--14-21-32", HONDA.HONDA_CRV_HYBRID, segment=22),
+
+  # port extensions
+  CarTestRoute("dc7bf18c8af12e37/00000006--ea06255cd0", HYUNDAI.KIA_CEED_PHEV_2022_NON_SCC),
 ]
