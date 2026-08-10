@@ -37,14 +37,14 @@ This two-layer approach is essential because while the current vehicle model may
 
 ### Special Case: Driving the Baseline Vehicle
 
-When actually driving the baseline vehicle itself (e.g., Santa Fe), we apply an additional 80% ISO cap since that vehicle would otherwise operate right at the ISO safety threshold. This extra margin ensures safe operation even for our most restrictive vehicle model.
+When actually driving the baseline vehicle itself (e.g., Kia Sportage HEV 2026), the two-layer validation is skipped since the current vehicle model and the baseline model are the same. The panda safety layer still enforces the ISO limits using the baseline vehicle's parameters.
 
 ## Example Implementation
 
-### Baseline Vehicle: Hyundai Santa Fe
-Due to its physics characteristics, the Santa Fe requires smaller steering angles to remain within ISO safety limits.
+### Baseline Vehicle: Kia Sportage HEV 2026
+Due to its physics characteristics, the Sportage HEV 2026 requires smaller steering angles to remain within ISO safety limits.
 
 ### Current Vehicle: Ioniq 5 PE
 Due to different physical characteristics, the Ioniq 5 PE can handle larger steering angles while still remaining within the same ISO safety standards.
 
-By using the Santa Fe's conservative limits across all vehicles, we ensure the Ioniq 5 PE operates well within its capabilities, while preventing the Santa Fe from exceeding its safety thresholds.
+By using the Sportage HEV 2026's conservative limits across all vehicles, we ensure the Ioniq 5 PE operates well within its capabilities, while preventing the Sportage HEV 2026 from exceeding its safety thresholds.
