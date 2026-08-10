@@ -79,6 +79,19 @@ class TestCanParserPacker(unittest.TestCase):
     ret = parser.update([])
     assert len(ret) == 0
 
+  def test_parser_selected_signals(self):
+    msgs = [("CAN_FD_MESSAGE", 10), ]
+    parser = CANParser(TEST_DBC, msgs, 0, signals={"SIGNED"})
+    packer = CANPacker(TEST_DBC)
+
+    msg = packer.make_can_msg("CAN_FD_MESSAGE", 0, {"SIGNED": -5})
+    parser.update([0, [msg]])
+
+    assert parser.vl["CAN_FD_MESSAGE"] == {"SIGNED": -5}
+
+    with self.assertRaisesRegex(RuntimeError, "UNKNOWN_SIGNAL"):
+      CANParser(TEST_DBC, msgs, 0, signals={"UNKNOWN_SIGNAL"})
+
   def test_parser_counter_can_valid(self):
     """
     Tests number of allowed bad counters + ensures CAN stays invalid
