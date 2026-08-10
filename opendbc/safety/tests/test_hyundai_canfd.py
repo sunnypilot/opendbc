@@ -184,9 +184,9 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
     self.assertTrue(self.safety.safety_tx_consumed)
 
   def test_disengaged_always_suppresses_stock_steering(self):
-    msg = self._camera_lfa(37, 1, 41, Damping_Gain=47, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
+    msg = self._camera_lfa(37, 1, 41, Damping_Gain=47, LKA_SysWrn=9, ELK_SymbDisp=5)
     modified = self._modify(msg)
-    expected = self._camera_lfa(0, 0, 41, Damping_Gain=100, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
+    expected = self._camera_lfa(0, 0, 41, Damping_Gain=100, LKA_SysWrn=9, ELK_SymbDisp=5)
     self.assertEqual(modified, self._data(expected))
 
   def test_command_owns_steering_with_or_without_camera_lanes(self):
@@ -195,9 +195,9 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
 
     for camera_request, damping in ((0, 10), (1, 47)):
       with self.subTest(camera_request=camera_request):
-        msg = self._camera_lfa(91, camera_request, 7, Damping_Gain=47, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
+        msg = self._camera_lfa(91, camera_request, 7, Damping_Gain=47, LKA_SysWrn=9, ELK_SymbDisp=5)
         modified = self._modify(msg)
-        expected = self._camera_lfa(2, 1, 7, Damping_Gain=damping, NEW_SIGNAL_1=5, NEW_SIGNAL_7=0xA6)
+        expected = self._camera_lfa(2, 1, 7, Damping_Gain=damping, LKA_SysWrn=9, ELK_SymbDisp=5)
         self.assertEqual(modified, self._data(expected))
 
   def test_camera_companion_messages_pass_unchanged(self):
@@ -223,7 +223,7 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
     self.safety.set_controls_allowed(True)
     self.assertTrue(self._tx(self._command(0, 0, ui_active=1)))
 
-    for alerts_2, alerts_5, sounds_2 in ((1, 0, 0), (2, 0, 3), (4, 1, 6), (0, 1, 0)):
+    for alerts_2, alerts_5, sounds_2 in ((1, 0, 0), (2, 0, 3), (4, 1, 6)):
       with self.subTest(alerts_2=alerts_2, alerts_5=alerts_5, sounds_2=sounds_2):
         msg = self._camera_161(9, ALERTS_2=alerts_2, ALERTS_5=alerts_5, SOUNDS_2=sounds_2, ALERTS_3=7)
         expected = self._camera_161(9, ALERTS_2=0, ALERTS_5=0, SOUNDS_2=0, ALERTS_3=7, LFA_ICON=2, CENTERLINE=1)
@@ -233,6 +233,10 @@ class TestHyundaiCanfdLFACameraSync(TestHyundaiCanfdLFASteeringBase):
     unrelated = self._camera_161(10, ALERTS_2=5, ALERTS_5=3, SOUNDS_2=4)
     expected = self._camera_161(10, ALERTS_2=5, ALERTS_5=3, SOUNDS_2=4, LFA_ICON=2, CENTERLINE=1)
     self.assertEqual(self._modify_len(unrelated, 32), bytes(expected[0].data[0:32]))
+
+    alerts_5_only = self._camera_161(10, ALERTS_2=0, ALERTS_5=1, SOUNDS_2=0)
+    expected = self._camera_161(10, ALERTS_2=0, ALERTS_5=1, SOUNDS_2=0, LFA_ICON=2, CENTERLINE=1)
+    self.assertEqual(self._modify_len(alerts_5_only, 32), bytes(expected[0].data[0:32]))
 
     self.assertTrue(self._tx(self._command(0, 0, ui_active=0)))
     inactive = self._camera_161(11, ALERTS_2=4, ALERTS_5=1, SOUNDS_2=6)

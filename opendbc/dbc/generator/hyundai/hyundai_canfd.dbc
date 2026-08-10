@@ -201,23 +201,15 @@ BO_ 298 LFA: 16 ADRV
  SG_ BCA_Rear_WrnSta : 57|3@1+ (1,0) [0|255] "" ADRV
  SG_ LKA_SysWrn : 60|4@1+ (1,0) [0|15] "" CLU,CGW
  SG_ FCA_LO_WrnSta : 64|1@1+ (1,0) [0|1] "" ADRV
- SG_ NEW_SIGNAL_1 : 67|3@0+ (1,0) [0|7] "" XXX
  SG_ FCA_LS_WrnSta : 68|1@1+ (1,0) [0|1] "" ADRV
- SG_ NEW_SIGNAL_2 : 71|3@0+ (1,0) [0|7] "" XXX
  SG_ LKA_OnOffEquip2Sta : 72|2@1+ (1,0) [0|255] "" ADRV
- SG_ NEW_SIGNAL_3 : 79|6@0+ (1,0) [0|63] "" XXX
  SG_ LKA_UsmMod : 80|2@1+ (1,0) [0|3] "" CLU,CGW
  SG_ Info_PedtrnDst : 84|3@0+ (1,0) [0|7] "" ADAS_DRV
  SG_ ELK_SysFlrSta : 85|5@1+ (1,0) [0|31] "" ADRV
  SG_ ELK_SymbDisp : 90|3@1+ (1,0) [0|7] "" ADRV
  SG_ FCA_ESA_WrnSta : 93|1@1+ (1,0) [0|7] "" ADRV
- SG_ NEW_SIGNAL_4 : 95|2@0+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_6 : 100|5@0+ (1,0) [0|31] "" XXX
  SG_ FCA_ESA_CtrlSta : 101|1@1+ (1,0) [0|7] "" ADRV
- SG_ NEW_SIGNAL_5 : 103|2@0+ (1,0) [0|3] "" XXX
  SG_ Damping_Gain : 104|8@1+ (1,0) [0|255] "" CGW
- SG_ NEW_SIGNAL_7 : 119|8@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_8 : 127|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 304 GEAR_SHIFTER: 16 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX

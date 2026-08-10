@@ -3,7 +3,6 @@ from hypothesis import settings, given, strategies as st
 import unittest
 from types import SimpleNamespace
 
-from opendbc.can import CANPacker
 from opendbc.car import gen_empty_fingerprint
 from opendbc.car.structs import CarParams
 from opendbc.car.fw_versions import build_fw_dict
@@ -49,14 +48,7 @@ CANFD_EXPECTED_ECUS = {Ecu.fwdCamera, Ecu.fwdRadar}
 
 class TestHyundaiFingerprint(unittest.TestCase):
   def test_canfd_lfa_camera_sync_command(self):
-    packer = CANPacker("hyundai_canfd_generated")
-    CP = SimpleNamespace(flags=HyundaiFlags.CANFD)
     CAN = SimpleNamespace(ECAN=0)
-    lfa_msg = {"COUNTER": 41, "ActToiSta": 1, "StrTqReqVal": 17}
-
-    _, dat, _ = hyundaicanfd.create_steering_messages(packer, CP, CAN, False, False, 0, 0, lfa_msg)[0]
-    _, stock_dat, _ = packer.make_can_msg("LFA", CAN.ECAN, lfa_msg)
-    assert dat == stock_dat
 
     addr, dat, bus = hyundaicanfd.create_lfa_steering_command(CAN, True, True, -25)
     assert (addr, bus) == (0x7FF, CAN.ECAN)

@@ -40,7 +40,7 @@ LFA_COMMAND_ADDR = 0x7FF
 LFA_COMMAND_MAGIC = 0xA5
 
 
-def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon, lfa_msg):
+def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon):
   values = {
     "LKA_OptUsmSta": 2,
     "LKA_SysIndReq": lkas_icon,
@@ -59,7 +59,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
       ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
     ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, values))
   else:
-    ret.append(packer.make_can_msg("LFA", CAN.ECAN, lfa_msg))
+    ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
 
   return ret
 

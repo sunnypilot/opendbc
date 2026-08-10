@@ -404,7 +404,7 @@ static void hyundai_canfd_fwd_modify(CANPacket_t *msg) {
     const uint8_t sounds_2 = msg->data[20] >> 4U;
     const bool hands_off_warning = ((alerts_2 == 1U) && (sounds_2 == 0U)) ||
                                    ((alerts_2 == 2U) && (sounds_2 == 3U)) ||
-                                   ((alerts_2 == 4U) && (sounds_2 == 6U)) || (alerts_5 == 1U);
+                                   ((alerts_2 == 4U) && (alerts_5 == 1U) && (sounds_2 == 6U));
     if (ui_active && hands_off_warning) {
       msg->data[16] &= 0x3FU;
       msg->data[17] &= 0xF8U;

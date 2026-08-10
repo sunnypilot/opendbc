@@ -88,14 +88,14 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     new_torque = int(round(actuators.torque * self.params.STEER_MAX))
     apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
 
-    # The CCNC MDPS faults after roughly 0.9 seconds of an active request above
-    # 85 degrees, so this request-bit guard is required on the camera-sync path too.
+    # >90 degree steering fault prevention
     self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_ANGLE, CC.latActive,
                                                                        self.angle_limit_counter, MAX_ANGLE_FRAMES,
                                                                        MAX_ANGLE_CONSECUTIVE_FRAMES)
 
     if not CC.latActive:
       apply_torque = 0
+
     self.apply_torque_last = apply_torque
 
     # accel + longitudinal
@@ -204,8 +204,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
     # steering control
     if not lfa_camera_sync:
-      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon,
-                                                             CS.lfa_msg))
+      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon))
     else:
       can_sends.append(hyundaicanfd.create_lfa_steering_command(self.CAN, CC.latActive, apply_steer_req, apply_torque))
 
