@@ -36,7 +36,8 @@ enum {
 #define HYUNDAI_ANGLE_MODEL_MASK  0xFU  // 4 bits
 
 static inline uint8_t hyundai_get_angle_model_id(uint16_t safety_param_sp) {
-  return (safety_param_sp >> HYUNDAI_ANGLE_MODEL_SHIFT) & HYUNDAI_ANGLE_MODEL_MASK;
+  uint8_t model_id = (safety_param_sp >> HYUNDAI_ANGLE_MODEL_SHIFT) & HYUNDAI_ANGLE_MODEL_MASK;
+  return (model_id >= HYUNDAI_ANGLE_MODEL_COUNT) ? HYUNDAI_ANGLE_MODEL_BASELINE : model_id;
 }
 
 

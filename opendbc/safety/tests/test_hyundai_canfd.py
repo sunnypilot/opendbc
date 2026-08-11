@@ -391,6 +391,27 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         f"Slip Factor: {repr(calc_slip_factor(current_vm))}"
       )
 
+  @parameterized("car_name", sorted(PLATFORMS))
+  def test_valid_angle_model_extraction(self, car_name):
+    """
+    Ensures that the safety layer correctly extracts and assigns the expected
+    angle steering model ID from the safety_param_sp bitmask for every supported platform.
+    """
+    angle_model_id = ANGLE_STEERING_MODEL_BY_CAR.get(car_name, 0)
+    self.safety.set_current_safety_param_sp(encode_angle_model_id(angle_model_id))
+    self._reset_safety_hooks()
+    self.assertEqual(self.safety.get_hyundai_angle_model_id(), angle_model_id)
+
+  def test_out_of_bounds_angle_model_fallback(self):
+    """
+    Verifies that passing an unknown or out of bounds angle model ID
+    via safety_param_sp safely defaults to the baseline fallback model (ID 0).
+    """
+    model_count = len(ANGLE_STEERING_MODEL_BY_CAR)
+    self.safety.set_current_safety_param_sp(encode_angle_model_id(model_count + 1))
+    self._reset_safety_hooks()
+    self.assertEqual(self.safety.get_hyundai_angle_model_id(), 0)
+
 
 class TestHyundaiCanfdLFASteeringBase(TestHyundaiCanfdTorqueSteering):
 
