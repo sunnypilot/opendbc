@@ -412,6 +412,22 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     self._reset_safety_hooks()
     self.assertEqual(self.safety.get_hyundai_angle_model_id(), 0)
 
+  def test_angle_model_bitmask_isolation(self):
+    """
+    Tests that bits [0:3] and [8:15] in safety_param_sp are properly ignored.
+    Verifies the shift and mask logic works regardless of other flags being set.
+    """
+    test_id = 2  # HYUNDAI_IONIQ_5_PE
+
+    # 0xFF0F sets every bit to 1 EXCEPT bits 4-7.
+    noise_mask = 0xFF0F
+    param_with_noise = encode_angle_model_id(test_id) | noise_mask
+
+    self.safety.set_current_safety_param_sp(param_with_noise)
+    self._reset_safety_hooks()
+
+    self.assertEqual(self.safety.get_hyundai_angle_model_id(), test_id)
+
 
 class TestHyundaiCanfdLFASteeringBase(TestHyundaiCanfdTorqueSteering):
 
