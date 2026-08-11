@@ -136,7 +136,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     msg_161["ALERTS_3"] = 0
   if msg_161["ALERTS_5"] in (2, 5):
     msg_161["ALERTS_5"] = 0
-  if msg_161["SOUNDS_4"] == 2 and msg_161["LFA_ICON"] in (3, 0,):
+  if msg_161["SOUNDS_4"] == 2 and msg_161["LFA_ICON"] in (0, 3):
     msg_161["SOUNDS_4"] = 0
 
   LANE_CHANGE_SPEED_MIN = 8.9408  # 20 mph
