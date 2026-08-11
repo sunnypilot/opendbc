@@ -128,13 +128,13 @@ static const AngleSteeringParams *hyundai_get_angle_params(uint8_t model_id) {
       .wheelbase = 2.895,
     },
   };
-  const AngleSteeringParams *result_model;
+  // const AngleSteeringParams *result_model;
+  //
+  // if (model_id >= HYUNDAI_ANGLE_MODEL_COUNT) {
+  //   result_model = &HYUNDAI_ANGLE_MODELS[HYUNDAI_ANGLE_MODEL_BASELINE];
+  // } else {
+  //   result_model = &HYUNDAI_ANGLE_MODELS[model_id];
+  // }
   
-  if (model_id >= HYUNDAI_ANGLE_MODEL_COUNT) {
-    result_model = &HYUNDAI_ANGLE_MODELS[HYUNDAI_ANGLE_MODEL_BASELINE];
-  } else {
-    result_model = &HYUNDAI_ANGLE_MODELS[model_id];
-  }
-  
-  return result_model;
+  return &HYUNDAI_ANGLE_MODELS[model_id];
 }
