@@ -314,6 +314,15 @@ class HyundaiCanfdCCNCTest:
 
   CCNC_SAFETY_PARAM = HyundaiSafetyFlags.CCNC
 
+  @classmethod
+  def setUpClass(cls):
+    if cls.__name__ in (
+      "TestHyundaiCanfdLFASteeringCCNC",
+      "TestHyundaiCanfdLFASteeringLongCCNC",
+    ):
+      cls.safety = None
+      raise unittest.SkipTest
+
   def setUp(self):
     self.packer = CANPackerSafety("hyundai_canfd_generated")
     self.safety = libsafety_py.libsafety
@@ -333,12 +342,6 @@ class TestHyundaiCanfdLFASteeringCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFAS
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162), 2: (0x7C4, 0xEA)}
   FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162], 0: [0x7C4, 0xEA]}
 
-  @classmethod
-  def setUpClass(cls):
-    if cls.__name__ == "TestHyundaiCanfdLFASteeringCCNC":
-      cls.safety = None
-      raise unittest.SkipTest
-
 
 @parameterized_class(CAMERA_SCC_COMBOS)
 class TestHyundaiCanfdLFASteeringLongCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFASteeringLongBase):
@@ -349,11 +352,6 @@ class TestHyundaiCanfdLFASteeringLongCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfd
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162, 0x1A0), 2: (0x7C4, 0xEA)}
   FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162, 0x1A0], 0: [0x7C4, 0xEA]}
 
-  @classmethod
-  def setUpClass(cls):
-    if cls.__name__ == "TestHyundaiCanfdLFASteeringLongCCNC":
-      cls.safety = None
-      raise unittest.SkipTest
 
 if __name__ == "__main__":
   unittest.main()
