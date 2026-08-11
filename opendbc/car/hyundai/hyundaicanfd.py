@@ -139,7 +139,7 @@ def create_ccnc(packer, CAN, openpilotLongitudinalControl, enabled, hud, leftBli
   if msg_161["SOUNDS_4"] == 2 and msg_161["LFA_ICON"] in (3, 0,):
     msg_161["SOUNDS_4"] = 0
 
-  LANE_CHANGE_SPEED_MIN = 8.9408
+  LANE_CHANGE_SPEED_MIN = 8.9408  # 20 mph
   anyBlinker = leftBlinker or rightBlinker
   curvature = {i: (31 if i == -1 else 13 - abs(i + 15)) if i < 0 else 15 + i for i in range(-15, 16)}
 
