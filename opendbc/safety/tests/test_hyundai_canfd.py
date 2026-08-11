@@ -5,6 +5,7 @@ import numpy as np
 
 from opendbc.car.hyundai.carcontroller import ANGLE_SAFETY_BASELINE_MODEL
 from opendbc.car.hyundai.values import HyundaiSafetyFlags, CAR, HyundaiFlags, CarControllerParams
+from opendbc.sunnypilot.car.hyundai.values import ANGLE_STEERING_MODEL_BY_CAR, encode_angle_model_id
 from opendbc.car.structs import CarParams
 from opendbc.car.vehicle_model import VehicleModel, calc_slip_factor
 from opendbc.safety.tests.libsafety import libsafety_py
@@ -161,10 +162,13 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
 
   cnt_angle_cmd = 0
 
-  def get_baseline_limits(self):
-    limits = CarControllerParams(CarInterface.get_non_essential_params(ANGLE_SAFETY_BASELINE_MODEL))
+  def get_angle_limits(self, car_name):
+    limits = CarControllerParams(CarInterface.get_non_essential_params(car_name))
     limits.ANGLE_LIMITS = self.BASELINE_PANDA_ANGLE_LIMITS
     return limits
+
+  def get_baseline_limits(self):
+    return self.get_angle_limits(ANGLE_SAFETY_BASELINE_MODEL)
 
   def _angle_cmd_msg(self, angle: float, enabled: bool, increment_timer: bool = True, gain: float = 0.0):
     if increment_timer:
@@ -213,15 +217,15 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         self._reset_speed_measurement(speed + 1)  # safety fudges the speed
 
         # at limit (safety tolerance adds 1)
-        angl = get_max_angle_vm(speed, self.get_vm(car_name), self.get_baseline_limits())
-        max_angle = round_angle(get_max_angle_vm(speed, self.get_vm(car_name), self.get_baseline_limits()), 1) * sign
+        angl = get_max_angle_vm(speed, self.get_vm(car_name), self.get_angle_limits(car_name))
+        max_angle = round_angle(get_max_angle_vm(speed, self.get_vm(car_name), self.get_angle_limits(car_name)), 1) * sign
         max_angle = np.clip(max_angle, -self.STEER_ANGLE_MAX, self.STEER_ANGLE_MAX)
         self.safety.set_desired_angle_last(round(max_angle * self.DEG_TO_CAN))
 
         self.assertTrue(self._tx(self._angle_cmd_msg(max_angle, True)), f"{angl} -- {max_angle}")
 
         # above limit (offset 6 to reliably exceed C float tolerance)
-        max_angle_raw = round_angle(get_max_angle_vm(speed, self.get_vm(car_name), self.get_baseline_limits()), 6) * sign
+        max_angle_raw = round_angle(get_max_angle_vm(speed, self.get_vm(car_name), self.get_angle_limits(car_name)), 6) * sign
         max_angle = np.clip(max_angle_raw, -self.STEER_ANGLE_MAX, self.STEER_ANGLE_MAX)
         self._tx(self._angle_cmd_msg(max_angle, True))
 
@@ -229,8 +233,13 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         should_tx = abs(max_angle_raw) >= self.STEER_ANGLE_MAX
         self.assertEqual(should_tx, self._tx(self._angle_cmd_msg(max_angle, True)), f"should_tx: {should_tx}, max_angle: {max_angle}, speed: {speed}")
 
-  def test_lateral_jerk_limit(self):
-    car_name = ANGLE_SAFETY_BASELINE_MODEL
+  @parameterized("car_name", sorted(PLATFORMS))
+  def test_lateral_jerk_limit(self, car_name):
+    # car_name = ANGLE_SAFETY_BASELINE_MODEL
+    angle_model_id = ANGLE_STEERING_MODEL_BY_CAR.get(car_name, 0)
+    self.safety.set_current_safety_param_sp(encode_angle_model_id(angle_model_id))
+    self._reset_safety_hooks()
+
     for speed in np.linspace(0, 40, 100):
       speed = round_speed(away_round(speed / 0.03125 * 3.6) * 0.03125 / 3.6)
       speed = max(speed, 1)
@@ -241,8 +250,9 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
 
         # Stay within limits
         # Up
-        max_angle_delta = round_angle(get_max_angle_delta_vm(speed, self.get_vm(car_name), self.get_baseline_limits())) * sign
-        self.assertTrue(self._tx(self._angle_cmd_msg(max_angle_delta, True)))
+        max_angle_delta = round_angle(get_max_angle_delta_vm(speed, self.get_vm(car_name), self.get_angle_limits(car_name))) * sign
+        sent = self._tx(self._angle_cmd_msg(max_angle_delta, True))
+        self.assertTrue(sent)
 
         # Don't change
         self.safety.set_desired_angle_last(round(max_angle_delta * self.DEG_TO_CAN))
@@ -254,8 +264,8 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         # Inject too high rates
         # Up
         # TODO-SP: Why do I need to set a can_offset so high to pass the tests and why tesla only does +1? and why does it seem to differ based on the baseline?
-        max_angle_delta = round_angle(get_max_angle_delta_vm(speed, self.get_vm(car_name), self.get_baseline_limits()), 6) * sign
-        self.assertFalse(self._tx(self._angle_cmd_msg(max_angle_delta, True)), vars(self.get_baseline_limits()))
+        max_angle_delta = round_angle(get_max_angle_delta_vm(speed, self.get_vm(car_name), self.get_angle_limits(car_name)), 6) * sign
+        self.assertFalse(self._tx(self._angle_cmd_msg(max_angle_delta, True)), vars(self.get_angle_limits(car_name)))
 
         # Don't change
         self.safety.set_desired_angle_last(round(max_angle_delta * self.DEG_TO_CAN))
@@ -327,7 +337,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
 
     for speed in np.linspace(1, 40, 10):
       baseline_max_angle = get_max_angle_vm(speed, baseline_vm, self.get_baseline_limits())
-      current_max_angle = get_max_angle_vm(speed, current_vm, self.get_baseline_limits())
+      current_max_angle = get_max_angle_vm(speed, current_vm, self.get_angle_limits(car_name))
 
       # Skip if both exceed STEER_ANGLE_MAX (only_relevant_angles logic)
       if current_max_angle > self.STEER_ANGLE_MAX and baseline_max_angle > self.STEER_ANGLE_MAX:
@@ -380,6 +390,43 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
         f"Consider updating the baseline model to be {car_name} (which will lower the threshold for ALL models)." +
         f"Slip Factor: {repr(calc_slip_factor(current_vm))}"
       )
+
+  @parameterized("car_name", sorted(PLATFORMS))
+  def test_valid_angle_model_extraction(self, car_name):
+    """
+    Ensures that the safety layer correctly extracts and assigns the expected
+    angle steering model ID from the safety_param_sp bitmask for every supported platform.
+    """
+    angle_model_id = ANGLE_STEERING_MODEL_BY_CAR.get(car_name, 0)
+    self.safety.set_current_safety_param_sp(encode_angle_model_id(angle_model_id))
+    self._reset_safety_hooks()
+    self.assertEqual(self.safety.get_hyundai_angle_model_id(), angle_model_id)
+
+  def test_out_of_bounds_angle_model_fallback(self):
+    """
+    Verifies that passing an unknown or out of bounds angle model ID
+    via safety_param_sp safely defaults to the baseline fallback model (ID 0).
+    """
+    model_count = len(ANGLE_STEERING_MODEL_BY_CAR)
+    self.safety.set_current_safety_param_sp(encode_angle_model_id(model_count + 1))
+    self._reset_safety_hooks()
+    self.assertEqual(self.safety.get_hyundai_angle_model_id(), 0)
+
+  def test_angle_model_bitmask_isolation(self):
+    """
+    Tests that bits [0:3] and [8:15] in safety_param_sp are properly ignored.
+    Verifies the shift and mask logic works regardless of other flags being set.
+    """
+    test_id = 2  # HYUNDAI_IONIQ_5_PE
+
+    # 0xFF0F sets every bit to 1 EXCEPT bits 4-7.
+    noise_mask = 0xFF0F
+    param_with_noise = encode_angle_model_id(test_id) | noise_mask
+
+    self.safety.set_current_safety_param_sp(param_with_noise)
+    self._reset_safety_hooks()
+
+    self.assertEqual(self.safety.get_hyundai_angle_model_id(), test_id)
 
 
 class TestHyundaiCanfdLFASteeringBase(TestHyundaiCanfdTorqueSteering):
