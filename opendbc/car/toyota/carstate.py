@@ -8,8 +8,14 @@ from opendbc.car.interfaces import CarStateBase
 from opendbc.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, \
                                                   TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR, \
                                                   SECOC_CAR
-from opendbc.sunnypilot.car.toyota.carstate_ext import CarStateExt
-from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
+try:
+  from opendbc.sunnypilot.car.toyota.carstate_ext import CarStateExt
+  from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
+  _HAS_CARSTATE_EXT = True
+except ImportError:
+  _HAS_CARSTATE_EXT = False
+  CarStateExt = object
+  ToyotaFlagsSP = None
 
 ButtonType = structs.CarState.ButtonEvent.Type
 SteerControlType = structs.CarParams.SteerControlType
@@ -26,10 +32,15 @@ TEMP_STEER_FAULTS = (0, 9, 11, 21, 25)
 PERM_STEER_FAULTS = (3, 17)
 
 
-class CarState(CarStateBase, CarStateExt):
-  def __init__(self, CP, CP_SP):
-    CarStateBase.__init__(self, CP, CP_SP)
-    CarStateExt.__init__(self, CP, CP_SP)
+if _HAS_CARSTATE_EXT:
+  class CarState(CarStateBase, CarStateExt):
+    def __init__(self, CP, CP_SP=None):
+      CarStateBase.__init__(self, CP, CP_SP)
+      CarStateExt.__init__(self, CP, CP_SP)
+else:
+  class CarState(CarStateBase):
+    def __init__(self, CP, CP_SP=None):
+      super().__init__(CP, CP_SP)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.
     self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
@@ -61,8 +72,9 @@ class CarState(CarStateBase, CarStateExt):
     cp_cam = can_parsers[Bus.cam]
 
     ret = structs.CarState()
-    ret_sp = structs.CarStateSP()
-    cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
+    if _HAS_CARSTATE_EXT:
+      ret_sp = structs.CarStateSP()
+    cp_acc = cp_cam if (self.CP.flags & ToyotaFlags.TSS2) and not (self.CP.flags & ToyotaFlags.RADAR_ACC) else cp
 
     if not self.CP.flags & ToyotaFlags.SECOC.value:
       self.gvc = cp.vl["VSC1S07"]["GVC"]
@@ -137,7 +149,7 @@ class CarState(CarStateBase, CarStateExt):
       if not self.accurate_steer_angle_seen:
         ret.vehicleSensorsInvalid = True
 
-    if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
+    if self.CP.flags & ToyotaFlags.UNSUPPORTED_DSU:
       # TODO: find the bit likely in DSU_CRUISE that describes an ACC fault. one may also exist in CLUTCH
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["DSU_CRUISE"]["SET_SPEED"] * CV.KPH_TO_MS
@@ -155,8 +167,8 @@ class CarState(CarStateBase, CarStateExt):
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
 
-    if self.CP.carFingerprint in TSS2_CAR and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
-      if not (self.CP_SP.flags & ToyotaFlagsSP.SMART_DSU.value):
+    if self.CP.flags & ToyotaFlags.TSS2 and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
+      if not _HAS_CARSTATE_EXT or not (self.CP_SP and self.CP_SP.flags & ToyotaFlagsSP.SMART_DSU.value if ToyotaFlagsSP else False):
         self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["PCS_HUD"]["FCW"])
 
@@ -164,14 +176,13 @@ class CarState(CarStateBase, CarStateExt):
     # these cars are identified by an ACC_TYPE value of 2.
     # TODO: it is possible to avoid the lockout and gain stop and go if you
     # send your own ACC_CONTROL msg on startup with ACC_TYPE set to 1
-    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint not in UNSUPPORTED_DSU_CAR) or \
-       (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
+    if (not (self.CP.flags & ToyotaFlags.TSS2) and not (self.CP.flags & ToyotaFlags.UNSUPPORTED_DSU)) or \
+       (self.CP.flags & ToyotaFlags.TSS2 and self.acc_type == 1):
       if self.CP.openpilotLongitudinalControl:
         ret.accFaulted = ret.accFaulted or cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
     if self.CP.carFingerprint not in (NO_STOP_TIMER_CAR - TSS2_CAR):
-      # ignore standstill state in certain vehicles, since pcm allows to restart with just an acceleration request
       ret.cruiseState.standstill = self.pcm_acc_status == 7
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
     ret.cruiseState.nonAdaptive = self.pcm_acc_status in (1, 2, 3, 4, 5, 6)
@@ -186,12 +197,12 @@ class CarState(CarStateBase, CarStateExt):
     if self.CP.carFingerprint != CAR.TOYOTA_PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
-    if self.CP.carFingerprint not in UNSUPPORTED_DSU_CAR:
+    if not (self.CP.flags & ToyotaFlags.UNSUPPORTED_DSU):
       self.pcm_follow_distance = cp.vl["PCM_CRUISE_2"]["PCM_FOLLOW_DISTANCE"]
 
     buttonEvents = []
     prev_distance_button = self.distance_button
-    if self.CP.carFingerprint in TSS2_CAR:
+    if self.CP.flags & ToyotaFlags.TSS2:
       # lkas button is wired to the camera
       prev_lkas_button = self.lkas_button
       self.lkas_button = cp_cam.vl["LKAS_HUD"]["LDA_ON_MESSAGE"]
@@ -201,7 +212,7 @@ class CarState(CarStateBase, CarStateExt):
         buttonEvents.extend(create_button_events(1, 0, {1: ButtonType.lkas}) +
                             create_button_events(0, 1, {1: ButtonType.lkas}))
 
-      if self.CP.carFingerprint not in (RADAR_ACC_CAR | SECOC_CAR):
+      if not (self.CP.flags & (ToyotaFlags.RADAR_ACC | ToyotaFlags.SECOC)):
         # distance button is wired to the ACC module (camera or radar)
         self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
 

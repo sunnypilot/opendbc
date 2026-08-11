@@ -7,15 +7,18 @@ from opendbc.car.interfaces import CarStateBase
 from opendbc.car.tesla.teslacan import get_steer_ctrl_type
 from opendbc.car.tesla.values import DBC, CANBUS, GEAR_MAP, STEER_THRESHOLD, TeslaFlags
 
-from opendbc.sunnypilot.car.tesla.carstate_ext import CarStateExt
+try:
+  from opendbc.sunnypilot.car.tesla.carstate_ext import CarStateExt
+  _HAS_CARSTATE_EXT = True
+except ImportError:
+  _HAS_CARSTATE_EXT = False
 
-ButtonType = structs.CarState.ButtonEvent.Type
 
-
-class CarState(CarStateBase, CarStateExt):
-  def __init__(self, CP, CP_SP):
-    CarStateBase.__init__(self, CP, CP_SP)
-    CarStateExt.__init__(self, CP, CP_SP)
+class CarState(CarStateBase):
+  def __init__(self, CP, CP_SP=None):
+    super().__init__(CP, CP_SP)
+    if _HAS_CARSTATE_EXT:
+      CarStateExt.__init__(self, CP, CP_SP)
     self.can_define = CANDefine(DBC[CP.carFingerprint][Bus.party])
     self.shifter_values = self.can_define.dv["DI_systemStatus"]["DI_gear"]
 
