@@ -101,6 +101,29 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
       tester_present = libsafety_py.make_CANPacket(0x750, 0, msg)
       self.assertEqual(should_tx and ecu_disabled and not stock_longitudinal, self._tx(tester_present))
 
+  def test_enhanced_bsm(self):
+    # SP: enable/disable/poll left+right blind spot debug mode, sent to the radar diagnostic address
+    valid_msgs = [
+      b"\x41\x02\x10\x60\x00\x00\x00\x00",  # enable left
+      b"\x41\x02\x10\x01\x00\x00\x00\x00",  # disable left
+      b"\x41\x02\x21\x69\x00\x00\x00\x00",  # poll left
+      b"\x42\x02\x10\x60\x00\x00\x00\x00",  # enable right
+      b"\x42\x02\x10\x01\x00\x00\x00\x00",  # disable right
+      b"\x42\x02\x21\x69\x00\x00\x00\x00",  # poll right
+    ]
+    for msg in valid_msgs:
+      pkt = libsafety_py.make_CANPacket(0x750, 0, msg)
+      self.assertTrue(self._tx(pkt), msg.hex())
+
+    invalid_msgs = [
+      b"\x41\x02\x10\x61\x00\x00\x00\x00",  # wrong subfunction
+      b"\x43\x02\x10\x60\x00\x00\x00\x00",  # wrong sub-address (not left/right)
+      b"\x41\x02\x10\x60\x01\x00\x00\x00",  # non-zero trailing bytes
+    ]
+    for msg in invalid_msgs:
+      pkt = libsafety_py.make_CANPacket(0x750, 0, msg)
+      self.assertFalse(self._tx(pkt), msg.hex())
+
   def test_block_aeb(self, stock_longitudinal: bool = False):
     for controls_allowed in (True, False):
       for bad in (True, False):
