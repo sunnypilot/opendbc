@@ -11,7 +11,7 @@ from opendbc.car.toyota import toyotacan
 from opendbc.car.toyota.values import CAR, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         CarControllerParams, ToyotaFlags
 from opendbc.can import CANPacker
-
+from opendbc.sunnypilot.car.toyota.auto_brake_hold import AutoBrakeHoldCarController
 from opendbc.sunnypilot.car.toyota.enhanced_bsm import EnhancedBsmCarController
 from opendbc.sunnypilot.car.toyota.gas_interceptor import GasInterceptorCarController
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
@@ -37,7 +37,6 @@ MAX_STEER_RATE_FRAMES = 17  # tx control frames needed before torque can be cut
 
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
-
 
 def get_long_tune(CP, CP_SP, params):
   if CP.flags & ToyotaFlags.TSS2:
@@ -88,6 +87,7 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     self.secoc_prev_reset_counter = 0
 
     self.enhanced_bsm = EnhancedBsmCarController(CP, CP_SP)
+    self.auto_brake_hold = AutoBrakeHoldCarController(CP, CP_SP)
 
     self._auto_lock_speed = 0.0
 
@@ -208,6 +208,9 @@ class CarController(CarControllerBase, GasInterceptorCarController):
           self.standstill_req = True
 
     self.last_standstill = CS.out.standstill
+
+    if self.auto_brake_hold.enabled:
+      can_sends.extend(self.auto_brake_hold.update(CS, self.frame, self.packer))
 
     # handle UI messages
     fcw_alert = hud_control.visualAlert == VisualAlert.fcw
