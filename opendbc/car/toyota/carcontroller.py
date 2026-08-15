@@ -38,11 +38,17 @@ MAX_STEER_RATE_FRAMES = 17  # tx control frames needed before torque can be cut
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
 
+CRUISE_CANCEL_DELAY_FRAMES = 10
+
 def get_long_tune(CP, CP_SP, params):
   if CP.flags & ToyotaFlags.TSS2:
     if CP_SP.flags & ToyotaFlagsSP.TSS2_LONG_TUNING:
-      kiBP = [0.3, 0.9, 1.0, 2.0, 5.0, 27., 36.]
-      kiV = [0.46, 0.46, 0.50, 0.50, 0.244, 0.10, 0.09]
+      #kiBP = [0.,   2.0,  9.0,  14.,  20.,  27.]
+      #kiV =  [0.25, 0.25, 0.15, 0.12, 0.12, 0.12]
+      #kiBP= [0.,  1.0,  2.0,   3.0,   4.0,   5.0,   7.,  20.,  27.,  36.]
+      #kiV  = [0.31, 0.32, 0.301, 0.280,  0.259,  0.226, 0.15, 0.15, 0.101, 0.10]
+      kiBP = [0.0,  1.0,  3.0,  5.0,  12.,  36.]
+      kiV  = [0.30, 0.35, 0.32, 0.28, 0.24, 0.20]
     else:
       kiBP = [2., 5.]
       kiV = [0.5, 0.25]
@@ -68,6 +74,7 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     self.permit_braking = True
     self.steer_rate_counter = 0
     self.distance_button = 0
+    self.cancel_counter = 0
 
     # *** start long control state ***
     self.long_pid = get_long_tune(self.CP, self.CP_SP, self.params)
@@ -98,7 +105,8 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     actuators = CC.actuators
     stopping = actuators.longControlState == LongCtrlState.stopping
     hud_control = CC.hudControl
-    pcm_cancel_cmd = CC.cruiseControl.cancel
+    self.cancel_counter = self.cancel_counter + 1 if CC.cruiseControl.cancel else 0
+    pcm_cancel_cmd = self.cancel_counter > CRUISE_CANCEL_DELAY_FRAMES
     lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
 
     if len(CC.orientationNED) == 3:
