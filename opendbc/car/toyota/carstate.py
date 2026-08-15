@@ -38,6 +38,17 @@ def get_host_params():
   except ModuleNotFoundError:
     return None
 
+VIRTUAL_CRUISE_BUTTONS = {
+  1: ButtonType.accelCruise,
+  2: ButtonType.decelCruise,
+}
+
+
+def get_virtual_cruise_button(cruise_res: int, cruise_set: int) -> int:
+  if bool(cruise_res) == bool(cruise_set):
+    return 0
+  return 1 if cruise_res else 2
+
 # These steering fault definitions seem to be common across LKA (torque) and LTA (angle):
 # - high steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
 # - lka/lta msg drop out: goes to 9 then 11 for a combined total of 2 seconds, then 3.
@@ -72,6 +83,7 @@ class CarState(CarStateBase, CarStateExt):
 
     self.lkas_button = 0
     self.distance_button = 0
+    self.virtual_cruise_button = 0
 
     self.pcm_follow_distance = 0
 
@@ -258,6 +270,11 @@ class CarState(CarStateBase, CarStateExt):
       self.pcm_follow_distance = cp.vl["PCM_CRUISE_2"]["PCM_FOLLOW_DISTANCE"]
 
     buttonEvents = []
+    if self.CP_SP.flags & ToyotaFlagsSP.VIRTUAL_CRUISE_SPEED_AVAILABLE and not self.CP_SP.pcmCruiseSpeed:
+      virtual_cruise_button = get_virtual_cruise_button(cp.vl["CLUTCH"]["CRUISE_RES"], cp.vl["CLUTCH"]["CRUISE_SET"])
+      buttonEvents += create_button_events(virtual_cruise_button, self.virtual_cruise_button, VIRTUAL_CRUISE_BUTTONS)
+      self.virtual_cruise_button = virtual_cruise_button
+
     prev_distance_button = self.distance_button
     if self.CP.flags & ToyotaFlags.TSS2:
       # lkas button is wired to the camera
@@ -298,6 +315,9 @@ class CarState(CarStateBase, CarStateExt):
     pt_messages = [
       ("BLINKERS_STATE", float('nan')),
     ]
+
+    if CP_SP.flags & ToyotaFlagsSP.VIRTUAL_CRUISE_SPEED_AVAILABLE and not CP_SP.pcmCruiseSpeed:
+      pt_messages.append(("CLUTCH", 16))
 
     cam_messages = [
       ("RSA1", 0),

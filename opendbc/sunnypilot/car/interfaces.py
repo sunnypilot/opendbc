@@ -160,6 +160,7 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
     toyota_tss2_long_tuning = int(params_dict.get("ToyotaTSS2Long", 0)) == 1
     toyota_enhanced_bsm = int(params_dict.get("ToyotaEnhancedBsm", 0)) == 1
     toyota_auto_brake_hold = int(params_dict.get("ToyotaAutoHold", 0)) == 1
+    toyota_virtual_cruise_speed = int(params_dict.get("ToyotaVirtualCruiseSpeed", 0)) == 1
 
     if toyota_stock_long:
       CP_SP.flags |= ToyotaFlagsSP.STOCK_LONGITUDINAL.value
@@ -178,3 +179,7 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
 
     if toyota_auto_brake_hold and CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR - SECOC_CAR):
       CP_SP.flags |= ToyotaFlagsSP.SP_AUTO_BRAKE_HOLD.value
+
+    if toyota_virtual_cruise_speed and CP.openpilotLongitudinalControl and \
+       CP_SP.flags & ToyotaFlagsSP.VIRTUAL_CRUISE_SPEED_AVAILABLE:
+      CP_SP.pcmCruiseSpeed = False
