@@ -356,7 +356,7 @@ class CAR(Platforms):
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8,
   )
   HYUNDAI_SONATA_2024 = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Hyundai Sonata (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_a]))],
+    [HyundaiCarDocs("Hyundai Sonata (without HDA II) 2024-26", car_parts=CarParts.common([CarHarness.hyundai_a]))],
     CarSpecs(mass=1556, wheelbase=2.84, steerRatio=12.81),
     flags=HyundaiFlags.CCNC,
   )

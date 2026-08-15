@@ -1947,14 +1947,15 @@
     ],
     "package": "All"
   },
-  "Hyundai Sonata (without HDA II) 2024-25": {
+  "Hyundai Sonata (without HDA II) 2024-26": {
     "platform": "HYUNDAI_SONATA_2024",
     "make": "Hyundai",
     "brand": "hyundai",
     "model": "Sonata (without HDA II)",
     "year": [
       "2024",
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
