@@ -37,10 +37,14 @@ MAX_STEER_RATE_FRAMES = 17  # tx control frames needed before torque can be cut
 MAX_USER_TORQUE = 500
 
 
-def get_long_tune(CP, params):
+def get_long_tune(CP, CP_SP, params):
   if CP.flags & ToyotaFlags.TSS2:
-    kiBP = [2., 5.]
-    kiV = [0.5, 0.25]
+    if CP_SP.flags & ToyotaFlagsSP.TSS2_LONG_TUNING:
+      kiBP = [0.3, 0.9, 1.0, 2.0, 5.0, 27., 36.]
+      kiV = [0.46, 0.46, 0.50, 0.50, 0.244, 0.10, 0.09]
+    else:
+      kiBP = [2., 5.]
+      kiV = [0.5, 0.25]
   else:
     kiBP = [0., 5., 35.]
     kiV = [3.6, 2.4, 1.5]
@@ -65,7 +69,7 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     self.distance_button = 0
 
     # *** start long control state ***
-    self.long_pid = get_long_tune(self.CP, self.params)
+    self.long_pid = get_long_tune(self.CP, self.CP_SP, self.params)
     self.aego = FirstOrderFilter(0.0, 0.25, DT_CTRL * 3)
     self.pitch = FirstOrderFilter(0, 0.5, DT_CTRL)
     self.pitch_hp = HighPassFilter(0.0, 0.25, 1.5, DT_CTRL)
