@@ -12,6 +12,7 @@ from opendbc.car.toyota.values import CAR, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         CarControllerParams, ToyotaFlags
 from opendbc.can import CANPacker
 
+from opendbc.sunnypilot.car.toyota.enhanced_bsm import EnhancedBsmCarController
 from opendbc.sunnypilot.car.toyota.gas_interceptor import GasInterceptorCarController
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
@@ -19,6 +20,7 @@ Ecu = structs.CarParams.Ecu
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 SteerControlType = structs.CarParams.SteerControlType
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
+GearShifter = structs.CarState.GearShifter
 
 # The up limit allows the brakes/gas to unwind quickly leaving a stop,
 # the down limit roughly matches the rate of ACCEL_NET, reducing PCM compensation windup
@@ -84,6 +86,13 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     self.secoc_lta_message_counter = 0
     self.secoc_acc_message_counter = 0
     self.secoc_prev_reset_counter = 0
+
+    self.enhanced_bsm = EnhancedBsmCarController(CP, CP_SP)
+
+    self._auto_lock_speed = 0.0
+
+    self._auto_lock_once = False
+    self._gear_prev = GearShifter.park
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
@@ -322,6 +331,9 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     # keep radar disabled
     if self.frame % 20 == 0 and self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       can_sends.append(make_tester_present_msg(0x750, 0, 0xF))
+
+    if self.enhanced_bsm.enabled:
+      can_sends.extend(self.enhanced_bsm.update(CS, self.frame))
 
     new_actuators = actuators.as_builder()
     new_actuators.torque = apply_torque / self.params.STEER_MAX

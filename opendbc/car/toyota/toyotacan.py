@@ -1,4 +1,5 @@
 from opendbc.car.structs import CarParams
+from opendbc.car.can_definitions import CanData
 
 SteerControlType = CarParams.SteerControlType
 
@@ -164,3 +165,13 @@ def toyota_checksum(address: int, sig, d: bytearray) -> int:
   for i in range(len(d) - 1):
     s += d[i]
   return s & 0xFF
+
+def create_set_bsm_debug_mode(lr_blindspot, enabled):
+  dat = b"\x02\x10\x60\x00\x00\x00\x00" if enabled else b"\x02\x10\x01\x00\x00\x00\x00"
+  dat = lr_blindspot + dat
+
+  return CanData(0x750, dat, 0)
+
+
+def create_bsm_polling_status(lr_blindspot):
+  return CanData(0x750, lr_blindspot + b"\x02\x21\x69\x00\x00\x00\x00", 0)
