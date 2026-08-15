@@ -1,4 +1,6 @@
 import copy
+from enum import IntEnum
+import importlib
 
 from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, DT_CTRL, create_button_events, structs
@@ -12,6 +14,28 @@ from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
 ButtonType = structs.CarState.ButtonEvent.Type
 SteerControlType = structs.CarParams.SteerControlType
+
+
+class AccelPersonality(IntEnum):
+  eco = 0
+  normal = 1
+  sport = 2
+
+
+def get_accel_personality(sport_mode: int, eco_mode: int) -> AccelPersonality:
+  if sport_mode == 1:
+    return AccelPersonality.sport
+  if eco_mode == 1:
+    return AccelPersonality.eco
+  return AccelPersonality.normal
+
+
+def get_host_params():
+  """Return sunnypilot's Params store when opendbc is embedded in openpilot."""
+  try:
+    return importlib.import_module("openpilot.common.params").Params()
+  except ModuleNotFoundError:
+    return None
 
 # These steering fault definitions seem to be common across LKA (torque) and LTA (angle):
 # - high steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
@@ -55,6 +79,14 @@ class CarState(CarStateBase, CarStateExt):
     self.gvc = 0.0
     self.secoc_synchronization = None
 
+    self._host_params = get_host_params()
+    self.toyota_drive_mode = self._host_params is not None and self._host_params.get_bool('ToyotaDriveMode')
+    self._drive_mode_signals_checked = False
+    self._sport_signal_available = False
+    self._eco_signal_available = False
+    self._prev_accel_profile = None
+    self._accel_profile_init = False
+
   def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
@@ -83,6 +115,35 @@ class CarState(CarStateBase, CarStateExt):
       can_gear = int(cp.vl["GEAR_PACKET"]["GEAR"])
       if not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
         ret.stockAeb = bool(cp_acc.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_acc.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
+
+    if self.toyota_drive_mode: # and not self.CP.flags & ToyotaFlags.SECOC.value:
+      sport_signal = 'SPORT_ON_2' if self.CP.carFingerprint in (CAR.TOYOTA_RAV4_TSS2, CAR.LEXUS_ES_TSS2,
+                                                                CAR.TOYOTA_HIGHLANDER_TSS2) else 'SPORT_ON'
+
+      if not self._drive_mode_signals_checked:
+        self._drive_mode_signals_checked = True
+        try:
+          sport_mode = cp.vl["GEAR_PACKET"][sport_signal]
+          self._sport_signal_available = True
+        except KeyError:
+          sport_mode = 0
+          self._sport_signal_available = False
+        try:
+          eco_mode = cp.vl["GEAR_PACKET"]['ECON_ON']
+          self._eco_signal_available = True
+        except KeyError:
+          eco_mode = 0
+          self._eco_signal_available = False
+      else:
+        sport_mode = cp.vl["GEAR_PACKET"][sport_signal] if self._sport_signal_available else 0
+        eco_mode = cp.vl["GEAR_PACKET"]['ECON_ON'] if self._eco_signal_available else 0
+
+      accel_profile = get_accel_personality(sport_mode, eco_mode)
+
+      if not self._accel_profile_init or accel_profile != self._prev_accel_profile:
+        self._host_params.put('AccelPersonality', int(accel_profile))
+        self._accel_profile_init = True
+        self._prev_accel_profile = accel_profile
 
     self.parse_wheel_speeds(ret,
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
