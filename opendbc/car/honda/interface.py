@@ -4,8 +4,7 @@ from opendbc.car import get_safety_config, structs, uds
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.disable_ecu import disable_ecu
 from opendbc.car.honda.hondacan import CanBus
-from opendbc.car.honda.values import CarControllerParams, HondaFlags, CAR, HONDA_BOSCH, HONDA_BOSCH_CANFD, \
-                                                 HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, HondaSafetyFlags
+from opendbc.car.honda.values import CarControllerParams, HondaFlags, CAR, HondaSafetyFlags, HONDA_BOSCH, HONDA_BOSCH_CANFD, HONDA_BOSCH_RADARLESS
 from opendbc.car.honda.carcontroller import CarController
 from opendbc.car.honda.carstate import CarState
 from opendbc.car.honda.radar_interface import RadarInterface
@@ -42,9 +41,9 @@ class CarInterface(CarInterfaceBase):
 
     CAN = CanBus(ret, fingerprint)
 
-    if candidate in HONDA_BOSCH:
+    if ret.flags & HondaFlags.BOSCH:
       cfgs = [get_safety_config(structs.CarParams.SafetyModel.hondaBosch)]
-      if candidate in HONDA_BOSCH_CANFD and CAN.pt >= 4:
+      if ret.flags & HondaFlags.BOSCH_CANFD and CAN.pt >= 4:
         cfgs.insert(0, get_safety_config(structs.CarParams.SafetyModel.noOutput))
       ret.safetyConfigs = cfgs
 
@@ -53,8 +52,8 @@ class CarInterface(CarInterfaceBase):
       # WARNING: THIS DISABLES AEB!
       # If Bosch radarless, this blocks ACC messages from the camera
       # TODO: get radar disable working on Bosch CANFD
-      ret.alphaLongitudinalAvailable = candidate not in HONDA_BOSCH_CANFD
-      ret.openpilotLongitudinalControl = alpha_long and (candidate not in HONDA_BOSCH_CANFD)
+      ret.alphaLongitudinalAvailable = not (ret.flags & HondaFlags.BOSCH_CANFD)
+      ret.openpilotLongitudinalControl = alpha_long and not (ret.flags & HondaFlags.BOSCH_CANFD)
       ret.pcmCruise = not ret.openpilotLongitudinalControl
     else:
       ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.hondaNidec)]
@@ -72,8 +71,7 @@ class CarInterface(CarInterfaceBase):
     if 0x184 in fingerprint[CAN.pt]:
       ret.flags |= HondaFlags.HYBRID.value
 
-    if ret.flags & HondaFlags.ALLOW_MANUAL_TRANS and all(msg not in fingerprint[CAN.pt] for msg in (0x191, 0x1A3)):
-      # Manual transmission support for allowlisted cars only, to prevent silent fall-through on auto-detection failures
+    if all(msg not in fingerprint[CAN.pt] for msg in (0x191, 0x1A3)):
       ret.transmissionType = TransmissionType.manual
     elif 0x191 in fingerprint[CAN.pt] and candidate != CAR.ACURA_RDX:
       # Traditional CVTs, gearshift position in GEARBOX_CVT
@@ -87,9 +85,9 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kf = 0.00006  # conservative feed-forward
     ret.steerActuatorDelay = 0.1
 
-    if candidate in HONDA_BOSCH:
+    if ret.flags & HondaFlags.BOSCH:
       ret.longitudinalActuatorDelay = 0.5 # s
-      if candidate in HONDA_BOSCH_RADARLESS:
+      if ret.flags & HondaFlags.BOSCH_RADARLESS:
         ret.stopAccel = CarControllerParams.BOSCH_ACCEL_MIN  # stock uses -4.0 m/s^2 once stopped but limited by safety model
     else:
       # default longitudinal tuning for all hondas
@@ -183,7 +181,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
 
-    elif candidate == CAR.HONDA_E:
+    elif candidate in (CAR.HONDA_E, CAR.HONDA_E_ADVANCE):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: can probably use some tuning
 
@@ -199,7 +197,7 @@ class CarInterface(CarInterfaceBase):
         # When using stock ACC, the radar intercepts and filters steering commands the EPS would otherwise accept
         ret.minSteerSpeed = 70. * CV.KPH_TO_MS
 
-    elif candidate == CAR.ACURA_TLX_2G_MMR:
+    elif candidate in (CAR.ACURA_TLX_2G_MMR, CAR.ACURA_MDX_4G):
       ret.steerActuatorDelay = 0.15
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
@@ -213,25 +211,30 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560], [0, 2560]]
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    if candidate == CAR.ACURA_RDX_3G_MMR:
+      CarControllerParams.BOSCH_GAS_LOOKUP_V = [0, 2000] # alpha longitudinal pedal tuning
+      ret.dashcamOnly = is_release  # TODO: release from dashcam when there's enough driving data for torqued/paramsd to converge
+
     # These cars use alternate user brake msg (0x1BE)
-    if 0x1BE in fingerprint[CAN.pt] and candidate in (CAR.HONDA_ACCORD, CAR.HONDA_HRV_3G, CAR.ACURA_RDX_3G, *HONDA_BOSCH_CANFD):
+    if 0x1BE in fingerprint[CAN.pt] and (candidate in (CAR.HONDA_ACCORD, CAR.HONDA_HRV_3G, CAR.ACURA_RDX_3G, CAR.ACURA_MDX_4G) or
+                                          ret.flags & HondaFlags.BOSCH_CANFD):
       ret.flags |= HondaFlags.BOSCH_ALT_BRAKE.value
 
     if ret.flags & HondaFlags.BOSCH_ALT_BRAKE:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.ALT_BRAKE.value
-    if candidate in HONDA_NIDEC_ALT_SCM_MESSAGES:
+    if ret.flags & HondaFlags.NIDEC_ALT_SCM_MESSAGES:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.NIDEC_ALT.value
-    if ret.openpilotLongitudinalControl and candidate in HONDA_BOSCH:
+    if ret.openpilotLongitudinalControl and ret.flags & HondaFlags.BOSCH:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.BOSCH_LONG.value
-    if candidate in HONDA_BOSCH_RADARLESS:
+    if ret.flags & HondaFlags.BOSCH_RADARLESS:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.RADARLESS.value
-    if candidate in HONDA_BOSCH_CANFD:
+    if ret.flags & HondaFlags.BOSCH_CANFD:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.BOSCH_CANFD.value
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
     # conflict with PCM acc
-    ret.autoResumeSng = candidate in (HONDA_BOSCH | {CAR.HONDA_CIVIC})
+    ret.autoResumeSng = bool(ret.flags & HondaFlags.BOSCH) or candidate == CAR.HONDA_CIVIC
     if ret.autoResumeSng:
       ret.minEnableSpeed = -1.
     elif candidate == CAR.HONDA_ODYSSEY_TWN:
@@ -320,6 +323,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyParam |= HondaSafetyFlagsSP.GAS_INTERCEPTOR
 
     stock_cp.autoResumeSng = stock_cp.autoResumeSng or ret.enableGasInterceptor
+    stock_cp.minEnableSpeed = -1. if ret.enableGasInterceptor else stock_cp.minEnableSpeed
 
     ret.intelligentCruiseButtonManagementAvailable = candidate in (HONDA_BOSCH - HONDA_BOSCH_CANFD) or \
                                                      (candidate in HONDA_BOSCH_CANFD and not is_release_sp)
