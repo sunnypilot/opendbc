@@ -489,7 +489,7 @@ class CAR(Platforms):
     [
       HyundaiCarDocs("Kia Niro Plus EV 2023-24", "Advanced Smart Cruise Control", car_parts=CarParts.common([CarHarness.hyundai_h])),
     ],
-    CarSpecs(mass=1760, wheelbase=2.7, steerRatio=13.6, tireStiffnessFactor=0.385),  # average of all the cars
+    CarSpecs(mass=1760, wheelbase=2.7, steerRatio=13.6, tireStiffnessFactor=0.385),
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.EV,
   )
   KIA_OPTIMA_G4 = HyundaiPlatformConfig(
