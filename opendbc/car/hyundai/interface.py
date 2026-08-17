@@ -191,6 +191,8 @@ class CarInterface(CarInterfaceBase):
       stock_cp.openpilotLongitudinalControl = False
       stock_cp.pcmCruise = True
       ret.safetyParam |= HyundaiSafetyFlagsSP.NON_SCC
+      if not stock_cp.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV):
+        ret.pcmCruiseSpeed = 0x367 in fingerprint[0]
 
     # untested non-SCC platforms, need user validations
     if stock_cp.carFingerprint in (CAR.HYUNDAI_BAYON_1ST_GEN_NON_SCC, CAR.KIA_FORTE_2021_NON_SCC,
