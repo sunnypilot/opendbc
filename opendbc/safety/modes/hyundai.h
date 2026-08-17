@@ -482,19 +482,19 @@ static safety_config hyundai_legacy_init(uint16_t param) {
     HYUNDAI_SCC11_ADDR_CHECK(0)
   };
 
-  static RxCheck hyundai_legacy_non_scc_rx_checks[] = {
-    HYUNDAI_COMMON_RX_CHECKS(true)
-  };
-
   hyundai_common_init(param);
   hyundai_legacy = true;
   hyundai_longitudinal = false;
   hyundai_camera_scc = false;
 
+  safety_config ret = BUILD_SAFETY_CFG(hyundai_legacy_rx_checks, HYUNDAI_TX_MSGS);
   if (hyundai_non_scc) {
-    return BUILD_SAFETY_CFG(hyundai_legacy_non_scc_rx_checks, HYUNDAI_TX_MSGS);
+    static RxCheck hyundai_legacy_non_scc_rx_checks[] = {
+      HYUNDAI_COMMON_RX_CHECKS(true)
+    };
+    ret = BUILD_SAFETY_CFG(hyundai_legacy_non_scc_rx_checks, HYUNDAI_TX_MSGS);
   }
-  return BUILD_SAFETY_CFG(hyundai_legacy_rx_checks, HYUNDAI_TX_MSGS);
+  return ret;
 }
 
 const safety_hooks hyundai_hooks = {
