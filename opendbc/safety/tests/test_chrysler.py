@@ -2,6 +2,7 @@
 import unittest
 
 from opendbc.car.chrysler.values import ChryslerSafetyFlags
+from opendbc.sunnypilot.car.chrysler.values_ext import ChryslerSafetyFlagsSP
 from opendbc.car.structs import CarParams
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
@@ -159,7 +160,8 @@ class TestChryslerRamHDAltButtonSafety(TestChryslerRamHDSafety):
   def setUp(self):
     self.packer = CANPackerSafety("chrysler_ram_hd_generated")
     self.safety = libsafety_py.libsafety
-    self.safety.set_safety_hooks(CarParams.SafetyModel.chrysler, ChryslerSafetyFlags.RAM_HD | ChryslerSafetyFlags.RAM_HD_ALT_BUTTONS)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.chrysler, ChryslerSafetyFlags.RAM_HD)
+    self.safety.set_current_safety_param_sp(ChryslerSafetyFlagsSP.RAM_HD_ALT_BUTTONS)
     self.safety.init_tests()
 
   def _button_msg(self, cancel=False, resume=False, accel=False, decel=False):

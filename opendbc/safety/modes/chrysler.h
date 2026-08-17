@@ -218,9 +218,9 @@ static safety_config chrysler_init(uint16_t param) {
   };
 
   const uint32_t CHRYSLER_PARAM_RAM_HD = 2U;  // set for Ram HD platform
-  const uint32_t CHRYSLER_PARAM_RAM_HD_ALT_BUTTONS = 4U;
+  const uint16_t CHRYSLER_PARAM_SP_RAM_HD_ALT_BUTTONS = 1U;
   bool enable_ram_hd = GET_FLAG(param, CHRYSLER_PARAM_RAM_HD);
-  bool ram_hd_alt_buttons = GET_FLAG(param, CHRYSLER_PARAM_RAM_HD_ALT_BUTTONS);
+  bool ram_hd_alt_buttons = GET_FLAG(current_safety_param_sp, CHRYSLER_PARAM_SP_RAM_HD_ALT_BUTTONS);
 #endif
 
   safety_config ret;
