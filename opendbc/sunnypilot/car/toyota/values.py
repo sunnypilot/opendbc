@@ -7,14 +7,6 @@ See the LICENSE.md file in the root directory for more details.
 
 from enum import IntFlag
 
-from opendbc.car.toyota.values import CAR
-
-
-VIRTUAL_CRUISE_SPEED_CAR = {
-  CAR.TOYOTA_COROLLA_TSS2,
-  CAR.TOYOTA_PRIUS_TSS2,
-}
-
 
 class ToyotaFlagsSP(IntFlag):
   SMART_DSU = 1
@@ -25,7 +17,6 @@ class ToyotaFlagsSP(IntFlag):
   SP_ENHANCED_BSM = 32
   SP_NEED_DEBUG_BSM = 64
   SP_AUTO_BRAKE_HOLD = 128
-  VIRTUAL_CRUISE_SPEED_AVAILABLE = 256
   TSS2_LONG_TUNING = 512
 
 

@@ -3,10 +3,10 @@ from opendbc.car.toyota.carstate import CarState
 from opendbc.car.toyota.carcontroller import CarController
 from opendbc.car.toyota.radar_interface import RadarInterface
 from opendbc.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
-                                                  MIN_ACC_SPEED, EPS_SCALE, NO_STOP_TIMER_CAR, ToyotaSafetyFlags, UNSUPPORTED_DSU_CAR
+                                                  MIN_ACC_SPEED, EPS_SCALE, NO_STOP_TIMER_CAR, ToyotaSafetyFlags, UNSUPPORTED_DSU_CAR, SECOC_CAR
 from opendbc.car.disable_ecu import disable_ecu
 from opendbc.car.interfaces import CarInterfaceBase
-from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP, ToyotaSafetyFlagsSP, VIRTUAL_CRUISE_SPEED_CAR
+from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP, ToyotaSafetyFlagsSP
 
 SteerControlType = structs.CarParams.SteerControlType
 
@@ -127,12 +127,6 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
-    # Direct cruise-button states are route-validated on Corolla Cross and Prius TSS2.
-    # COROLLA_TSS2 is also shared with other Corolla/UX variants, so this remains an
-    # explicit, off-by-default user opt-in.
-    if candidate in VIRTUAL_CRUISE_SPEED_CAR:
-      ret.flags |= ToyotaFlagsSP.VIRTUAL_CRUISE_SPEED_AVAILABLE.value
-
     if candidate in UNSUPPORTED_DSU_CAR:
       ret.safetyParam |= ToyotaSafetyFlagsSP.UNSUPPORTED_DSU
 
