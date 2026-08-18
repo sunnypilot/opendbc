@@ -179,6 +179,24 @@ class TestAutoBrakeHoldCarController(unittest.TestCase):
       ctrl.update(cs, i, None)
     self.assertEqual(mock_create.call_count, 5)
 
+  def test_no_message_sent_outside_hold_allowed_window(self, mock_create):
+    # outside hold_allowed, toyota_fwd_hook lets the real PRE_COLLISION_2 relay through on its own -
+    # our passthrough copy would just be redundant traffic panda rejects, so it must not be sent at all
+    cases = [
+      dict(cruise_enabled=True),
+      dict(gas_pressed=True),
+      dict(gear=GearShifter.park),
+      dict(gear=GearShifter.reverse),
+      dict(cruise_available=False),
+    ]
+    for kwargs in cases:
+      with self.subTest(kwargs=kwargs):
+        ctrl = self._make()
+        cs = FakeCarState(brake_pressed=False, **kwargs)
+        for i in range(10):
+          ctrl.update(cs, i, None)
+        mock_create.assert_not_called()
+
 
 class TestPcsIsActive(unittest.TestCase):
   def test_all_zero_is_not_active(self):
