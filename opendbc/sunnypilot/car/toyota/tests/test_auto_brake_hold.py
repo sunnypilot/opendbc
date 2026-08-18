@@ -179,14 +179,12 @@ class TestAutoBrakeHoldCarController(unittest.TestCase):
       ctrl.update(cs, i, None)
     self.assertEqual(mock_create.call_count, 5)
 
-  def test_no_message_sent_outside_hold_allowed_window(self, mock_create):
-    # outside hold_allowed, toyota_fwd_hook lets the real PRE_COLLISION_2 relay through on its own -
+  def test_no_message_sent_outside_relay_blocked_window(self, mock_create):
+    # outside relay_blocked, toyota_fwd_hook lets the real PRE_COLLISION_2 relay through on its own -
     # our passthrough copy would just be redundant traffic panda rejects, so it must not be sent at all
     cases = [
       dict(cruise_enabled=True),
       dict(gas_pressed=True),
-      dict(gear=GearShifter.park),
-      dict(gear=GearShifter.reverse),
       dict(cruise_available=False),
     ]
     for kwargs in cases:
@@ -196,6 +194,22 @@ class TestAutoBrakeHoldCarController(unittest.TestCase):
         for i in range(10):
           ctrl.update(cs, i, None)
         mock_create.assert_not_called()
+
+  def test_message_still_sent_in_park_or_reverse(self, mock_create):
+    # relay_blocked has no gear check, matching toyota_fwd_hook - park/reverse must not open a gap
+    # in the PRE_COLLISION_2 relay even though hold can never engage there (this was a real
+    # regression: gating the send on hold_allowed's gear check left bus 0 with nothing at this
+    # address while parked, which is what tripped a genuine PCS dash fault on-road)
+    for gear in (GearShifter.park, GearShifter.reverse):
+      with self.subTest(gear=gear):
+        ctrl = self._make()
+        cs = FakeCarState(gear=gear, brake_pressed=False)
+        for i in range(BRAKE_HOLD_ALLOWED_TIMER + 1):
+          ctrl.update(cs, i, None)
+        self.assertFalse(ctrl.active, "must never actually hold in park/reverse")
+        self.assertGreater(mock_create.call_count, 0, "must still relay PRE_COLLISION_2 in park/reverse")
+        override_arg = mock_create.call_args.args[-1]
+        self.assertFalse(override_arg, "never override while gear disallows an actual hold")
 
 
 class TestPcsIsActive(unittest.TestCase):
