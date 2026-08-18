@@ -72,7 +72,7 @@ class AutoBrakeHoldCarController(AutoBrakeHold):
     self._prev_brake_pressed = CS.out.brakePressed
 
     can_sends = []
-    if frame % 2 == 0:
+    if hold_allowed and frame % 2 == 0:
       override = self.active and not pcs_is_active(CS.pre_collision_2)
       can_sends.append(toyotacan.create_brake_hold_command(packer, frame, CS.pre_collision_2, override))
 
