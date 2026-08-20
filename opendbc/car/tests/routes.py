@@ -54,6 +54,9 @@ non_tested_cars = [
   GM.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN,
   GM.CHEVROLET_MALIBU_NON_ACC_9TH_GEN,
   GM.CADILLAC_XT5_NON_ACC_1ST_GEN,
+
+  # no uploadable route for this PRC-market patched platform
+  TOYOTA.TOYOTA_SIENNA_PATCHED,
 ]
 
 
