@@ -106,6 +106,11 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = ((bool(ret.flags & ToyotaFlags.TSS2) and not (ret.flags & ToyotaFlags.RADAR_ACC)) or
                                         bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value))
 
+    # This platform only uses openpilot for lateral control. All longitudinal
+    # control and its SecOC traffic remain stock.
+    if ret.flags & ToyotaFlags.EPS_BYPASS_SECOC.value:
+      ret.openpilotLongitudinalControl = False
+
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:
