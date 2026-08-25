@@ -16,6 +16,7 @@ from opendbc.car.values import Platform
 from opendbc.car.volkswagen.values import CAR as VOLKSWAGEN
 from opendbc.car.body.values import CAR as COMMA
 from opendbc.car.psa.values import CAR as PSA
+from opendbc.car.mg.values import CAR as MG
 
 # FIXME: add routes for these cars
 non_tested_cars = [
@@ -35,7 +36,6 @@ non_tested_cars = [
   TOYOTA.TOYOTA_RAV4H,
 
   # port extensions
-  HYUNDAI.KIA_CEED_PHEV_2022_NON_SCC,
   HYUNDAI.HYUNDAI_KONA_EV_NON_SCC,
   HYUNDAI.HYUNDAI_BAYON_1ST_GEN_NON_SCC,
   HYUNDAI.HYUNDAI_ELANTRA_2022_NON_SCC,
@@ -373,7 +373,12 @@ routes = [
   CarTestRoute("2c912ca5de3b1ee9/0000025d--6eb6bcbca4", TESLA.TESLA_MODEL_Y, segment=4),
   CarTestRoute("bdda168c0c35fad7/00000001--5c5a36ec06", TESLA.TESLA_MODEL_X), # openpilot longitudinal
 
+  CarTestRoute("5d61e2f6e1f247f3/00000054--d3dfb01b34", MG.MG_5_EV),
+
   # Segments that test specific issues
   # Controls mismatch due to standstill threshold
   CarTestRoute("bec2dcfde6a64235/2022-04-08--14-21-32", HONDA.HONDA_CRV_HYBRID, segment=22),
+
+  # port extensions
+  CarTestRoute("dc7bf18c8af12e37/00000006--ea06255cd0", HYUNDAI.KIA_CEED_PHEV_2022_NON_SCC),
 ]
