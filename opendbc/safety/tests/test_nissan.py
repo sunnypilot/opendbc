@@ -40,7 +40,7 @@ class TestNissanSafety(common.CarSafetyTest, common.AngleSteeringSafetyTest):
 
   def _angle_meas_msg(self, angle: float):
     values = {"STEER_ANGLE": angle}
-    return self.packer.make_can_msg_safety("STEER_ANGLE_SENSOR", self.EPS_BUS, values)
+    return self.packer.make_can_msg_safety("STEER_TORQUE_SENSOR", 0, values)
 
   def _pcm_status_msg(self, enable):
     values = {"CRUISE_ENABLED": enable}
@@ -89,13 +89,13 @@ class TestNissanSafety(common.CarSafetyTest, common.AngleSteeringSafetyTest):
 class TestNissanSafetyAltEpsBus(TestNissanSafety):
   """Altima uses different buses"""
 
+  TX_MSGS = [[0x169, 0], [0x2b1, 0], [0x4cc, 0], [0x20b, 1]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x169, 0x2b1, 0x4cc)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x169, 0x2b1, 0x4cc]}
+
   EPS_BUS = 1
   CRUISE_BUS = 1
   ACC_MAIN_BUS = 2
-
-  TX_MSGS = [[0x169, 0], [0x2b1, 0], [0x4cc, 0], [0x20b, 2]]
-  RELAY_MALFUNCTION_ADDRS = {0: (0x169, 0x2b1, 0x4cc)}
-  FWD_BLACKLISTED_ADDRS = {2: [0x169, 0x2b1, 0x4cc]}
 
   def setUp(self):
     self.packer = CANPackerSafety("nissan_x_trail_2017_generated")
@@ -128,6 +128,24 @@ class TestNissanLeafSafety(TestNissanSafety):
   def _acc_state_msg(self, main_on):
     values = {"CRUISE_AVAILABLE": main_on}
     return self.packer.make_can_msg_safety("CRUISE_THROTTLE", 0, values)
+
+  def test_acc_buttons(self):
+    # Leaf uses continuous CRUISE_THROTTLE forwarding (relay replacement),
+    # no button check in safety — all buttons pass through
+    btns = [
+      ("cancel", True),
+      ("propilot", True),
+      ("flw_dist", True),
+      ("_set", True),
+      ("res", True),
+      (None, True),
+    ]
+    for controls_allowed in (True, False):
+      for btn, should_tx in btns:
+        self.safety.set_controls_allowed(controls_allowed)
+        args = {} if btn is None else {btn: 1}
+        tx = self._tx(self._acc_button_cmd(**args))
+        self.assertEqual(tx, should_tx)
 
 
 if __name__ == "__main__":

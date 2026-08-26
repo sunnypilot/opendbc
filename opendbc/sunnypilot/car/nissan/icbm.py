@@ -6,7 +6,7 @@ See the LICENSE.md file in the root directory for more details.
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.can_definitions import CanData
 from opendbc.sunnypilot.car.intelligent_cruise_button_management_interface_base import IntelligentCruiseButtonManagementInterfaceBase
-from opendbc.car.nissan import nissancan
+from opendbc.sunnypilot.car.nissan.nissancan_ext import create_cruise_throttle_msg
 
 from collections import deque
 
@@ -72,7 +72,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
 
     # block button sends state
     if self.__state == 1:
-      can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, "NO_BUTTON_PRESSED"))
+      can_sends.append(create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, "NO_BUTTON_PRESSED"))
       if (self.frame - self.last_button_frame) * DT_CTRL >= 0.06:
         if not self.__queued_buttons and self.ICBM.sendButton != SendButtonState.none:
           self.__queued_buttons.append(BUTTONS[self.ICBM.sendButton])
@@ -84,7 +84,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
 
     # during button send state
     elif self.__state == 2:
-      can_sends.append(nissancan.create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, self.__queued_buttons[0]))
+      can_sends.append(create_cruise_throttle_msg(packer, self.CP.carFingerprint, CS.cruise_throttle_msg, self.frame, self.__queued_buttons[0]))
       if (self.frame - self.last_button_frame) * DT_CTRL >= 0.12:
         self.__queued_buttons.popleft()
         self.__state = 1

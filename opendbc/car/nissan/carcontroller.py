@@ -1,10 +1,13 @@
+import numpy as np
 from opendbc.can import CANPacker
-from opendbc.car import Bus, structs
+from opendbc.car import Bus, DT_CTRL, structs
 from opendbc.car.lateral import apply_std_steer_angle_limits
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.nissan import nissancan
 from opendbc.car.nissan.values import CAR, CarControllerParams
+from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.sunnypilot.car.nissan.icbm import IntelligentCruiseButtonManagementInterface
+from opendbc.sunnypilot.car.nissan.nissancan_ext import create_cruise_throttle_msg
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
@@ -14,6 +17,9 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     IntelligentCruiseButtonManagementInterface.__init__(self, CP, CP_SP)
     self.car_fingerprint = CP.carFingerprint
+
+    self.angle_filter = FirstOrderFilter(0.0, 0.1, DT_CTRL)
+
     self.apply_angle_last = 0
     self.packer = CANPacker(dbc_names[Bus.pt])
 
@@ -27,8 +33,15 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
     ### STEER ###
     steer_hud_alert = 1 if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw) else 0
 
+    # At low speeds and at high steering angles, EPS is sensitive to jitter in angle request. Smooth to fix uncomfortable response.
+    if CC.latActive:
+      self.angle_filter.update_alpha(float(np.interp(CS.out.vEgo, [5, 10, 20], [0.2, 0.1, 0.0])))
+      self.angle_filter.update(actuators.steeringAngleDeg)
+    else:
+      self.angle_filter.x = actuators.steeringAngleDeg
+
     # windup slower
-    self.apply_angle_last = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
+    self.apply_angle_last = apply_std_steer_angle_limits(self.angle_filter.x, self.apply_angle_last, CS.out.vEgoRaw,
                                                          CS.out.steeringAngleDeg, CC.latActive, CarControllerParams.ANGLE_LIMITS)
 
     lkas_max_torque = 0
@@ -37,12 +50,11 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
       if not bool(CS.out.steeringPressed):
         lkas_max_torque = CarControllerParams.LKAS_MAX_TORQUE
       else:
-        # Scale max torque based on how much torque the driver is applying to the wheel
+        # Scale max torque based on how much torque the driver is applying to the wheel.
+        # Start scaling torque at STEER_THRESHOLD down to 0.2. If we don't scale this low, EPS will temp fault from high driver and LKAS torque
         lkas_max_torque = max(
-          # Scale max torque down to half LKAX_MAX_TORQUE as a minimum
-          CarControllerParams.LKAS_MAX_TORQUE * 0.5,
-          # Start scaling torque at STEER_THRESHOLD
-          CarControllerParams.LKAS_MAX_TORQUE - 0.6 * max(0, abs(CS.out.steeringTorque) - CarControllerParams.STEER_THRESHOLD)
+          CarControllerParams.LKAS_MIN_TORQUE,
+          CarControllerParams.LKAS_MAX_TORQUE - 0.6 * max(0, abs(CS.out.steeringTorque) - CarControllerParams.STEER_THRESHOLD),
         )
 
     if self.CP.carFingerprint == CAR.NISSAN_ALTIMA and pcm_cancel_cmd:
@@ -54,13 +66,13 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
     if self.CP.carFingerprint != CAR.NISSAN_ALTIMA and self.frame % 2 == 0:
       if pcm_cancel_cmd or CS.cruise_throttle_msg["CANCEL_BUTTON"]:
         IntelligentCruiseButtonManagementInterface.clear_queue(self)
-        can_sends.append(nissancan.create_cruise_throttle_msg(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, self.frame, "CANCEL_BUTTON"))
+        can_sends.append(create_cruise_throttle_msg(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, self.frame, "CANCEL_BUTTON"))
       else:
         icbm_msg = IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame)
         if icbm_msg:
           can_sends.extend(icbm_msg)
         else:
-          can_sends.append(nissancan.create_cruise_throttle_msg(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, self.frame))
+          can_sends.append(create_cruise_throttle_msg(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, self.frame))
 
     # Below are the HUD messages. We copy the stock message and modify
     if self.CP.carFingerprint != CAR.NISSAN_ALTIMA:
