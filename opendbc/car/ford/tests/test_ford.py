@@ -205,11 +205,19 @@ class TestFordPathActuators(unittest.TestCase):
 
     parser.update([0, can_sends])
     msg = parser.vl["LateralMotionControl2"]
-    assert msg["LatCtl_D2_Rq"] == 3
+    assert msg["LatCtl_D2_Rq"] == 2
     assert msg["LatCtlPathOffst_L_Actl"] == 0.0
     assert msg["LatCtlPath_An_Actl"] == 0.0
     assert msg["LatCtlCurv_No_Actl"] == 0.0
     assert msg["LatCtlCrv_NoRate2_Actl"] == 0.0
+
+    CC.latActive = False
+    controller.frame = 3 * CarControllerParams.STEER_STEP
+    controller.lkas_enabled_last = False
+    output, can_sends = controller.update(CC.as_reader(), CC_SP, CS, 0)
+    parser.update([0, can_sends])
+    msg = parser.vl["LateralMotionControl2"]
+    assert msg["LatCtl_D2_Rq"] == 3
 
   def test_controller_unloads_c2_without_dropping_path(self):
     CP = CarInterface.get_non_essential_params(CAR.FORD_F_150_LIGHTNING_MK1)

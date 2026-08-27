@@ -79,7 +79,7 @@ class CarController(CarControllerBase):
       if self.CP.flags & FordFlags.CANFD:
         # Mode 2 = PathFollowingExtendedMode. Mode 3 = SafeRampOut so PSCM
         # does not sit Unavailable for ~5s after we drop to mode 0.
-        if path_enabled:
+        if CC.latActive:
           mode = 2
           self.lmc2_ramp_out = 20
         elif self.lmc2_ramp_out > 0:
