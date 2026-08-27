@@ -177,17 +177,26 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   bool tx = true;
 
   // steering
-  const unsigned int steer_addr = (hyundai_canfd_lka_steer_msg && !hyundai_longitudinal) ? hyundai_canfd_get_lka_addr() : 0x12aU;
+  const unsigned int steer_addr = (hyundai_canfd_lka_steer_msg && !hyundai_longitudinal) ? hyundai_canfd_get_lka_addr() :
+                                   (hyundai_canfd_angle_steering ? 0x0cbU : 0x12aU);
   if (msg->addr == steer_addr) {
     if (hyundai_canfd_angle_steering) {
-      const int lkas_angle_active = (msg->data[9] >> 4U) & 0x3U;
-      const bool steer_angle_req = lkas_angle_active != 1;
+      bool steer_angle_req;
+      int desired_angle;
+      uint8_t gain_raw;
 
-      int desired_angle = (msg->data[11] << 6U) | (msg->data[10] >> 2U);
+      if (hyundai_longitudinal) {
+        // LFA_ALT (0x0CB): ADAS_ActvACILvl2Sta at byte 3 bits 4-7, angle at bytes 4-5, gain at byte 6
+        steer_angle_req = ((msg->data[3] >> 4U) & 0xFU) != 1U;
+        desired_angle = ((msg->data[5] << 8U) | msg->data[4]) & 0x3FFFU;
+        gain_raw = msg->data[6];
+      } else {
+        // LKAS: LKAS_ANGLE_ACTIVE at byte 9 bits 4-5, angle at bytes 10-11, gain at byte 12
+        steer_angle_req = ((msg->data[9] >> 4U) & 0x3U) != 1U;
+        desired_angle = (msg->data[11] << 6U) | (msg->data[10] >> 2U);
+        gain_raw = msg->data[12];
+      }
       desired_angle = to_signed(desired_angle, 14);
-
-      // ADAS_ACIAnglTqRedcGainVal: bit 96, 8 bits, unsigned. Raw 0-250 valid, 251-255 reserved.
-      const uint8_t gain_raw = msg->data[12];
       bool gain_violation = gain_raw > 250U;
       if (!steer_angle_req && (gain_raw != 0U)) {
         gain_violation = true;
@@ -283,6 +292,9 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     {0x200, 1,  8, .check_relay = false},  // ADRV_0x200
     {0x345, 1,  8, .check_relay = false},  // ADRV_0x345
     {0x1DA, 1, 32, .check_relay = false},  // ADRV_0x1da
+    {0x0CB, 1, 24, .check_relay = false},  // LFA_ALT
+    {0x1BA, 1, 24, .check_relay = false},  // ADAS_CMD_50_50ms
+    {0x1E5, 1, 16, .check_relay = false},  // BLINDSPOTS_FRONT_CORNER_1
   };
 
   static const CanMsg HYUNDAI_CANFD_LFA_STEERING_TX_MSGS[] = {

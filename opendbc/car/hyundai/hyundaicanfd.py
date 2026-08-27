@@ -48,7 +48,15 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     "Damping_Gain": 100,  # can potentially tuned for better perf [3, 200]
   }
 
-  # Angle control doesn't support using LFA yet
+  lfa_alt_values = {
+    "ADAS_ActvACISta": 0,
+    "ADAS_ActvACILvl2Sta": 2 if lat_active else 1,
+    "ADAS_StrAnglReqVal": apply_angle,
+    "ADAS_ACIAnglTqRedcGainVal": apply_torque if lat_active else 0,
+    "FCA_ESA_ActvSta": 0,
+    "FCA_ESA_TqBstGainVal": 0,
+  }
+
   if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
     # LKAS messages take priority over LFA messages on HDA2.
     values |= {
@@ -65,7 +73,10 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
     lkas_msg = "LKAS_ALT" if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS"
     if CP.openpilotLongitudinalControl:
-      ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
+      if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+        ret.append(packer.make_can_msg("LFA_ALT", CAN.ECAN, lfa_alt_values))
+      else:
+        ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
     ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, values))
   else:
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
@@ -245,6 +256,23 @@ def create_adrv_messages(packer, CAN, frame):
       'SET_ME_41': 0x41,
     }
     ret.append(packer.make_can_msg("ADRV_0x1da", CAN.ECAN, values))
+
+  return ret
+
+
+def create_bsm_spoof_messages(packer, CAN, bsm_counter):
+  ret = []
+
+  ret.append(packer.make_can_msg("BLINDSPOTS_FRONT_CORNER_1", CAN.ECAN, {}))
+
+  # manual counter/CRC — signal names don't match the CHECKSUM/COUNTER convention
+  values = {"ADAS_CMD_AlvCnt50Val": bsm_counter}
+  addr, dat, bus = packer.make_can_msg("ADAS_CMD_50_50ms", CAN.ECAN, values)
+  dat = bytearray(dat)
+  crc = hkg_can_fd_checksum(addr, None, dat)
+  dat[0] = crc & 0xFF
+  dat[1] = (crc >> 8) & 0xFF
+  ret.append((addr, bytes(dat), bus))
 
   return ret
 

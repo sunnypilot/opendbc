@@ -122,6 +122,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
     self.cancel_counter = 0
+    self.bsm_counter = 0
 
     self.apply_angle_last = 0
 
@@ -303,6 +304,9 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     if self.CP.openpilotLongitudinalControl:
       if lka_steering:
         can_sends.extend(hyundaicanfd.create_adrv_messages(self.packer, self.CAN, self.frame))
+        if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+          can_sends.extend(hyundaicanfd.create_bsm_spoof_messages(self.packer, self.CAN, self.bsm_counter))
+          self.bsm_counter = (self.bsm_counter + 1) % 256
       else:
         can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))
       if self.frame % 2 == 0:
