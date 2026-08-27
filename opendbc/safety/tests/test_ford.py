@@ -77,6 +77,7 @@ class TestFordSafetyBase(common.CarSafetyTest):
   DEG_TO_CAN = 50000   # CAN units per rad/m
   MAX_CURVATURE = 0.02 # rad/m, 1000 CAN units
   MAX_CURVATURE_ERROR = 0.002         # rad/m, 100 CAN units
+  MAX_PATH_CURVATURE = 0.02           # rad/m, LMC2 field/PSCM limit
   CURVATURE_ERROR_MIN_SPEED = 10.0    # m/s
   LATERAL_FREQUENCY = 20              # Hz, for per-frame jerk limit
 
@@ -178,7 +179,7 @@ class TestFordSafetyBase(common.CarSafetyTest):
 
   # LCA command
   def _lat_ctl_msg(self, enabled: bool, path_offset: float, path_angle: float, curvature: float, curvature_rate: float,
-                   increment_timer: bool = True):
+                   increment_timer: bool = True, mode: int | None = None):
     if increment_timer:
       self.safety.set_timer(self.cnt_lat_ctl * int(1e6 / self.LATERAL_FREQUENCY))
       self.__class__.cnt_lat_ctl += 1
@@ -193,7 +194,7 @@ class TestFordSafetyBase(common.CarSafetyTest):
       return self.packer.make_can_msg_safety("LateralMotionControl", 0, values)
     elif self.STEER_MESSAGE == MSG_LateralMotionControl2:
       values = {
-        "LatCtl_D2_Rq": 1 if enabled else 0,
+        "LatCtl_D2_Rq": (1 if enabled else 0) if mode is None else mode,
         "LatCtlPathOffst_L_Actl": path_offset,     # Path offset [-5.12|5.11] meter
         "LatCtlPath_An_Actl": path_angle,          # Path angle [-0.5|0.5235] radians
         "LatCtlCrv_NoRate2_Actl": curvature_rate,  # Curvature rate [-0.001024|0.001023] 1/meter^2
@@ -301,16 +302,78 @@ class TestFordSafetyBase(common.CarSafetyTest):
                   self._set_prev_desired_angle(curvature)
                   self._reset_curvature_measurement(curvature, speed)
 
-                  should_tx = path_offset == 0 and path_angle == 0 and curvature_rate == 0
-                  # when request bit is 0, only allow curvature of 0 since the signal range
-                  # is not large enough to enforce it tracking measured
-                  should_tx = should_tx and (controls_allowed if steer_control_enabled else curvature == 0)
+                  # Enabled: bounded c0/c1/c3 plus existing curvature checks. Inactive: all zeros.
+                  should_tx = -5.12 <= path_offset <= 5.11 and -0.5 <= path_angle <= 0.5235
+                  if steer_control_enabled:
+                    should_tx = should_tx and controls_allowed
+                  else:
+                    should_tx = should_tx and path_offset == 0 and path_angle == 0 and curvature_rate == 0 and curvature == 0
                   should_tx = should_tx and abs(round(curvature * self.DEG_TO_CAN)) <= max_curvature_can
 
                   with self.subTest(controls_allowed=controls_allowed, steer_control_enabled=steer_control_enabled,
                                     path_offset=float(path_offset), path_angle=float(path_angle), curvature_rate=float(curvature_rate),
                                     curvature=float(curvature)):
-                    self.assertEqual(should_tx, self._tx(self._lat_ctl_msg(steer_control_enabled, path_offset, path_angle, curvature, curvature_rate)))
+                    mode = 2 if self.STEER_MESSAGE == MSG_LateralMotionControl2 and steer_control_enabled else None
+                    self.assertEqual(should_tx, self._tx(self._lat_ctl_msg(steer_control_enabled, path_offset, path_angle,
+                                                                          curvature, curvature_rate, mode=mode)))
+
+  def test_safe_ramp_out(self):
+    if self.STEER_MESSAGE != MSG_LateralMotionControl2:
+      raise unittest.SkipTest("CAN FD only")
+    self.safety.set_controls_allowed(False)
+    self.assertTrue(self._tx(self._lat_ctl_msg(False, 0, 0, 0, 0, mode=3)))
+    self.assertFalse(self._tx(self._lat_ctl_msg(False, 0.5, 0, 0, 0, mode=3)))
+
+  def test_path_fields_require_extended_mode(self):
+    if self.STEER_MESSAGE != MSG_LateralMotionControl2:
+      raise unittest.SkipTest("CAN FD only")
+    self.safety.set_controls_allowed(True)
+    self._set_prev_desired_angle(0.0)
+    self._reset_curvature_measurement(0.0, 10.0)
+
+    self.assertTrue(self._tx(self._lat_ctl_msg(True, 0.0, 0.0, 0.0, 0.0, mode=1)))
+    self.assertFalse(self._tx(self._lat_ctl_msg(True, 0.1, 0.0, 0.0, 0.0, mode=1)))
+    self.assertFalse(self._tx(self._lat_ctl_msg(True, 0.0, 0.1, 0.0, 0.0, mode=1)))
+    self.assertFalse(self._tx(self._lat_ctl_msg(True, 0.0, 0.0, 0.0, 0.0001, mode=1)))
+    for mode in range(4, 8):
+      self.assertFalse(self._tx(self._lat_ctl_msg(True, 0.0, 0.0, 0.0, 0.0, mode=mode)))
+
+  def test_path_mode_does_not_require_c2_to_match_measured_curvature(self):
+    if self.STEER_MESSAGE != MSG_LateralMotionControl2:
+      raise unittest.SkipTest("CAN FD only")
+    self.safety.set_controls_allowed(True)
+    self._set_prev_desired_angle(0.0)
+    self._reset_curvature_measurement(0.01, 20.0)
+
+    for path_offset, path_angle in ((0.4, 0.1), (0.0, 0.0)):
+      self.assertTrue(self._tx(self._lat_ctl_msg(True, path_offset, path_angle, 0.0, 0.0, mode=2)))
+
+  def test_path_command_keeps_c2_rate_limit(self):
+    if self.STEER_MESSAGE != MSG_LateralMotionControl2:
+      raise unittest.SkipTest("CAN FD only")
+    self.safety.set_controls_allowed(True)
+    self._set_prev_desired_angle(0.0)
+    self._reset_curvature_measurement(0.01, 20.0)
+    over_rate = (self._get_max_curvature_delta_can(20.0) + 1) / self.DEG_TO_CAN
+
+    self.assertFalse(self._tx(self._lat_ctl_msg(True, 0.4, 0.1, over_rate, 0.0, mode=2)))
+
+  def test_path_command_caps_c2_at_pscm_limit(self):
+    if self.STEER_MESSAGE != MSG_LateralMotionControl2:
+      raise unittest.SkipTest("CAN FD only")
+    self.safety.set_controls_allowed(True)
+    # At road speeds the lateral-acceleration envelope is tighter than the
+    # field limit; isolate the absolute LMC2/PSCM bound at low speed.
+    self._reset_curvature_measurement(0.0, 1.0)
+
+    for curvature in (self.MAX_PATH_CURVATURE, -self.MAX_PATH_CURVATURE):
+      self._set_prev_desired_angle(curvature)
+      self.assertTrue(self._tx(self._lat_ctl_msg(True, 0.0, 0.0, curvature, 0.0, mode=2)))
+
+    for curvature in (self.MAX_PATH_CURVATURE + 1 / self.DEG_TO_CAN,
+                      -self.MAX_PATH_CURVATURE - 1 / self.DEG_TO_CAN):
+      self._set_prev_desired_angle(curvature)
+      self.assertFalse(self._tx(self._lat_ctl_msg(True, 0.0, 0.0, curvature, 0.0, mode=2)))
 
   def test_curvature_rate_limits(self):
     """

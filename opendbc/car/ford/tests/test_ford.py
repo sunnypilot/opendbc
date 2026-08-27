@@ -1,9 +1,14 @@
+import math
 import random
+from types import SimpleNamespace
 import unittest
 
-from opendbc.car.structs import CarParams
+from opendbc.can import CANParser
+from opendbc.car.structs import CarControl, CarControlSP, CarParams
 from opendbc.car.fw_versions import build_fw_dict
-from opendbc.car.ford.values import CAR, FW_QUERY_CONFIG, FW_PATTERN, get_platform_codes
+from opendbc.car.ford.carcontroller import CarController
+from opendbc.car.ford.interface import CarInterface
+from opendbc.car.ford.values import CAR, DBC, CarControllerParams, FW_QUERY_CONFIG, FW_PATTERN, get_platform_codes
 from opendbc.car.ford.fingerprints import FW_VERSIONS
 from opendbc.testing import fuzzy_test, parameterized
 
@@ -135,3 +140,112 @@ class TestFordFW(unittest.TestCase):
     live_fw[(0x760, None)] = {b"M1MC-2D053-XX\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"}
     candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {expected_fingerprint: offline_fw})
     assert len(candidates) == 0, "Should not match new model year hint"
+
+
+class TestFordPathActuators(unittest.TestCase):
+  def test_lateral_path_round_trip(self):
+    path = CarControlSP().fordLateralPath
+    path.pathOffset = 0.3
+    path.pathAngle = -0.2
+    path.curvature = 0.01
+    path.curvatureRate = -0.0004
+    path.valid = True
+    assert math.isclose(path.pathOffset, 0.3, rel_tol=1e-6)
+    assert math.isclose(path.pathAngle, -0.2, rel_tol=1e-6)
+    assert math.isclose(path.curvature, 0.01, rel_tol=1e-6)
+    assert math.isclose(path.curvatureRate, -0.0004, rel_tol=1e-6)
+    assert path.valid
+
+  def test_controller_packs_path(self):
+    CP = CarInterface.get_non_essential_params(CAR.FORD_F_150_LIGHTNING_MK1)
+    CP_SP = CarInterface.get_non_essential_params_sp(CP, CAR.FORD_F_150_LIGHTNING_MK1)
+    controller = CarController(DBC[CP.carFingerprint], CP, CP_SP)
+    controller.frame = CarControllerParams.STEER_STEP
+    controller.apply_curvature_last = 0.001
+
+    CC = CarControl(latActive=True)
+    CC_SP = CarControlSP()
+    CC_SP.fordLateralPath.valid = True
+    CC_SP.fordLateralPath.pathOffset = 0.4
+    CC_SP.fordLateralPath.pathAngle = 0.1
+    CC_SP.fordLateralPath.curvature = 0.001
+    CC_SP.fordLateralPath.curvatureRate = 0.0002
+    CC.hudControl.leadDistanceBars = 0
+
+    CS = SimpleNamespace(
+      out=SimpleNamespace(
+        cruiseState=SimpleNamespace(available=False, standstill=False),
+        vEgoRaw=7.0,
+        vEgo=7.0,
+        yawRate=0.0,
+      ),
+      buttons_stock_values={},
+      acc_tja_status_stock_values={"Tja_D_Stat": 0},
+      lkas_status_stock_values={},
+    )
+    controller.lkas_enabled_last = True
+    controller.lead_distance_bars_last = 0
+
+    output, can_sends = controller.update(CC.as_reader(), CC_SP, CS, 0)
+    assert math.isclose(output.curvature, 0.001, rel_tol=1e-6)
+
+    parser = CANParser("ford_lincoln_base_pt", [("LateralMotionControl2", 0)], 0)
+    parser.update([0, can_sends])
+    msg = parser.vl["LateralMotionControl2"]
+    assert msg["LatCtl_D2_Rq"] == 2
+    assert math.isclose(msg["LatCtlPathOffst_L_Actl"], -0.4, abs_tol=0.01)
+    assert math.isclose(msg["LatCtlPath_An_Actl"], -0.1, abs_tol=0.001)
+    assert math.isclose(msg["LatCtlCurv_No_Actl"], -0.001, abs_tol=1e-5)
+    assert math.isclose(msg["LatCtlCrv_NoRate2_Actl"], -0.0002, abs_tol=2e-6)
+
+    CC_SP.fordLateralPath.valid = False
+    controller.frame = 2 * CarControllerParams.STEER_STEP
+    output, can_sends = controller.update(CC.as_reader(), CC_SP, CS, 0)
+    assert output.curvature == 0.0
+
+    parser.update([0, can_sends])
+    msg = parser.vl["LateralMotionControl2"]
+    assert msg["LatCtl_D2_Rq"] == 3
+    assert msg["LatCtlPathOffst_L_Actl"] == 0.0
+    assert msg["LatCtlPath_An_Actl"] == 0.0
+    assert msg["LatCtlCurv_No_Actl"] == 0.0
+    assert msg["LatCtlCrv_NoRate2_Actl"] == 0.0
+
+  def test_controller_unloads_c2_without_dropping_path(self):
+    CP = CarInterface.get_non_essential_params(CAR.FORD_F_150_LIGHTNING_MK1)
+    CP_SP = CarInterface.get_non_essential_params_sp(CP, CAR.FORD_F_150_LIGHTNING_MK1)
+    controller = CarController(DBC[CP.carFingerprint], CP, CP_SP)
+    controller.frame = CarControllerParams.STEER_STEP
+    controller.apply_curvature_last = 0.001
+
+    CC = CarControl(latActive=True)
+    CC_SP = CarControlSP()
+    CC_SP.fordLateralPath.valid = True
+    CC_SP.fordLateralPath.pathOffset = 0.4
+    CC_SP.fordLateralPath.pathAngle = 0.1
+    CC_SP.fordLateralPath.curvature = 0.0
+    CC.hudControl.leadDistanceBars = 0
+
+    CS = SimpleNamespace(
+      out=SimpleNamespace(
+        cruiseState=SimpleNamespace(available=False, standstill=False),
+        vEgoRaw=35.0,
+        vEgo=35.0,
+        yawRate=0.0,
+      ),
+      buttons_stock_values={},
+      acc_tja_status_stock_values={"Tja_D_Stat": 0},
+      lkas_status_stock_values={},
+    )
+    controller.lkas_enabled_last = True
+    controller.lead_distance_bars_last = 0
+
+    output, can_sends = controller.update(CC.as_reader(), CC_SP, CS, 0)
+    assert 0.0 < output.curvature < 0.001
+
+    parser = CANParser("ford_lincoln_base_pt", [("LateralMotionControl2", 0)], 0)
+    parser.update([0, can_sends])
+    msg = parser.vl["LateralMotionControl2"]
+    assert math.isclose(msg["LatCtlPathOffst_L_Actl"], -0.4, abs_tol=0.01)
+    assert math.isclose(msg["LatCtlPath_An_Actl"], -0.1, abs_tol=0.001)
+    assert 0.0 < -msg["LatCtlCurv_No_Actl"] < 0.001

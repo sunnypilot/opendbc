@@ -138,12 +138,22 @@ class LeadData:
 
 
 @auto_dataclass
+class FordLateralPath:
+  pathOffset: float = auto_field()
+  pathAngle: float = auto_field()
+  curvature: float = auto_field()
+  curvatureRate: float = auto_field()
+  valid: bool = auto_field()
+
+
+@auto_dataclass
 class CarControlSP:
   mads: 'ModularAssistiveDrivingSystem' = field(default_factory=lambda: ModularAssistiveDrivingSystem())
   params: list['CarControlSP.Param'] = auto_field()
   leadOne: 'LeadData' = field(default_factory=lambda: LeadData())
   leadTwo: 'LeadData' = field(default_factory=lambda: LeadData())
   intelligentCruiseButtonManagement: 'IntelligentCruiseButtonManagement' = field(default_factory=lambda: IntelligentCruiseButtonManagement())
+  fordLateralPath: 'FordLateralPath' = field(default_factory=lambda: FordLateralPath())
 
   @auto_dataclass
   class Param:
