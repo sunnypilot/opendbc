@@ -122,6 +122,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
     self.cancel_counter = 0
+    self.angle_fault = False
 
     self.apply_angle_last = 0
 
@@ -173,6 +174,13 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       if not CC.latActive:
         self.apply_angle_last = float(np.clip(CS.out.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX))
         self.angle_filter.x = self.apply_angle_last
+
+      # LFA_ALT lockout prevention — cycle ActvACILvl2Sta above 165 deg
+      if self.CP.openpilotLongitudinalControl:
+        self.angle_limit_counter, angle_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= 165, CC.latActive,
+                                                                           self.angle_limit_counter, MAX_ANGLE_FRAMES,
+                                                                           MAX_ANGLE_CONSECUTIVE_FRAMES)
+        self.angle_fault = CC.latActive and not angle_steer_req
 
     if not CC.latActive:
       apply_torque = 0
@@ -284,8 +292,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     lka_steering_long = lka_steering and self.CP.openpilotLongitudinalControl
 
     # steering control
-    can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.apply_angle_last
-                                                           , self.lkas_icon))
+    can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.apply_angle_last,
+                                                           self.lkas_icon, angle_fault=self.angle_fault))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU
     if self.frame % 5 == 0 and lka_steering:
