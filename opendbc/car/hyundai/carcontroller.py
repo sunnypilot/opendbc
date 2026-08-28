@@ -305,7 +305,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       if lka_steering:
         can_sends.extend(hyundaicanfd.create_adrv_messages(self.packer, self.CAN, self.frame))
         if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
-          can_sends.extend(hyundaicanfd.create_bsm_spoof_messages(self.packer, self.CAN, self.bsm_counter))
+          can_sends.extend(hyundaicanfd.create_bsm_spoof_messages(self.CAN, self.bsm_counter))
+          can_sends.extend(hyundaicanfd.create_ccnc_messages(self.CAN, self.bsm_counter))
           self.bsm_counter = (self.bsm_counter + 1) % 256
       else:
         can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))

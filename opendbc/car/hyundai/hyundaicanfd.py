@@ -260,21 +260,35 @@ def create_adrv_messages(packer, CAN, frame):
   return ret
 
 
-def create_bsm_spoof_messages(packer, CAN, bsm_counter):
-  ret = []
+_ADAS_DRV_TEMPLATES = {
+  0x161: bytes.fromhex("0000000000000000c0fff0c003000040000000000000000000ff000000000000"),
+  0x162: bytes.fromhex("0000002700000000c0ff00000000000000000000000000000000000000000000"),
+  0x1BA: bytes.fromhex("00000000000000880200000000000000000100000000000f"),
+  0x1E5: bytes.fromhex("00000000000000000000220200000080"),
+}
 
-  ret.append(packer.make_can_msg("BLINDSPOTS_FRONT_CORNER_1", CAN.ECAN, {}))
 
-  # manual counter/CRC — signal names don't match the CHECKSUM/COUNTER convention
-  values = {"ADAS_CMD_AlvCnt50Val": bsm_counter}
-  addr, dat, bus = packer.make_can_msg("ADAS_CMD_50_50ms", CAN.ECAN, values)
-  dat = bytearray(dat)
-  crc = hkg_can_fd_checksum(addr, None, dat)
-  dat[0] = crc & 0xFF
-  dat[1] = (crc >> 8) & 0xFF
-  ret.append((addr, bytes(dat), bus))
+def _create_adas_drv_spoof(address, bus, counter):
+  d = bytearray(_ADAS_DRV_TEMPLATES[address])
+  d[2] = counter & 0xFF
+  crc = hkg_can_fd_checksum(address, None, d)
+  d[0] = crc & 0xFF
+  d[1] = (crc >> 8) & 0xFF
+  return (address, bytes(d), bus)
 
-  return ret
+
+def create_ccnc_messages(CAN, counter):
+  return [
+    _create_adas_drv_spoof(0x161, CAN.ECAN, counter),
+    _create_adas_drv_spoof(0x162, CAN.ECAN, counter),
+  ]
+
+
+def create_bsm_spoof_messages(CAN, counter):
+  return [
+    _create_adas_drv_spoof(0x1BA, CAN.ECAN, counter),
+    _create_adas_drv_spoof(0x1E5, CAN.ECAN, counter),
+  ]
 
 
 def hkg_can_fd_checksum(address: int, sig, d: bytearray) -> int:
