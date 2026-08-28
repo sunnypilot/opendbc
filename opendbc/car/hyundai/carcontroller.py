@@ -304,10 +304,13 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     if self.CP.openpilotLongitudinalControl:
       if lka_steering:
         can_sends.extend(hyundaicanfd.create_adrv_messages(self.packer, self.CAN, self.frame))
-        if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
-          can_sends.extend(hyundaicanfd.create_bsm_spoof_messages(self.CAN, self.bsm_counter))
-          can_sends.extend(hyundaicanfd.create_ccnc_messages(self.CAN, self.bsm_counter))
-          self.bsm_counter = (self.bsm_counter + 1) % 256
+        if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+          if self.frame % 5 == 0:
+            can_sends.extend(hyundaicanfd.create_bsm_spoof_messages(self.CAN, self.bsm_counter))
+            can_sends.extend(hyundaicanfd.create_ccnc_messages(self.CAN, self.bsm_counter))
+            self.bsm_counter = (self.bsm_counter + 1) % 256
+          if self.frame % 20 == 0:
+            can_sends.append(hyundaicanfd._create_adas_drv_spoof(0x38C, self.CAN.ECAN, self.frame // 20))
       else:
         can_sends.extend(hyundaicanfd.create_fca_warning_light(self.packer, self.CAN, self.frame))
       if self.frame % 2 == 0:

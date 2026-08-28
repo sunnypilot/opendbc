@@ -605,7 +605,7 @@ class TestHyundaiCanfdLKASteeringLongEV(HyundaiLongitudinalBase, TestHyundaiCanf
              [0x51, 0], [0x730, 1], [0x12a, 1], [0x160, 1],
              [0x1e0, 1], [0x1a0, 1], [0x1ea, 1], [0x200, 1], [0x345, 1], [0x1da, 1],
              [0x0cb, 1], [0x1ba, 1], [0x1e5, 1],
-             [0x161, 1], [0x162, 1]]
+             [0x161, 1], [0x162, 1], [0x38c, 1]]
 
   RELAY_MALFUNCTION_ADDRS = {0: (0x50, 0x2a4), 1: (0x1a0,)}  # LKAS, CAM_0x2A4, SCC_CONTROL
 

@@ -293,6 +293,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     {0x1E5, 1, 16, .check_relay = false},  // BLINDSPOTS_FRONT_CORNER_1
     {0x161, 1, 32, .check_relay = false},  // CCNC_0x161
     {0x162, 1, 32, .check_relay = false},  // CCNC_0x162
+    {0x38C, 1, 32, .check_relay = false},  // ADRV_0x38c
   };
 
   static const CanMsg HYUNDAI_CANFD_LFA_STEERING_TX_MSGS[] = {
