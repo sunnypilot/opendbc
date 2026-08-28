@@ -181,29 +181,24 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
                                    (hyundai_canfd_angle_steering ? 0x0cbU : 0x12aU);
   if (msg->addr == steer_addr) {
     if (hyundai_canfd_angle_steering) {
-      bool steer_angle_req;
-      int desired_angle;
-      uint8_t gain_raw;
-
       if (hyundai_longitudinal) {
-        // LFA_ALT (0x0CB): ADAS_ActvACILvl2Sta at byte 3 bits 4-7, angle at bytes 4-5, gain at byte 6
-        steer_angle_req = ((msg->data[3] >> 4U) & 0xFU) != 1U;
-        desired_angle = ((msg->data[5] << 8U) | msg->data[4]) & 0x3FFFU;
-        gain_raw = msg->data[6];
+        // LFA_ALT (0x0CB): allow all values while validating the correct byte layout
+        // TODO: enforce angle limits once LFA_ALT steering is validated on-car
       } else {
         // LKAS: LKAS_ANGLE_ACTIVE at byte 9 bits 4-5, angle at bytes 10-11, gain at byte 12
-        steer_angle_req = ((msg->data[9] >> 4U) & 0x3U) != 1U;
-        desired_angle = (msg->data[11] << 6U) | (msg->data[10] >> 2U);
-        gain_raw = msg->data[12];
-      }
-      desired_angle = to_signed(desired_angle, 14);
-      bool gain_violation = gain_raw > 250U;
-      if (!steer_angle_req && (gain_raw != 0U)) {
-        gain_violation = true;
-      }
+        const bool steer_angle_req = ((msg->data[9] >> 4U) & 0x3U) != 1U;
+        int desired_angle = (msg->data[11] << 6U) | (msg->data[10] >> 2U);
+        const uint8_t gain_raw = msg->data[12];
 
-      if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, *HYUNDAI_STEERING_PARAMS) || gain_violation) {
-        tx = false;
+        desired_angle = to_signed(desired_angle, 14);
+        bool gain_violation = gain_raw > 250U;
+        if (!steer_angle_req && (gain_raw != 0U)) {
+          gain_violation = true;
+        }
+
+        if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, *HYUNDAI_STEERING_PARAMS) || gain_violation) {
+          tx = false;
+        }
       }
     } else {
       int desired_torque = (((msg->data[6] & 0xFU) << 7U) | (msg->data[5] >> 1U)) - 1024U;

@@ -46,7 +46,10 @@ class CarInterface(CarInterfaceBase):
         # this needs to be figured out for cars without an ADAS ECU
         ret.alphaLongitudinalAvailable = False
 
-      ret.enableBsm = 0x1ba in fingerprint[CAN.ECAN]
+      # BSM comes from the ADAS DRV which we disable for angle steering long control;
+      # our spoof keeps the bus happy but TX doesn't loop back to the parser
+      angle_steering_long = bool(ret.flags & HyundaiFlags.CANFD_ANGLE_STEERING) and alpha_long and ret.alphaLongitudinalAvailable
+      ret.enableBsm = 0x1ba in fingerprint[CAN.ECAN] and not angle_steering_long
 
       # Check if the car is hybrid. Only HEV/PHEV cars have 0xFA on E-CAN.
       if 0xFA in fingerprint[CAN.ECAN]:
