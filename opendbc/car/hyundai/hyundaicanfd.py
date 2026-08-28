@@ -48,11 +48,10 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     "Damping_Gain": 100,  # can potentially tuned for better perf [3, 200]
   }
 
-  lfa_alt_angle = float(np.clip(apply_angle, -176.7, 176.7))
   lfa_alt_values = {
     "ADAS_ActvACISta": 0,
     "ADAS_ActvACILvl2Sta": 2 if lat_active else 1,
-    "ADAS_StrAnglReqVal": lfa_alt_angle,
+    "ADAS_StrAnglReqVal": apply_angle,
     "ADAS_ACIAnglTqRedcGainVal": apply_torque if lat_active else 0,
     "FCA_ESA_ActvSta": 0,
     "FCA_ESA_TqBstGainVal": 0,
