@@ -375,6 +375,16 @@ class TestFordSafetyBase(common.CarSafetyTest):
       self._set_prev_desired_angle(curvature)
       self.assertFalse(self._tx(self._lat_ctl_msg(True, 0.0, 0.0, curvature, 0.0, mode=2)))
 
+  def test_path_command_accepts_100hz(self):
+    if self.STEER_MESSAGE != MSG_LateralMotionControl2:
+      raise unittest.SkipTest("CAN FD only")
+    self.safety.set_controls_allowed(True)
+    self._reset_curvature_measurement(0.0, 0.0)
+
+    for i in range(200):
+      self.safety.set_timer(i * 10_000)
+      self.assertTrue(self._tx(self._lat_ctl_msg(True, 0.0, 0.0, 0.0, 0.0, mode=2, increment_timer=False)))
+
   def test_curvature_rate_limits(self):
     """
     When the curvature error is exceeded, commanded curvature must start moving towards meas respecting rate limits.

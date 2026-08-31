@@ -164,7 +164,7 @@ static bool ford_tx_hook(const CANPacket_t *msg) {
   const CurvatureSteeringLimits FORD_PATH_STEERING_LIMITS = {
     .max_curvature = 1000,              // 0.02 rad/m LMC2 field/PSCM limit
     .curvature_to_can = 50000,
-    .frequency = 20,
+    .frequency = 100,
     .max_curvature_error = 100,
     .curvature_error_min_speed = 1.0e6,
     .max_steer_power = 0,
