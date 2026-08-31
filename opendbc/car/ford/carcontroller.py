@@ -57,8 +57,9 @@ class CarController(CarControllerBase):
       can_sends.append(fordcan.create_button_msg(self.packer, self.CAN.camera, CS.buttons_stock_values, tja_toggle=True))
 
     ### lateral control ###
-    # send steer msg at 20Hz
-    if (self.frame % CarControllerParams.STEER_STEP) == 0:
+    # LateralMotionControl2 accepts the full 100Hz control rate; legacy LateralMotionControl remains at 20Hz.
+    steer_step = CarControllerParams.LMC2_STEP if self.CP.flags & FordFlags.CANFD else CarControllerParams.STEER_STEP
+    if (self.frame % steer_step) == 0:
       path_offset = 0.0
       path_angle = 0.0
       apply_curvature = 0.0
@@ -72,7 +73,7 @@ class CarController(CarControllerBase):
         curvature_rate = float(path.curvatureRate)
         if self.CP.flags & FordFlags.CANFD:
           apply_curvature = CarControllerParams.CURVATURE_LIMITS.apply_limits(
-            apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0.0, True, CarControllerParams.STEER_STEP,
+            apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0.0, True, steer_step,
           )
 
       self.apply_curvature_last = apply_curvature
@@ -81,13 +82,13 @@ class CarController(CarControllerBase):
         # does not sit Unavailable for ~5s after we drop to mode 0.
         if CC.latActive:
           mode = 2
-          self.lmc2_ramp_out = 20
+          self.lmc2_ramp_out = CarControllerParams.LMC2_RAMP_OUT_FRAMES
         elif self.lmc2_ramp_out > 0:
           mode = 3
           self.lmc2_ramp_out -= 1
         else:
           mode = 0
-        counter = (self.frame // CarControllerParams.STEER_STEP) % 0x10
+        counter = (self.frame // steer_step) % 0x10
         can_sends.append(fordcan.create_lat_ctl2_msg(self.packer, self.CAN, mode,
                                                      -path_offset, -path_angle, -apply_curvature, -curvature_rate, counter))
       else:

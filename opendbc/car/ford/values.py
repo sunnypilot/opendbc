@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass, field, replace
 from enum import Enum, IntFlag
 
-from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
+from opendbc.car import Bus, CarSpecs, DbcDict, DT_CTRL, PlatformConfig, Platforms, uds
 from opendbc.car.lateral import CurvatureSteeringLimits
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column
@@ -14,6 +14,8 @@ Ecu = CarParams.Ecu
 
 class CarControllerParams:
   STEER_STEP = 5        # LateralMotionControl, 20Hz
+  LMC2_STEP = 1         # LateralMotionControl2, 100Hz
+  LMC2_RAMP_OUT_FRAMES = round(1.0 / (LMC2_STEP * DT_CTRL))
   LKA_STEP = 3          # Lane_Assist_Data1, 33Hz
   ACC_CONTROL_STEP = 2  # ACCDATA, 50Hz
   LKAS_UI_STEP = 100    # IPMA_Data, 1Hz
