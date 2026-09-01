@@ -171,6 +171,12 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
     .frequency = 100U,
   };
 
+  const AngleSteeringLimits HYUNDAI_CANFD_ANGLE_STEERING_LIMITS_LONG = {
+    .max_angle = 1750,
+    .angle_deg_to_can = 10,
+    .frequency = 100U,
+  };
+
   // Per-vehicle angle steering params, resolved at init from safety_param_sp
   const AngleSteeringParams *HYUNDAI_STEERING_PARAMS = hyundai_get_angle_params(hyundai_canfd_angle_model_id);
 
@@ -182,8 +188,20 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   if (msg->addr == steer_addr) {
     if (hyundai_canfd_angle_steering) {
       if (hyundai_longitudinal) {
-        // LFA_ALT (0x0CB): allow all values while validating the correct byte layout
-        // TODO: enforce angle limits once LFA_ALT steering is validated on-car
+        // LFA_ALT (0x0CB): ADAS_ActvACILvl2Sta at byte 3 bits 4-7, angle at bytes 4-5, gain at byte 6
+        const bool steer_angle_req = ((msg->data[3] >> 4U) & 0xFU) != 1U;
+        int desired_angle = ((msg->data[5] & 0x3FU) << 8U) | msg->data[4];
+        const uint8_t gain_raw = msg->data[6];
+
+        desired_angle = to_signed(desired_angle, 14);
+        bool gain_violation = gain_raw > 250U;
+        if (!steer_angle_req && (gain_raw != 0U)) {
+          gain_violation = true;
+        }
+
+        if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS_LONG, *HYUNDAI_STEERING_PARAMS) || gain_violation) {
+          tx = false;
+        }
       } else {
         // LKAS: LKAS_ANGLE_ACTIVE at byte 9 bits 4-5, angle at bytes 10-11, gain at byte 12
         const bool steer_angle_req = ((msg->data[9] >> 4U) & 0x3U) != 1U;

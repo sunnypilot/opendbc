@@ -33,6 +33,7 @@ MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 CANCEL_BUTTON_DELAY_FRAMES = 10
 
 MAX_ANGLE_RATE = 5
+MAX_ANGLE_LFA_ALT = 175.
 ANGLE_SAFETY_BASELINE_MODEL = "KIA_SPORTAGE_HEV_2026"
 
 
@@ -122,7 +123,6 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
     self.cancel_counter = 0
-    self.angle_fault = False
 
     self.apply_angle_last = 0
 
@@ -147,7 +147,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     # angle control
     else:
       v_ego_raw = CS.out.vEgoRaw
-      desired_angle = float(np.clip(actuators.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX))
+      angle_max = MAX_ANGLE_LFA_ALT if self.CP.openpilotLongitudinalControl else self.params.ANGLE_LIMITS.STEER_ANGLE_MAX
+      desired_angle = float(np.clip(actuators.steeringAngleDeg, -angle_max, angle_max))
 
       self.angle_filter.update_alpha(float(np.interp(CS.out.vEgo, [5, 10, 20], [0.2, 0.1, 0.0])))
       desired_angle = self.angle_filter.update(desired_angle)
@@ -172,15 +173,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       self.apply_angle_last = apply_angle
 
       if not CC.latActive:
-        self.apply_angle_last = float(np.clip(CS.out.steeringAngleDeg, -self.params.ANGLE_LIMITS.STEER_ANGLE_MAX, self.params.ANGLE_LIMITS.STEER_ANGLE_MAX))
+        self.apply_angle_last = float(np.clip(CS.out.steeringAngleDeg, -angle_max, angle_max))
         self.angle_filter.x = self.apply_angle_last
-
-      # LFA_ALT lockout prevention — cycle ActvACILvl2Sta above 165 deg
-      if self.CP.openpilotLongitudinalControl:
-        self.angle_limit_counter, angle_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= 165, CC.latActive,
-                                                                           self.angle_limit_counter, MAX_ANGLE_FRAMES,
-                                                                           MAX_ANGLE_CONSECUTIVE_FRAMES)
-        self.angle_fault = CC.latActive and not angle_steer_req
 
     if not CC.latActive:
       apply_torque = 0
@@ -293,7 +287,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
     # steering control
     can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.apply_angle_last,
-                                                           self.lkas_icon, angle_fault=self.angle_fault))
+                                                           self.lkas_icon))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU
     if self.frame % 5 == 0 and lka_steering:
