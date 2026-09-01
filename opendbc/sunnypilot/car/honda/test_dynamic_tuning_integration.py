@@ -4,7 +4,7 @@ with the dynamic tuner switched on.
 
 test_dynamic_tuning.py covers HondaDynamicTuner in isolation. It cannot catch the
 class of bug that lives in the *seam* -- call ordering, the 100 Hz / 50 Hz / 10 Hz
-rate split, which branch leaves pcm_speed stale, whether a learned gain reaches an
+rate split, whether a learned gain reaches an
 actuator it was never meant to touch. That is what this file is for, so every check
 below goes through CarController.update() and reads what would go on the wire.
 
@@ -47,7 +47,7 @@ class FakeParams:
   bad_writes: list = field(default_factory=list)
 
   def _spec(self, key):
-    if key in ("HondaDynamicTuningEnabled", "HondaDynamicPcmBlendEnabled"):
+    if key in ("HondaDynamicTuningEnabled",):
       return None
     if key not in dt._PARAM_SPEC:
       raise KeyError(key)
@@ -68,10 +68,9 @@ class FakeParams:
     self.store[key] = val
 
 
-def build(tuning=True, blend=True):
+def build(tuning=True):
   params = FakeParams()
   params.store["HondaDynamicTuningEnabled"] = tuning
-  params.store["HondaDynamicPcmBlendEnabled"] = blend
   dt._open_params = lambda: params
 
   CP = CarInterface.get_non_essential_params(PLATFORM)
@@ -110,6 +109,27 @@ class CS:
     self.is_metric = True
 
 
+ACC_HUD_ADDR = 0x30C
+
+
+def acc_hud_pcm_gas(can_sends):
+  """PCM_GAS as it actually reaches the wire: byte 2 of ACC_HUD.
+
+  Read off the CAN frames rather than off the tuner, because the tuner no longer has
+  a PCM channel to ask -- and what matters is that nothing puts gas in this byte for
+  an interceptor car, whatever the internals do.
+  """
+  out = 0
+  for m in can_sends:
+    # packer.make_can_msg returns a plain (address, dat, bus) tuple; CanData objects
+    # carry the same fields by name. Accept either so this does not depend on which.
+    addr = m[0] if isinstance(m, tuple) else m.address
+    dat = m[1] if isinstance(m, tuple) else m.dat
+    if addr == ACC_HUD_ADDR and len(dat) > 2:
+      out = max(out, dat[2])
+  return out
+
+
 def drive(cc_obj, phases, plant_gain=0.75, tau=0.30):
   """Run a scripted drive with a crude first-order plant. Returns per-frame traces."""
   cs = CS()
@@ -121,9 +141,9 @@ def drive(cc_obj, phases, plant_gain=0.75, tau=0.30):
     v = max(0.0, v + a * 0.01)
     cs.out.vEgo, cs.out.aEgo = v, a
     cs.out.standstill = v < 0.01
-    cc_obj.update(make_cc(target, state, long_active, pitch), CC_SP, cs, i * int(1e7))
+    _, sends = cc_obj.update(make_cc(target, state, long_active, pitch), CC_SP, cs, i * int(1e7))
     trace.append({"i": i, "v": v, "brake": cc_obj.apply_brake_last, "gas": cc_obj.gas,
-                  "pcm": int(cc_obj.dynamic_tuner.new_accel), "state": state,
+                  "pcm": acc_hud_pcm_gas(sends), "state": state,
                   "gain": 1.0 + cc_obj.dynamic_tuner.brake_pid_factor})
   return trace
 
@@ -133,24 +153,24 @@ def drive(cc_obj, phases, plant_gain=0.75, tau=0.30):
 print("\n[1] toggle off == stock")
 PHASES = ([(0.9, LongCtrlState.pid, 0.0)] * 400 + [(0.2, LongCtrlState.pid, 0.03)] * 600 +
           [(-1.5, LongCtrlState.pid, -0.03)] * 500 + [(-0.8, LongCtrlState.stopping, 0.0)] * 400)
-off, *_ = build(tuning=False, blend=False)
+off, *_ = build(tuning=False)
 t_off = drive(off, PHASES)
-check("tuner reports disabled", not off.dynamic_tuner.enabled and not off.dynamic_tuner.pcm_blend)
-check("no PCM gas is ever requested with the interceptor and no blend",
+check("tuner reports disabled", not off.dynamic_tuner.enabled)
+check("no PCM gas is ever requested with the interceptor",
       all(f["pcm"] == 0 for f in t_off))
 check("brake gain is exactly 1.0 every frame",
       all(abs(f["gain"] - 1.0) < 1e-12 for f in t_off))
 
 # same drive with the tuner on: nothing may leave the legal range
-print("\n[2] toggle on, both features")
+print("\n[2] toggle on")
 on, CP, CP_SP, params = build()
 t_on = drive(on, PHASES)
-check("tuner and blend both came up", on.dynamic_tuner.enabled and on.dynamic_tuner.pcm_blend)
+check("tuner came up", on.dynamic_tuner.enabled)
 check("brake command stays in range",
       all(0 <= f["brake"] <= PARAMS.NIDEC_BRAKE_MAX - 1 for f in t_on),
       f"{min(f['brake'] for f in t_on)}..{max(f['brake'] for f in t_on)}")
 check("interceptor command stays in range", all(0.0 <= f["gas"] <= 1.0 for f in t_on))
-check("pcm gas stays in range", all(0 <= f["pcm"] <= PARAMS.NIDEC_GAS_MAX for f in t_on))
+check("PCM gas stays at zero with the tuner on too", all(f["pcm"] == 0 for f in t_on))
 check("no learned value goes non-finite",
       all(math.isfinite(x) for k, x in on.dynamic_tuner.debug_values().items()
           if isinstance(x, float)))
@@ -165,14 +185,18 @@ print("\n[3] no concurrent gas + brake")
 cc_obj, *_ = build()
 cs = CS()
 bad = []
+bad_pcm = []
 v = 6.0
 for i in range(1200):
   cs.out.vEgo, cs.out.aEgo = v, -1.0
-  cc_obj.update(make_cc(-2.0), CC_SP, cs, i * int(1e7))
-  if cc_obj.apply_brake_last > 0 and int(cc_obj.dynamic_tuner.new_accel) > 0:
+  _, sends = cc_obj.update(make_cc(-2.0), CC_SP, cs, i * int(1e7))
+  if cc_obj.apply_brake_last > 0 and cc_obj.gas > 0.0:
     bad.append(i)
+  if cc_obj.apply_brake_last > 0 and acc_hud_pcm_gas(sends) > 0:
+    bad_pcm.append(i)
   v = max(0.0, v - 0.005)
-check("PCM gas is cut whenever brake is commanded", not bad, f"{len(bad)} frames")
+check("interceptor gas is cut whenever brake is commanded", not bad, f"{len(bad)} frames")
+check("no PCM gas while braking either", not bad_pcm, f"{len(bad_pcm)} frames")
 
 
 # --- 4. the standstill hold is exactly what interface.py asked for -----------
@@ -216,34 +240,30 @@ check("the integrator is back at the converged estimate on re-engage",
       f"{cc_obj.dynamic_tuner.brake_pid_factor:.4f}")
 
 
-# --- 6. the PCM crossfade ------------------------------------------------------
+# --- 6. the interceptor owns the gas at every speed ---------------------------
+#
+# There used to be a pedal/PCM crossfade here that handed part of the request back
+# to the PCM above ~30 km/h. It is gone: the PCM was never once shown to answer
+# openpilot's ACC_HUD, and it is the harder actuator to control anyway. What is
+# left to prove is the inverse -- that nothing puts gas in the PCM byte at any
+# speed, and that the interceptor command does not fall away as speed rises.
 
-print("\n[6] pedal / PCM crossfade")
+print("\n[6] interceptor owns the gas at every speed")
 cc_obj, *_ = build()
 cs = CS()
 seen = {}
-for i, v in enumerate(np.linspace(0.0, 20.0, 4000)):
-  cs.out.vEgo, cs.out.aEgo = float(v), 0.5
-  cc_obj.update(make_cc(1.0), CC_SP, cs, i * int(1e7))
-  seen[round(float(v), 1)] = (cc_obj.gas, int(cc_obj.dynamic_tuner.new_accel))
-below = [g for v, (g, p) in seen.items() if v < dt.PCM_AUTHORITY_FLOOR - 0.5 and p != 0]
-check("no PCM gas below the authority floor", not below, f"{len(below)} speeds")
-above = [p for v, (g, p) in seen.items() if v > dt.PCM_AUTHORITY_FULL + 2.0]
-check("PCM gas is live above the full-authority speed", any(p > 0 for p in above))
-pedal_hi = [g for v, (g, p) in seen.items() if v > dt.PCM_AUTHORITY_FULL + 2.0]
-pedal_lo = [g for v, (g, p) in seen.items() if v < dt.PCM_AUTHORITY_FLOOR - 0.5]
-check("the pedal share falls away as the PCM takes over",
-      max(pedal_hi) < max(pedal_lo) + 1e-9, f"hi {max(pedal_hi):.3f} vs lo {max(pedal_lo):.3f}")
-
-# with the blend off the interceptor must own the whole request at every speed
-cc_obj, *_ = build(blend=False)
-cs = CS()
 pcm_any = 0
-for i, v in enumerate(np.linspace(0.0, 25.0, 3000)):
+for i, v in enumerate(np.linspace(0.0, 25.0, 4000)):
   cs.out.vEgo, cs.out.aEgo = float(v), 0.5
-  cc_obj.update(make_cc(1.0), CC_SP, cs, i * int(1e7))
-  pcm_any = max(pcm_any, int(cc_obj.dynamic_tuner.new_accel))
-check("blend off -> the PCM channel is inert at every speed", pcm_any == 0, f"max {pcm_any}")
+  _, sends = cc_obj.update(make_cc(1.0), CC_SP, cs, i * int(1e7))
+  pcm_any = max(pcm_any, acc_hud_pcm_gas(sends))
+  seen[round(float(v), 1)] = cc_obj.gas
+check("PCM gas is zero at every speed", pcm_any == 0, f"max {pcm_any}")
+lo = [g for v, g in seen.items() if v < 8.0]
+hi = [g for v, g in seen.items() if v > 15.0]
+check("the interceptor still carries the request at high speed", max(hi) > 0.0, f"max hi {max(hi):.3f}")
+check("no crossfade cliff: high-speed command is not cut below the low-speed one",
+      max(hi) >= max(lo) - 1e-9, f"hi {max(hi):.3f} vs lo {max(lo):.3f}")
 
 
 print("\n" + "=" * 60)

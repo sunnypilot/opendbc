@@ -10,9 +10,10 @@ Ported from MVL's ACURA_MDX_3G dynamic branch, restructured for this fork:
 
   * The MDX 3G drives gas purely through the Nidec PCM, so MVL has a single set
     of gas learners that all learn against pcm_accel. This car has a comma pedal
-    interceptor AND a PCM that ignores gas requests below ~30 km/h, so the gas
-    learning is split into two channels with a speed crossfade: the pedal owns
-    low speed, the PCM owns high speed where pedal authority falls off.
+    interceptor, which owns the gas at every speed, so none of that is ported:
+    the gas learners here work on the interceptor command only. An earlier
+    revision crossfaded part of the request back to the PCM above ~30 km/h; that
+    is gone. See the note in carcontroller.py where the request is built.
 
   * MVL's per-5mph lateral latFactors are deliberately NOT ported. Longitudinal
     only, by request.
@@ -57,7 +58,6 @@ import numpy as np
 
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY, structs
 from opendbc.car.carlog import carlog
-from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.common.pid import PIDController
 from opendbc.sunnypilot.car.honda.gas_interceptor import ELESYS_GAS_BP
@@ -136,7 +136,7 @@ LEARN_MAX_JERK = 0.5        # m/s^3 on the filtered reference; above this the dw
 SETTLE_FRAMES = 100
 
 # --- the brake channel keeps the OLD dwell -----------------------------------
-# The ramp dwell above is safe for the pedal, PCM and aero learners because those
+# The ramp dwell above is safe for the pedal and aero learners because those
 # are small-rate EMAs (2e-4 and below): 2-3x the samples buys 2-3x the convergence
 # speed and nothing else. The brake learner is not an EMA. It is a PID integrator
 # at BRAKE_KI = 0.5 whose error is WEIGHTED BY BRAKE COMMAND, so it grows on the
@@ -255,42 +255,6 @@ PEDAL_GAIN_MIN = 0.5
 PEDAL_GAIN_MAX = 1.8
 PEDAL_LEARN_RATE = 2e-4
 
-# --- PCM channel -------------------------------------------------------------
-# The PCM is believed to ignore gas requests below this speed, so the pedal owns
-# everything underneath it. Above PCM_AUTHORITY_FULL the PCM carries the whole
-# request.
-#
-# BOTH NUMBERS ARE INHERITED BELIEF, NOT MEASUREMENT. They are completely
-# unvalidated on this car, and the logs cannot validate them: openpilot sent
-# 250,334 ACC_HUD frames across all 14 routes with PCM_GAS = 0 and PCM_SPEED = 0
-# in 100% of them (the branch at carcontroller.py:268 zeroes them unless
-# HondaDynamicPcmBlendEnabled is set, which it never was), so the PCM has never
-# once been asked for gas. The stock side carries no usable answer either: stock
-# ACC never engaged (openpilot re-sends SCM_BUTTONS with MAIN_ON = 0), bus-2
-# ACC_HUD has ACC_ON = 0 in 100% of 251,204 frames, and its PCM_SPEED is just the
-# dash speed echo. So the PRIOR question is not "is the floor 30 km/h" but "does
-# the PCM answer openpilot's ACC_HUD at all".
-#
-# When testing this, do NOT test by flipping HondaDynamicPcmBlendEnabled:
-# pedal_authority() is 1 - pcm_authority(), so "no change in acceleration" is
-# indistinguishable between "the PCM did nothing" and "the pedal was taken away".
-# Use a build with pedal_share forced to 1.0 so the PCM request is purely
-# additive, and start stationary.
-PCM_AUTHORITY_FLOOR = 30.0 * CV.KPH_TO_MS
-PCM_AUTHORITY_FULL = 45.0 * CV.KPH_TO_MS
-PCM_LEARN_RATE = 1e-4
-# gas_alpha is divided by max_accel (0.6 at 20 m/s) before it reaches the gas
-# request, so a +-1.0 clamp would let the bias alone saturate the channel. Keep
-# it small enough that it can only ever trim.
-PCM_ALPHA_LEARN_RATE = 5e-5
-GAS_ALPHA_MIN, GAS_ALPHA_MAX = -0.15, 0.15
-GAS_FACTOR_MIN, GAS_FACTOR_MAX = 0.5, 2.0
-AVERAGE_FACTOR_MIN, AVERAGE_FACTOR_MAX = 0.30, 1.0
-SPEED_FACTOR_MIN, SPEED_FACTOR_MAX = 0.5, 8.0
-SPEED_ALPHA_MIN, SPEED_ALPHA_MAX = -2.0, 2.0
-SPEED_LEAD_MAX = 8.0        # m/s of commanded lead over vEgo, hard ceiling
-PCM_RAMP_PER_TX = 20        # counts of pcm gas change allowed per transmitted frame
-
 # --- brake channel -----------------------------------------------------------
 # MVL runs k_i=2.0 / pos_limit=4.0, i.e. up to 5x the base brake command, on top
 # of a 3x faster brake rise. Their product reaches full brake authority from a
@@ -345,11 +309,6 @@ _PARAM_SPEC = {
   "HondaDynPedalGain3": (1.0, PEDAL_GAIN_MIN, PEDAL_GAIN_MAX),
   "HondaDynPedalGain4": (1.0, PEDAL_GAIN_MIN, PEDAL_GAIN_MAX),
   "HondaDynPedalGain5": (1.0, PEDAL_GAIN_MIN, PEDAL_GAIN_MAX),
-  "HondaDynGasFactor": (1.0, GAS_FACTOR_MIN, GAS_FACTOR_MAX),
-  "HondaDynGasAlpha": (0.0, GAS_ALPHA_MIN, GAS_ALPHA_MAX),
-  "HondaDynAverageFactor": (0.95, AVERAGE_FACTOR_MIN, AVERAGE_FACTOR_MAX),
-  "HondaDynSpeedFactor": (4.0, SPEED_FACTOR_MIN, SPEED_FACTOR_MAX),
-  "HondaDynSpeedAlpha": (0.0, SPEED_ALPHA_MIN, SPEED_ALPHA_MAX),
   "HondaDynWindFactor": (1.0, WIND_FACTOR_MIN, WIND_FACTOR_MAX),
   # starts at zero gain: flipping the toggle must not change braking until
   # something has actually been learned
@@ -440,43 +399,16 @@ class HondaDynamicTuner:
     # Bosch and stock-long cars skip the params read and the writer thread
     # entirely rather than paying for a feature that can never apply to them.
     self.applicable = self._is_applicable(CP, CP_SP)
-    # The crossfade only ever makes sense on a car whose gas is normally driven by
-    # the pedal. Without this gate a non-interceptor Nidec car with both toggles on
-    # would have its stock PCM request cut on every brake application.
     self.interceptor = bool(getattr(CP_SP, "enableGasInterceptor", False))
 
     self._params = _open_params() if self.applicable else None
     self.enabled = self._get_bool("HondaDynamicTuningEnabled")
-    # The pedal/PCM crossfade changes which actuator drives the car, so it is a
-    # separate opt-in on top of the learning.
-    self.pcm_blend = (self.enabled and self.interceptor
-                      and self._get_bool("HondaDynamicPcmBlendEnabled"))
 
     self._writer = _ParamWriter(self._params) if (self._params is not None and self.enabled) else None
 
     # pedal channel
     self.pedal_gain = [self._get_float(f"HondaDynPedalGain{i}") for i in range(len(PEDAL_GAIN_BP))]
     self.pedal_gain_converged = list(self.pedal_gain)
-
-    # PCM channel
-    self.gas_factor = self._get_float("HondaDynGasFactor")
-    self.gas_alpha = self._get_float("HondaDynGasAlpha")
-    self.average_factor = self._get_float("HondaDynAverageFactor")
-    self.speed_factor = self._get_float("HondaDynSpeedFactor")
-    self.speed_alpha = self._get_float("HondaDynSpeedAlpha")
-    self.gas_factor_converged = self.gas_factor
-    self.gas_alpha_converged = self.gas_alpha
-    self.average_factor_converged = self.average_factor
-    self.speed_factor_converged = self.speed_factor
-    self.speed_alpha_converged = self.speed_alpha
-    self.prior_gas_average = 0.0
-    self.new_accel = 0.0
-    self.pcm_accel_raw = 0
-    self.pcm_accel_last_tx = 0
-    self.pcm_ramp_limited = False
-    # the exact term gas_factor multiplied on the frame the request was built;
-    # 0.0 makes the gain update a no-op if update_pcm ever runs without it
-    self.gas_accel_applied = 0.0
 
     # shared aero
     self.wind_factor = self._get_float("HondaDynWindFactor")
@@ -565,16 +497,8 @@ class HondaDynamicTuner:
     next drive's starting point."""
     if self._writer is None or not self.enabled or frame % PERSIST_INTERVAL != 0:
       return
-    # NB: speed_factor / speed_alpha are deliberately absent. They can only learn
-    # from a saturated gas request, which is a one-sided error signal, so their
-    # adaptation is kept within-drive: they relax back to the loaded value as
-    # soon as the request comes off the rail and are never written back. The
-    # params still exist so a starting value can be set by hand.
     values = {f"HondaDynPedalGain{i}": g for i, g in enumerate(self.pedal_gain_converged)}
     values.update({
-      "HondaDynGasFactor": self.gas_factor_converged,
-      "HondaDynGasAlpha": self.gas_alpha_converged,
-      "HondaDynAverageFactor": self.average_factor_converged,
       "HondaDynWindFactor": self.wind_factor_converged,
       "HondaDynBrakeGain": self.brake_gain_converged,
     })
@@ -667,7 +591,7 @@ class HondaDynamicTuner:
     # (LEARN_MIN_CMD) are about what the planner asked for, not about grade
     self.accel_target = target
     # Lag-compensated. Every learner reads this, so the correction lands on the
-    # pedal, brake, PCM and aero channels at once and they cannot disagree about
+    # pedal, brake and aero channels at once and they cannot disagree about
     # what "error" means.
     self.accel_error = self.accel_ref - _finite(CS.out.aEgo)
 
@@ -809,19 +733,6 @@ class HondaDynamicTuner:
   def _track(converged: float, live: float) -> float:
     return converged + CONVERGED_TAU * (live - converged)
 
-  # --- channel authority -----------------------------------------------------
-
-  def pcm_authority(self, v_ego: float) -> float:
-    """0.0 where the PCM ignores gas requests, 1.0 where it carries the whole
-    request. Returns 0.0 unless the crossfade is explicitly enabled, which keeps
-    stock behaviour (pedal-only) as the default."""
-    if not self.pcm_blend:
-      return 0.0
-    return float(np.interp(v_ego, [PCM_AUTHORITY_FLOOR, PCM_AUTHORITY_FULL], [0.0, 1.0]))
-
-  def pedal_authority(self, v_ego: float) -> float:
-    return 1.0 - self.pcm_authority(v_ego)
-
   # --- pedal channel ---------------------------------------------------------
 
   def pedal_gain_at(self, v_ego: float) -> float:
@@ -834,8 +745,6 @@ class HondaDynamicTuner:
   def update_pedal(self, CC, CS, gas_cmd: float) -> None:
     """gas_cmd is the final 0..1 interceptor command actually being sent."""
     if not self._learn_ok(CC, CS):
-      return
-    if self.pedal_authority(CS.out.vEgo) < 0.5:
       return
     if self.accel_target < LEARN_MIN_CMD:
       return
@@ -853,156 +762,6 @@ class HondaDynamicTuner:
       railed = not (PEDAL_GAIN_MIN + 1e-6 < self.pedal_gain[i] < PEDAL_GAIN_MAX - 1e-6)
       if not railed:
         self.pedal_gain_converged[i] = self._track(self.pedal_gain_converged[i], self.pedal_gain[i])
-
-  # --- PCM channel -----------------------------------------------------------
-
-  def reset_pcm_feedforward(self) -> None:
-    """Drop the decaying-average state. Called whenever the PCM gas request is
-    forced to zero (braking, user gas, dropping below the authority floor) so the
-    feedforward does not resume from a stale average and step the gas."""
-    self.new_accel = 0.0
-    self.prior_gas_average = 0.0
-    self.pcm_accel_raw = 0
-    self.pcm_accel_last_tx = 0
-    self.pcm_ramp_limited = False
-    self.gas_accel_applied = 0.0
-
-  def pcm_request(self, CC, CS, adjust_accel: float, wind_brake_ms2: float,
-                  max_accel: float, gas_max: int) -> tuple[float, int]:
-    """MVL's PCM gas path: a learned speed lead plus a decaying-average
-    feedforward inverse that cancels the Nidec PCM's own gas averaging.
-
-    adjust_accel must already be scaled by pcm_authority() by the caller; the
-    speed lead is scaled here so BOTH sides of the crossfade ramp in together.
-
-    update_state() must have run this frame -- the speed lead is built from the
-    accel target it stashes.
-    """
-    if not self.pcm_blend or not CC.longActive:
-      self.reset_pcm_feedforward()
-      return 0.0, 0
-
-    authority = self.pcm_authority(CS.out.vEgo)
-    speed_lead = float(self.speed_factor * self.accel_target + self.speed_alpha) * authority
-    speed_lead = float(np.clip(speed_lead, -SPEED_LEAD_MAX, SPEED_LEAD_MAX))
-    # The lead is added to vEgo, never scaled into it. A partial pcm_speed (say
-    # 0.3 * vEgo) would read to the PCM as "target 30% of your current speed",
-    # i.e. a hard deceleration request, which is the opposite of what a partial
-    # handover should mean. This still steps 0 -> vEgo at the authority floor;
-    # see the note in the carcontroller diff, that step is the one piece of this
-    # channel that wants confirming on the car before the blend is enabled.
-    pcm_speed = float(np.clip(_finite(CS.out.vEgo) + speed_lead, 0.0, 100.0))
-
-    gas_accel = adjust_accel + wind_brake_ms2 * self.wind_factor * authority
-    avg = float(np.clip(self.average_factor, AVERAGE_FACTOR_MIN, AVERAGE_FACTOR_MAX))
-    # gas_alpha is scaled by authority like every other term: an unscaled bias at
-    # its rail is worth ~49 of 198 counts on its own, which would appear the
-    # instant authority came off zero.
-    # the 1.44 is upstream's, kept to preserve the pcm_accel scale
-    request = (self.gas_alpha * authority + gas_accel * self.gas_factor / 1.44) / max(max_accel, 1e-3)
-    pcm_accel = int(np.clip(_finite(request), 0.0, 1.0) * gas_max)
-    self.pcm_accel_raw = pcm_accel
-    # gas_factor multiplies gas_accel, so its gradient has to be weighted by
-    # gas_accel -- not by adjust_accel. Stashed here rather than recomputed in
-    # update_pcm() so the two can never drift apart. See update_pcm().
-    self.gas_accel_applied = gas_accel
-
-    # Invert the PCM's internal decaying average so the *effective* gas tracks
-    # the request instead of lagging it. The ramp limit is against the last
-    # TRANSMITTED value, not the last computed one -- this is recomputed at
-    # 100 Hz but only reaches the car at 10 Hz.
-    unclipped = int((pcm_accel - self.prior_gas_average * (1 - avg)) / avg)
-    ceiling = min(self.pcm_accel_last_tx + PCM_RAMP_PER_TX, gas_max)
-    self.new_accel = int(np.clip(unclipped, 0, ceiling))
-    # average_factor is learned by comparing new_accel against the raw request.
-    # While the ramp limiter is holding new_accel down that comparison measures
-    # the limiter, not the PCM's averaging, and drives the factor to its cap --
-    # which turns the whole inversion into an identity. Flag it and skip.
-    self.pcm_ramp_limited = unclipped != self.new_accel
-    self.prior_gas_average = self.prior_gas_average * (1 - avg) + self.new_accel * avg
-
-    return pcm_speed, int(self.new_accel)
-
-  def note_pcm_tx(self, pcm_accel: int) -> None:
-    """Call on the frames the ACC HUD actually goes out, so the ramp limit is
-    anchored to what the car saw."""
-    self.pcm_accel_last_tx = int(pcm_accel)
-
-  def update_pcm(self, CC, CS, adjust_accel: float, gas_max: int, braking: bool) -> None:
-    """adjust_accel must be the same authority-scaled value handed to
-    pcm_request(), or the gain learned here does not match the gain applied."""
-    if not self._learn_ok(CC, CS) or not self.pcm_blend or braking:
-      return
-    if self.pcm_authority(CS.out.vEgo) < 0.5:
-      return
-    # Same floor the pedal and brake channels use, and for the same reason (see
-    # LEARN_MIN_CMD): below it the residual is grade and wind, not actuator gain.
-    # This channel was missing it. Without the floor, gas_alpha -- an unweighted
-    # bias with nothing tying it to command magnitude -- integrates the grade
-    # residual at settled cruise and rails at GAS_ALPHA_MAX in about 3 min of
-    # learnable time; the converged value reaches ~0.10 and IS persisted, so the
-    # next drive opens with a standing PCM gas request at zero accel demand.
-    # Positive-only: this is a gas channel.
-    if self.accel_target < LEARN_MIN_CMD:
-      return
-
-    err = self.accel_error
-    pcm_accel = self.pcm_accel_raw
-
-    if 0 < self.new_accel < gas_max:
-      self.gas_alpha = float(np.clip(self.gas_alpha + PCM_ALPHA_LEARN_RATE * err,
-                                     GAS_ALPHA_MIN, GAS_ALPHA_MAX))
-      # Weighted by the term gas_factor actually multiplies, NOT by adjust_accel.
-      # pcm_request builds gas_accel = adjust_accel + aero, so the two disagree in
-      # sign across the whole band where the accel target is mildly negative but
-      # smaller than the aero term (at 25 m/s that is adjust_accel in about
-      # (-0.19, 0)) -- ordinary highway lift-off, and precisely where update_pcm
-      # runs, since apply_brake is still 0 there. Measured with the old weight: a
-      # +0.30 error (car needs MORE gas) drove gas_factor 1.00 -> 0.84 and
-      # persisted 0.84. MVL has the same expression; this is an inherited bug.
-      self.gas_factor = float(np.clip(self.gas_factor * (1 + PCM_LEARN_RATE * err * self.gas_accel_applied),
-                                      GAS_FACTOR_MIN, GAS_FACTOR_MAX))
-
-      # average_factor converges on the PCM's own averaging constant: if the
-      # feedforward pushes the right way but not far enough, slow the decay; if
-      # it overshoots, speed it back up.
-      if not self.pcm_ramp_limited:
-        more_needed = ((self.new_accel > pcm_accel and err > 0) or
-                       (self.new_accel < pcm_accel and err < 0))
-        step = abs(err * (self.new_accel - pcm_accel))
-        if more_needed:
-          self.average_factor /= (1 + PCM_LEARN_RATE * step)
-        else:
-          self.average_factor *= (1 + PCM_LEARN_RATE * step)
-        self.average_factor = float(np.clip(self.average_factor, AVERAGE_FACTOR_MIN, AVERAGE_FACTOR_MAX))
-
-      if GAS_ALPHA_MIN + 1e-6 < self.gas_alpha < GAS_ALPHA_MAX - 1e-6:
-        self.gas_alpha_converged = self._track(self.gas_alpha_converged, self.gas_alpha)
-      if GAS_FACTOR_MIN + 1e-6 < self.gas_factor < GAS_FACTOR_MAX - 1e-6:
-        self.gas_factor_converged = self._track(self.gas_factor_converged, self.gas_factor)
-      if AVERAGE_FACTOR_MIN + 1e-6 < self.average_factor < AVERAGE_FACTOR_MAX - 1e-6:
-        self.average_factor_converged = self._track(self.average_factor_converged, self.average_factor)
-
-    # The speed lead is a separate decision from the gas learners above, so it is
-    # its own if/else rather than a branch of theirs -- as an elif the relax path
-    # below is unreachable for any in-range gas request, which is most of them.
-    if self.new_accel >= gas_max:
-      # Gas is railed, so the only remaining lever is the speed lead. A railed
-      # request cannot satisfy the target, so this branch sees a positive error
-      # almost by construction and, left alone, is a one-way ratchet. MVL guards
-      # it by only allowing reductions once pcm_speed itself saturates; here it
-      # is bounded, relaxes below, and is never persisted.
-      self.speed_factor = float(np.clip(self.speed_factor * (1 + PCM_LEARN_RATE * err * self.accel_target),
-                                        SPEED_FACTOR_MIN, SPEED_FACTOR_MAX))
-      if err < 0:
-        self.speed_alpha = float(np.clip(self.speed_alpha + PCM_ALPHA_LEARN_RATE * err,
-                                         SPEED_ALPHA_MIN, SPEED_ALPHA_MAX))
-    else:
-      # Not railed: relax back toward the starting value so one railed episode
-      # (a long climb, a loaded merge) cannot latch a large lead for the rest of
-      # the drive.
-      self.speed_factor = self._track(self.speed_factor, self.speed_factor_converged)
-      self.speed_alpha = self._track(self.speed_alpha, self.speed_alpha_converged)
 
   # --- shared aero -----------------------------------------------------------
 
@@ -1135,8 +894,6 @@ class HondaDynamicTuner:
         f"{LOG_TAG} pedal=[{pedal}] pedalc=[{pedalc}] " +
         f"brake={v['brake_gain']:.3f} brakec={v['brake_gain_converged']:.3f} " +
         f"wind={v['wind_factor']:.3f} pitch={v['pitch']:+.4f} " +
-        f"gasf={v['gas_factor']:.3f} gasa={v['gas_alpha']:+.4f} avg={v['average_factor']:.3f} " +
-        f"spdf={v['speed_factor']:.2f} spda={v['speed_alpha']:+.2f} " +
         f"settle={self._settle} settles={self._settle_steady} eng={int(v['long_active'])} " +
         f"aref={v['accel_ref']:+.3f} aerr={v['accel_error']:+.3f} " +
         f"stale={v['pose_stale']} werr={v['write_errors']} " +
@@ -1148,14 +905,8 @@ class HondaDynamicTuner:
   def debug_values(self) -> dict:
     return {
       "enabled": self.enabled,
-      "pcm_blend": self.pcm_blend,
       "pedal_gain": list(self.pedal_gain),
       "pedal_gain_converged": list(self.pedal_gain_converged),
-      "gas_factor": self.gas_factor,
-      "gas_alpha": self.gas_alpha,
-      "average_factor": self.average_factor,
-      "speed_factor": self.speed_factor,
-      "speed_alpha": self.speed_alpha,
       "wind_factor": self.wind_factor,
       "brake_gain": 1.0 + self.brake_pid_factor,
       "brake_gain_converged": self.brake_gain_converged,

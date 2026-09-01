@@ -70,19 +70,18 @@ class GasInterceptorCarController:
       if self.CP.carFingerprint in HONDA_ELESYS:
         gas_mult = elesys_gas_multiplier(CS.out.vEgo)
 
-      # Learned correction and, when the PCM crossfade is enabled, the pedal's share of the
-      # request. Both are 1.0 when the dynamic tuner is off, so this is a no-op by default.
-      pedal_share = 1.0
+      # Learned correction on the shipped curve. 1.0 when the dynamic tuner is off, so this
+      # is a no-op by default. The interceptor owns the gas at every speed -- there is no
+      # longer a PCM share to subtract; see the note in carcontroller.py.
       if tuner is not None:
         gas_mult *= tuner.pedal_gain_at(CS.out.vEgo)
-        pedal_share = tuner.pedal_authority(CS.out.vEgo)
 
       # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
       # This prevents unexpected pedal range rescaling
       # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected
       # when you do enable.
       if CC.longActive:
-        self.gas = float(np.clip(gas_mult * pedal_share * (gas - brake + wind_brake * 3 / 4), 0., 1.))
+        self.gas = float(np.clip(gas_mult * (gas - brake + wind_brake * 3 / 4), 0., 1.))
       else:
         self.gas = 0.0
       can_sends.append(create_gas_interceptor_command(packer, self.gas, frame // 2))

@@ -304,26 +304,20 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
                     -wind_brake * (3 / 4),
                     0.0,
                     0.5]
-    # FORK: the PCM ignores gas requests below ~30 km/h on this car, so the pedal owns low
-    # speed. Above the floor the PCM can take a share of the request back, which is where the
-    # pedal's own authority is falling off. 0.0 unless HondaDynamicPcmBlendEnabled is set.
-    pcm_authority = self.dynamic_tuner.pcm_authority(CS.out.vEgo)
-    # the PCM's share of the request; the learner has to see the same scaled value that the
-    # request was built from or the gain it learns will not match the gain applied
-    pcm_gas_accel = adjust_accel * pcm_authority
-
     # The Honda ODYSSEY seems to have different PCM_ACCEL
     # msgs, is it other cars too?
-    if not CC.longActive or (self.CP_SP.enableGasInterceptor and pcm_authority <= 0.0):
+    #
+    # FORK: an earlier revision crossfaded part of the gas request back to the PCM above
+    # ~30 km/h. That is gone. The PCM was never once shown to answer: across 17 engaged
+    # routes openpilot sent 289,625 ACC_HUD frames with PCM_GAS = 0 and PCM_SPEED = 0 in
+    # 100% of them, so the whole channel was inherited belief, never a measurement. The
+    # interceptor is also simply the easier actuator to control -- the PCM has its own
+    # limits, lags and dual-servo behaviour, and it differs per car, so anything learned
+    # about it would not transfer. The interceptor owns the gas at every speed, which is
+    # what stock upstream already does for a GasInterceptor car.
+    if self.CP_SP.enableGasInterceptor or not CC.longActive:
       pcm_speed = 0.0
       pcm_accel = int(0.0)
-      if self.CP_SP.enableGasInterceptor:
-        # dropping back below the authority floor must not leave a stale decaying average
-        # to resume from when the car speeds up again
-        self.dynamic_tuner.reset_pcm_feedforward()
-    elif self.CP_SP.enableGasInterceptor:
-      pcm_speed, pcm_accel = self.dynamic_tuner.pcm_request(CC, CS, pcm_gas_accel, wind_brake_ms2,
-                                                            max_accel, self.params.NIDEC_GAS_MAX)
     elif self.CP.carFingerprint in HONDA_NIDEC_ALT_PCM_ACCEL:
       pcm_speed_V = [0.0,
                      np.clip(CS.out.vEgo - 3.0, 0.0, 100.0),
@@ -380,18 +374,6 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
           else:
             pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
 
-          # FORK: with the pedal/PCM crossfade active the PCM gas request is live, so it has to
-          # be cut while braking or the Honda faults on concurrent gas + brake. No-op otherwise,
-          # since pcm_accel is already 0 whenever the crossfade is off.
-          if pcm_authority > 0.0:
-            if apply_brake > 0 or CS.out.gasPressed or CS.out.stockAeb:
-              pcm_speed = 0.0
-              pcm_accel = 0
-              self.dynamic_tuner.reset_pcm_feedforward()
-            else:
-              # learned here rather than at 100 Hz so it sees this frame's brake state, not last
-              self.dynamic_tuner.update_pcm(CC, CS, pcm_gas_accel, self.params.NIDEC_GAS_MAX, False)
-
           pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, self.CAN, apply_brake, pump_on,
                                                          pcm_override, pcm_cancel_cmd, alert_fcw,
@@ -415,9 +397,6 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
         # On Nidec, this also controls longitudinal positive acceleration
         can_sends.append(hondacan.create_acc_hud(self.packer, self.CAN.pt, self.CP, CC.enabled, pcm_speed, pcm_accel,
                                                  hud_control, hud_v_cruise, CS.is_metric, CS.acc_hud))
-        # anchor the PCM gas ramp limit to what the car actually saw: this is the only
-        # place pcm_accel reaches the wire, at 10 Hz, not the 100 Hz it is recomputed at
-        self.dynamic_tuner.note_pcm_tx(pcm_accel)
 
       steering_available = CS.out.cruiseState.available and CS.out.vEgo > max(self.params.STEER_GLOBAL_MIN_SPEED, self.CP.minSteerSpeed)
       # HONDA_ELESYS: 4-byte LKAS_HUD with a different layout; stock camera's HUD is forwarded instead

@@ -20,9 +20,8 @@ from opendbc.car import structs
 from opendbc.sunnypilot.car.honda import dynamic_tuning as dt
 from opendbc.sunnypilot.car.honda.dynamic_tuning import (
   HondaDynamicTuner, _bp_weights, PEDAL_GAIN_BP, PEDAL_GAIN_MIN, PEDAL_GAIN_MAX,
-  PCM_AUTHORITY_FLOOR, PCM_AUTHORITY_FULL, SETTLE_FRAMES, BRAKE_POS_LIMIT,
-  SPEED_LEAD_MAX, SPEED_FACTOR_MAX, WIND_FACTOR_MAX, WIND_FACTOR_MIN,
-  PITCH_ACCEL_LIMIT, PITCH_STALE_FRAMES, PCM_RAMP_PER_TX, GAS_ALPHA_MAX,
+  SETTLE_FRAMES, BRAKE_POS_LIMIT, WIND_FACTOR_MAX, WIND_FACTOR_MIN,
+  PITCH_ACCEL_LIMIT, PITCH_STALE_FRAMES,
 )
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -95,7 +94,7 @@ class FakeParams:
     self.written[key] = value
 
 
-def make_tuner(enabled=True, pcm_blend=False, params=None):
+def make_tuner(enabled=True, params=None):
   if params is not None:
     dt._open_params = lambda: params
   else:
@@ -103,7 +102,6 @@ def make_tuner(enabled=True, pcm_blend=False, params=None):
   t = HondaDynamicTuner(CP=None, CP_SP=None)
   if params is None:
     t.enabled = enabled
-    t.pcm_blend = enabled and pcm_blend
   return t
 
 
@@ -144,10 +142,7 @@ cc.orientationNED = [0.0, 0.30, 0.0]
 check("pitch feedforward is exactly 0.0", t.update_state(cc, cs) == 0.0)
 check("pedal gain is exactly 1.0", t.pedal_gain_at(12.0) == 1.0)
 check("wind scale is exactly 1.0", t.wind_scale() == 1.0)
-check("pcm authority is 0.0 at all speeds", all(t.pcm_authority(v) == 0.0 for v in (0, 5, 10, 20, 40)))
-check("pedal authority is 1.0 at all speeds", all(t.pedal_authority(v) == 1.0 for v in (0, 5, 10, 20, 40)))
 check("brake gain is exactly 1.0", t.brake_gain(cc, cs, 0.5) == 1.0)
-check("pcm_request is silent", t.pcm_request(cc, cs, 1.0, 0.2, 2.0, NIDEC_GAS_MAX) == (0.0, 0))
 
 before = list(t.pedal_gain)
 for _ in range(500):
@@ -424,138 +419,6 @@ for _ in range(30):                 # dwell not yet satisfied
 check("brake integrator frozen before the dwell opens", abs(t.brake_pid.i - before) < 1e-9)
 
 
-# --- 6. pcm crossfade --------------------------------------------------------
-
-print("\n[6] pcm crossfade")
-t = make_tuner(pcm_blend=True)
-check("no pcm authority below the floor", t.pcm_authority(PCM_AUTHORITY_FLOOR - 0.1) == 0.0)
-check("full pcm authority above the band", t.pcm_authority(PCM_AUTHORITY_FULL + 5) == 1.0)
-mid = (PCM_AUTHORITY_FLOOR + PCM_AUTHORITY_FULL) / 2
-check("half authority mid-band", abs(t.pcm_authority(mid) - 0.5) < 1e-6)
-check("pedal + pcm authority always sums to 1",
-      all(abs(t.pcm_authority(float(v)) + t.pedal_authority(float(v)) - 1.0) < 1e-9
-          for v in np.linspace(0, 40, 300)))
-check("crossfade off -> pcm authority 0 everywhere",
-      all(make_tuner(pcm_blend=False).pcm_authority(v) == 0.0 for v in np.linspace(0, 40, 50)))
-
-# REGRESSION (review finding 6): pcm_speed must ramp in with authority, not step
-t = make_tuner(pcm_blend=True)
-leads = []
-for v in np.linspace(PCM_AUTHORITY_FLOOR - 1.0, PCM_AUTHORITY_FULL + 1.0, 400):
-  cc, cs = base(float(v), 2.0)
-  t.update_state(cc, cs)
-  sp, _ = t.pcm_request(cc, cs, 2.0 * t.pcm_authority(float(v)), 0.2, 2.0, NIDEC_GAS_MAX)
-  leads.append(0.0 if sp == 0.0 else sp - float(v))
-steps = [abs(leads[i + 1] - leads[i]) for i in range(len(leads) - 1)]
-check("pcm speed lead ramps in continuously", max(steps) < 0.25, f"max step={max(steps):.3f} m/s")
-check("pcm speed lead is bounded", max(leads) <= SPEED_LEAD_MAX + 1e-9, f"{max(leads):.3f}")
-
-t = make_tuner(pcm_blend=True)
-cc, cs = base(25.0, 0.0)
-t.update_state(cc, cs)
-sp0, _ = t.pcm_request(cc, cs, 0.0, 0.2, 2.0, NIDEC_GAS_MAX)
-check("pcm_request holds vEgo when target accel is zero", abs(sp0 - 25.0) < 1e-6, f"{sp0}")
-
-
-# --- 7. pcm feedforward ------------------------------------------------------
-
-print("\n[7] pcm feedforward")
-# REGRESSION (review finding 11): the ramp limit must bound what the CAR sees
-# (10 Hz), not what is recomputed internally (100 Hz).
-t = make_tuner(pcm_blend=True)
-cc, cs = base(25.0, 2.0)
-t.update_state(cc, cs)
-tx, prev_tx, ok = [], 0, True
-for frame in range(600):
-  _, pa = t.pcm_request(cc, cs, 2.0, 0.2, 2.0, NIDEC_GAS_MAX)
-  if frame % 10 == 0:                       # the only frames the HUD goes out
-    if pa > prev_tx + PCM_RAMP_PER_TX:
-      ok = False
-      break
-    prev_tx = pa
-    t.note_pcm_tx(pa)
-    tx.append(pa)
-check("ramp limit bounds change per TRANSMITTED frame", ok, f"jump to {prev_tx}")
-check("feedforward never exceeds NIDEC_GAS_MAX", max(tx) <= NIDEC_GAS_MAX, f"{max(tx)}")
-
-t = make_tuner(pcm_blend=True)
-cc, cs = base(25.0, 2.0)
-cc.longActive = False
-check("feedforward resets when long is inactive",
-      t.pcm_request(cc, cs, 2.0, 0.2, 2.0, NIDEC_GAS_MAX) == (0.0, 0) and t.prior_gas_average == 0.0)
-
-t = make_tuner(pcm_blend=True)
-t.new_accel, t.prior_gas_average, t.pcm_accel_raw, t.pcm_accel_last_tx = 50, 40.0, 60, 55
-t.reset_pcm_feedforward()
-check("reset_pcm_feedforward clears every piece of state",
-      (t.new_accel, t.prior_gas_average, t.pcm_accel_raw, t.pcm_accel_last_tx) == (0.0, 0.0, 0, 0))
-
-
-# --- 8. pcm learners ---------------------------------------------------------
-
-print("\n[8] pcm learners")
-# REGRESSION (review finding 5): gas_alpha must not be able to command gas on its own
-t = make_tuner(pcm_blend=True)
-cc, cs = base(25.0, 2.0, -2.0)
-settle(t, cc, cs)
-for _ in range(8000):
-  t.update_state(cc, cs)
-  t.pcm_request(cc, cs, 2.0, 0.2, 2.0, NIDEC_GAS_MAX)
-  t.update_pcm(cc, cs, 2.0, NIDEC_GAS_MAX, False)
-check("gas_alpha clamps", abs(t.gas_alpha) <= GAS_ALPHA_MAX + 1e-9, f"{t.gas_alpha}")
-alpha_only = int(np.clip(GAS_ALPHA_MAX / 0.6, 0.0, 1.0) * NIDEC_GAS_MAX)
-check("gas_alpha alone cannot saturate the channel", alpha_only < NIDEC_GAS_MAX // 2,
-      f"alpha-only request = {alpha_only}/{NIDEC_GAS_MAX}")
-
-# REGRESSION (review finding 4): speed_factor must not latch after a railed episode
-t = make_tuner(pcm_blend=True)
-cc, cs = base(25.0, 1.5, -0.5)
-settle(t, cc, cs)
-for _ in range(12000):                       # long railed episode
-  t.update_state(cc, cs)
-  t.new_accel = NIDEC_GAS_MAX
-  t.update_pcm(cc, cs, 1.5, NIDEC_GAS_MAX, False)
-latched = t.speed_factor
-check("speed_factor is bounded while railed", latched <= SPEED_FACTOR_MAX + 1e-9, f"{latched}")
-cs.out.aEgo = 1.5                            # now tracking perfectly, off the rail
-for _ in range(12000):
-  t.update_state(cc, cs)
-  t.new_accel = 100
-  t.update_pcm(cc, cs, 1.5, NIDEC_GAS_MAX, False)
-check("speed_factor relaxes once off the rail", t.speed_factor < latched - 0.1,
-      f"latched={latched:.3f} relaxed={t.speed_factor:.3f}")
-
-t = make_tuner(pcm_blend=True)
-cc, cs = base(25.0, 2.0, -2.0)
-settle(t, cc, cs)
-for _ in range(8000):
-  t.update_state(cc, cs)
-  t.new_accel = 100
-  t.update_pcm(cc, cs, 2.0, NIDEC_GAS_MAX, False)
-check("average_factor stays in range and non-zero", 0.30 - 1e-9 <= t.average_factor <= 1.0 + 1e-9,
-      f"{t.average_factor}")
-check("gas_factor stays in range", 0.5 - 1e-9 <= t.gas_factor <= 2.0 + 1e-9, f"{t.gas_factor}")
-
-t = make_tuner(pcm_blend=True)
-cc, cs = base(25.0, 2.0, -2.0)
-settle(t, cc, cs)
-before = (t.gas_factor, t.gas_alpha, t.speed_factor)
-for _ in range(5000):
-  t.update_state(cc, cs)
-  t.update_pcm(cc, cs, 2.0, NIDEC_GAS_MAX, True)      # braking
-check("no pcm learning while braking", (t.gas_factor, t.gas_alpha, t.speed_factor) == before)
-
-t = make_tuner(pcm_blend=False)
-cc, cs = base(25.0, 2.0, -2.0)
-settle(t, cc, cs)
-before = (t.gas_factor, t.gas_alpha, t.speed_factor)
-for _ in range(5000):
-  t.update_state(cc, cs)
-  t.update_pcm(cc, cs, 2.0, NIDEC_GAS_MAX, False)
-check("no pcm learning when the crossfade is off",
-      (t.gas_factor, t.gas_alpha, t.speed_factor) == before)
-
-
 # --- 9. wind learner ---------------------------------------------------------
 
 print("\n[9] wind learner")
@@ -590,19 +453,15 @@ check("zero-mean error does not drift the wind factor", abs(t.wind_factor - 1.0)
 # --- 10. params: load clamping, unknown keys, persistence -------------------
 
 print("\n[10] params handling")
-known = set(dt._PARAM_SPEC) | {"HondaDynamicTuningEnabled", "HondaDynamicPcmBlendEnabled"}
+known = set(dt._PARAM_SPEC) | {"HondaDynamicTuningEnabled"}
 
 # REGRESSION (review finding 14): corrupted / hand-edited values must be clamped
 p = FakeParams({"HondaDynamicTuningEnabled": True, "HondaDynBrakeGain": 10.0,
-                "HondaDynPedalGain0": 99.0, "HondaDynSpeedFactor": 500.0,
-                "HondaDynGasAlpha": -50.0, "HondaDynAverageFactor": 0.0}, known)
+                "HondaDynPedalGain0": 99.0}, known)
 t = make_tuner(params=p)
 check("out-of-range brake gain is clamped on load", t.brake_pid.i <= BRAKE_POS_LIMIT + 1e-9,
       f"{t.brake_pid.i}")
 check("out-of-range pedal gain is clamped on load", t.pedal_gain[0] <= PEDAL_GAIN_MAX + 1e-9)
-check("out-of-range speed factor is clamped on load", t.speed_factor <= SPEED_FACTOR_MAX + 1e-9)
-check("out-of-range gas alpha is clamped on load", t.gas_alpha >= -GAS_ALPHA_MAX - 1e-9)
-check("zero average factor is clamped away from a divide-by-zero", t.average_factor >= 0.30 - 1e-9)
 cc, cs = base(10.0, -2.0, -1.0)
 check("clamped brake gain reaches the output bounded",
       t.brake_gain(cc, cs, 1.0) <= 1.0 + BRAKE_POS_LIMIT + 1e-9)
@@ -695,35 +554,6 @@ t.update_state(cc, cs)
 rolling = t.brake_gain(cc, cs, 0.9)
 check("rolling stop does not hand back the wound gain", rolling <= 1.0 + 0.1, f"{rolling:.3f}")
 
-# gas_alpha must be crossfaded like every other term, or a railed bias appears
-# as real PCM gas the instant authority leaves zero.
-t = make_tuner(pcm_blend=True)
-t.gas_alpha = GAS_ALPHA_MAX
-v_just_above = PCM_AUTHORITY_FLOOR + 0.02
-cc, cs = base(v_just_above, 0.0)
-t.update_state(cc, cs)
-_, pa = t.pcm_request(cc, cs, 0.0, 0.0, 0.6, NIDEC_GAS_MAX)
-check("railed gas_alpha contributes ~no gas at zero authority", pa <= 2, f"{pa} counts")
-
-# average_factor was being learned against the ramp limiter rather than the PCM,
-# which drove it to 1.0 and turned the feedforward into an identity.
-t = make_tuner(pcm_blend=True)
-cc, cs = base(25.0, 0.0, 0.0)
-target = 0.0
-for i in range(30000):
-  want = 1.5 if (i // 2000) % 2 == 0 else 0.0
-  target += float(np.clip(want - target, -0.02, 0.02))
-  cc.actuators.accel = target
-  t.update_state(cc, cs)
-  cs.out.aEgo += 0.02 * (target * 0.8 - cs.out.aEgo)
-  _, pa = t.pcm_request(cc, cs, target, 0.2, 2.0, NIDEC_GAS_MAX)
-  if i % 10 == 0:
-    t.note_pcm_tx(pa)
-  if i % 2 == 0:
-    t.update_pcm(cc, cs, target, NIDEC_GAS_MAX, False)
-check("average_factor does not collapse to the identity under a real sequence",
-      t.average_factor < 0.999, f"{t.average_factor:.6f}")
-
 # Pitch must fade out at standstill: on an uphill the term asks for less brake,
 # which is right while decelerating and wrong while holding the car on a hill.
 t = make_tuner()
@@ -742,22 +572,13 @@ for _ in range(2000):
   hill_moving = t.update_state(cc, cs)
 check("pitch feedforward is live while cruising", hill_moving > 0.5, f"{hill_moving}")
 
-# The crossfade must not touch a car that has no interceptor.
-class _NoPedalCP_SP:
-  enableGasInterceptor = False
-dt._open_params = lambda: FakeParams(
-  {"HondaDynamicTuningEnabled": True, "HondaDynamicPcmBlendEnabled": True}, known)
-t = HondaDynamicTuner(CP=None, CP_SP=_NoPedalCP_SP())
-check("crossfade stays off without a gas interceptor", t.pcm_blend is False)
-check("crossfade off -> no authority anywhere", all(t.pcm_authority(v) == 0.0 for v in (10, 20, 40)))
-
 # Params that come back as a numpy scalar / string must still load.
 p = FakeParams({"HondaDynamicTuningEnabled": True,
                 "HondaDynBrakeGain": np.float64(0.25),
-                "HondaDynGasFactor": "1.25"}, known)
+                "HondaDynPedalGain1": "1.25"}, known)
 t = make_tuner(params=p)
 check("numpy scalar param loads", abs(t.brake_gain_converged - 0.25) < 1e-9, f"{t.brake_gain_converged}")
-check("string param loads", abs(t.gas_factor - 1.25) < 1e-9, f"{t.gas_factor}")
+check("string param loads", abs(t.pedal_gain[1] - 1.25) < 1e-9, f"{t.pedal_gain[1]}")
 check("registry default of 0.0 means no day-one brake gain",
       make_tuner(params=FakeParams({"HondaDynamicTuningEnabled": True}, known)).brake_gain_converged == 0.0)
 
@@ -918,57 +739,6 @@ app_cc.actuators.longControlState = LongCtrlState.stopping
 t2.update_state(app_cc, app_cs)
 check("the gain is still applied while still moving in the stopping phase",
       t2.brake_gain(app_cc, app_cs, 0.6) > 1.4, f"{t2.brake_gain(app_cc, app_cs, 0.6):.4f}")
-
-# (c) the PCM channel was the only learner without LEARN_MIN_CMD. gas_alpha is an
-# unweighted bias, so at settled cruise it integrated the grade residual straight
-# to its rail -- and persisted it, giving the next drive a standing gas request.
-t = make_tuner(pcm_blend=True)
-cc, cs = base(25.0, 0.05, -0.25)          # 0.05 target, 0.30 shortfall
-settle(t, cc, cs)
-for _ in range(20000):
-  t.update_state(cc, cs)
-  t.pcm_request(cc, cs, 0.05, 0.19, 0.6, NIDEC_GAS_MAX)
-  t.note_pcm_tx(t.new_accel)
-  t.update_pcm(cc, cs, 0.05, NIDEC_GAS_MAX, False)
-check("no pcm learning below the command floor",
-      t.gas_alpha == 0.0 and t.gas_factor == 1.0,
-      f"alpha={t.gas_alpha:.5f} factor={t.gas_factor:.5f}")
-# above the floor it must still learn, or the gate is just an off switch
-t = make_tuner(pcm_blend=True)
-cc, cs = base(25.0, 1.0, 0.7)
-settle(t, cc, cs)
-for _ in range(20000):
-  t.update_state(cc, cs)
-  t.pcm_request(cc, cs, 1.0, 0.19, 0.6, NIDEC_GAS_MAX)
-  t.note_pcm_tx(t.new_accel)
-  t.update_pcm(cc, cs, 1.0, NIDEC_GAS_MAX, False)
-check("pcm learning still runs above the command floor",
-      t.gas_alpha > 0.0, f"alpha={t.gas_alpha:.5f}")
-
-# (d) gas_factor multiplies gas_accel, so its gradient must be weighted by
-# gas_accel. Weighted by adjust_accel it inverts wherever adjust_accel < 0 <
-# gas_accel; that band is now unreachable behind the floor, but the weight has to
-# be the right one regardless.
-t = make_tuner(pcm_blend=True)
-cc, cs = base(25.0, 1.0, 0.7)
-settle(t, cc, cs)
-t.pcm_request(cc, cs, 1.0, 0.19, 0.6, NIDEC_GAS_MAX)
-check("gas_factor's gradient weight is the term it actually multiplies",
-      abs(t.gas_accel_applied - (1.0 + 0.19 * t.wind_factor)) < 1e-9,
-      f"{t.gas_accel_applied:.4f} vs adjust_accel 1.0")
-t.reset_pcm_feedforward()
-check("the stashed weight is cleared with the rest of the feedforward state",
-      t.gas_accel_applied == 0.0, f"{t.gas_accel_applied}")
-
-# (e) PEDAL_GAIN_BP is ELESYS_GAS_BP, which lives in another file. Growing it
-# without adding the matching param must not take out CarController.__init__.
-t = make_tuner()
-try:
-  v = t._get_float("HondaDynPedalGain9")
-  check("an unregistered key degrades instead of raising", v == 1.0, f"got {v}")
-except Exception as e:
-  check("an unregistered key degrades instead of raising", False, f"raised {type(e).__name__}")
-
 
 # --- 15. drive-mode gating ----------------------------------------------------
 #
