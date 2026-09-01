@@ -66,23 +66,96 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 DT_CTRL = 0.01
 
-# --- dwell / convergence gating ---------------------------------------------
+# --- dwell / lag compensation ------------------------------------------------
 # update_state() runs every control frame (100 Hz).
-# The dwell has to outlast SEVERAL plant time constants, not one: at 1 tau the
-# residual lag error is still ~37% of peak and the integrator happily eats it,
-# and because the error is weighted by brake command it grows on the ramp-in and
-# barely unwinds on the release, so it ratchets to the rail over a few
-# applications. Measured on 5 routes (122 min long-active, S:/OP/sunny_logs): peak
-# target->aEgo correlation lands at 23-34 frames, so the plant settles with a
-# time constant near 0.25-0.35 s. 150 frames is 4-6 of those, which is enough to
-# be clear of the lag while still leaving ~4 min of learnable braking and ~5 min
-# of learnable gas across those routes. 200 halved that for no measured benefit.
-SETTLE_FRAMES = 150         # 1.5 s of steady target before anything believes the error
-# Drift from the START of the dwell window, NOT frame-to-frame. Compared against
-# the previous frame this is a 20 m/s^3 jerk threshold, and real planner targets
-# ramp at 1-3 m/s^3, so the gate would never close and every learner would end up
-# integrating pure actuator lag.
-SETTLE_TOLERANCE = 0.20     # m/s^2 of drift across the window that resets the dwell
+#
+# The thing every learner here has to avoid is mistaking ACTUATOR LAG for a gain
+# error. The plant tracks the target late, so during any ramp aEgo sits below a
+# rising target and (target - aEgo) is positive with nothing wrong with the gain.
+# There are two ways to deal with that:
+#
+#   (a) refuse to learn until the target has been STEADY long enough for the lag
+#       to have decayed, or
+#   (b) model the lag and subtract it.
+#
+# This used to do (a): a 1.5 s dwell that reset whenever the commanded accel drifted
+# more than 0.20 m/s^2 from the start of the window. Measured against two weeks of
+# driving (routes 99/9b/9c/9d/9e, ~45 min engaged), that gate is very nearly closed
+# at all times, because (a) is in direct conflict with LEARN_MIN_CMD below. Real
+# accel demands RAMP. The median demand episode lasts 0.37-0.90 s, and of the few
+# that last over 1.5 s the target swings a median 0.67-0.94 m/s^2 across the episode
+# -- 3-5x the tolerance -- so the dwell kept resetting inside the very episodes it
+# existed to admit. Engaged+PID+clean time that cleared BOTH gates: 0.4-2.6% of the
+# drive, i.e. 0.7 to 19.6 SECONDS per route.
+#
+# Worse, the exclusion was biased rather than merely sparse. On route a2d078f21b,
+# demand in 0.6-1.0 m/s^2 got 28.2 s of which 1.7 s was settled, and demand above
+# 1.0 m/s^2 got 20.8 s of which ZERO was settled. The learner could only ever see a
+# thin 0.4-0.6 m/s^2 sliver -- exactly where pedal gain is least identifiable
+# against grade and wind. The result after two weeks of persistence: the six pedal
+# breakpoints read 1.000/1.000/1.000/1.004/1.004/1.000. The channel was dead.
+#
+# So this now does (b). accel_ref is the planner target pushed through a
+# first-order lag matching the plant, and accel_error is measured against THAT
+# rather than against the raw target. For a plant that tracks perfectly but late,
+# the error is then ~0 by construction on a ramp exactly as it is on a plateau,
+# which is what makes it safe to admit ramps at all. The dwell keeps watching the
+# COMMANDED value (target + grade) so a pitch transient still resets it; the two
+# references are filtered separately for exactly that reason.
+#
+# PLANT_TAU is a pooled least-squares fit of aEgo against lowpass(target, tau) over
+# engaged PID time on four routes. The basin is real but SHALLOW -- residual RMS
+# 0.242 at tau=0.30 against 0.256 at tau=0.0 -- because the residual is dominated
+# by grade and wind, not by lag. Per route the optimum ranges 0.0-0.5 s. So treat
+# the uncertainty on this as +-0.2 s, not +-0.05, and see LEARN_MAX_JERK.
+PLANT_TAU = 0.30            # s
+# A first-order reference lags a ramp by tau * rate, so an error of dtau in the tau
+# estimate leaves dtau * rate of residual. With dtau = 0.2 s, holding that residual
+# under 0.1 m/s^2 -- comfortably below the 0.2-0.35 m/s^2 biases this exists to find
+# -- caps the admissible ramp rate at 0.5 m/s^3.
+#
+# This is measured on the FILTERED reference, not on raw target jerk; see the note
+# in update_state() for why that distinction is the whole gate. On the filtered
+# signal the demand-time distribution is p50 0.21, p75 0.45, p90 0.92 m/s^3, so 0.5
+# sits just above the median ramp and admits the bulk of ordinary demand while
+# excluding steps, lead cut-ins and the pitch feedforward fading.
+#
+# Admitted pedal-learn time over the four routes, old gate against this one:
+#     9927285994   3.7 s -> 7.7 s      cb866d7303   0.7 s -> 1.5 s
+#     e0d590c25c   2.2 s -> 7.7 s      a2d078f21b  19.4 s -> 49.4 s
+#     TOTAL       25.9 s -> 66.3 s  (2.6x), and no longer biased against the
+# strong-demand bands that carry the actual gain information.
+#
+# Loosening to 0.8-1.0 m/s^3 buys 3.3-3.6x instead of 2.6x, and was NOT taken: it
+# puts the tau-mismatch residual at 0.16-0.20 m/s^2, the same size as the bias being
+# learned. Revisit only alongside a tighter PLANT_TAU.
+LEARN_MAX_JERK = 0.5        # m/s^3 on the filtered reference; above this the dwell resets
+# The filtered ramp rate stays above LEARN_MAX_JERK until the reference has settled
+# after a step, so this no longer has to cover the plant's settling time on its own
+# -- it is the margin AFTER the model has caught up.
+SETTLE_FRAMES = 100
+
+# --- the brake channel keeps the OLD dwell -----------------------------------
+# The ramp dwell above is safe for the pedal, PCM and aero learners because those
+# are small-rate EMAs (2e-4 and below): 2-3x the samples buys 2-3x the convergence
+# speed and nothing else. The brake learner is not an EMA. It is a PID integrator
+# at BRAKE_KI = 0.5 whose error is WEIGHTED BY BRAKE COMMAND, so it grows on the
+# ramp-in and barely unwinds on the release -- the ratchet the original dwell was
+# written against. Feeding it the extra ramp samples rails it.
+#
+# Measured, replaying the real tuner over the same four routes, time spent pinned
+# at the 1.60x ceiling:
+#     old dwell:  0.0 s / 0.0 s / 0.0 s / 0.0 s
+#     ramp dwell: 0.0 s / 0.0 s / 3.3 s / 10.7 s   (and 71.5 s at the 0.85 floor)
+# so the brake channel additionally requires the steady-target dwell it has always
+# used, and its behaviour is bit-for-bit what shipped. Revisit only by lowering
+# BRAKE_KI at the same time, and only against replay.
+STEADY_SETTLE_FRAMES = 150
+# Drift from the START of the window, NOT frame-to-frame. Compared against the
+# previous frame this is a 20 m/s^3 jerk threshold, and real planner targets ramp
+# far slower than that, so the gate would never close and the integrator would eat
+# pure actuator lag.
+STEADY_SETTLE_TOLERANCE = 0.20
 # The persisted estimate is a long EMA of the live value that only advances
 # while the live value is off its rails. An earlier version gated it on
 # |instantaneous error| < 0.3 instead, which is biased: with a real -0.35 m/s^2
@@ -425,13 +498,26 @@ class HondaDynamicTuner:
     # dwell tracking
     self.accel_target = 0.0
     self.accel_error = 0.0
-    self._dwell_ref = 0.0
+    # First-order model of the plant's own lag. Every learner compares aEgo
+    # against this rather than the raw target, so a plant that tracks perfectly
+    # but late reads as zero error instead of as a gain shortfall.
+    self.accel_ref_filter = FirstOrderFilter(0.0, PLANT_TAU, DT_CTRL)
+    self.accel_ref = 0.0
+    # The same model applied to the COMMANDED value (target + grade). Only the
+    # dwell reads this: it has to see a pitch transient as a transient, while the
+    # error above must stay measured against what the planner actually asked for.
+    self.cmd_ref_filter = FirstOrderFilter(0.0, PLANT_TAU, DT_CTRL)
+    self.cmd_ref = 0.0
     self._settle = 0
+    # the brake channel's separate, stricter dwell
+    self._dwell_ref = 0.0
+    self._settle_steady = 0
 
     # drive-mode tracking
     # (gear, econ); either element None means "not observable, do not gate on it"
     self.drive_mode: tuple = (None, None)
     self.mode_ok = True
+    self.long_active = False
 
   @staticmethod
   def _is_applicable(CP, CP_SP) -> bool:
@@ -529,16 +615,61 @@ class HondaDynamicTuner:
     mode_changed = mode != self.drive_mode
     self.drive_mode = mode
     self.mode_ok = self._mode_learnable(mode)
+    # stashed purely for the log line: a dwell-open percentage computed over
+    # disengaged frames is meaningless (target pins at 0.0, so the gate opens
+    # trivially) and that is exactly how the old telemetry read 88% while the
+    # learner was getting ~1 s of real samples per drive.
+    self.long_active = bool(CC.longActive)
 
-    if mode_changed or abs(commanded - self._dwell_ref) > SETTLE_TOLERANCE:
+    # The dwell now watches JERK, not drift from the window start. A sustained
+    # ramp is exactly what the lag model below is for, so admitting it is the
+    # point; what still has to be excluded is a transient fast enough that the
+    # +-0.2 s uncertainty on PLANT_TAU matters. A mode change is a step in the
+    # pedal map itself, which no lag model covers, so it resets as it always did.
+    # Advance the plant model first -- every frame, engaged or not, so it is
+    # already tracking when the dwell opens rather than converging from stale
+    # state. The dwell below keys off ITS ramp rate, so the two must describe the
+    # same frame.
+    # Filtered from `target`, NOT from `commanded`, for the same reason the error
+    # below has always been measured against the planner target: the grade term is
+    # added to the command precisely so the car still achieves `target`, so folding
+    # it into the reference would ask every learner to correct for a hill the pitch
+    # feedforward is already handling. The DWELL still watches `commanded` -- a
+    # pitch transient is a transient whatever it is added to.
+    prev_ref = self.cmd_ref
+    self.cmd_ref = _finite(self.cmd_ref_filter.update(commanded))
+    self.accel_ref = _finite(self.accel_ref_filter.update(target))
+
+    # The dwell watches the ramp rate of the FILTERED reference, not the raw
+    # frame-to-frame target jerk. That distinction is the whole gate. The planner
+    # target is noisy enough on its own that ~12% of frames exceed 0.5 m/s^3, so a
+    # raw-jerk dwell almost never strings together SETTLE_FRAMES clean frames and
+    # measures WORSE than the gate it replaces (2.3-5.8 s admitted against 25.9 s
+    # over the same four routes). The filtered rate is also the quantity that
+    # actually multiplies the tau error, and it has a second useful property: after
+    # a step it stays above the threshold until the reference itself has settled,
+    # so the dwell cannot start counting while the lag model is still catching up.
+    ramp = abs(self.cmd_ref - prev_ref) / DT_CTRL
+    if mode_changed or ramp > LEARN_MAX_JERK:
       self._settle = 0
-      self._dwell_ref = commanded
     else:
       self._settle = min(self._settle + 1, SETTLE_FRAMES)
+
+    # The brake channel's own, stricter dwell -- unchanged from what shipped. See
+    # STEADY_SETTLE_FRAMES for why that channel does not get the ramp dwell.
+    if mode_changed or abs(commanded - self._dwell_ref) > STEADY_SETTLE_TOLERANCE:
+      self._settle_steady = 0
+      self._dwell_ref = commanded
+    else:
+      self._settle_steady = min(self._settle_steady + 1, STEADY_SETTLE_FRAMES)
+
     # the planner target, NOT the commanded value: the command-magnitude gates
     # (LEARN_MIN_CMD) are about what the planner asked for, not about grade
     self.accel_target = target
-    self.accel_error = target - _finite(CS.out.aEgo)
+    # Lag-compensated. Every learner reads this, so the correction lands on the
+    # pedal, brake, PCM and aero channels at once and they cannot disagree about
+    # what "error" means.
+    self.accel_error = self.accel_ref - _finite(CS.out.aEgo)
 
     # Rule 5: NOTHING WOUND UP IN ONE ENGAGEMENT CROSSES INTO THE NEXT.
     # The brake integrator's only unwind paths are the stopping clamp and the
@@ -930,7 +1061,7 @@ class HondaDynamicTuner:
     # hydraulic lag. Without it a normal deceleration rails the gain in seconds.
     active = (apply_brake_frac > 0.0
               and self.accel_target < -LEARN_MIN_CMD
-              and self._settle >= SETTLE_FRAMES
+              and self._settle_steady >= STEADY_SETTLE_FRAMES
               and self.mode_ok
               and CC.longActive
               and CC.actuators.longControlState == LongCtrlState.pid
@@ -1006,7 +1137,9 @@ class HondaDynamicTuner:
         f"wind={v['wind_factor']:.3f} pitch={v['pitch']:+.4f} " +
         f"gasf={v['gas_factor']:.3f} gasa={v['gas_alpha']:+.4f} avg={v['average_factor']:.3f} " +
         f"spdf={v['speed_factor']:.2f} spda={v['speed_alpha']:+.2f} " +
-        f"settle={self._settle} stale={v['pose_stale']} werr={v['write_errors']} " +
+        f"settle={self._settle} settles={self._settle_steady} eng={int(v['long_active'])} " +
+        f"aref={v['accel_ref']:+.3f} aerr={v['accel_error']:+.3f} " +
+        f"stale={v['pose_stale']} werr={v['write_errors']} " +
         f"gear={v['drive_mode'][0] or '-'} econ={_econ_tag(v['drive_mode'][1])} " +
         f"modeok={int(v['mode_ok'])}")
     except Exception:
@@ -1030,5 +1163,8 @@ class HondaDynamicTuner:
       "pose_stale": self._pose_stale,
       "drive_mode": self.drive_mode,
       "mode_ok": self.mode_ok,
+      "long_active": self.long_active,
+      "accel_ref": self.accel_ref,
+      "accel_error": self.accel_error,
       "write_errors": self._writer.write_errors if self._writer is not None else -1,
     }

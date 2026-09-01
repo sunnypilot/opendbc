@@ -27,6 +27,8 @@ from opendbc.sunnypilot.car.honda.dynamic_tuning import (
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
+MAX_SETTLE_FRAMES = 1000   # generous cap for settle(); real waits are 135-177
+
 NIDEC_BRAKE_MAX = 256
 NIDEC_GAS_MAX = 198
 
@@ -105,9 +107,25 @@ def make_tuner(enabled=True, pcm_blend=False, params=None):
   return t
 
 
-def settle(t, cc, cs, n=SETTLE_FRAMES + 5):
-  for _ in range(n):
+def settle(t, cc, cs, n=None):
+  """Drive update_state until the dwell is actually open.
+
+  This used to run a fixed SETTLE_FRAMES + 5 frames, which was enough when the
+  dwell started counting from the first steady frame. It now counts only once the
+  lag model has caught up with the commanded step, so the wait depends on the step
+  size -- measured 135 frames for a 0.5 m/s^2 step, 156 for 1.0, 177 for 2.0.
+  Waiting on the real condition keeps the tests honest about that instead of
+  encoding a constant that has to be re-derived every time PLANT_TAU moves.
+  """
+  if n is not None:
+    for _ in range(n):
+      t.update_state(cc, cs)
+    return
+  for _ in range(MAX_SETTLE_FRAMES):
     t.update_state(cc, cs)
+    if t._settle >= SETTLE_FRAMES:
+      return
+  raise AssertionError(f"dwell never opened within {MAX_SETTLE_FRAMES} frames (settle={t._settle})")
 
 
 def base(v=10.0, target=0.0, a=0.0):
