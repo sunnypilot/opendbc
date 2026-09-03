@@ -117,7 +117,7 @@ class CarInterface(CarInterfaceBase):
 
     if ret.flags & ToyotaFlags.TSS2:
       ret.flags |= ToyotaFlags.RAISED_ACCEL_LIMIT.value
-      ret.stopAccel = -0.02
+      #ret.stopAccel = -0.02
 
       # Hybrids have much quicker longitudinal actuator response
       if ret.flags & ToyotaFlags.HYBRID.value:
