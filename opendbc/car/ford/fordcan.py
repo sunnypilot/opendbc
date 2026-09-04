@@ -1,3 +1,5 @@
+import math
+
 from opendbc.car import CanBusBase
 
 
@@ -93,6 +95,14 @@ def create_lat_ctl2_msg(packer, CAN: CanBus, mode: int, path_offset: float, path
 
   Frequency is 20Hz.
   """
+
+  # Saturate in wire coordinates before packing: unsigned field overflow wraps
+  # across zero and can turn a saturated path request into the opposite sign.
+  if not all(math.isfinite(value) for value in (path_offset, path_angle, curvature_rate)):
+    raise ValueError("LateralMotionControl2 path fields must be finite")
+  path_offset = max(-5.12, min(path_offset, 5.11))
+  path_angle = max(-0.5, min(path_angle, 0.5235))
+  curvature_rate = max(-0.001024, min(curvature_rate, 0.001023))
 
   values = {
     "LatCtl_D2_Rq": mode,                       # Mode: 0=None, 1=PathFollowingLimitedMode, 2=PathFollowingExtendedMode,

@@ -3,10 +3,11 @@ import random
 from types import SimpleNamespace
 import unittest
 
-from opendbc.can import CANParser
+from opendbc.can import CANPacker, CANParser
 from opendbc.car.structs import CarControl, CarControlSP, CarParams
 from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.ford.carcontroller import CarController
+from opendbc.car.ford.fordcan import CanBus, calculate_lat_ctl2_checksum, create_lat_ctl2_msg
 from opendbc.car.ford.interface import CarInterface
 from opendbc.car.ford.values import CAR, DBC, CarControllerParams, FW_QUERY_CONFIG, FW_PATTERN, get_platform_codes
 from opendbc.car.ford.fingerprints import FW_VERSIONS
@@ -143,6 +144,34 @@ class TestFordFW(unittest.TestCase):
 
 
 class TestFordPathActuators(unittest.TestCase):
+  def test_packer_rejects_nonfinite_path_fields(self):
+    packer = CANPacker("ford_lincoln_base_pt")
+    for field in ("path_offset", "path_angle", "curvature_rate"):
+      for value in (math.nan, math.inf, -math.inf):
+        with self.subTest(field=field, value=value):
+          fields = dict(path_offset=0.0, path_angle=0.0, curvature_rate=0.0)
+          fields[field] = value
+          with self.assertRaises(ValueError):
+            create_lat_ctl2_msg(packer, CanBus(fingerprint={0: {}}), 2, curvature=0.0, counter=0, **fields)
+
+  def test_packer_clamps_path_fields_without_wrapping_direction(self):
+    packer = CANPacker("ford_lincoln_base_pt")
+    parser = CANParser("ford_lincoln_base_pt", [("LateralMotionControl2", 0)], 0)
+    for offset, angle, rate, expected in (
+      (5.12, -0.5235, 0.001024, (5.11, -0.5, 0.001023)),
+      (-5.13, 0.524, -0.001025, (-5.12, 0.5235, -0.001024)),
+      (0.4, -0.1, -0.0002, (0.4, -0.1, -0.0002)),
+    ):
+      with self.subTest(offset=offset, angle=angle, rate=rate):
+        msg = create_lat_ctl2_msg(packer, CanBus(fingerprint={0: {}}), 2, offset, angle, 0.0, rate, 7)
+        parser.update([0, [msg]])
+        values = parser.vl["LateralMotionControl2"]
+        for signal, value in zip(("LatCtlPathOffst_L_Actl", "LatCtlPath_An_Actl", "LatCtlCrv_NoRate2_Actl"), expected, strict=True):
+          self.assertAlmostEqual(values[signal], value)
+        self.assertEqual(values["LatCtl_D2_Rq"], 2)
+        self.assertEqual(values["LatCtlPath_No_Cnt"], 7)
+        self.assertEqual(values["LatCtlPath_No_Cs"], calculate_lat_ctl2_checksum(2, 7, msg[1]))
+
   def test_lateral_path_round_trip(self):
     path = CarControlSP().fordLateralPath
     path.pathOffset = 0.3
