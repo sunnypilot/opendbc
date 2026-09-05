@@ -908,8 +908,13 @@ class HondaDynamicTuner:
       "pedal_gain": list(self.pedal_gain),
       "pedal_gain_converged": list(self.pedal_gain_converged),
       "wind_factor": self.wind_factor,
+      # BOTH as gains. brake_gain_converged is stored as an OFFSET (the param
+      # defaults to 0.0 so the toggle changes nothing until something is learned),
+      # but reporting the offset next to a gain made the log unreadable: a settled
+      # brake channel logged "brake=1.015 brakec=0.015", which reads as a
+      # disagreement rather than as the same number twice.
       "brake_gain": 1.0 + self.brake_pid_factor,
-      "brake_gain_converged": self.brake_gain_converged,
+      "brake_gain_converged": 1.0 + self.brake_gain_converged,
       "pitch": self.pitch,
       "pose_stale": self._pose_stale,
       "drive_mode": self.drive_mode,
