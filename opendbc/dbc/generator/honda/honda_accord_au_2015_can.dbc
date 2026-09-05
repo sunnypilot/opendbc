@@ -4,7 +4,7 @@ CM_ "IMPORT _nidec_common.dbc";
 CM_ "IMPORT _lkas_hud_4byte.dbc";
 CM_ "IMPORT _nidec_scm_group_a.dbc";
 CM_ "IMPORT _steering_sensors_c.dbc";
-CM_ "IMPORT _steering_control_a.dbc";
+CM_ "IMPORT _steering_control_e.dbc";
 CM_ "IMPORT _gearbox_legacy.dbc";
 
 BO_ 545 ECON_STATUS: 3 SCM
@@ -12,13 +12,4 @@ BO_ 545 ECON_STATUS: 3 SCM
  SG_ COUNTER : 21|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 19|4@0+ (1,0) [0|15] "" EON
 
-CM_ BO_ 545 "ECON state latch, 25 Hz on bus 0. NOT the 6-byte ECON_STATUS the other Honda
-DBCs describe (_bosch_2018.dbc, honda_civic_touring_2016_can.dbc) -- on this car it is 3
-bytes, so their ECON_ON at 23|1 happens to land in the right place but their ECON_ON_2 at
-37|2 and COUNTER/CHECKSUM at 45|2 / 43|4 are past the end of the frame. Layout verified
-against 628,053 logged bus-0 frames (routes 15646e8515eda1a7, 7 h): bytes 0-1 are always
-0x00 and byte 2 is exactly (COUNTER << 4) | (3 - COUNTER), giving the four payloads
-000003 / 000012 / 000021 / 000030 at 25.00% each. COUNTER decodes 0,1,2,3 exactly once
-across them, and ECON_ON reads 0 in all four -- i.e. ECON was simply off for the whole
-recording, which is why the bit looked dead. With ECON on the payloads become
-000083 / 000092 / 0000a1 / 0000b0.";
+
