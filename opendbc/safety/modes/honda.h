@@ -348,14 +348,18 @@ static safety_config honda_nidec_init(uint16_t param) {
   // 0x1FA is brake control, 0x30C is acc hud, 0x33D is lkas hud
   static CanMsg HONDA_N_TX_MSGS[] = {HONDA_N_COMMON_TX_MSGS};
 
-  // HONDA_ACCORD_9G_AU (Elesys radar) stock-ACC stand-down: 0x33D is the 4-byte LKAS_HUD (stock camera's is forwarded,
-  // so no relay check), plus SCM_BUTTONS on bus 2 (re-sent with MAIN_ON=0 to stand the stock ACC down).
+  // HONDA_ACCORD_9G_AU (Elesys radar) stock-ACC stand-down. NOTE 0x33D (LKAS_HUD) is deliberately NOT here:
+  // the stock camera keeps it and the panda forwards it, so openpilot never transmits it on this car.
+  // SCM_BUTTONS on bus 2 is re-sent with MAIN_ON=0 to stand the stock ACC down. 0x500 is SP_HUD_STATUS,
+  // a sunnypilot-only frame for an aftermarket module at the camera; no stock ECU sends or reads it, so
+  // there is no relay to check.
   static CanMsg HONDA_N_ELESYS_STANDDOWN_TX_MSGS[] = {
     {0xE4,  0, 5, .check_relay = true},
     {0x194, 0, 4, .check_relay = true},
     {0x1FA, 0, 8, .check_relay = false},
     {0x30C, 0, 8, .check_relay = true},
     {0x1A6, 2, 8, .check_relay = false},
+    {0x500, 2, 8, .check_relay = false},
   };
 
   // stand-down + comma pedal: same list plus GAS_COMMAND. Keep in sync with the list above.
@@ -365,6 +369,7 @@ static safety_config honda_nidec_init(uint16_t param) {
     {0x1FA, 0, 8, .check_relay = false},
     {0x30C, 0, 8, .check_relay = true},
     {0x1A6, 2, 8, .check_relay = false},
+    {0x500, 2, 8, .check_relay = false},
     {0x200, 0, 6, .check_relay = false},
   };
 

@@ -20,6 +20,7 @@ import numpy as np
 from opendbc.car import structs
 from opendbc.car.honda.interface import CarInterface
 from opendbc.car.honda.carcontroller import CarController
+from opendbc.car.honda.hondacan import honda_checksum
 from opendbc.car.honda.values import CAR, CarControllerParams
 from opendbc.sunnypilot.car.honda import dynamic_tuning as dt
 
@@ -264,6 +265,45 @@ hi = [g for v, g in seen.items() if v > 15.0]
 check("the interceptor still carries the request at high speed", max(hi) > 0.0, f"max hi {max(hi):.3f}")
 check("no crossfade cliff: high-speed command is not cut below the low-speed one",
       max(hi) >= max(lo) - 1e-9, f"hi {max(hi):.3f} vs lo {max(lo):.3f}")
+
+
+# --- 7. SP_HUD_STATUS reaches the wire ----------------------------------------
+#
+# openpilot does not send LKAS_HUD on this car -- the stock camera keeps 0x33D so its
+# RDM_HUD lane-departure popup and LKAS_PROBLEM survive. openpilot's own alert state goes
+# out on 0x500 instead, for an in-line module to merge. This guards the three things that
+# have to line up for that to work: the DBC entry, the call site, and the panda allowlist.
+
+print("\n[7] SP_HUD_STATUS side channel")
+cc_obj, *_ = build()
+cs = CS()
+cs.out.vEgo, cs.out.aEgo = 20.0, 0.0
+sp_frames = []
+lkas_frames = []
+for i in range(60):
+    _, sends = cc_obj.update(make_cc(0.5), CC_SP, cs, i * int(1e7))
+    for m in sends:
+        addr = m[0] if isinstance(m, tuple) else m.address
+        dat = m[1] if isinstance(m, tuple) else m.dat
+        bus = m[2] if isinstance(m, tuple) else m.src
+        if addr == 0x500:
+            sp_frames.append((bus, bytes(dat)))
+        if addr == 0x33D:
+            lkas_frames.append(addr)
+
+check("SP_HUD_STATUS is transmitted", len(sp_frames) > 0, f"{len(sp_frames)} frames")
+check("openpilot still does NOT send LKAS_HUD on this car", not lkas_frames,
+      f"{len(lkas_frames)} frames of 0x33D")
+if sp_frames:
+    bus, dat = sp_frames[0]
+    check("on bus 2, 8 bytes", bus == 2 and len(dat) == 8, f"bus={bus} dlc={len(dat)}")
+    bad = [d for _, d in sp_frames if (d[7] & 0x0F) != honda_checksum(0x500, None, bytearray(d))]
+    check("every frame carries a valid Honda checksum", not bad, f"{len(bad)} bad")
+    check("protocol version is 1", (dat[0] >> 4) & 0x0F == 1, f"{(dat[0] >> 4) & 0x0F}")
+    # set speed is km/h on the wire regardless of cluster units: 30 m/s -> 108
+    check("SET_SPEED is km/h, not the cluster's display units", dat[2] == 108, f"{dat[2]}")
+    counters = [(d[7] >> 4) & 0x03 for _, d in sp_frames]
+    check("COUNTER advances", len(set(counters)) > 1, f"{sorted(set(counters))}")
 
 
 print("\n" + "=" * 60)

@@ -403,6 +403,12 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
       if self.CP.carFingerprint not in HONDA_ELESYS:
         can_sends.extend(hondacan.create_lkas_hud(self.packer, self.CAN.lkas, self.CP, hud_control, CC.latActive,
                                                   steering_available, alert_steer_required, CS.lkas_hud, self.dashed_lanes))
+      else:
+        # The stock camera keeps 0x33D. This is the side channel an in-line module reads to
+        # merge openpilot's alerts into that frame -- see _sunnypilot_hud.dbc for why it is
+        # done this way round rather than by taking 0x33D over.
+        can_sends.append(hondacan.create_sp_hud_status(self.packer, self.CAN.camera, CC, hud_control,
+                                                       alert_steer_required, alert_fcw))
 
       if self.CP.openpilotLongitudinalControl:
         # TODO: combining with create_acc_hud block above will change message order and will need replay logs regenerated

@@ -1,0 +1,47 @@
+BO_ 1280 SP_HUD_STATUS: 8 ADAS
+ SG_ PROTOCOL_VERSION : 7|4@0+ (1,0) [0|15] "" STM
+ SG_ OP_ENABLED : 3|1@0+ (1,0) [0|1] "" STM
+ SG_ LAT_ACTIVE : 2|1@0+ (1,0) [0|1] "" STM
+ SG_ LONG_ACTIVE : 1|1@0+ (1,0) [0|1] "" STM
+ SG_ STEERING_REQUIRED : 0|1@0+ (1,0) [0|1] "" STM
+ SG_ LDW_LEFT : 15|1@0+ (1,0) [0|1] "" STM
+ SG_ LDW_RIGHT : 14|1@0+ (1,0) [0|1] "" STM
+ SG_ FCW : 13|1@0+ (1,0) [0|1] "" STM
+ SG_ SOLID_LANES : 12|1@0+ (1,0) [0|1] "" STM
+ SG_ DASHED_LANES : 11|1@0+ (1,0) [0|1] "" STM
+ SG_ LEAD_VISIBLE : 10|1@0+ (1,0) [0|1] "" STM
+ SG_ ALERT_LEVEL : 9|2@0+ (1,0) [0|3] "" STM
+ SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "km/h" STM
+ SG_ RESERVED_3 : 31|8@0+ (1,0) [0|255] "" STM
+ SG_ RESERVED_4 : 39|8@0+ (1,0) [0|255] "" STM
+ SG_ RESERVED_5 : 47|8@0+ (1,0) [0|255] "" STM
+ SG_ RESERVED_6 : 55|8@0+ (1,0) [0|255] "" STM
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" STM
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" STM
+
+CM_ BO_ 1280 "sunnypilot -> aftermarket HUD module. NOT a stock Honda message: 0x500 was
+chosen because it is unused on every bus of this car (81 distinct addresses observed across
+buses 0/1/2 over a 26 min route; the whole 0x500-0x5FF range is empty). Nothing in the car
+reads it -- it exists so an in-line module at the LKAS camera can merge openpilot's alert
+state into the stock LKAS_HUD it is already passing through, WITHOUT openpilot having to
+take over 0x33D. Taking over 0x33D would drop the camera's RDM_HUD lane-departure popup and
+blind carstate's LKAS_PROBLEM check, which on HONDA_ELESYS reads 0x33D off bus 0.
+
+CHECKSUM and COUNTER are the stock Honda 4-bit / 2-bit pair and are named exactly that so
+opendbc's packer fills them automatically -- see get_checksum_state() in opendbc/can/dbc.py,
+which keys off the honda_ DBC name prefix. A receiver validates them the same way it would
+any Honda frame.
+
+PROTOCOL_VERSION is 1. Bump it if the meaning of any existing bit changes; adding a signal
+in a RESERVED byte does not need a bump, since a v1 receiver ignores those bytes anyway.";
+
+CM_ SG_ 1280 STEERING_REQUIRED "openpilot wants hands on the wheel. This is openpilot's own
+driver-monitoring nag, NOT the stock camera's -- merge it into LKAS_HUD's STEERING_REQUIRED
+by OR, never by overwrite, or a genuine stock warning can be masked.";
+CM_ SG_ 1280 ALERT_LEVEL "0 none, 1 info, 2 warning, 3 critical. Severity hint for choosing a
+chime; the specific alert is in the flag bits.";
+CM_ SG_ 1280 SET_SPEED "0 when no set speed is available. 255 means 255 or above.";
+CM_ SG_ 1280 LDW_LEFT "Lane departure to the left. Distinct from the stock camera's RDM_HUD,
+which stays on 0x33D and is untouched by openpilot.";
+
+VAL_ 1280 ALERT_LEVEL 3 "critical" 2 "warning" 1 "info" 0 "none" ;

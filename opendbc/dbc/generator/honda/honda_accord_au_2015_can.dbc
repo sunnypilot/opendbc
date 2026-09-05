@@ -6,6 +6,7 @@ CM_ "IMPORT _nidec_scm_group_a.dbc";
 CM_ "IMPORT _steering_sensors_c.dbc";
 CM_ "IMPORT _steering_control_e.dbc";
 CM_ "IMPORT _gearbox_legacy.dbc";
+CM_ "IMPORT _sunnypilot_hud.dbc";
 
 BO_ 545 ECON_STATUS: 3 SCM
  SG_ ECON_ON : 23|1@0+ (1,0) [0|1] "" EON

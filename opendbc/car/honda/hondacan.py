@@ -252,6 +252,57 @@ def spam_buttons_command(packer, CAN, button_val, car_fingerprint):
   return packer.make_can_msg("SCM_BUTTONS", bus, values)
 
 
+SP_HUD_PROTOCOL_VERSION = 1
+
+
+def create_sp_hud_status(packer, bus, CC, hud_control, alert_steer_required, alert_fcw):
+  """openpilot's alert state, for an aftermarket module sitting in line with the LKAS camera.
+
+  This is NOT a stock Honda message and nothing in the car reads it. It exists so a module
+  that is already passing the camera's LKAS_HUD through can merge openpilot's alerts into
+  that frame, instead of openpilot taking 0x33D over itself. Taking 0x33D over would drop
+  the camera's RDM_HUD lane-departure popup, which openpilot has no road-departure logic to
+  reproduce, and would blind carstate's LKAS_PROBLEM check -- on HONDA_ELESYS that reads
+  0x33D off bus 0, so openpilot would end up reading back its own frame.
+
+  CHECKSUM and COUNTER are filled by the packer, because they are named exactly that in a
+  honda_ DBC. See _sunnypilot_hud.dbc.
+  """
+  # 3 critical, 2 warning, 1 info, 0 none. A severity hint only -- which alert it is lives
+  # in the flag bits, so a receiver never has to infer one from the other.
+  if alert_fcw:
+    alert_level = 3
+  elif alert_steer_required or hud_control.leftLaneDepart or hud_control.rightLaneDepart:
+    alert_level = 2
+  elif CC.enabled:
+    alert_level = 1
+  else:
+    alert_level = 0
+
+  values = {
+    'PROTOCOL_VERSION': SP_HUD_PROTOCOL_VERSION,
+    'OP_ENABLED': CC.enabled,
+    'LAT_ACTIVE': CC.latActive,
+    'LONG_ACTIVE': CC.longActive,
+    'STEERING_REQUIRED': alert_steer_required,
+    'LDW_LEFT': hud_control.leftLaneDepart,
+    'LDW_RIGHT': hud_control.rightLaneDepart,
+    'FCW': alert_fcw,
+    'SOLID_LANES': CC.latActive,
+    'DASHED_LANES': hud_control.lanesVisible and not CC.latActive,
+    'LEAD_VISIBLE': hud_control.leadVisible,
+    'ALERT_LEVEL': alert_level,
+    # ALWAYS km/h, never the user's display units. hud_v_cruise in carcontroller.py is
+    # setSpeed / v_cruise_factor, which is mph when the cluster is imperial -- putting that
+    # on the wire would make the signal mean two different things depending on a setting the
+    # receiver cannot see. Converted here so the DBC unit is simply true.
+    # 0 means "no set speed available"; the value saturates rather than wrapping, so a
+    # receiver never sees a plausible-but-wrong low speed.
+    'SET_SPEED': max(0, min(255, int(hud_control.setSpeed * CV.MS_TO_KPH))) if hud_control.speedVisible else 0,
+  }
+  return packer.make_can_msg("SP_HUD_STATUS", bus, values)
+
+
 def honda_checksum(address: int, sig, d: bytearray) -> int:
   s = 0
   extended = address > 0x7FF
