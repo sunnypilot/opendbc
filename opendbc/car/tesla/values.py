@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
+import re
+
 from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms
 from opendbc.car.lateral import AngleSteeringLimitsVM
 from opendbc.car.structs import CarParams, CarState
@@ -69,6 +71,46 @@ class CAR(Platforms):
   )
 
 
+TESLA_EPS_FW_RE = re.compile(
+  rb'^.+,(?P<platform>[EYX])(?P<variant_code>\d?[A-Z]*\d{3})\.(?P<software_major>\d+)(?:\.\d+)?$'
+)
+
+
+def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
+  """Identify an otherwise unknown Tesla EPS FW by its embedded platform code.
+
+  Tesla's EPS response is the only queried ECU and E/Y/X is the only portion
+  whose meaning is established. Requiring address 0x730 and exactly one valid
+  platform keeps this fallback narrower than a generic CAN fingerprint match.
+  """
+  del vin, offline_fw_versions
+  platforms = set()
+  for (address, sub_address), versions in live_fw_versions.items():
+    if address != 0x730 or sub_address is not None:
+      continue
+    for version in versions:
+      match = TESLA_EPS_FW_RE.fullmatch(version)
+      if match is not None:
+        platforms.add(match["platform"])
+
+  # This fallback is intentionally limited to Model Y HW4/Juniper. Extend it
+  # to E/X only after those refresh platforms have equivalent validation.
+  return {str(CAR.TESLA_MODEL_Y)} if platforms == {b"Y"} else set()
+
+
+def is_fsd_14_fw(candidate, fw_version: bytes) -> bool:
+  match = TESLA_EPS_FW_RE.fullmatch(fw_version)
+  if match is None or int(match["software_major"]) < 4:
+    return False
+
+  variant = match["variant_code"]
+  if candidate == CAR.TESLA_MODEL_3:
+    return variant.startswith(b"4H") and variant.endswith(b"015")
+  if candidate == CAR.TESLA_MODEL_Y:
+    return variant.startswith(b"4") and variant.endswith(b"003")
+  return False
+
+
 FW_QUERY_CONFIG = FwQueryConfig(
   fw_version_regex=br".+,[EYX]\d?[A-Z]*\d{3}\.\d+(?:\.\d+)?",
   requests=[
@@ -77,7 +119,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.SUPPLIER_SOFTWARE_VERSION_RESPONSE],
       bus=0,
     )
-  ]
+  ],
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
 
 # Cars with this EPS FW have FSD 14 and use TeslaFlags.FSD_14
