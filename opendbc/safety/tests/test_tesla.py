@@ -70,7 +70,7 @@ class TestTeslaSafetyBase(common.CarSafetyTest, common.AngleSteeringSafetyTest, 
     self.define = CANDefine("tesla_model3_party")
     self.acc_states = {d: v for v, d in self.define.dv["DAS_control"]["DAS_accState"].items()}
     self.autopark_states = {d: v for v, d in self.define.dv["DI_state"]["DI_autoparkState"].items()}
-    self.active_autopark_states = [self.autopark_states[s] for s in ('ACTIVE', 'COMPLETE', 'SELFPARK_STARTED')]
+    self.active_autopark_states = [self.autopark_states[s] for s in ('STARTED', 'ACTIVE', 'COMPLETE', 'PAUSED', 'RESUMED', 'SELFPARK_STARTED')]
 
     self.steer_control_types = {d: v for v, d in self.define.dv["DAS_steeringControl"]["DAS_steeringControlType"].items()}
 
@@ -295,6 +295,26 @@ class TestTeslaSafetyBase(common.CarSafetyTest, common.AngleSteeringSafetyTest, 
     self.assertEqual(1, self._rx(lkas_msg_cam))
     self.assertEqual(0, self.safety.safety_fwd_hook(2, lkas_msg_cam.addr))
     self.assertFalse(self._tx(no_lkas_msg))
+
+    # A confirmed stock FSD steering session owns longitudinal control too.
+    stock_long_msg = self._long_control_msg(10, acc_state=self.acc_states["ACC_ON"], bus=2)
+    openpilot_long_msg = self._long_control_msg(10, acc_state=self.acc_states["ACC_CANCEL_GENERIC_SILENT"])
+    self.assertEqual(0, self.safety.safety_fwd_hook(2, stock_long_msg.addr))
+    self.assertFalse(self._tx(openpilot_long_msg))
+
+  def test_stock_emergency_lkas_passthrough(self):
+    no_lkas_msg = self._angle_cmd_msg(0, state=False)
+    emergency_msg_cam = self._angle_cmd_msg(0, state=3, bus=2)
+
+    # Emergency lane departure avoidance may preempt openpilot lateral control.
+    self.safety.set_controls_allowed(True)
+    self.assertEqual(1, self._rx(emergency_msg_cam))
+    self.assertEqual(0, self.safety.safety_fwd_hook(2, emergency_msg_cam.addr))
+    self.assertFalse(self._tx(no_lkas_msg))
+
+    # It does not take ownership of longitudinal control.
+    openpilot_long_msg = self._long_control_msg(10, acc_state=self.acc_states["ACC_CANCEL_GENERIC_SILENT"])
+    self.assertTrue(self._tx(openpilot_long_msg))
 
   def test_angle_cmd_when_enabled(self):
     # We properly test lateral acceleration and jerk below

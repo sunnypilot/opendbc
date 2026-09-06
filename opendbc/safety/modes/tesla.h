@@ -24,8 +24,9 @@ static bool tesla_stock_aeb = false;
 // TODO: Only LKAS (non-emergency) is currently supported since we've only seen it
 static bool tesla_stock_lkas = false;
 static bool tesla_stock_lkas_prev = false;
+static bool tesla_stock_emergency_lkas = false;
 
-// Only Summon is currently supported due to Autopark not setting Autopark state properly
+// Stock Autopark/Summon owns control for the full confirmed maneuver.
 static bool tesla_autopark = false;
 static bool tesla_autopark_prev = false;
 
@@ -173,8 +174,11 @@ static void tesla_rx_hook(const CANPacket_t *msg) {
     if (msg->addr == 0x286U) {
       // Autopark state
       int autopark_state = (msg->data[3] >> 1) & 0x0FU;  // DI_autoparkState
-      bool tesla_autopark_now = (autopark_state == 3) ||  // ACTIVE
+      bool tesla_autopark_now = (autopark_state == 2) ||  // STARTED
+                                (autopark_state == 3) ||  // ACTIVE
                                 (autopark_state == 4) ||  // COMPLETE
+                                (autopark_state == 5) ||  // PAUSED
+                                (autopark_state == 7) ||  // RESUMED
                                 (autopark_state == 9);    // SELFPARK_STARTED
 
       // Only consider rising edges while controls are not allowed
@@ -222,6 +226,7 @@ static void tesla_rx_hook(const CANPacket_t *msg) {
     if (msg->addr == 0x488U) {
       int steering_control_type = msg->data[2] >> 6;
       bool tesla_stock_lkas_now = steering_control_type == tesla_get_steer_ctrl_type(2);  // "LANE_KEEP_ASSIST"
+      tesla_stock_emergency_lkas = steering_control_type == 3;  // "EMERGENCY_LANE_KEEP"
 
       // Only consider rising edges while controls are not allowed
       if (tesla_stock_lkas_now && !tesla_stock_lkas_prev && !(controls_allowed || controls_allowed_lateral)) {
@@ -286,14 +291,21 @@ static bool tesla_tx_hook(const CANPacket_t *msg) {
       violation = true;
     }
 
-    if (tesla_stock_lkas) {
-      // Don't allow any steering commands when stock LKAS is active
+    if (tesla_stock_lkas || tesla_stock_emergency_lkas) {
+      // Don't allow any steering commands when stock LKAS or emergency lane
+      // departure avoidance is active.
       violation = true;
     }
   }
 
   // DAS_control: longitudinal control message
   if (msg->addr == 0x2b9U) {
+    // Stock FSD owns both lateral and longitudinal control during a confirmed
+    // stock-LKAS passthrough session.
+    if (tesla_stock_lkas) {
+      violation = true;
+    }
+
     // No AEB events may be sent by openpilot
     int aeb_event = msg->data[2] & 0x03U;
     if (aeb_event != 0) {
@@ -349,12 +361,12 @@ static bool tesla_fwd_hook(int bus_num, int addr) {
       }
 
       // DAS_steeringControl
-      if ((addr == 0x488) && !tesla_stock_lkas) {
+      if ((addr == 0x488) && !tesla_stock_lkas && !tesla_stock_emergency_lkas) {
         block_msg = true;
       }
 
       // DAS_control
-      if (tesla_longitudinal && (addr == 0x2b9) && !tesla_stock_aeb) {
+      if (tesla_longitudinal && (addr == 0x2b9) && !tesla_stock_aeb && !tesla_stock_lkas) {
         block_msg = true;
       }
     }
@@ -405,6 +417,7 @@ static safety_config tesla_init(uint16_t param) {
   tesla_stock_aeb = false;
   tesla_stock_lkas = false;
   tesla_stock_lkas_prev = false;
+  tesla_stock_emergency_lkas = false;
   // we need to assume Autopark/Summon on startup since DI_state is a low freq msg.
   // this is so that we don't fault if starting while these systems are active
   tesla_autopark = true;

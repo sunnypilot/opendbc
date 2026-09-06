@@ -4,9 +4,10 @@ import unittest
 from opendbc.car import gen_empty_fingerprint
 from opendbc.car.structs import CarParams
 from opendbc.car.tesla.interface import CarInterface
+from opendbc.car.tesla.carstate import CarState
 from opendbc.car.tesla.fingerprints import FW_VERSIONS
 from opendbc.car.tesla.radar_interface import RADAR_START_ADDR
-from opendbc.car.tesla.values import CAR, FSD_14_FW
+from opendbc.car.tesla.values import CAR, FSD_14_FW, is_fsd_14_fw, match_fw_to_car_fuzzy
 
 Ecu = CarParams.Ecu
 
@@ -84,6 +85,21 @@ class TestTeslaFingerprint(unittest.TestCase):
           and int(m['software_major']) >= 4
         )
         assert is_fsd_14 == expected, f"{fw}"
+        assert is_fsd_14_fw(car_model, fw) == expected, f"{fw}"
+
+    # A newer OTA with the same evidence-backed platform/variant structure
+    # should not require another exact-list entry.
+    assert is_fsd_14_fw(CAR.TESLA_MODEL_Y, b'TeMYG4_Main_0.0.0 (99),Y4003.99.1')
+
+  def test_unknown_model_y_hw4_fuzzy_fw(self):
+    live_fw = {(0x730, None): {b'TeMYG4_Main_0.0.0 (99),Y4003.99.1'}}
+    assert match_fw_to_car_fuzzy(live_fw, "", {}) == {str(CAR.TESLA_MODEL_Y)}
+
+  def test_tesla_fuzzy_fw_rejects_wrong_address_or_mixed_platforms(self):
+    fw_y = b'TeMYG4_Main_0.0.0 (99),Y4003.99.1'
+    fw_e = b'TeMYG4_Main_0.0.0 (99),E4H015.99.1'
+    assert match_fw_to_car_fuzzy({(0x731, None): {fw_y}}, "", {}) == set()
+    assert match_fw_to_car_fuzzy({(0x730, None): {fw_y, fw_e}}, "", {}) == set()
 
   def test_radar_detection(self):
     # Test radar availability detection for cars with radar DBC defined
@@ -102,3 +118,24 @@ class TestTeslaFingerprint(unittest.TestCase):
         fingerprint[1][RADAR_START_ADDR] = 8
       CP = CarInterface.get_params(CAR.TESLA_MODEL_X, fingerprint, [], False, False, False)
       assert CP.radarUnavailable  # Always unavailable since no radar DBC
+
+
+class TestTeslaNativeSteeringArbitration(unittest.TestCase):
+  def setUp(self):
+    # The state helpers only depend on these arbitration fields.
+    self.cs = CarState.__new__(CarState)
+    self.cs.stock_lkas_passthrough = False
+    self.cs.stock_lkas_prev = False
+
+  def test_stock_lkas_before_engagement_starts_passthrough(self):
+    self.cs.update_stock_lkas_state(True, cruise_was_enabled=False)
+    self.assertTrue(self.cs.stock_lkas_passthrough)
+
+  def test_stock_lkas_cannot_take_over_after_engagement(self):
+    self.cs.update_stock_lkas_state(True, cruise_was_enabled=True)
+    self.assertFalse(self.cs.stock_lkas_passthrough)
+
+  def test_stock_lkas_release_ends_passthrough(self):
+    self.cs.update_stock_lkas_state(True, cruise_was_enabled=False)
+    self.cs.update_stock_lkas_state(False, cruise_was_enabled=True)
+    self.assertFalse(self.cs.stock_lkas_passthrough)
