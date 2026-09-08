@@ -50,6 +50,10 @@ class FordFlags(IntFlag):
   CANFD = 1
 
 
+class FordFlagsSP(IntFlag):
+  MODEL_ACTION = 1  # selected-action controller, with 20Hz LMC2 transmission
+
+
 class RADAR:
   DELPHI_ESR = 'ford_fusion_2018_adas'
   DELPHI_MRR = 'FORD_CADS'

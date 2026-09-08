@@ -3,7 +3,7 @@ import numpy as np
 from opendbc.can import CANPacker
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY, Bus, DT_CTRL, structs
 from opendbc.car.ford import fordcan
-from opendbc.car.ford.values import CarControllerParams, FordFlags
+from opendbc.car.ford.values import CarControllerParams, FordFlags, FordFlagsSP
 from opendbc.car.interfaces import CarControllerBase, V_CRUISE_MAX
 
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -56,8 +56,10 @@ class CarController(CarControllerBase):
       can_sends.append(fordcan.create_button_msg(self.packer, self.CAN.camera, CS.buttons_stock_values, tja_toggle=True))
 
     ### lateral control ###
-    # LateralMotionControl2 accepts the full 100Hz control rate; legacy LateralMotionControl remains at 20Hz.
-    steer_step = CarControllerParams.LMC2_STEP if self.CP.flags & FordFlags.CANFD else CarControllerParams.STEER_STEP
+    # Sample the selected-action controller's latest 100Hz output at 20Hz.
+    steer_step = CarControllerParams.STEER_STEP
+    if self.CP.flags & FordFlags.CANFD and not self.CP_SP.flags & FordFlagsSP.MODEL_ACTION:
+      steer_step = CarControllerParams.LMC2_STEP
     if (self.frame % steer_step) == 0:
       path_offset = 0.0
       path_angle = 0.0
@@ -71,8 +73,9 @@ class CarController(CarControllerBase):
         apply_curvature = float(path.curvature)
         curvature_rate = float(path.curvatureRate)
         if self.CP.flags & FordFlags.CANFD:
+          # Preserve Panda's existing per-message C2 bound; selected-action C2 is zero.
           apply_curvature = CarControllerParams.CURVATURE_LIMITS.apply_limits(
-            apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0.0, True, steer_step,
+            apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0.0, True, CarControllerParams.LMC2_STEP,
           )
 
       self.apply_curvature_last = apply_curvature
