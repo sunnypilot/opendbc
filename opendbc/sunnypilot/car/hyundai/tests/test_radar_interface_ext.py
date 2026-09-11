@@ -4,8 +4,10 @@ from opendbc.testing import parameterized
 
 from opendbc.car import CanData
 from opendbc.car.car_helpers import interfaces
+from opendbc.car.hyundai.radar_interface import CANFD_RADAR_MSG_COUNT, CANFD_RADAR_START_ADDR
 from opendbc.car.hyundai.values import CAR, HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 ESCC_CARS = [
   (CAR.HYUNDAI_ELANTRA_2021, ESCC_MSG),
@@ -119,3 +121,42 @@ class TestRadarInterfaceExt(unittest.TestCase):
       cans = [(0, [CanData(0, b'', 0) for _ in range(5)])]
       rr = RD.update(cans)
       self.assertTrue(rr is None or len(rr.errors) > 0)
+
+  def test_canfd_group1_radar_tracks(self):
+    RD, CP, CP_SP = self._setup_platform(CAR.HYUNDAI_IONIQ_5, additional_flags=HyundaiFlags.CANFD_CAMERA_SCC.value)
+    CP_SP.flags |= HyundaiFlagsSP.CANFD_RADAR_TRACKS.value
+    CP.radarUnavailable = False
+    RD = interfaces[CAR.HYUNDAI_IONIQ_5].RadarInterface(CP, CP_SP)
+
+    self.assertFalse(RD.use_radar_interface_ext)
+    self.assertEqual(RD.trigger_msg, 0x21f)
+
+    active_bank1 = bytes.fromhex("a727dd0a2413300651f306553d0f000100000000000000000000000000000000")
+    active_bank2 = bytes.fromhex("0fbddd000000000000000000000000000000000a221130f3d0e1f1913de75f02")
+    payloads = {0x210: active_bank1, 0x213: active_bank2}
+    packets = [(addr, payloads.get(addr, bytes(32)), 1)
+               for addr in range(CANFD_RADAR_START_ADDR, CANFD_RADAR_START_ADDR + CANFD_RADAR_MSG_COUNT)]
+    radar_data = RD.update([0, packets])
+
+    self.assertIsNotNone(radar_data)
+    self.assertEqual(len(radar_data.points), 2)
+    point_bank2, point = sorted(radar_data.points, key=lambda p: p.dRel)
+    self.assertAlmostEqual(point.dRel, 42.45, places=2)
+    self.assertAlmostEqual(point.yRel, 5.55, places=2)
+    self.assertAlmostEqual(point.vRel, -6.83, places=2)
+    self.assertAlmostEqual(point_bank2.dRel, 23.2, places=2)
+    self.assertAlmostEqual(point_bank2.yRel, -11.3, places=2)
+    self.assertAlmostEqual(point_bank2.vRel, -6.23, places=2)
+
+  def test_canfd_group1_radar_tracks_detection(self):
+    CarInterface = interfaces[CAR.HYUNDAI_IONIQ_5]
+    fingerprint = {bus: {} for bus in range(8)}
+    fingerprint[1] = {addr: 32 for addr in range(CANFD_RADAR_START_ADDR,
+                                                 CANFD_RADAR_START_ADDR + CANFD_RADAR_MSG_COUNT)}
+
+    CP = CarInterface.get_params(CAR.HYUNDAI_IONIQ_5, fingerprint, [], True, False, False)
+    CP.radarUnavailable = True
+    CP_SP = CarInterface.get_params_sp(CP, CAR.HYUNDAI_IONIQ_5, fingerprint, [], True, False, False)
+
+    self.assertTrue(CP_SP.flags & HyundaiFlagsSP.CANFD_RADAR_TRACKS)
+    self.assertFalse(CP.radarUnavailable)
