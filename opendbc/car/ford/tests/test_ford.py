@@ -194,6 +194,7 @@ class TestFordPathActuators(unittest.TestCase):
 
     CC = CarControl(latActive=True)
     CC_SP = CarControlSP()
+    CC_SP.fordLateralPath.enabled = True
     CC_SP.fordLateralPath.valid = True
     CC_SP.fordLateralPath.pathOffset = 0.4
     CC_SP.fordLateralPath.pathAngle = 0.1
@@ -264,6 +265,7 @@ class TestFordPathActuators(unittest.TestCase):
 
     CC = CarControl(latActive=True)
     CC_SP = CarControlSP()
+    CC_SP.fordLateralPath.enabled = True
     CC_SP.fordLateralPath.valid = True
     CC_SP.fordLateralPath.pathOffset = 0.4
     CC_SP.fordLateralPath.pathAngle = 0.1

@@ -144,6 +144,7 @@ class FordLateralPath:
   curvature: float = auto_field()
   curvatureRate: float = auto_field()
   valid: bool = auto_field()
+  enabled: bool = auto_field()
 
 
 @auto_dataclass
