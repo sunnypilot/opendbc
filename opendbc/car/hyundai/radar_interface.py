@@ -162,7 +162,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
         ))
 
     for track in tracks:
-      point_key = track["point_key"]
+      point_key = int(track["point_key"])
       confirmed = track["age"] >= CANFD_RADAR_CONFIRMED_AGE
       corroborated = track is scc_match and track["age"] >= CANFD_RADAR_CORROBORATED_AGE
       valid = confirmed or corroborated
