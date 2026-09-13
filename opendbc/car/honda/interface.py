@@ -238,6 +238,21 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560], [0, 2560]]
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    if candidate in HONDA_ELESYS:
+      # FORK(HONDA_ELESYS): the steering request does not go out on CAN to a camera-fed EPS.
+      # It goes to the gateway board, which retimes it onto the car's 9600-baud LKAS serial
+      # link at the camera's own cadence, and the EPS then runs its own torque loop on it.
+      # That whole chain is measured, not guessed: openpilot's own delay learner (liveDelay)
+      # converged to 0.383 s on route 000000d3 and 0.377 s on 000000d4, both "estimated",
+      # calPerc 100, 5 valid blocks, estimate std 0.003 s. The 0.15 s the Honda default
+      # leaves here is the camera-CAN number and is 2.5x short.
+      #
+      # lagd normally overrides this frame by frame, so on a warm device this line changes
+      # nothing. It is load-bearing in the two places lagd is not: the seconds after a boot
+      # before the learner has blocks, and a device with the LagdToggle off, where
+      # LagdToggle.update() returns CP.steerActuatorDelay + the user's offset verbatim.
+      ret.steerActuatorDelay = 0.38
+
     if candidate == CAR.ACURA_RDX_3G_MMR:
       CarControllerParams.BOSCH_GAS_LOOKUP_V = [0, 2000] # alpha longitudinal pedal tuning
       ret.dashcamOnly = is_release  # TODO: release from dashcam when there's enough driving data for torqued/paramsd to converge
