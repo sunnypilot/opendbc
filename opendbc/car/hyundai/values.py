@@ -636,7 +636,8 @@ class CAR(Platforms):
   )
   KIA_EV6_2025 = HyundaiCanFDPlatformConfig(
     [
-      HyundaiCarDocs("Kia EV6 (with HDA I) 2025", "Highway Driving Assist I", car_parts=CarParts.common([CarHarness.hyundai_p]))
+      HyundaiCarDocs("Kia EV6 (with HDA I) 2025", "Highway Driving Assist I", car_parts=CarParts.common([CarHarness.hyundai_p])),
+      HyundaiCarDocs("Kia EV6 (with HDA II) 2025-26", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))
     ],
     CarSpecs(mass=2055, wheelbase=2.9, steerRatio=16, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,

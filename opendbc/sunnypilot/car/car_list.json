@@ -2168,6 +2168,17 @@
     ],
     "package": "Highway Driving Assist II"
   },
+  "Kia EV6 (with HDA II) 2025-26": {
+    "platform": "KIA_EV6_2025",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "EV6 (with HDA II)",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Highway Driving Assist II"
+  },
   "Kia EV6 (without HDA II) 2022-24": {
     "platform": "KIA_EV6",
     "make": "Kia",
