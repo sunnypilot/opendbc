@@ -253,6 +253,20 @@ class CarInterface(CarInterfaceBase):
       # LagdToggle.update() returns CP.steerActuatorDelay + the user's offset verbatim.
       ret.steerActuatorDelay = 0.38
 
+      # FORK(HONDA_ELESYS): keep lateral alive at a stop so the cluster keeps its
+      # lane graphic, which is what the stock camera does. controlsd computes
+      #   standstill = abs(vEgo) <= max(minSteerSpeed, 0.3) or CS.standstill
+      #   CC.latActive = ... and (not standstill or CP.steerAtStandstill)
+      # so with this False, latActive - and therefore STEER_TORQUE_REQUEST on
+      # 0x0E4 - drops at every red light, the gateway board reads that as "not
+      # armed" and blanks 0x33D. Stock keeps the dashed lanes up throughout.
+      #
+      # It does NOT let anything steer at a standstill. The board has its own
+      # guard: below GW_STANDSTILL_CPH (5.00 km/h) it raises the engage-guard
+      # inhibit, target is zero by construction, and 0x704 reports STANDSTILL.
+      # This only keeps openpilot's REQUEST alive so the graphic can follow it.
+      ret.steerAtStandstill = True
+
     if candidate == CAR.ACURA_RDX_3G_MMR:
       CarControllerParams.BOSCH_GAS_LOOKUP_V = [0, 2000] # alpha longitudinal pedal tuning
       ret.dashcamOnly = is_release  # TODO: release from dashcam when there's enough driving data for torqued/paramsd to converge
