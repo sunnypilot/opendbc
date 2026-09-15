@@ -125,6 +125,7 @@ bool get_controls_allowed_lateral(void);
 bool get_controls_requested_lateral(void);
 void set_current_safety_param_sp(uint16_t param);
 uint16_t get_current_safety_param_sp(void);
+uint8_t get_hyundai_angle_model_id(void);
 bool get_enable_mads(void);
 bool get_disengage_lateral_on_brake(void);
 bool get_pause_lateral_on_brake(void);
