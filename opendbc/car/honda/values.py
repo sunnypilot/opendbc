@@ -427,6 +427,18 @@ DBC = CAR.create_dbc_map()
 
 STEER_THRESHOLD = {
   # default is 1200, overrides go here
+  # FORK(HONDA_ACCORD_9G_AU): 600, the same as the 11G Accord and six other
+  # modern Hondas above. Measured on route 000000d9, 21 preLaneChange windows:
+  # the 11 that armed a lane change peaked at 1556 to 5839 counts in the wanted
+  # direction, and of the 10 that did not, six peaked between 600 and 1225 - one
+  # of them 937 after NINE SECONDS of the driver trying at 60 km/h. The gap
+  # between the two groups is wide and empty, so 600 catches the weak nudges
+  # without touching a single one that already worked.
+  # The reason this car needs it is the gateway: below the EPS's 50 km/h floor
+  # the wheel is unassisted and a nudge easily passes 1200, which is why the
+  # driver found lane changes working at low speed and failing at cruise. With
+  # 160 counts of assist in the wheel the same nudge lands around 900.
+  CAR.HONDA_ACCORD_9G_AU: 600,
   CAR.ACURA_RDX: 400,
   CAR.HONDA_CRV_EU: 400,
   CAR.HONDA_ACCORD_11G: 600,
