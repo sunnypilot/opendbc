@@ -177,6 +177,9 @@ class CarControlSP:
 @auto_dataclass
 class CarStateSP:
   speedLimit: float = auto_field()
+  # HONDA_ELESYS: steeringTorque is latched while the EPS is under LKAS control, so no
+  # consumer may read driver intent out of it. See docs/SP_GATEWAY_FIRMWARE.md.
+  driverTorqueStale: bool = auto_field()
   linbusGateway: 'CarStateSP.LinbusGateway' = field(default_factory=lambda: CarStateSP.LinbusGateway())
 
   @auto_dataclass

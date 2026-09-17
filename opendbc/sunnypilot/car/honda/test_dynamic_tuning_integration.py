@@ -731,6 +731,111 @@ check("its counter is NOT named COUNTER (a honda_ DBC would enforce continuity a
 check("it has no CHECKSUM signal (the board computes no Honda checksum for it)",
       "CHECKSUM" not in sigs13)
 
+# --- 14. A latched STEER_TORQUE_SENSOR must not be read as driver intent ---------
+#
+# While the EPS is under LKAS control it stops updating STEER_TORQUE_SENSOR on 0x18F. The
+# frame keeps arriving at 100 Hz with a rolling counter and a good checksum, so nothing in
+# the CAN layer notices; carState.steeringTorque simply holds the value it had when the
+# gateway engaged. Routes dd/de/df: frozen for up to 946 s at a time while the wheel moved,
+# 41-69 % of each drive, canValid 1.00 throughout.
+#
+# Two failure modes came out of that, depending on what it latched at:
+#   |latched| > 1200  -> steeringPressed stuck True  (integrator frozen for the whole
+#                        engagement, driver monitoring told the driver is holding the wheel,
+#                        torqued and lagd starved, "take over" alert silenced)
+#   |latched| < 1200  -> steeringPressed stuck False (openpilot cannot see the driver fight
+#                        it at all -- route dd, 946 s latched at -528)
+
+print("\n[14] latched STEER_TORQUE_SENSOR -> driverTorqueStale")
+CP10 = CarInterface.get_non_essential_params(PLATFORM)
+CP10_SP = CarInterface.get_non_essential_params_sp(CP10, PLATFORM)
+CI10 = CarInterface(CP10, CP10_SP)
+packer10 = CANPacker(DBC[PLATFORM][Bus.pt])
+
+
+def steer_step(i, torque, control_active):
+  m = packer10.make_can_msg("STEER_STATUS", 0, {"STEER_TORQUE_SENSOR": torque,
+                                                "STEER_CONTROL_ACTIVE": control_active})
+  frames = [m if isinstance(m, tuple) else (m.address, bytes(m.dat), m.src)]
+  return CI10.update([((i + 1) * int(1e7), frames)])
+
+
+_frame10 = [0]
+
+
+def hold(torque, control_active, frames=120, moving=False):
+  """Feed `frames` of STEER_STATUS and return the final (CarState, CarStateSP)."""
+  out = None
+  for _ in range(frames):
+    _frame10[0] += 1
+    value = torque + (_frame10[0] % 7) * 13 if moving else torque
+    out = steer_step(_frame10[0], value, control_active)
+  return out
+
+
+# warm-up: lazy VLDict registration drops the first frame of any message (see section 9)
+hold(0, 0, frames=1)
+
+# a real driver holding a constant torque, NOT under LKAS control: never stale
+cs10, cs_sp10 = hold(2000, 0)
+check("constant torque with STEER_CONTROL_ACTIVE=0 is NOT stale", not cs_sp10.driverTorqueStale)
+check("...and steeringPressed is left alone", cs10.steeringPressed)
+
+# LKAS takes over and the value latches at the same 2000
+cs10, cs_sp10 = hold(2000, 1)
+check("latched torque under LKAS control IS stale", cs_sp10.driverTorqueStale)
+check("steeringPressed is forced False rather than stuck True", not cs10.steeringPressed,
+      "stuck True is what froze the integrator for 946 s on route dd")
+
+# the EPS keeps reporting properly while under LKAS control (a fixed board): not stale
+cs10, cs_sp10 = hold(2000, 1, moving=True)
+check("a LIVE value under LKAS control is NOT stale", not cs_sp10.driverTorqueStale,
+      "STEER_CONTROL_ACTIVE alone must not discard good data")
+check("...and steeringPressed works again", cs10.steeringPressed)
+
+# it must go stale again, and recover again, without a restart
+cs10, cs_sp10 = hold(777, 1)
+check("re-latching is detected again", cs_sp10.driverTorqueStale)
+
+# the sub-threshold latch from route dd: -528 for 946 s, steeringPressed stuck False
+cs10, cs_sp10 = hold(-528, 1)
+check("the route-dd latch (-528, under the 1200 threshold) is still reported stale",
+      cs_sp10.driverTorqueStale,
+      "it reads as 'no driver' either way, but only the flag says openpilot is BLIND")
+
+
+# --- 15. A stale reading cannot confirm a lane change ----------------------------
+#
+# 14 of 17 lane changes on dd/de/df were confirmed within a single 0.05 s sample, and all
+# 10 failures were the direction the latched sign happened to oppose. With the torque
+# latched at +1813 every LEFT change fired instantly and every RIGHT one was impossible.
+
+print("\n[15] lane change nudge ignores a latched torque")
+try:
+  import types
+
+  from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper, LaneChangeState
+except Exception as e:  # openpilot not importable standalone
+  print(f"  SKIP  desire_helper not importable here ({type(e).__name__})")
+else:
+  def carstate(torque, pressed, blinker_left):
+    return types.SimpleNamespace(vEgo=25.0, steeringTorque=torque, steeringPressed=pressed,
+                                 leftBlinker=blinker_left, rightBlinker=not blinker_left,
+                                 leftBlindspot=False, rightBlindspot=False, brakePressed=False)
+
+  def run(stale, torque, blinker_left):
+    dh = DesireHelper()
+    dh.update(carstate(torque, True, blinker_left), True, 0.0, stale)      # blinker rising edge
+    dh.update(carstate(torque, True, blinker_left), True, 0.0, stale)
+    return dh.lane_change_state
+
+  st = run(False, 3000, True)
+  check("a LIVE matching nudge still confirms", st == LaneChangeState.laneChangeStarting, f"{st}")
+  st = run(True, 3000, True)
+  check("a STALE matching nudge does NOT confirm", st == LaneChangeState.preLaneChange, f"{st}")
+  st = run(True, -3000, True)
+  check("a STALE opposing value does not confirm either", st == LaneChangeState.preLaneChange, f"{st}")
+
 
 print("\n" + "=" * 60)
 if FAILURES:
