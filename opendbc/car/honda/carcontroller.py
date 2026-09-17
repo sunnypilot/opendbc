@@ -36,6 +36,12 @@ def compute_gas_brake(accel, speed, CP):
     return compute_gb_honda_nidec(accel, speed)
 
 
+def longitudinal_control_allowed(control_enabled: bool, long_active: bool,
+                                  brake_hold_active: bool) -> bool:
+  """Brake hold is a hard inhibit until the vehicle exits the hold state."""
+  return control_enabled and long_active and not brake_hold_active
+
+
 # TODO not clear this does anything useful
 def actuator_hysteresis(brake, braking, brake_steady):
   # hyst params
@@ -121,8 +127,11 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     hud_control = CC.hudControl
     hud_v_cruise = hud_control.setSpeed / CS.v_cruise_factor if hud_control.speedVisible else 255
     pcm_cancel_cmd = CC.cruiseControl.cancel
+    brake_hold_active = bool(CS.out.brakeHoldActive)
+    control_enabled = CC.enabled and not brake_hold_active
+    long_active = longitudinal_control_allowed(CC.enabled, CC.longActive, brake_hold_active)
 
-    if CC.longActive:
+    if long_active:
       accel = actuators.accel
       gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP)
     else:
@@ -171,7 +180,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
                     0.5]
     # The Honda ODYSSEY seems to have different PCM_ACCEL
     # msgs, is it other cars too?
-    if self.CP_SP.enableGasInterceptor or not CC.longActive:
+    if self.CP_SP.enableGasInterceptor or not long_active:
       pcm_speed = 0.0
       pcm_accel = int(0.0)
     elif self.CP.flags & HondaFlags.NIDEC_ALT_PCM_ACCEL:
@@ -204,12 +213,16 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
         ts = self.frame * DT_CTRL
 
         if self.CP.flags & HondaFlags.BOSCH:
-          self.accel = float(np.clip(accel, self.params.BOSCH_ACCEL_MIN, self.params.BOSCH_ACCEL_MAX))
-          self.gas = float(np.interp(accel, self.params.BOSCH_GAS_LOOKUP_BP, self.params.BOSCH_GAS_LOOKUP_V))
+          if brake_hold_active:
+            self.accel = 0.0
+            self.gas = 0.0
+          else:
+            self.accel = float(np.clip(accel, self.params.BOSCH_ACCEL_MIN, self.params.BOSCH_ACCEL_MAX))
+            self.gas = float(np.interp(accel, self.params.BOSCH_GAS_LOOKUP_BP, self.params.BOSCH_GAS_LOOKUP_V))
 
           stopping = actuators.longControlState == LongCtrlState.stopping
           self.stopping_counter = self.stopping_counter + 1 if stopping else 0
-          can_sends.extend(hondacan.create_acc_commands(self.packer, self.CAN, CC.enabled, CC.longActive, self.accel, self.gas,
+          can_sends.extend(hondacan.create_acc_commands(self.packer, self.CAN, control_enabled, long_active, self.accel, self.gas,
                                                         self.stopping_counter, self.CP))
         else:
           apply_brake = np.clip(self.brake_last - wind_brake, 0.0, 1.0)
@@ -229,7 +242,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     if self.frame % 10 == 0:
       if self.CP.openpilotLongitudinalControl:
         # On Nidec, this also controls longitudinal positive acceleration
-        can_sends.append(hondacan.create_acc_hud(self.packer, self.CAN.pt, self.CP, CC.enabled, pcm_speed, pcm_accel,
+        can_sends.append(hondacan.create_acc_hud(self.packer, self.CAN.pt, self.CP, control_enabled, pcm_speed, pcm_accel,
                                                  hud_control, hud_v_cruise, CS.is_metric, CS.acc_hud))
 
       steering_available = CS.out.cruiseState.available and CS.out.vEgo > max(self.params.STEER_GLOBAL_MIN_SPEED, self.CP.minSteerSpeed)
