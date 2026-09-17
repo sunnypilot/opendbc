@@ -753,41 +753,46 @@ CI10 = CarInterface(CP10, CP10_SP)
 packer10 = CANPacker(DBC[PLATFORM][Bus.pt])
 
 
-def steer_step(i, torque, control_active):
-  m = packer10.make_can_msg("STEER_STATUS", 0, {"STEER_TORQUE_SENSOR": torque,
-                                                "STEER_CONTROL_ACTIVE": control_active})
-  frames = [m if isinstance(m, tuple) else (m.address, bytes(m.dat), m.src)]
+def steer_step(i, torque, control_active, board=None, board_ok=True):
+  """One 100 Hz frame of STEER_STATUS, optionally with the board's EPS mirror beside it."""
+  msgs = [packer10.make_can_msg("STEER_STATUS", 0, {"STEER_TORQUE_SENSOR": torque,
+                                                    "STEER_CONTROL_ACTIVE": control_active})]
+  if board is not None:
+    msgs.append(packer10.make_can_msg("EPS_LIN_RAW", 0, {"STEER_TORQUE": board,
+                                                         "CHECKSUM_OK": board_ok}))
+  frames = [m if isinstance(m, tuple) else (m.address, bytes(m.dat), m.src) for m in msgs]
   return CI10.update([((i + 1) * int(1e7), frames)])
 
 
 _frame10 = [0]
 
 
-def hold(torque, control_active, frames=120, moving=False):
+def hold(torque, control_active, frames=120, moving=False, board=None, board_ok=True):
   """Feed `frames` of STEER_STATUS and return the final (CarState, CarStateSP)."""
   out = None
   for _ in range(frames):
     _frame10[0] += 1
     value = torque + (_frame10[0] % 7) * 13 if moving else torque
-    out = steer_step(_frame10[0], value, control_active)
+    b = None if board is None else board + (_frame10[0] % 5)
+    out = steer_step(_frame10[0], value, control_active, b, board_ok)
   return out
 
 
 # warm-up: lazy VLDict registration drops the first frame of any message (see section 9)
-hold(0, 0, frames=1)
+hold(0, 0, frames=1, board=0)
 
 # a real driver holding a constant torque, NOT under LKAS control: never stale
 cs10, cs_sp10 = hold(2000, 0)
 check("constant torque with STEER_CONTROL_ACTIVE=0 is NOT stale", not cs_sp10.driverTorqueStale)
 check("...and steeringPressed is left alone", cs10.steeringPressed)
 
-# LKAS takes over and the value latches at the same 2000
+# LKAS takes over and the value latches, with NO board frame to stand in for it
 cs10, cs_sp10 = hold(2000, 1)
-check("latched torque under LKAS control IS stale", cs_sp10.driverTorqueStale)
+check("latched torque and no board frame IS stale", cs_sp10.driverTorqueStale)
 check("steeringPressed is forced False rather than stuck True", not cs10.steeringPressed,
       "stuck True is what froze the integrator for 946 s on route dd")
 
-# the EPS keeps reporting properly while under LKAS control (a fixed board): not stale
+# the EPS keeps reporting properly while under LKAS control (a fixed car): not stale
 cs10, cs_sp10 = hold(2000, 1, moving=True)
 check("a LIVE value under LKAS control is NOT stale", not cs_sp10.driverTorqueStale,
       "STEER_CONTROL_ACTIVE alone must not discard good data")
@@ -799,9 +804,52 @@ check("re-latching is detected again", cs_sp10.driverTorqueStale)
 
 # the sub-threshold latch from route dd: -528 for 946 s, steeringPressed stuck False
 cs10, cs_sp10 = hold(-528, 1)
-check("the route-dd latch (-528, under the 1200 threshold) is still reported stale",
+check("the route-dd latch (-528, under the 1200 threshold) is reported stale",
       cs_sp10.driverTorqueStale,
       "it reads as 'no driver' either way, but only the flag says openpilot is BLIND")
+
+
+# --- 14b. the board's EPS mirror stands in for the latched value -----------------
+#
+# EPS_LIN_RAW (0x700) is on the bus at 100 Hz on every live image, it stays live through the
+# freeze (43.5 % of samples change while 0x18F is latched, route dd) and its CHECKSUM_OK was
+# 1.000 on every frame of dd/de/df. It is the only live driver-torque signal on this car
+# while openpilot is steering.
+
+# latched at -528, board reporting a hard LEFT pull: -40 serial counts -> +2580 CAN counts
+cs10, cs_sp10 = hold(-528, 1, board=-40)
+check("a latched value with a live board frame is NOT stale", not cs_sp10.driverTorqueStale)
+check("steeringTorque comes from the board, sign flipped to left-positive",
+      cs10.steeringTorque > 2000, f"{cs10.steeringTorque:.0f}")
+check("...and steeringPressed follows it", cs10.steeringPressed)
+
+# the same latched -528, board reporting the driver is off the wheel
+cs10, cs_sp10 = hold(-528, 1, board=0)
+check("board says no driver torque -> steeringPressed False", not cs10.steeringPressed,
+      f"{cs10.steeringTorque:.0f}")
+check("...and still not stale, because the signal is good", not cs_sp10.driverTorqueStale)
+
+# sign both ways: a RIGHT pull on the board must read negative in CarState
+cs10, _ = hold(-528, 1, board=+40)
+check("board positive -> CarState negative (right)", cs10.steeringTorque < -2000,
+      f"{cs10.steeringTorque:.0f}")
+
+# a bad EPS serial checksum must not be substituted
+cs10, cs_sp10 = hold(-528, 1, board=-40, board_ok=False)
+check("CHECKSUM_OK=0 is not substituted", cs_sp10.driverTorqueStale)
+check("...and steeringPressed falls back to False", not cs10.steeringPressed)
+
+# the board goes quiet mid-engagement: must return to stale, not hold its last word
+cs10, cs_sp10 = hold(-528, 1, board=-40)
+check("substituting again once the board speaks", not cs_sp10.driverTorqueStale)
+cs10, cs_sp10 = hold(-528, 1)
+check("board silent -> stale again, NOT the last torque it sent", cs_sp10.driverTorqueStale)
+check("...and steeringPressed is False, not the stale substitute", not cs10.steeringPressed)
+
+# while the car's own sensor is live the board is ignored, whatever it says
+cs10, cs_sp10 = hold(2000, 0, board=-40)
+check("a live car sensor wins over the board mirror", cs10.steeringTorque == 2000,
+      f"{cs10.steeringTorque:.0f}")
 
 
 # --- 15. A stale reading cannot confirm a lane change ----------------------------

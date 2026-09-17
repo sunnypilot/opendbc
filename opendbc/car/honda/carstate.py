@@ -331,7 +331,8 @@ class CarState(CarStateBase, CarStateExt):
     # Neither frame may carry a signal named COUNTER or CHECKSUM: in a honda_ DBC those names
     # make the parser enforce Honda counter continuity and a Honda checksum the board does not
     # compute, and every frame would be dropped (opendbc/can/dbc.py:218-227, parser.py:66-73).
-    pt_msgs = [("GW_ACTIVE", float("nan")), ("GW_STEER_GRANT", float("nan"))] if CP.carFingerprint in HONDA_ELESYS else []
+    pt_msgs = [("GW_ACTIVE", float("nan")), ("GW_STEER_GRANT", float("nan")),
+               ("EPS_LIN_RAW", float("nan"))] if CP.carFingerprint in HONDA_ELESYS else []
     parsers = {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_msgs, CanBus(CP).pt),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], CanBus(CP).camera),

@@ -107,6 +107,44 @@ CM_ SG_ 1796 DRY_RUN "The board is NOT actuating anything -- it reports what it 
 ENGAGED is still set in a dry run, so ENGAGED alone means 'the board has an opinion', not
 'the loop is closed'. Every consumer must read ENGAGED AND NOT DRY_RUN.";
 
+BO_ 1792 EPS_LIN_RAW: 8 STM
+ SG_ STEER_TORQUE : 40|8@1- (2,0) [-256|254] "counts" ADAS
+ SG_ EPS_LKAS_ON : 13|1@1+ (1,0) [0|1] "" ADAS
+ SG_ CHECKSUM_OK : 59|1@1+ (1,0) [0|1] "" ADAS
+ SG_ GW_COUNTER : 60|4@1+ (1,0) [0|15] "" ADAS
+
+CM_ BO_ 1792 "LIN-bus gateway -> sunnypilot. The board's mirror of the EPS's own serial frame,
+one CAN frame per serial frame, so 100 Hz. NOT a stock Honda message.
+
+This is the ONLY live driver-torque signal on this car while openpilot is steering. The EPS
+stops updating STEER_TORQUE_SENSOR on 0x18F for as long as it is under LKAS control -- the
+frame keeps arriving at 100 Hz with a rolling counter and a valid checksum, and the torque
+byte simply holds the value it had when LKAS engaged. That is the EPS's own behaviour, not
+the board's: it is visible on route 0000001f, recorded before this board existed, where a
+7.7 s stock LKAS engagement contains a 4.7 s frozen run. With the board fitted the
+engagements are long, so the frozen fraction goes from 36 % to 99 %.
+
+Only the four signals sunnypilot acts on are declared here. The board's own DBC
+(dbc/eps-lkas-gw.dbc in the gateway firmware repo) carries the rest of the frame, including
+the raw nibbles this STEER_TORQUE is assembled from, and this file deliberately does not
+duplicate them.
+
+Little-endian, matching the board's DBC. Note the two names that must NOT change: a signal
+called CHECKSUM or COUNTER in a honda_ DBC makes opendbc's parser try to validate a Honda
+checksum and enforce counter continuity -- see get_checksum_state() in opendbc/can/dbc.py --
+and the board computes neither for this frame.";
+
+CM_ SG_ 1792 STEER_TORQUE "Driver torque in EPS serial counts, scale 2, LEFT NEGATIVE --
+the opposite sign to CarState.steeringTorque. carstate_ext converts:
+steeringTorque = -64.5 * STEER_TORQUE. That constant is a least-squares fit against 0x18F
+over the 30 482 samples of routes dd/de/df where both were live, R^2 0.9991, residual RMS
+134 CAN counts. Converting rather than rescaling the thresholds is deliberate: every
+consumer of steeringTorque, and every STEER_THRESHOLD, keeps working unchanged, and the
+logs stay comparable with the drives from before the board was fitted.";
+CM_ SG_ 1792 CHECKSUM_OK "The board's verdict on the EPS serial frame's own checksum. 1.000
+across every frame of routes dd/de/df. Do not substitute this torque for the car's when it
+is 0.";
+
 BO_ 1803 GW_STEER_GRANT: 8 STM
  SG_ STATE : 7|8@0+ (1,0) [0|7] "" ADAS
  SG_ REASON : 15|8@0+ (1,0) [0|15] "" ADAS

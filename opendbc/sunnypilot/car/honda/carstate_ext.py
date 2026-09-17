@@ -8,7 +8,7 @@ from enum import StrEnum
 
 from opendbc.car import Bus, structs
 from opendbc.car.carlog import carlog
-from opendbc.car.honda.values import HONDA_ELESYS
+from opendbc.car.honda.values import HONDA_ELESYS, STEER_THRESHOLD
 from opendbc.can.parser import CANParser
 from opendbc.sunnypilot.car.honda.values_ext import HondaFlagsSP
 
@@ -39,6 +39,19 @@ GRANT_RETRY_KEY_CYCLE = 255
 # properly the value changes at 29-83 Hz and the 95th percentile hold is 1-2 frames.
 STEER_TORQUE_STALE_FRAMES = 25
 
+# EPS_LIN_RAW (0x700) is the board's mirror of the EPS serial frame, one CAN frame per serial
+# frame, so 100 Hz -- the same rate as the message it stands in for. Half the window of the
+# 10 Hz frames for that reason.
+EPS_LIN_RAW_STALE_FRAMES = 25
+
+# EPS_LIN_RAW.STEER_TORQUE is in serial counts, scale 2 already applied by the parser, and
+# LEFT NEGATIVE. CarState.steeringTorque is in this car's CAN counts and LEFT POSITIVE.
+# Least squares over the 30 482 samples of routes dd/de/df where both signals were live:
+# 0x18F = -64.52 * STEER_TORQUE, R^2 0.9991, residual RMS 134 CAN counts against a 600-1200
+# count threshold. Converting into the CAN domain rather than rescaling every threshold keeps
+# STEER_THRESHOLD, torqued, driver monitoring and the lane-change nudge working unchanged.
+SERIAL_TORQUE_TO_CAN = -64.5
+
 # SCM_BUTTONS.FUEL_LEVEL is clamped by the meter at 105 (~52 L of a ~60 L tank), so this is
 # "fraction of the gauge", not fraction of the tank. See _nidec_scm_group_a_elesys.dbc.
 FUEL_LEVEL_FULL = 105.0
@@ -55,6 +68,8 @@ class CarStateExt:
     self._linbus_grant_logged = None
     self._steer_torque_last = None
     self._steer_torque_held = 0
+    self._eps_lin_stale = EPS_LIN_RAW_STALE_FRAMES
+    self._eps_lin_ts = 0
 
   def update(self, ret: structs.CarState, ret_sp: structs.CarStateSP,
              can_parsers: dict[StrEnum, CANParser]) -> None:
@@ -107,11 +122,34 @@ class CarStateExt:
       self._steer_torque_held = min(self._steer_torque_held + 1, STEER_TORQUE_STALE_FRAMES)
 
     under_lkas_control = bool(cp.vl["STEER_STATUS"]["STEER_CONTROL_ACTIVE"])
-    stale = under_lkas_control and self._steer_torque_held >= STEER_TORQUE_STALE_FRAMES
+    latched = under_lkas_control and self._steer_torque_held >= STEER_TORQUE_STALE_FRAMES
 
-    ret_sp.driverTorqueStale = stale
-    if stale:
+    if latched and self._eps_lin_driver_torque_valid(cp):
+      # Same quantity, live, at the same 100 Hz, from the one device that can still see it.
+      ret.steeringTorque = SERIAL_TORQUE_TO_CAN * cp.vl["EPS_LIN_RAW"]["STEER_TORQUE"]
+      ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
+      latched = False
+
+    ret_sp.driverTorqueStale = latched
+    if latched:
       ret.steeringPressed = False
+
+  def _eps_lin_driver_torque_valid(self, cp: CANParser) -> bool:
+    """Is the board's EPS mirror fresh enough, and did the EPS frame behind it check out?
+
+    Frame-counted like every other gateway frame, because CarState.update() is not handed a
+    clock. A board that stops talking must read as no substitute rather than as a torque of
+    whatever it last said -- which is the exact failure this whole function exists to undo.
+    """
+    ts = cp.ts_nanos["EPS_LIN_RAW"]["STEER_TORQUE"]
+    if ts != self._eps_lin_ts:
+      self._eps_lin_ts = ts
+      self._eps_lin_stale = 0
+    else:
+      self._eps_lin_stale = min(self._eps_lin_stale + 1, EPS_LIN_RAW_STALE_FRAMES)
+
+    fresh = self._eps_lin_stale < EPS_LIN_RAW_STALE_FRAMES and ts != 0
+    return fresh and bool(cp.vl["EPS_LIN_RAW"]["CHECKSUM_OK"])
 
   def _update_linbus_gateway(self, ret_sp: structs.CarStateSP, cp: CANParser) -> None:
     """Decode GW_ACTIVE (0x704) from the aftermarket LIN-bus gateway.
