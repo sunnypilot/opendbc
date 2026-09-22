@@ -261,6 +261,7 @@ BO_ 1807 GW_BUILD: 8 STM
  SG_ BUILD_BOOTLOADER : 2|1@1+ (1,0) [0|1] "" ADAS
  SG_ BUILD_READONLY : 3|1@1+ (1,0) [0|1] "" ADAS
  SG_ BUILD_INCAR_TEST : 4|1@1+ (1,0) [0|1] "" ADAS
+ SG_ BUILD_SP_FRESH : 5|1@1+ (1,0) [0|1] "" ADAS
  SG_ EPS_FLOOR_CPH : 8|16@1+ (1,0) [0|65535] "0.01 km/h" ADAS
  SG_ LIN_MAX_ABS : 24|8@1+ (1,0) [0|255] "counts" ADAS
  SG_ BOARD_UID : 32|24@1+ (1,0) [0|16777215] "" ADAS
@@ -272,6 +273,7 @@ cannot, because its flag byte is full.
 NEW IN FIRMWARE 625b782a. A board running anything older sends 0x707 and not this, which is
 itself informative: no GW_BUILD means firmware older than 2026-09-22, which in turn means no
 CAN bootloader and no on-screen update.";
+CM_ SG_ 1807 BUILD_SP_FRESH "0x500 SP_HUD_STATUS is arriving and fresh, sampled at the instant this beat was sent. RUNTIME, not build -- it is on this frame because byte 0 had room. It answers the one question a log could not: the board's lane graphic hangs on a bit carried in 0x500, and with no telemetry for it, \"the HUD is wrong\" and \"the side channel never arrived\" looked identical. Two drives were spent guessing between them.";
 CM_ SG_ 1807 BUILD_BOOTLOADER "A bootloader really is present at 0x08000000, checked at RUN
 TIME rather than assumed from build flags -- the firmware reads the reset vector there. THIS
 IS THE BIT THAT SAYS THE BOARD CAN BE UPDATED OVER CAN AT ALL. Clear means the board has
