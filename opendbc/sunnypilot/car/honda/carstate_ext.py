@@ -210,6 +210,7 @@ class CarStateExt:
       ret_sp.linbusGateway.fwBootloader = bool(b["BUILD_BOOTLOADER"])
       ret_sp.linbusGateway.fwReadOnly = bool(b["BUILD_READONLY"])
       ret_sp.linbusGateway.boardUid = int(b["BOARD_UID"])
+      ret_sp.linbusGateway.fwBuildValid = True
 
   def _update_linbus_grant(self, ret_sp: structs.CarStateSP, cp: CANParser) -> None:
     """Decode GW_STEER_GRANT (0x70B) from the aftermarket LIN-bus gateway.

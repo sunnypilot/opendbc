@@ -215,3 +215,4 @@ class CarStateSP:
     fwBootloader: bool = auto_field()
     fwReadOnly: bool = auto_field()
     boardUid: int = auto_field()
+    fwBuildValid: bool = auto_field()
