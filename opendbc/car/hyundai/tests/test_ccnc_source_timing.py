@@ -3,9 +3,11 @@ from types import SimpleNamespace
 import unittest
 
 from opendbc.can import CANPacker, CANParser
+from opendbc.car import Bus
+from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.carcontroller import CarController
 from opendbc.car.hyundai.hyundaicanfd import CanBus
-from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.car.hyundai.values import CAR, HyundaiFlags
 
 
 DBC = "hyundai_canfd_generated"
@@ -87,6 +89,43 @@ class TestCcncSourceTiming(unittest.TestCase):
     self.assertEqual([msg[0] for msg in self.display_messages(2, updated_162=True)], [0x162])
     self.assertEqual(self.display_messages(5), [])
     self.assertEqual([msg[0] for msg in self.display_messages(6, updated_161=True, updated_162=True)], [0x161, 0x162])
+
+  def test_boot_first_display_frames_are_captured_in_either_order(self):
+    cp = SimpleNamespace(flags=HyundaiFlags.CANFD | HyundaiFlags.CCNC,
+                         carFingerprint=CAR.HYUNDAI_SONATA_2024, safetyConfigs=[None])
+    for order in (((0x161, STOCK_161), (0x162, STOCK_162)), ((0x162, STOCK_162), (0x161, STOCK_161))):
+      with self.subTest(order=[address for address, _ in order]):
+        parser = CarState.__new__(CarState).get_can_parsers_canfd(cp)[Bus.cam]
+        for frame, (address, raw) in enumerate(order):
+          parser.update([(1_000_000_000 + frame * 20_000_000, [(address, bytes.fromhex(raw), 2)])])
+          # Match carstate's first read, after the initial CAN batch was parsed.
+          self.cs.msg_161 = copy.copy(parser.vl["CCNC_0x161"])
+          self.cs.msg_162 = copy.copy(parser.vl["CCNC_0x162"])
+          updated_161 = bool(parser.vl_all["CCNC_0x161"]["COUNTER"])
+          updated_162 = bool(parser.vl_all["CCNC_0x162"]["COUNTER"])
+          messages = self.display_messages(frame, updated_161, updated_162)
+          self.assertEqual([m[0] for m in messages], [address])
+          name = "CCNC_0x161" if address == 0x161 else "CCNC_0x162"
+          self.assertEqual(decode(name, address, messages[0][1].hex())["COUNTER"], decode(name, address, raw)["COUNTER"])
+          parser.update([(1_010_000_000 + frame * 20_000_000, [])])
+          self.assertEqual(self.display_messages(frame, bool(parser.vl_all["CCNC_0x161"]["COUNTER"]),
+                                                 bool(parser.vl_all["CCNC_0x162"]["COUNTER"])), [])
+
+  def test_boot_camera_lane_message_is_captured_before_first_read(self):
+    cp = SimpleNamespace(flags=HyundaiFlags.CANFD | HyundaiFlags.CCNC,
+                         carFingerprint=CAR.HYUNDAI_SONATA_2024, safetyConfigs=[None])
+    parser = CarState.__new__(CarState).get_can_parsers_canfd(cp)[Bus.cam]
+    address, data, _ = self.controller.packer.make_can_msg("FR_CMR_03_50ms", 2, self.cs.msg_1b5)
+    parser.update([(1_000_000_000, [(address, data, 2)])])
+    self.assertEqual(parser.vl["FR_CMR_03_50ms"]["Info_LftLnQualSta"], 3)
+    self.assertEqual(parser.ts_nanos["FR_CMR_03_50ms"]["Info_LftLnPosVal"], 1_000_000_000)
+
+  def test_other_canfd_variants_do_not_preregister_ccnc(self):
+    for flags in (HyundaiFlags.CANFD, HyundaiFlags.CANFD | HyundaiFlags.CCNC | HyundaiFlags.CANFD_LKA_STEER_MSG):
+      cp = SimpleNamespace(flags=flags, carFingerprint=CAR.HYUNDAI_SONATA_2024, safetyConfigs=[None])
+      parser = CarState.__new__(CarState).get_can_parsers_canfd(cp)[Bus.cam]
+      self.assertNotIn(0x161, parser.addresses)
+      self.assertNotIn(0x162, parser.addresses)
 
   def test_preserves_stock_phase_and_source_counters(self):
     expected = [(0, 0x161, 10), (2, 0x162, 40), (5, 0x161, 11), (7, 0x162, 41)]

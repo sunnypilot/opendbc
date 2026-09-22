@@ -325,6 +325,12 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
   def get_can_parsers_canfd(self, CP):
     msgs = []
+    camera_msgs = []
+    if CP.flags & HyundaiFlags.CCNC and not CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+      # Register before the first CAN batch. Lazy registration during update()
+      # discards that initial batch, delaying source-timed cluster replay.
+      # Keep automatic frequency learning, as with the previous lazy parser.
+      camera_msgs = [("CCNC_0x161", 0), ("CCNC_0x162", 0), ("FR_CMR_03_50ms", 0)]
     if not (CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS):
       # TODO: this can be removed once we add dynamic support to vl_all
       msgs += [
@@ -333,7 +339,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
       ]
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], msgs, CanBus(CP).ECAN),
-      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], CanBus(CP).CAM),
+      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], camera_msgs, CanBus(CP).CAM),
     }
 
   def get_can_parsers(self, CP, CP_SP):
