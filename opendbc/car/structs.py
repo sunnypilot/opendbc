@@ -206,3 +206,12 @@ class CarStateSP:
     motorTorque: int = auto_field()
     retryIn: int = auto_field()
     latchedUntilKeyOff: bool = auto_field()
+    # GW_VERSION (0x707) + GW_BUILD (0x70F). Identity, not control. Same lockstep rule as
+    # the block above: names and order must match cereal/custom.capnp exactly.
+    fwValid: bool = auto_field()
+    fwGitHash: int = auto_field()
+    fwDirty: bool = auto_field()
+    fwAppSlot: bool = auto_field()
+    fwBootloader: bool = auto_field()
+    fwReadOnly: bool = auto_field()
+    boardUid: int = auto_field()

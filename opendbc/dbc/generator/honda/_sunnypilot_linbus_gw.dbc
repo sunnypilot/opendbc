@@ -206,3 +206,76 @@ for any 'is anything on the wire' check.";
 
 VAL_ 1803 STATE 7 "board_fault" 6 "refused" 5 "limited" 4 "active" 3 "intro" 2 "requested" 1 "ready" 0 "idle" ;
 VAL_ 1803 REASON 15 "soft_start" 14 "dry_run" 13 "board_fault" 12 "camera_fault" 11 "integrator_too_large" 10 "serial_checksum" 9 "eps_no_ack" 8 "eps_refused_latched" 7 "standstill" 6 "brake" 5 "blinker" 4 "driver_override" 3 "speed_too_low" 2 "op_stale" 1 "no_request" 0 "none" ;
+
+BO_ 1799 GW_VERSION: 8 STM
+ SG_ GIT_HASH : 0|32@1+ (1,0) [0|4294967295] "" ADAS
+ SG_ DRY_RUN : 32|1@1+ (1,0) [0|1] "" ADAS
+ SG_ SPLIT_CAN : 33|1@1+ (1,0) [0|1] "" ADAS
+ SG_ HUD_MERGE : 34|1@1+ (1,0) [0|1] "" ADAS
+ SG_ LIVE : 35|1@1+ (1,0) [0|1] "" ADAS
+ SG_ MIN_SPEED_GUARD : 36|1@1+ (1,0) [0|1] "" ADAS
+ SG_ SLAVE_CADENCE : 37|1@1+ (1,0) [0|1] "" ADAS
+ SG_ DOMAIN_CAPABLE : 38|1@1+ (1,0) [0|1] "" ADAS
+ SG_ DOMAIN_SERIAL_ACTIVE : 39|1@1+ (1,0) [0|1] "" ADAS
+ SG_ AUTHORITY : 40|8@1+ (1,0) [0|255] "counts" ADAS
+ SG_ HOLD_FRAMES : 48|5@1+ (1,0) [0|31] "" ADAS
+ SG_ HUD_OWN : 53|1@1+ (1,0) [0|1] "" ADAS
+ SG_ CAM_MUTE : 54|1@1+ (1,0) [0|1] "" ADAS
+ SG_ PROBE : 55|1@1+ (1,0) [0|1] "" ADAS
+ SG_ VER_COUNTER : 56|8@1+ (1,0) [0|255] "" ADAS
+
+CM_ BO_ 1799 "LIN-bus gateway -> sunnypilot. WHICH FIRMWARE IS ON THE BOARD, and the only
+answer any log or any screen gets. Sent once at mode entry and once a minute -- NOT 10 Hz --
+from gw_active.c:1267 and :2519. Little-endian, unlike the 0x70B block above: the board packs
+these bytes LSB-first, so the 32-bit hash is @1+ and not @0+.
+
+NOT SENT AT ALL by the INCAR_READONLY stand-down image before firmware 52ca4732, and never
+sent by a board sitting in its CAN bootloader -- that one answers on 0x711 instead. So an
+absent GW_VERSION means 'nothing told us', never 'no board'.";
+CM_ SG_ 1799 GIT_HASH "The first 8 hex digits of the commit the image was BUILT FROM, baked in
+by CMake at configure time. Read it as %08x and it greps against the firmware repo's git log
+and against docs/CAN-UPDATE.md directly.
+
+IT CAN LIE, and 0x70F BUILD_DIRTY is how you find out: before firmware 52ca4732 there was no
+dirty-tree check, so an image built from an edited working tree reported its PARENT commit
+here as though it were that commit.";
+CM_ SG_ 1799 AUTHORITY "The compile-time GW_LIN_AUTHORITY, not the negotiated ceiling. 0x70B
+AUTHORITY carries the one actually in force, which sunnypilot's 0x500 can pull down, so the
+two legitimately disagree.";
+CM_ SG_ 1799 HOLD_FRAMES "Compile-time GW_MAX_HOLD_FRAMES, 25 on every Stage 3/4 image and 0
+on Stage 2a. It distinguishes nothing between current builds; it is here because it was here.";
+
+BO_ 1807 GW_BUILD: 8 STM
+ SG_ BUILD_DIRTY : 0|1@1+ (1,0) [0|1] "" ADAS
+ SG_ BUILD_APP_SLOT : 1|1@1+ (1,0) [0|1] "" ADAS
+ SG_ BUILD_BOOTLOADER : 2|1@1+ (1,0) [0|1] "" ADAS
+ SG_ BUILD_READONLY : 3|1@1+ (1,0) [0|1] "" ADAS
+ SG_ BUILD_INCAR_TEST : 4|1@1+ (1,0) [0|1] "" ADAS
+ SG_ EPS_FLOOR_CPH : 8|16@1+ (1,0) [0|65535] "0.01 km/h" ADAS
+ SG_ LIN_MAX_ABS : 24|8@1+ (1,0) [0|255] "counts" ADAS
+ SG_ BOARD_UID : 32|24@1+ (1,0) [0|16777215] "" ADAS
+ SG_ BUILD_COUNTER : 56|8@1+ (1,0) [0|255] "" ADAS
+
+CM_ BO_ 1807 "Board and build identity, sent beside 0x707. Answers what 0x707 structurally
+cannot, because its flag byte is full.
+
+NEW IN FIRMWARE 625b782a. A board running anything older sends 0x707 and not this, which is
+itself informative: no GW_BUILD means firmware older than 2026-09-22, which in turn means no
+CAN bootloader and no on-screen update.";
+CM_ SG_ 1807 BUILD_BOOTLOADER "A bootloader really is present at 0x08000000, checked at RUN
+TIME rather than assumed from build flags -- the firmware reads the reset vector there. THIS
+IS THE BIT THAT SAYS THE BOARD CAN BE UPDATED OVER CAN AT ALL. Clear means the board has
+never had its one-time SWD visit and will ignore the entire update procedure.";
+CM_ SG_ 1807 BUILD_APP_SLOT "Linked for 0x08004000 to run under the bootloader, rather than
+standalone at 0x08000000. The two are not interchangeable: a standalone image installed in the
+app slot passes every structural check and then gets branched into 16 KB from its real reset
+handler, which is why images carry a marker recording the address they were linked for.";
+CM_ SG_ 1807 BUILD_DIRTY "The image was built from an edited working tree, so GIT_HASH on
+0x707 names a commit it was NOT built from. Set by CMake, which also warns at configure time.";
+CM_ SG_ 1807 BOARD_UID "The 96-bit MCU unique ID folded to 24 bits -- i.e. WHICH PHYSICAL
+BOARD. Before this existed, board_read_device_id() was only ever called from the self-test,
+which verify_incar.py forbids in an in-car image, so no route could tell the car's board from
+a spare one on the bench.";
+CM_ SG_ 1807 EPS_FLOOR_CPH "GW_EPS_ACK_CPH, the speed below which the EPS will not acknowledge
+a torque request. With LIN_MAX_ABS this is what separates two otherwise identical images in a
+log -- the Stage 10 image and the 30 km/h floor test differ in little else.";

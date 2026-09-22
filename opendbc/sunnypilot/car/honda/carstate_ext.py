@@ -79,6 +79,7 @@ class CarStateExt:
     if self.CP.carFingerprint in HONDA_ELESYS:
       self._update_linbus_gateway(ret_sp, cp)
       self._update_linbus_grant(ret_sp, cp)
+      self._update_linbus_firmware(ret_sp, cp)
       self._update_driver_torque_validity(ret, ret_sp, cp)
       ret.fuelGauge = min(cp.vl["SCM_BUTTONS"]["FUEL_LEVEL"] / FUEL_LEVEL_FULL, 1.0)
 
@@ -180,6 +181,35 @@ class CarStateExt:
     # what it WOULD do -- so ENGAGED alone would tell openpilot it is in control when it is
     # not, and the integrator would wind up exactly as it did before this protocol existed.
     ret_sp.linbusGateway.actuating = engaged and not dry_run and valid
+
+  def _update_linbus_firmware(self, ret_sp: structs.CarStateSP, cp: CANParser) -> None:
+    """Decode GW_VERSION (0x707) and GW_BUILD (0x70F) -- which firmware, and which board.
+
+    NO STALENESS WINDOW HERE, deliberately, and it is the one thing that makes this method
+    different from the two above. Those decode 10 Hz control frames where a frame that stops
+    arriving means the board stopped talking, so silence has to read as "not granted". These
+    are 1/min identity frames: silence means nothing has changed, and treating it as "no
+    firmware" would blank the version row sixty times between every pair of updates.
+
+    So it latches on first sight and stays. What it must never do is claim to know something
+    it does not: ts == 0 means this parser has never seen the frame at all, and that is the
+    only case where fwValid stays False. Firmware older than 625b782a sends 0x707 and not
+    0x70F, so the two are tested separately -- a hash with no build flags is the normal
+    reading for a board that has not been updated since 2026-09-22.
+    """
+    if cp.ts_nanos["GW_VERSION"]["GIT_HASH"] != 0:
+      # int() is load-bearing: CANParser hands back floats and pycapnp refuses one for a
+      # UInt32 field.
+      ret_sp.linbusGateway.fwGitHash = int(cp.vl["GW_VERSION"]["GIT_HASH"])
+      ret_sp.linbusGateway.fwValid = True
+
+    if cp.ts_nanos["GW_BUILD"]["BUILD_COUNTER"] != 0:
+      b = cp.vl["GW_BUILD"]
+      ret_sp.linbusGateway.fwDirty = bool(b["BUILD_DIRTY"])
+      ret_sp.linbusGateway.fwAppSlot = bool(b["BUILD_APP_SLOT"])
+      ret_sp.linbusGateway.fwBootloader = bool(b["BUILD_BOOTLOADER"])
+      ret_sp.linbusGateway.fwReadOnly = bool(b["BUILD_READONLY"])
+      ret_sp.linbusGateway.boardUid = int(b["BOARD_UID"])
 
   def _update_linbus_grant(self, ret_sp: structs.CarStateSP, cp: CANParser) -> None:
     """Decode GW_STEER_GRANT (0x70B) from the aftermarket LIN-bus gateway.
