@@ -63,7 +63,17 @@ VAL_ 1280 ALERT_LEVEL 3 "critical" 2 "warning" 1 "info" 0 "none" ;
 
 CM_ SG_ 1280 WANT_CONTROL "openpilot intends to steer and is asking. The redundant statement of
 the 0x0E4 STEER_TORQUE_REQUEST bit, which remains the thing that actually asks.";
-CM_ SG_ 1280 LAT_READY "openpilot would steer if the board allowed it.";
+CM_ SG_ 1280 LAT_READY "OPENPILOT'S LATERAL IS ENABLED -- MADS on, including while it is
+paused. NOT \"could steer if asked\": it was that once, computed from
+`cruiseState.available and vEgo > minSteerSpeed`, which is true with MADS off, and the
+board drew dashed lanes whenever the car was moving.
+
+It is mads.enabled, i.e. state in (paused, enabled, softDisabling, overriding), ORed with
+latActive for anyone driving without MADS. The paused member is the load-bearing one: the
+board pauses openpilot's lateral itself on driver torque, and this staying true through
+that is what keeps the cluster's dashed lanes up across an override instead of blanking.
+
+The board reads this in exactly one place - whether to show the lane graphic at all.";
 CM_ SG_ 1280 OP_STATE "openpilot's own lateral state machine, NOT the board's. See
 GW_STEER_GRANT.STATE for the board's.";
 CM_ SG_ 1280 RELEASE_DRIVER "ADVISORY ONLY. openpilot sets it on steeringPressed and

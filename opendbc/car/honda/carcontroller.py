@@ -477,9 +477,23 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
         # is backing off mid-corner.
         release_brake = CC.latActive and CS.out.brakePressed
         release_driver = CC.latActive and CS.out.steeringPressed
-        # "would steer if the board allowed it". latActive is ORed in so this can never read
-        # false while openpilot is actually asking.
-        lat_ready = steering_available or CC.latActive
+        # "LATERAL IS ENABLED", which is not the same as "lateral could steer".
+        #
+        # This was `steering_available or CC.latActive`, and steering_available is
+        # `cruiseState.available and vEgo > minSteerSpeed` - i.e. the main cruise switch is
+        # on and the car is moving. That is true with MADS OFF, so the board, which uses
+        # this bit to decide whether to show dashed lanes, showed them whenever the car was
+        # driving. The driver reported the cluster was "not synced with SP", and it was not.
+        #
+        # mads.enabled is `state in ENABLED_STATES`, which is (paused, enabled,
+        # softDisabling, overriding). The paused member is what makes this the right signal
+        # rather than latActive: the board pauses openpilot's lateral itself on driver
+        # torque, and MADS stays enabled through that - so the cluster keeps its dashed
+        # lanes across an override instead of going blank, which is what was asked for.
+        #
+        # latActive is still ORed in for anyone driving without MADS, where there is no
+        # armed-but-paused state to represent.
+        lat_ready = CC_SP.mads.enabled or CC.latActive
         if CS.out.steerFaultTemporary or CS.out.steerFaultPermanent:
           op_state = hondacan.SP_OP_STATE_FAULTED
         elif not CC.latActive:
