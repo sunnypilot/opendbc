@@ -211,13 +211,14 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
                                                         self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT))
 
     # LFA and HDA icons
-    if self.frame % 5 == 0 and (not lka_steering or lka_steering_long):
-      if ccnc_non_hda2:
+    if ccnc_non_hda2:
+      # Replay each blocked stock display frame on its source update to retain its cadence, counter, and phase.
+      if CS.ccnc_0x161_updated or CS.ccnc_0x162_updated:
         can_sends.extend(hyundaicanfd.create_ccnc(self.packer, self.CAN, self.CP.openpilotLongitudinalControl, CC.enabled, CC.hudControl, CC.leftBlinker,
                                                   CC.rightBlinker, CS.msg_161, CS.msg_162, CS.msg_1b5, CS.is_metric, CS.out, CS.main_cruise_enabled,
-                                                  self.lfa_icon))
-      else:
-        can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
+                                                  self.lfa_icon, send_161=CS.ccnc_0x161_updated, send_162=CS.ccnc_0x162_updated))
+    elif self.frame % 5 == 0 and (not lka_steering or lka_steering_long):
+      can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
 
     # blinkers
     if lka_steering and self.CP.flags & HyundaiFlags.CANFD_ENABLE_BLINKERS:
