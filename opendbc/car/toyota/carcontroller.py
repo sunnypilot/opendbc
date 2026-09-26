@@ -47,9 +47,8 @@ def get_long_tune(CP, CP_SP, params):
       #kiV =  [0.25, 0.25, 0.15, 0.12, 0.12, 0.12]
       #kiBP= [0.,  1.0,  2.0,   3.0,   4.0,   5.0,   7.,  20.,  27.,  36.]
       #kiV  = [0.31, 0.32, 0.301, 0.280,  0.259,  0.226, 0.15, 0.15, 0.101, 0.10]
-      # Route replay indicates a smoother integral response across the Prius TSS2 speed range.
-      kiBP = [0., 3., 5., 10., 25., 36.]
-      kiV = [0.41, 0.41, 0.36, 0.20, 0.18, 0.18]
+      kiBP = [0.0,  0.3,  0.8,  5.0,  8.3,  27.]
+      kiV  = [0.50, 0.52, 0.52, 0.25, 0.21, 0.10]
     else:
       kiBP = [2., 5.]
       kiV = [0.5, 0.25]
@@ -79,7 +78,7 @@ class CarController(CarControllerBase, GasInterceptorCarController):
 
     # *** start long control state ***
     self.long_pid = get_long_tune(self.CP, self.CP_SP, self.params)
-    self.aego = FirstOrderFilter(0.0, 0.25, DT_CTRL * 3)
+    self.aego = FirstOrderFilter(0.0, 0.45, DT_CTRL * 3)
     self.pitch = FirstOrderFilter(0, 0.5, DT_CTRL)
     self.pitch_hp = HighPassFilter(0.0, 0.25, 1.5, DT_CTRL)
 

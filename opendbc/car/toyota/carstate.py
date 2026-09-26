@@ -298,6 +298,8 @@ class CarState(CarStateBase, CarStateExt):
     pt_messages = [
       ("BLINKERS_STATE", float('nan')),
     ]
+    if CP.flags & ToyotaFlags.HYBRID:
+      pt_messages.append(("ENGINE_RPM", float('nan')))
 
     cam_messages = [
       ("RSA1", 0),
