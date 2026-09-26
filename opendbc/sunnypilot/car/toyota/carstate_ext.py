@@ -11,7 +11,10 @@ from opendbc.car import Bus, structs
 from opendbc.car.carlog import carlog
 from opendbc.can.parser import CANParser
 from opendbc.car.common.conversions import Conversions as CV
+from opendbc.car.toyota.values import ToyotaFlags
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
+
+ENGINE_RUNNING_RPM = 300.0
 
 TRAFFIC_SIGNAL_MAP = {
   1: "kph",
@@ -168,3 +171,7 @@ class CarStateExt:
     # Update traffic signals and speed limit
     self.update_traffic_signals(cp_cam)
     ret_sp.speedLimit = self.calculate_speed_limit()
+
+    if self.CP.flags & ToyotaFlags.HYBRID and "ENGINE_RPM" in cp.vl:
+      ret_sp.engineRpm = float(cp.vl["ENGINE_RPM"]["RPM"])
+      ret_sp.engineOff = ret_sp.engineRpm < ENGINE_RUNNING_RPM and not bool(cp.vl["ENGINE_RPM"]["ENGINE_RUNNING"])
