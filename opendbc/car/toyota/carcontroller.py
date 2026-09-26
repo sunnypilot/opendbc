@@ -15,6 +15,7 @@ from opendbc.sunnypilot.car.toyota.auto_brake_hold import AutoBrakeHoldCarContro
 from opendbc.sunnypilot.car.toyota.enhanced_bsm import EnhancedBsmCarController
 from opendbc.sunnypilot.car.toyota.gas_interceptor import GasInterceptorCarController
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
+from opendbc.sunnypilot.car.toyota.brake_onset import BrakeOnsetShaper
 
 Ecu = structs.CarParams.Ecu
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -84,6 +85,7 @@ class CarController(CarControllerBase, GasInterceptorCarController):
 
     self.accel = 0
     self.prev_accel = 0
+    self.brake_onset = BrakeOnsetShaper(DT_CTRL * 3, -ACCEL_WINDDOWN_LIMIT / (DT_CTRL * 3))
     # *** end long control state ***
 
     self.packer = CANPacker(dbc_names[Bus.pt])
@@ -238,7 +240,11 @@ class CarController(CarControllerBase, GasInterceptorCarController):
         # internal PCM gas command can get stuck unwinding from negative accel so we apply a generous rate limit
         pcm_accel_cmd = actuators.accel
         if CC.longActive:
-          pcm_accel_cmd = rate_limit(pcm_accel_cmd, self.prev_accel, ACCEL_WINDDOWN_LIMIT, ACCEL_WINDUP_LIMIT)
+          winddown_step = self.brake_onset.down_step(pcm_accel_cmd, self.prev_accel,
+                                                     bypass=self.brake_onset.is_urgent(pcm_accel_cmd, fcw_alert))
+          pcm_accel_cmd = rate_limit(pcm_accel_cmd, self.prev_accel, winddown_step, ACCEL_WINDUP_LIMIT)
+        else:
+          self.brake_onset.reset()
         self.prev_accel = pcm_accel_cmd
 
         # calculate amount of acceleration PCM should apply to reach target, given pitch.
