@@ -249,9 +249,11 @@ class CarInterface(CarInterfaceBase):
       # leaves here is the camera-CAN number and is 2.5x short.
       #
       # lagd normally overrides this frame by frame, so on a warm device this line changes
-      # nothing. It is load-bearing in the two places lagd is not: the seconds after a boot
-      # before the learner has blocks, and a device with the LagdToggle off, where
-      # LagdToggle.update() returns CP.steerActuatorDelay + the user's offset verbatim.
+      # nothing. It is load-bearing in the two places lagd is not. Before the learner has
+      # blocks (and with no usable cache) lagd publishes this PLUS 0.2 s, i.e. 0.58 s, not
+      # 0.38; upstream's lagd VERSION 1 also discards any cache written before it, and only
+      # learns above 50 mph. And with the LagdToggle off, LagdToggle.update() returns
+      # CP.steerActuatorDelay + the user's offset verbatim.
       ret.steerActuatorDelay = 0.38
 
       # FORK(HONDA_ELESYS): keep lateral alive at a stop so the cluster keeps its

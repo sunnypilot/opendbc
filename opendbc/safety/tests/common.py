@@ -1050,6 +1050,11 @@ class SafetyTest(SafetyTestBase):
               # exceptions for common msgs across different hondas
               tx = list(filter(lambda m: m[0] not in [0x1FA, 0x30C, 0x33D, 0x33DB, 0x1A6], tx))
 
+            # FORK(LKAS-GATEWAY): both HONDA_ACCORD_9G_AU (Elesys) stand-down modes carry SP_HUD_STATUS
+            # (0x500, bus 0) for the LIN-bus gateway; they differ only by the gas-interceptor param
+            if attr.startswith('TestHondaElesys') and current_test.startswith('TestHondaElesys'):
+              tx = list(filter(lambda m: m[0] not in [0x500, ], tx))
+
             if attr.startswith('TestHyundaiLongitudinal'):
               # exceptions for common msgs across different Hyundai CAN platforms
               tx = list(filter(lambda m: m[0] not in [0x420, 0x50A, 0x389, 0x4A2], tx))

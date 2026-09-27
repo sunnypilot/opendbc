@@ -9,10 +9,13 @@ actuator it was never meant to touch. That is what this file is for, so every ch
 below goes through CarController.update() and reads what would go on the wire.
 
 Runs standalone: PYTHONPATH=<opendbc_repo> python this_file.py
+or under unittest discovery, where TestDynamicTuningIntegration (at the end) asserts
+that no check failed.
 """
 
 import math
 import sys
+import unittest
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -505,9 +508,16 @@ check("v3: lateral off and not enabled -> OP_STATE off, WANT_CONTROL clear",
 check("v3: MAX_TORQUE is 0 -- 'use your own authority', so the ladder lives in one place",
       f is not None and f[6] == 0, f"{f and f[6]}")
 
+# LAT_READY is `CC_SP.mads.enabled or CC.latActive` (carcontroller.py, 43a98b9d): lateral
+# ENABLED, not merely possible. CC_SP is shared by every later section, so put it back.
+CC_SP.mads.enabled = True
 f, _ = v3_frame(lat_active=False, enabled=True, v_ego=25.0, start=100)
-check("v3: enabled, lateral available, not asking -> READY and LAT_READY",
+check("v3: enabled, MADS lateral enabled, not asking -> READY and LAT_READY",
       f is not None and op_state(f) == READY and (b5(f) & 0x02), f"b5={f and f[5]:#04x}")
+CC_SP.mads.enabled = False
+f, _ = v3_frame(lat_active=False, enabled=True, v_ego=25.0, start=150)
+check("v3: enabled, MADS lateral off, not asking -> READY without LAT_READY",
+      f is not None and op_state(f) == READY and not (b5(f) & 0x02), f"b5={f and f[5]:#04x}")
 
 f, _ = v3_frame(lat_active=True, torque=0.0, v_ego=25.0, start=200)
 check("v3: asking with a zero command -> REQUESTING, WANT_CONTROL set",
@@ -885,8 +895,17 @@ else:
   check("a STALE opposing value does not confirm either", st == LaneChangeState.preLaneChange, f"{st}")
 
 
-print("\n" + "=" * 60)
-if FAILURES:
-  print(f"{len(FAILURES)} FAILED: {FAILURES}")
-  sys.exit(1)
-print("ALL CHECKS PASSED")
+class TestDynamicTuningIntegration(unittest.TestCase):
+  """The checks above run when the module loads. This is what lets unittest discovery (lefthook's
+  unittest-parallel) report them as a test; a sys.exit(1) at import only showed up as a module
+  that failed to import."""
+  def test_all_checks_pass(self):
+    self.assertEqual(FAILURES, [])
+
+
+if __name__ == "__main__":
+  print("\n" + "=" * 60)
+  if FAILURES:
+    print(f"{len(FAILURES)} FAILED: {FAILURES}")
+    sys.exit(1)
+  print("ALL CHECKS PASSED")
