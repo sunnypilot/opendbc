@@ -645,7 +645,7 @@ class HondaDynamicTuner:
     # CHANGES at speed; there is nothing to gain by keeping it near zero.
     #
     # KNOWN ISSUE, deliberately not changed here: the 2-5 m/s fade band sits
-    # entirely inside the PID state (stopping only begins at vEgoStopping = 0.8),
+    # entirely inside the PID state (stopping only begins below 0.8 m/s, stopping_tune.py),
     # so on a real stop approach this hands the whole grade term back to
     # openpilot's longitudinal integrator at a rate it cannot follow -- modelled
     # shortfall 0.115 m/s^2 on a 4% downhill rising to 0.249 on a 10%. Toyota
@@ -870,7 +870,7 @@ class HondaDynamicTuner:
     # a 66-count step across a 1.5 mm/s change in speed, with no hysteresis -- so a car
     # dithering around zero on a rough surface would chatter the hold between 189 and the
     # rail. And through the whole 0.001-1.0 m/s band the gain was applied with no feedback
-    # at all; above 0.8 m/s (vEgoStopping) not even the `stopping` clamp applies, so a
+    # at all; above 0.8 m/s (the stopping speed) not even the `stopping` clamp applies, so a
     # live railed 1.60x could reach the wire while the converged estimate was still ~0.
     #
     # Ramping instead of cutting fixes both: continuous everywhere, and the correction is

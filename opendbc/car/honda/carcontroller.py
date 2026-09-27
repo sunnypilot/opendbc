@@ -3,8 +3,8 @@ import numpy as np
 from opendbc.can import CANPacker
 from opendbc.car import Bus, DT_CTRL, rate_limit, make_tester_present_msg, structs
 from opendbc.car.honda import hondacan
-from opendbc.car.honda.values import CAR, CruiseButtons, HONDA_BOSCH, HONDA_BOSCH_CANFD, HONDA_BOSCH_RADARLESS, \
-                                     HONDA_BOSCH_TJA_CONTROL, HONDA_ELESYS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
+from opendbc.car.honda.values import CAR, CruiseButtons, HondaFlags, CarControllerParams
+from opendbc.car.honda.values import HONDA_ELESYS  # FORK(HONDA_ACCORD_9G_AU): HONDA_ELESYS
 from opendbc.car.interfaces import CarControllerBase
 
 from opendbc.sunnypilot.car.honda.mads import MadsCarController
@@ -31,6 +31,7 @@ def compute_gb_honda_nidec(accel, speed):
   return np.clip(gb, 0.0, 1.0), np.clip(-gb, 0.0, 1.0)
 
 
+# FORK(HONDA_ACCORD_9G_AU): this car's gas/brake map (creep table and 2.6 m/s^2 full brake), dispatched below
 def compute_gb_honda_elesys(accel, speed):
   creep = float(np.interp(speed, [0., 0.75, 1.75, 3.0, 5.0], [1.15, 0.8, 0.45, 0.3, 0.0]))
   creep *= float(np.clip(1. - max(float(accel), 0.) / 0.8, 0., 1.))
@@ -40,17 +41,17 @@ def compute_gb_honda_elesys(accel, speed):
   return float(np.clip(gas, 0.0, 1.0)), float(np.clip(brake, 0.0, 1.0))
 
 
-def compute_gas_brake(accel, speed, fingerprint):
-  if fingerprint in HONDA_BOSCH:
+def compute_gas_brake(accel, speed, CP):
+  if CP.flags & HondaFlags.BOSCH:
     return compute_gb_honda_bosch(accel, speed)
-  elif fingerprint in HONDA_ELESYS:
+  elif CP.carFingerprint in HONDA_ELESYS:
     return compute_gb_honda_elesys(accel, speed)
   else:
     return compute_gb_honda_nidec(accel, speed)
 
 
 # TODO not clear this does anything useful
-def actuator_hysteresis(brake, braking, brake_steady, v_ego, car_fingerprint):
+def actuator_hysteresis(brake, braking, brake_steady):
   # hyst params
   brake_hyst_on = 0.02    # to activate brakes exceed this value
   brake_hyst_off = 0.005  # to deactivate brakes below this value
@@ -244,7 +245,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.params = CarControllerParams(CP)
     self.CAN = hondacan.CanBus(CP)
-    self.tja_control = CP.carFingerprint in HONDA_BOSCH_TJA_CONTROL
+    self.tja_control = bool(CP.flags & HondaFlags.BOSCH_TJA_CONTROL)
     # FORK: self-learning longitudinal tuning. Inert unless HondaDynamicTuningEnabled is set.
     self.dynamic_tuner = HondaDynamicTuner(CP, CP_SP)
 
@@ -277,8 +278,8 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
 
     if CC.longActive:
       accel = actuators.accel
-      adjust_accel = accel + hill_accel
-      gas, brake = compute_gas_brake(adjust_accel, CS.out.vEgo, self.CP.carFingerprint)
+      adjust_accel = accel + hill_accel  # FORK(HONDA_ACCORD_9G_AU): pitch feedforward, also feeds pcm_accel below
+      gas, brake = compute_gas_brake(adjust_accel, CS.out.vEgo, self.CP)
     else:
       accel = 0.0
       adjust_accel = 0.0
@@ -305,8 +306,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     self.last_torque = limited_torque
 
     # *** apply brake hysteresis ***
-    pre_limit_brake, self.braking, self.brake_steady = actuator_hysteresis(brake, self.braking, self.brake_steady,
-                                                                           CS.out.vEgo, self.CP.carFingerprint)
+    pre_limit_brake, self.braking, self.brake_steady = actuator_hysteresis(brake, self.braking, self.brake_steady)
 
     # *** rate limit after the enable check ***
     # NB: MVL runs a 3x faster brake rise here (3 * DT_CTRL). Deliberately NOT ported: combined
@@ -327,7 +327,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     can_sends = []
 
     # tester present - w/ no response (keeps radar disabled)
-    if self.CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) and self.CP.openpilotLongitudinalControl:
+    if self.CP.flags & HondaFlags.BOSCH and not (self.CP.flags & HondaFlags.BOSCH_RADARLESS) and self.CP.openpilotLongitudinalControl:
       if self.frame % 10 == 0:
         can_sends.append(make_tester_present_msg(0x18DAB0F1, 1, suppress_response=True))
 
@@ -366,7 +366,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     if self.CP_SP.enableGasInterceptor or not CC.longActive:
       pcm_speed = 0.0
       pcm_accel = int(0.0)
-    elif self.CP.carFingerprint in HONDA_NIDEC_ALT_PCM_ACCEL:
+    elif self.CP.flags & HondaFlags.NIDEC_ALT_PCM_ACCEL:
       pcm_speed_V = [0.0,
                      np.clip(CS.out.vEgo - 3.0, 0.0, 100.0),
                      np.clip(CS.out.vEgo + 0.0, 0.0, 100.0),
@@ -382,27 +382,27 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
       pcm_accel = int(np.clip((adjust_accel / 1.44) / max_accel, 0.0, 1.0) * self.params.NIDEC_GAS_MAX)
 
     if not self.CP.openpilotLongitudinalControl:
-      if self.frame % 2 == 0 and self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS | HONDA_BOSCH_CANFD:
+      if self.frame % 2 == 0 and not (self.CP.flags & (HondaFlags.BOSCH_RADARLESS | HondaFlags.BOSCH_CANFD)):
         can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, self.CAN))
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, self.CAN, CruiseButtons.CANCEL, self.CP.carFingerprint))
+        can_sends.append(hondacan.spam_buttons_command(self.packer, self.CAN, CruiseButtons.CANCEL, self.CP))
       elif CC.cruiseControl.resume:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, self.CAN, CruiseButtons.RES_ACCEL, self.CP.carFingerprint))
+        can_sends.append(hondacan.spam_buttons_command(self.packer, self.CAN, CruiseButtons.RES_ACCEL, self.CP))
 
     else:
       # Send gas and brake commands.
       if self.frame % 2 == 0:
         ts = self.frame * DT_CTRL
 
-        if self.CP.carFingerprint in HONDA_BOSCH:
+        if self.CP.flags & HondaFlags.BOSCH:
           self.accel = float(np.clip(accel, self.params.BOSCH_ACCEL_MIN, self.params.BOSCH_ACCEL_MAX))
           self.gas = float(np.interp(accel, self.params.BOSCH_GAS_LOOKUP_BP, self.params.BOSCH_GAS_LOOKUP_V))
 
           stopping = actuators.longControlState == LongCtrlState.stopping
           self.stopping_counter = self.stopping_counter + 1 if stopping else 0
           can_sends.extend(hondacan.create_acc_commands(self.packer, self.CAN, CC.enabled, CC.longActive, self.accel, self.gas,
-                                                        self.stopping_counter, self.CP.carFingerprint))
+                                                        self.stopping_counter, self.CP))
         else:
           apply_brake = np.clip(self.brake_last - wind_brake * self.dynamic_tuner.wind_scale(), 0.0, 1.0)
           # FORK: learned brake gain. This is what replaces hand-editing the brake divisor in
@@ -425,7 +425,9 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
           pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, self.CAN, apply_brake, pump_on,
                                                          pcm_override, pcm_cancel_cmd, alert_fcw,
-                                                         self.CP.carFingerprint, CS.stock_brake, CS.is_metric, self.CP_SP))
+                                                         CS.stock_brake, self.CP_SP,
+                                                         # FORK(HONDA_ACCORD_9G_AU): BRAKE_COMMAND units bit
+                                                         is_metric=CS.is_metric, elesys=self.CP.carFingerprint in HONDA_ELESYS))
           self.apply_brake_last = apply_brake
           self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
 
@@ -511,11 +513,11 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
 
       if self.CP.openpilotLongitudinalControl:
         # TODO: combining with create_acc_hud block above will change message order and will need replay logs regenerated
-        if self.CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS):
+        if self.CP.flags & HondaFlags.BOSCH and not (self.CP.flags & HondaFlags.BOSCH_RADARLESS):
           can_sends.append(hondacan.create_radar_hud(self.packer, self.CAN.pt))
         if self.CP.carFingerprint == CAR.HONDA_CIVIC_BOSCH:
           can_sends.append(hondacan.create_legacy_brake_command(self.packer, self.CAN.pt))
-        if self.CP.carFingerprint not in HONDA_BOSCH:
+        if not (self.CP.flags & HondaFlags.BOSCH):
           self.speed = pcm_speed
           if not self.CP_SP.enableGasInterceptor:
             self.gas = pcm_accel / self.params.NIDEC_GAS_MAX

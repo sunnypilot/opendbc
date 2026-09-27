@@ -873,8 +873,8 @@ else:
 
   def run(stale, torque, blinker_left):
     dh = DesireHelper()
-    dh.update(carstate(torque, True, blinker_left), True, 0.0, stale)      # blinker rising edge
-    dh.update(carstate(torque, True, blinker_left), True, 0.0, stale)
+    dh.update(carstate(torque, True, blinker_left), True, 0.0, driver_torque_stale=stale)      # blinker rising edge
+    dh.update(carstate(torque, True, blinker_left), True, 0.0, driver_torque_stale=stale)
     return dh.lane_change_state
 
   st = run(False, 3000, True)

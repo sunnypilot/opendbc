@@ -33,10 +33,13 @@ class TestElesysCategory(unittest.TestCase):
       self.assertFalse(car in HONDA_BOSCH)
 
   def test_dispatch(self):
-    # Elesys car routes to the Elesys mapping, Nidec car to upstream mapping
+    # Elesys car routes to the Elesys mapping, Nidec car to upstream mapping.
+    # compute_gas_brake() takes a CP upstream; it reads only carFingerprint and flags.
+    def cp(car):
+      return SimpleNamespace(carFingerprint=car, flags=car.config.flags)
     a, v = -1.5, 7.0
-    self.assertEqual(compute_gas_brake(a, v, ELESYS_CAR), compute_gb_honda_elesys(a, v))
-    self.assertEqual(compute_gas_brake(a, v, NIDEC_CAR), tuple(compute_gb_honda_nidec(a, v)))
+    self.assertEqual(compute_gas_brake(a, v, cp(ELESYS_CAR)), compute_gb_honda_elesys(a, v))
+    self.assertEqual(compute_gas_brake(a, v, cp(NIDEC_CAR)), tuple(compute_gb_honda_nidec(a, v)))
 
 
 class TestComputeGbNidec(unittest.TestCase):
@@ -404,7 +407,8 @@ class TestBrakeCommandUnitsBit(unittest.TestCase):
       self.skipTest(f'opendbc.can unavailable: {e}')
     CAN = SimpleNamespace(pt=0)
     CP_SP = SimpleNamespace(flags=0)
-    msg = hondacan.create_brake_command(packer, CAN, 100, True, True, False, 0, car, {}, is_metric, CP_SP)
+    msg = hondacan.create_brake_command(packer, CAN, 100, True, True, False, 0, {}, CP_SP,
+                                        is_metric=is_metric, elesys=car in HONDA_ELESYS)
     return bytes(msg.dat if hasattr(msg, 'dat') else msg[1])
 
   def _units_bit_mask(self, car):

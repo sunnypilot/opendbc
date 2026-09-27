@@ -67,7 +67,11 @@ class CAR(Platforms):
   )
   # Leaf with ADAS ECU found behind instrument cluster instead of glovebox
   # Currently the only known difference between them is the inverted seatbelt signal.
-  NISSAN_LEAF_IC = NISSAN_LEAF.override(car_docs=[])
+  NISSAN_LEAF_IC = NissanPlatformConfig(
+    [NissanCarDocs("Nissan Leaf IC 2018-23", video="https://youtu.be/vaMbtAh_0cY")],
+    NissanCarSpecs(mass=1610, wheelbase=2.705),
+    {Bus.pt: 'nissan_leaf_2018_generated'},
+  )
   NISSAN_ROGUE = NissanPlatformConfig(
     [NissanCarDocs("Nissan Rogue 2018-20")],
     NissanCarSpecs(mass=1610, wheelbase=2.705)
@@ -95,6 +99,7 @@ NISSAN_RX_OFFSET = 0x20
 
 # TODO: once we gather enough Altima data on PT bus (1), we can remove OBD queries to speed up fingerprinting
 FW_QUERY_CONFIG = FwQueryConfig(
+  fw_version_regex=br"(?:[A-Z0-9]{10}|[\x00-\xff]{24})",
   requests=[request for bus, obd_multiplexing in ((0, False), (1, False), (1, True)) for request in [
     Request(
       [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
