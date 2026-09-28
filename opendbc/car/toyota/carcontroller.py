@@ -15,7 +15,7 @@ from opendbc.sunnypilot.car.toyota.auto_brake_hold import AutoBrakeHoldCarContro
 from opendbc.sunnypilot.car.toyota.enhanced_bsm import EnhancedBsmCarController
 from opendbc.sunnypilot.car.toyota.gas_interceptor import GasInterceptorCarController
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
-from opendbc.sunnypilot.car.toyota.brake_onset import BrakeOnsetShaper
+from opendbc.sunnypilot.car.toyota.brake_onset import BrakeOnsetShaper, EngageOnsetShaper
 
 Ecu = structs.CarParams.Ecu
 LongCtrlState = structs.CarControl.Actuators.LongControlState
