@@ -484,7 +484,7 @@ class CAR(Platforms):
     flags=HyundaiFlags.CHECKSUM_CRC8,
   )
   KIA_K5_2025 = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Kia K5 (without HDA II) 2025", car_parts=CarParts.common([CarHarness.hyundai_m]))],
+    [HyundaiCarDocs("Kia K5 (without HDA II) 2025-26", car_parts=CarParts.common([CarHarness.hyundai_m]))],
     CarSpecs(mass=3230 * CV.LB_TO_KG, wheelbase=2.85, steerRatio=13.27),
     flags=HyundaiFlags.CCNC,
   )
