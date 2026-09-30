@@ -4,6 +4,7 @@ from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 
 class RadarInterfaceExt(EsccRadarInterfaceBase):
@@ -21,7 +22,8 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
 
   @property
   def use_radar_interface_ext(self) -> bool:
-    return self.use_escc or self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC)
+    camera_scc = self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC)
+    return self.use_escc or bool(camera_scc and not self.CP_SP.flags & HyundaiFlagsSP.CANFD_RADAR_TRACKS)
 
   def get_msg_src(self) -> str | None:
     if self.use_escc:

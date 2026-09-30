@@ -198,6 +198,13 @@ class CarInterface(CarInterfaceBase):
       stock_cp.dashcamOnly = True
 
     if stock_cp.flags & HyundaiFlags.CANFD:
+      # Some CAN-FD front radars publish two tracked objects in each 0x210-0x21f
+      # message. Require the complete 16-message/DLC32 group before selecting
+      # this parser, since 0x210 alone is not enough to identify the layout.
+      if all(fingerprint[CAN.ACAN].get(addr) == 32 for addr in range(0x210, 0x220)):
+        ret.flags |= HyundaiFlagsSP.CANFD_RADAR_TRACKS.value
+        stock_cp.radarUnavailable = False
+
       if 0x1fa in fingerprint[CAN.ECAN]:
         ret.flags |= HyundaiFlagsSP.SPEED_LIMIT_AVAILABLE.value
     else:
