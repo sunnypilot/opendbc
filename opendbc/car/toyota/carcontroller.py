@@ -242,9 +242,9 @@ class CarController(CarControllerBase, GasInterceptorCarController):
         pcm_accel_cmd = actuators.accel
         if CC.longActive:
           # a hard request bypasses the soft brake onset, except in the first 0.6 s after engaging (FCW always does)
-          urgent = fcw_alert or (
-                  self.brake_onset.is_urgent(pcm_accel_cmd, False) and not self.engage_onset.in_engage_window)
-          winddown_step = self.brake_onset.down_step(pcm_accel_cmd, self.prev_accel, bypass=urgent, v_ego=CS.out.vEgo)
+          urgent = self.brake_onset.is_urgent(pcm_accel_cmd, False) and not self.engage_onset.in_engage_window
+          winddown_step = self.brake_onset.down_step(pcm_accel_cmd, self.prev_accel, bypass=fcw_alert, v_ego=CS.out.vEgo,
+                                                     urgent=urgent)
           windup_step = self.engage_onset.up_step(True)
           pcm_accel_cmd = rate_limit(pcm_accel_cmd, self.prev_accel, winddown_step, windup_step)
         else:

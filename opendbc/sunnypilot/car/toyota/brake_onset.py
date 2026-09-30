@@ -8,10 +8,13 @@ import numpy as np
 
 ONSET_T_BP = [0.0, 0.15, 0.6]  # s
 ONSET_V_BP = [11.1, 16.7]  # m/s
-ONSET_T1_V = [0.3, 0.15]
-ONSET_T3_V = [1.2, 0.6]
-ONSET_J_DOWN = [0.25, 0.6, 4.0]  # m/s^3
-HARD_BRAKE_ACCEL = -2.0  # m/s^2
+ONSET_T1_V = [0.1, 0.1]
+ONSET_T3_V = [0.3, 0.3]
+ONSET_J_DOWN = [1.0, 1.0, 4.0]  # m/s^3
+HARD_BRAKE_ACCEL = -1.5
+URGENT_T = 0.1  # s
+URGENT_J = 1.0  # m/s^3
+URGENT_T_RAMP = 0.1  # s
 
 
 class BrakeOnsetShaper:
@@ -29,16 +32,20 @@ class BrakeOnsetShaper:
     t3 = float(np.interp(v_ego, ONSET_V_BP, ONSET_T3_V))
     return [0.0, t1, t3]
 
-  def down_step(self, accel_request: float, prev_accel: float, bypass: bool = False, v_ego: float = 30.0) -> float:
+  def down_step(self, accel_request: float, prev_accel: float, bypass: bool = False, v_ego: float = 30.0,
+                urgent: bool = False) -> float:
     if bypass:
       self.t_onset = 0.0
       return -self.stock_down_jerk * self.dt
 
-    t_bp = self.schedule_t(v_ego)
+    if urgent:
+      t_bp, j_bp = [0.0, URGENT_T, URGENT_T + max(URGENT_T_RAMP, self.dt)], [URGENT_J, URGENT_J, self.stock_down_jerk]
+    else:
+      t_bp, j_bp = self.schedule_t(v_ego), ONSET_J_DOWN
     gentlest_step = -ONSET_J_DOWN[0] * self.dt
     onset = (accel_request - prev_accel) < gentlest_step - 1e-9
     if onset:
-      j_down = float(np.interp(self.t_onset, t_bp, ONSET_J_DOWN))
+      j_down = float(np.interp(self.t_onset, t_bp, j_bp))
       self.t_onset = min(self.t_onset + self.dt, t_bp[-1])
     else:
       j_down = self.stock_down_jerk
