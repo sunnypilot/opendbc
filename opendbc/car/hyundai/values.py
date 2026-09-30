@@ -369,6 +369,11 @@ class CAR(Platforms):
     CarSpecs(mass=2917 * CV.LB_TO_KG, wheelbase=2.8, steerRatio=13.75 * 1.15, tireStiffnessFactor=0.5),
     flags=HyundaiFlags.LEGACY | HyundaiFlags.TCU_GEARS,
   )
+  HYUNDAI_VENUE_2021_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Hyundai Venue Non-SCC 2021", car_parts=CarParts.common([CarHarness.hyundai_f]))],
+    CarSpecs(mass=1280, wheelbase=2.52, steerRatio=14.4),
+    flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.TCU_GEARS,
+  )
   HYUNDAI_SONATA_HYBRID = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Sonata Hybrid 2020-23", "All", car_parts=CarParts.common([CarHarness.hyundai_a]))],
     HYUNDAI_SONATA.specs,
