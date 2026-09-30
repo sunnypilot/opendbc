@@ -29,6 +29,7 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt, Inte
 
   def update(self, CC, CC_SP, CS, now_nanos):
     MadsCarController.update(self, CC, CC_SP, CS)
+    CarControllerExt.update_wp_main_state(self, CS, now_nanos)
     can_sends = []
 
     lkas_active = CC.latActive and self.lkas_control_bit_prev
