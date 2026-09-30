@@ -5,6 +5,7 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
+import math
 from opendbc.car import structs
 from opendbc.car.toyota import toyotacan
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
@@ -13,6 +14,8 @@ GearShifter = structs.CarState.GearShifter
 
 # frames of confirmed hold-eligible standstill required before engaging
 BRAKE_HOLD_ALLOWED_TIMER = 100
+BRAKE_HOLD_MIN_FORCE = 1400.0 #n
+BRAKE_HOLD_LIGHT_TIMER = 250
 
 DISALLOWED_GEARS = (GearShifter.park, GearShifter.reverse)
 
@@ -51,6 +54,8 @@ class AutoBrakeHoldCarController(AutoBrakeHold):
     self.active = False
     self._counter = 0
     self._released = False
+    self._armed = False
+    self._firm_frame = 0
     self._prev_brake_pressed = False
 
   def update(self, CS: structs.CarState, frame: int, packer) -> list:
@@ -63,12 +68,19 @@ class AutoBrakeHoldCarController(AutoBrakeHold):
       # _prev_brake_pressed by the time standstill is reached, so it doesn't count as a release
       if CS.out.brakePressed and not self._prev_brake_pressed:
         self._released = True
+      force = getattr(CS, "brake_force", float("nan"))
       self._counter += 1
-      self.active = self._counter > BRAKE_HOLD_ALLOWED_TIMER and not self._released
+      if not self._armed and (math.isnan(force) or force >= BRAKE_HOLD_MIN_FORCE):
+        self._armed = True
+        self._firm_frame = self._counter
+      firm_ready = self._armed and self._counter - self._firm_frame >= BRAKE_HOLD_ALLOWED_TIMER
+      held_long = self._counter > BRAKE_HOLD_LIGHT_TIMER
+      self.active = (firm_ready or held_long) and not self._released
     else:
       self._counter = 0
       self.active = False
       self._released = False
+      self._armed = False
 
     self._prev_brake_pressed = CS.out.brakePressed
 
