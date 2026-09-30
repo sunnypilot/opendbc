@@ -1,6 +1,6 @@
 # Experimental WP MAIN-on holdoff
 
-Status, September 29, 2026: **offline prototype, not a validated fix or installation candidate**. A second kind of captured EPS fault is outside this timer's coverage. No comma or WP firmware has been installed or flashed. No upstream PR has been submitted.
+Status, September 29, 2026: **experimental controller change with one successful vehicle trial; proposed for maintainer review**. The same runtime patch was installed in a release-based Sunnypilot application at the owner's request. No WP firmware was changed. The result supports further review, not general compatibility or merge readiness. A second kind of captured EPS fault is outside this timer's coverage.
 
 ## Purpose and scope
 
@@ -32,6 +32,7 @@ Development library base: `sunnypilot/opendbc` at `f95f996f5917dcbbf2e32fe51b606
 - The moving MAIN-on regression was first run against unmodified controller code and failed because LKAS was requested during the required holdoff.
 - Both library baselines pass **192 Chrysler safety/controller tests, with 21 existing skips and 234 passing subtests**. These comprise 180 safety tests and 12 new controller tests. The new tests use the real interface, controller, CAN packer and checksum/counter parser.
 - Both baselines additionally pass all **10 selected Chrysler/Jeep/Ram/Durango interface tests**.
+- Submission recheck on the library proposal passed **461 tests, with 21 skips and 234 passing subtests**, covering the Chrysler safety/controller tests and the complete vehicle-interface test file.
 - Changed Python files pass Ruff and both diffs pass `git diff --check`.
 - The exact release's old cross-mode safety-test discovery raised `AttributeError: TestBuild has no TX_MSGS` in three tests before assertions ran. The release branch backports the current opendbc predicate that selects actual `SafetyTest` subclasses. All three checks then execute and pass. This is a test-helper change, not a safety-policy or firmware change.
 
@@ -57,12 +58,30 @@ python -m pytest -q opendbc/car/tests/test_car_interfaces.py -k 'CHRYSLER or JEE
 
 For the exact release, run inside `opendbc_repo`, add `-c pyproject.toml --confcutdir=.` to isolate these library tests from openpilot's top-level pytest hooks, and use its declared Hypothesis 6.47.x dependency.
 
-## Remaining work before an installation candidate
+## First vehicle trial
+
+The two changed runtime files in this library proposal are byte-identical to those in [the tested application commit](https://github.com/cespanol/sunnypilot/commit/052ad68c40b663e4124405f94a719cc40880698b), based on Sunnypilot `2026.002.002` / `release-mici`. All 12 controller tests passed in the comma's Python environment before activation. This was not a fresh complete build of current upstream application master.
+
+The tested setup was one 2020 Grand Cherokee Trailhawk, comma four, and creator-reported WP Advanced. After a fresh startup with WP powered, the log confirms `NO_MIN_STEERING_SPEED` and `minSteerSpeed=0`. Twelve completed compact-log segments cover 701.7 seconds and 7,018 car-state samples. Five full-resolution excerpts corroborate the transitions below. No temporary or permanent EPS fault was recorded in either dataset; the excerpts overlap the same drive and are not independent trials.
+
+| Moving MAIN-on | Speed at parsed MAIN-on | First request after parsed MAIN-on | First request after raw CAN MAIN-on |
+| --- | ---: | ---: | ---: |
+| 1 | 14.80 mph | 0.7112 s | 0.7130 s |
+| 2 | 20.58 mph | 0.7111 s | 0.7129 s |
+| 3 | 19.29 mph | 0.7018 s | 0.7034 s |
+
+Nonzero controller output was sampled down to approximately 0.71 mph, all in Drive; the owner independently reported working steering. Two reverse periods produced no EPS fault and had no LKAS requests or nonzero steering-command torque in the full-resolution excerpts. The initial reverse-to-Drive request occurred 26.41 seconds after MAIN-on, at approximately 118.5 degrees steering angle. It did not reproduce D's approximately 464-degree condition and was outside the timer's active holdoff.
+
+There were eight CAN-invalid samples in the compact route and none in the selected full-resolution excerpts. No panda fault appeared in the drive's compact log. Safety transmit rejection counters did increment at startup, one MAIN-off transition, and shutdown; this is not a zero-rejection trial. The MAIN-off excerpt shows an already-generated request followed by MAIN-off and the next command with request off and torque zero. A later offroad snapshot contained `interruptRateCan1`, also observed before this patch. A reported battery discharge is separately unresolved. Neither observation establishes a cause or a WP power-management fix.
+
+Raw routes, device identifiers and location data remain private. Sanitized timing measurements are reported here; raw-route access needs coordination with the owner.
+
+## Remaining diagnostic and validation work
 
 Obtain the EPS diagnostic trouble code and an EPS-side WP capture in a controlled setup, covering both moving MAIN-on and first lateral engagement after reversing. Establish whether faults follow a speed-mode transition, request timing, steering load, message integrity, or another condition. The comma-side logs cannot directly prove which rewritten speed the EPS received, and they do not identify the exact WP binary.
 
 A request-based holdoff, such as jvePilot's, is a separate experiment worth evaluating after that evidence; do not automatically substitute it or guess an angle threshold. No safety limits should be relaxed and no fault should be hidden to make testing pass.
 
-There is no new waiting indicator: this is a controller-only prototype, and `CC.latActive` and the main UI can still indicate engagement during the holdoff. Resolve driver-visible readiness before any road validation. The existing project plan calls for the design-md visual contract when UI changes begin; no visual design is introduced here.
+There is no new waiting indicator: this is a controller-only prototype, and `CC.latActive` and the main UI can still indicate engagement during the holdoff. Driver-visible readiness needs maintainer review. No UI change is included.
 
-The comma-four application has not been fully built or run with this patch. Bench behavior, manual steering feel, exact Advanced-firmware compatibility and road behavior remain unverified. Keep the official release installed while this investigation continues.
+The installed release-based application booted successfully and completed the trial above; broader vehicle and bench validation remain incomplete. The WP beacon cannot identify the exact firmware or distinguish Basic from Advanced, so the automatic gate also covers untested WP variants on this platform. Review opt-in behavior or firmware qualification before wider inclusion. The original official application checkout is retained on the owner's device for rollback. The provisional delay is inspired by jvePilot's different request-based timer, not an EPS readiness specification.
