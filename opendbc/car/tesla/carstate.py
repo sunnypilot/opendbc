@@ -21,6 +21,9 @@ class CarState(CarStateBase, CarStateExt):
 
     self.autopark = False
     self.autopark_prev = False
+    self.stock_lkas_passthrough = False
+    self.stock_lkas_prev = False
+    self.stock_emergency_lkas = False
     self.cruise_enabled_prev = False
     self.fsd14_error_logged = False
     self.suspected_fsd14 = False
@@ -29,13 +32,24 @@ class CarState(CarStateBase, CarStateExt):
     self.das_control = None
 
   def update_autopark_state(self, autopark_state: str, cruise_enabled: bool):
-    autopark_now = autopark_state in ("ACTIVE", "COMPLETE", "SELFPARK_STARTED")
+    # Keep stock ownership for the full maneuver, including pauses. UNAVAILABLE,
+    # STANDBY and terminal ABORTED/UNPARK_COMPLETE states release ownership.
+    autopark_now = autopark_state in ("STARTED", "ACTIVE", "COMPLETE", "PAUSED", "RESUMED", "SELFPARK_STARTED")
     if autopark_now and not self.autopark_prev and not self.cruise_enabled_prev:
       self.autopark = True
     if not autopark_now:
       self.autopark = False
     self.autopark_prev = autopark_now
     self.cruise_enabled_prev = cruise_enabled
+
+  def update_stock_lkas_state(self, stock_lkas_now: bool, cruise_was_enabled: bool):
+    # Match panda safety: only hand control to stock steering on a rising edge
+    # that started before openpilot cruise controls were engaged.
+    if stock_lkas_now and not self.stock_lkas_prev and not cruise_was_enabled:
+      self.stock_lkas_passthrough = True
+    if not stock_lkas_now:
+      self.stock_lkas_passthrough = False
+    self.stock_lkas_prev = stock_lkas_now
 
   def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     cp_party = can_parsers[Bus.party]
@@ -78,10 +92,20 @@ class CarState(CarStateBase, CarStateExt):
 
     autopark_state = self.can_define.dv["DI_state"]["DI_autoparkState"].get(int(cp_party.vl["DI_state"]["DI_autoparkState"]), None)
     cruise_enabled = cruise_state in ("ENABLED", "STANDSTILL", "OVERRIDE", "PRE_FAULT", "PRE_CANCEL")
+    cruise_was_enabled = self.cruise_enabled_prev
     self.update_autopark_state(autopark_state, cruise_enabled)
 
+    # A second stalk pull is not visible on every supported harness. The
+    # authoritative cross-harness indication is stock DAS angle control on the
+    # isolated AP-side party bus. This cannot be confused with our own TX.
+    lkas_ctrl_type = get_steer_ctrl_type(self.CP.flags, 2)
+    stock_steer_ctrl_type = cp_ap_party.vl["DAS_steeringControl"]["DAS_steeringControlType"]
+    stock_lkas_now = stock_steer_ctrl_type == lkas_ctrl_type
+    self.stock_emergency_lkas = stock_steer_ctrl_type == 3  # EMERGENCY_LANE_KEEP
+    self.update_stock_lkas_state(stock_lkas_now, cruise_was_enabled)
+
     # Match panda safety cruise engaged logic
-    ret.cruiseState.enabled = cruise_enabled and not self.autopark
+    ret.cruiseState.enabled = cruise_enabled and not (self.autopark or self.stock_lkas_passthrough)
     if speed_units == "KPH":
       ret.cruiseState.speed = max(cp_party.vl["DI_state"]["DI_digitalSpeed"] * CV.KPH_TO_MS, 1e-3)
     elif speed_units == "MPH":
@@ -115,13 +139,14 @@ class CarState(CarStateBase, CarStateExt):
     # On FSD 14+, ANGLE_CONTROL behavior changed to allow user winddown while actuating.
     # FSD switched from using ANGLE_CONTROL to LANE_KEEP_ASSIST to likely keep the old steering override disengage logic.
     # LKAS switched from LANE_KEEP_ASSIST to ANGLE_CONTROL to likely allow overriding LKAS events smoothly
-    lkas_ctrl_type = get_steer_ctrl_type(self.CP.flags, 2)
-    ret.stockLkas = cp_ap_party.vl["DAS_steeringControl"]["DAS_steeringControlType"] == lkas_ctrl_type  # LANE_KEEP_ASSIST
+    ret.stockLkas = stock_lkas_now or self.stock_emergency_lkas
 
     # Stock Autosteer should be off (includes FSD)
     # TODO: find for TESLA_MODEL_X and HW2.5 vehicles
     if not (self.CP.flags & TeslaFlags.MISSING_DAS_SETTINGS):
-      ret.invalidLkasSetting = cp_ap_party.vl["DAS_settings"]["DAS_autosteerEnabled"] != 0
+      stock_autosteer_enabled = cp_ap_party.vl["DAS_settings"]["DAS_autosteerEnabled"] != 0
+      native_steering_passthrough = self.autopark or self.stock_lkas_passthrough or self.stock_emergency_lkas
+      ret.invalidLkasSetting = stock_autosteer_enabled and not native_steering_passthrough
 
       # Because we don't have FSD 14 detection outside of a set of FW, we should check if this FW is accidentally missing from FSD_14_FW
       # 1. If in Autosteer or FSD, already caught by invalidLkasSetting

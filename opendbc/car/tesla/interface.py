@@ -2,7 +2,7 @@ from opendbc.car import Bus, get_safety_config, structs
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.tesla.carcontroller import CarController
 from opendbc.car.tesla.carstate import CarState
-from opendbc.car.tesla.values import TeslaSafetyFlags, TeslaFlags, CANBUS, CAR, DBC, FSD_14_FW, Ecu
+from opendbc.car.tesla.values import TeslaSafetyFlags, TeslaFlags, CANBUS, CAR, DBC, Ecu, is_fsd_14_fw
 from opendbc.car.tesla.radar_interface import RadarInterface, RADAR_START_ADDR
 
 from opendbc.sunnypilot.car.tesla.values import TeslaFlagsSP, TeslaSafetyFlagsSP
@@ -41,7 +41,7 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs[0].safetyParam |= TeslaSafetyFlags.LONG_CONTROL.value
 
-    fsd_14 = any(fw.ecu == Ecu.eps and fw.fwVersion in FSD_14_FW.get(candidate, []) for fw in car_fw)
+    fsd_14 = any(fw.ecu == Ecu.eps and is_fsd_14_fw(candidate, fw.fwVersion) for fw in car_fw)
     if fsd_14:
       ret.flags |= TeslaFlags.FSD_14.value
       ret.safetyConfigs[0].safetyParam |= TeslaSafetyFlags.FSD_14.value

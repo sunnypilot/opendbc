@@ -31,24 +31,26 @@ class CarController(CarControllerBase, CoopSteeringCarController):
     CoopSteeringCarController.update(self, self.CP_SP)
     actuators = CC.actuators
     can_sends = []
+    native_passthrough = CS.autopark or CS.stock_lkas_passthrough
+    native_steering_passthrough = native_passthrough or CS.stock_emergency_lkas
 
     # Tesla EPS enforces disabling steering on heavy lateral override force.
     # When enabling in a tight curve, we wait until user reduces steering force to start steering.
     # Canceling is done on rising edge and is handled generically with CC.cruiseControl.cancel
     lat_active = CC.latActive and CS.hands_on_level < 3
 
-    if self.frame % 2 == 0:
+    if self.frame % 2 == 0 and not native_steering_passthrough:
       # Angular rate limit based on speed
       self.apply_angle_last = apply_steer_angle_limits_vm(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw, CS.out.steeringAngleDeg,
                                                           lat_active, CarControllerParams, self.VM)
 
       can_sends.append(self.tesla_can.create_steering_control(self.apply_angle_last, lat_active, self.coop_steering.control_type))
 
-    if self.frame % 10 == 0:
+    if self.frame % 10 == 0 and not native_steering_passthrough:
       can_sends.append(self.tesla_can.create_steering_allowed())
 
     # Longitudinal control
-    if self.CP.openpilotLongitudinalControl:
+    if self.CP.openpilotLongitudinalControl and not native_passthrough:
       if self.frame % 4 == 0:
         state = 13 if CC.cruiseControl.cancel else 4  # 4=ACC_ON, 13=ACC_CANCEL_GENERIC_SILENT
         accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
@@ -57,7 +59,7 @@ class CarController(CarControllerBase, CoopSteeringCarController):
 
     else:
       # Increment counter so cancel is prioritized even without openpilot longitudinal
-      if CC.cruiseControl.cancel:
+      if CC.cruiseControl.cancel and not native_passthrough:
         cntr = (CS.das_control["DAS_controlCounter"] + 1) % 8
         can_sends.append(self.tesla_can.create_longitudinal_command(13, 0, cntr, CS.out.vEgo, False))
 
