@@ -264,7 +264,11 @@ class CarInterface(CarInterfaceBase):
       if 0x223 in fingerprint[CAN.pt]:
         ret.flags |= HondaFlagsSP.HYBRID_ALT_BRAKEHOLD.value
 
-    if candidate == CAR.HONDA_CIVIC:
+    if candidate == CAR.HONDA_ODYSSEY:
+      if ret.flags & HondaFlagsSP.EPS_MODIFIED:
+        stock_cp.lateralTuning.pid.kpV, stock_cp.lateralTuning.pid.kiV = [[0.3], [0.1]]
+
+    elif candidate == CAR.HONDA_CIVIC:
       if ret.flags & HondaFlagsSP.EPS_MODIFIED:
         # stock request input values:     0x0000, 0x00DE, 0x014D, 0x01EF, 0x0290, 0x0377, 0x0454, 0x0610, 0x06EE
         # stock request output values:    0x0000, 0x0917, 0x0DC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x1680, 0x1680
