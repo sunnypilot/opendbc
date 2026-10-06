@@ -34,7 +34,9 @@ ONSET_J_DOWN = [1.0, 1.0, 4.0]  # m/s^3 (reference shape; the first two entries 
 # later. The normal onset schedule applies on top (the stricter of the two wins).
 ENGAGE_BRAKE_T_BP = [0.0, 0.2, 0.7]  # s since engaging
 ENGAGE_BRAKE_J_DOWN = [0.5, 0.5, 4.0]  # m/s^3
-HARD_BRAKE_ACCEL = -3.5  # driver 2026-10-05: "let the -2.0 bypass not act, I will test carefully" - at the ACCEL_MIN clip it never fires; only the FCW bypass remains (was -2.0; -1.5 before 2026-10-03)
+# Owner 2026-10-06: only a plan beyond -3.0 (a genuine emergency) bypasses the soft onset; -2.0 .. -3.0 keep it (at
+# 40 km/h -2.5 is reached slowly in ~1.8 s). History: -1.5 until 2026-10-03, -2.0, then -3.5 (= never) on 2026-10-05.
+HARD_BRAKE_ACCEL = -3.0
 URGENT_T = 0.1  # s
 URGENT_J = 1.0  # m/s^3
 URGENT_T_RAMP = 0.1  # s
@@ -124,3 +126,61 @@ class EngageOnsetShaper:
       return self.stock_up_jerk * self.dt
     j_up = float(np.interp(self.t_engaged, ENGAGE_T_BP, ENGAGE_J_UP))
     return min(j_up, self.stock_up_jerk) * self.dt
+
+# Hard-brake overshoot limit (owner 2026-10-06, route 00000100 19:41:42-45: the lead braked from 44 km/h at -3.3 m/s^2;
+# openpilot asked for -3.49 at most, but the PCM with the hybrid's regen delivered -4.3 m/s^2 for 0.8 s (BRAKE_FORCE
+# 4880 N), ~30% more than asked - the last, heaviest part of the "sudden brake" feel. The stock PID only lifted the
+# command ~0.3 above the request.) Once the request is a hard brake, the car's own deceleration is watched: when it
+# runs OVERSHOOT_DEADBAND past the request (predicted a moment ahead, as the PID does), the command is lifted by
+# OVERSHOOT_GAIN times the excess, at most OVERSHOOT_MAX, so the car settles near what openpilot asked for. The request
+# itself is never weakened: the limit only takes back braking the car delivered ON TOP of it (an MPC replay of 19:41
+# with the asked-for -3.5 ends 4.9 m behind the stopped lead). It never lifts the command above OVERSHOOT_CMD_CEIL.
+OVERSHOOT_ACTIVE_ACCEL = -2.5  # m/s^2: the limit works only while the request is harder than this
+OVERSHOOT_DEADBAND = 0.2  # m/s^2 of overshoot that is left alone
+OVERSHOOT_GAIN = 0.8
+OVERSHOOT_MAX = 1.0  # m/s^2 largest lift
+OVERSHOOT_RATE_UP = 3.0  # m/s^3 how fast the lift may grow
+OVERSHOOT_RATE_DOWN = 2.0  # m/s^3 how fast it is given back (also when the hard request ends)
+OVERSHOOT_CMD_CEIL = -1.5  # m/s^2: the lifted command always stays a firm brake
+
+
+class BrakeOvershootLimiter:
+  def __init__(self, dt: float):
+    self.dt = dt
+    self.lift = 0.0
+
+  def reset(self) -> None:
+    self.lift = 0.0
+
+  def update(self, accel_request: float, a_ego_future: float, active: bool = True) -> float:
+    """returns the lift (>= 0, m/s^2) to add to the command"""
+    target = 0.0
+    if active and accel_request < OVERSHOOT_ACTIVE_ACCEL:
+      excess = accel_request - a_ego_future - OVERSHOOT_DEADBAND  # > 0: decelerating harder than asked
+      target = float(np.clip(OVERSHOOT_GAIN * excess, 0.0, OVERSHOOT_MAX))
+    self.lift = float(np.clip(target, self.lift - OVERSHOOT_RATE_DOWN * self.dt, self.lift + OVERSHOOT_RATE_UP * self.dt))
+    return self.lift
+
+  def apply(self, accel_cmd: float) -> float:
+    if self.lift <= 0.0:
+      return accel_cmd
+    return min(accel_cmd + self.lift, max(accel_cmd, OVERSHOOT_CMD_CEIL))
+
+
+# Brake gain by speed (owner 2026-10-06: "far-away slowdowns are not smooth"; route 00000109 23:19:38 / 23:20:40 /
+# 23:20:50 braked hard early, eased off around 10-15 km/h, then braked again). Commanded vs delivered decel 0.4 s later
+# over routes 00000100 and 00000107-0000010a (braking, engaged, no pedals):
+#   3-10 km/h 0.75 | 10-15 0.71 | 15-20 0.86 | 20-30 1.01 | 30-40 1.12 | 40-50 1.09 | 50-70 1.07 | 70-110 1.03
+# The hybrid gives MORE than asked above ~25 km/h (regen + friction) and much LESS in the regen-to-friction hand-over
+# below ~15 km/h, so a smooth plan arrives heavy, then light, then re-braked. The braking command is divided by that
+# gain: x0.9 at 30-40 km/h, x1.3 at 10-15 km/h. Below 7 km/h it is untouched (the stop's end curve was tuned on the
+# car as it is) and blends in to 10 km/h.
+BRAKE_GAIN_V_BP = [7.0 / 3.6, 10.0 / 3.6, 15.0 / 3.6, 20.0 / 3.6, 25.0 / 3.6, 30.0 / 3.6, 50.0 / 3.6, 70.0 / 3.6, 100.0 / 3.6]
+BRAKE_GAIN_V = [1.0, 1.3, 1.3, 1.15, 1.0, 0.9, 0.9, 0.94, 1.0]
+
+
+def brake_speed_gain(accel_cmd: float, v_ego: float) -> float:
+  """the braking command scaled for the car's speed-dependent brake response; positive (gas) commands untouched"""
+  if accel_cmd >= 0.0:
+    return accel_cmd
+  return accel_cmd * float(np.interp(v_ego, BRAKE_GAIN_V_BP, BRAKE_GAIN_V))
