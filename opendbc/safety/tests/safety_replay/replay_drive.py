@@ -4,9 +4,9 @@ import os
 from collections import Counter, defaultdict
 from tqdm import tqdm
 
+from opendbc.car.carlog import carlog
 from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from opendbc.safety.tests.libsafety import libsafety_py
-from opendbc.car.carlog import carlog
 from opendbc.safety.tests.safety_replay.helpers import package_can_msg, init_segment
 
 # Define debug variables and their getter methods
@@ -62,7 +62,7 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
 
     # skip start and end of route, warm up/down period
     if msg.logMonoTime - start_t > 1e9 and end_t - msg.logMonoTime > 1e9:
-      safety.safety_tick_current_safety_config()
+      safety.safety_tick()
       safety_tick_rx_invalid |= not safety.safety_config_valid() or safety_tick_rx_invalid
 
     if msg.which() == 'sendcan':

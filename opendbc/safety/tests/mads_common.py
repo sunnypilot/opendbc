@@ -18,6 +18,7 @@ class MadsSafetyTestBase(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
+    self.safety.set_mads_params(False, False, False)
     self.safety.set_controls_allowed(False)
     self.safety.set_mads_button_press(-1)
     self.safety.set_controls_allowed_lateral(False)
@@ -72,6 +73,8 @@ class MadsSafetyTestBase(unittest.TestCase):
 
     for enable_mads in (True, False):
       with self.subTest("enable_mads", mads_enabled=enable_mads):
+        self.safety.set_acc_main_on(False)
+        self.safety.set_controls_allowed_lateral(False)
         self.safety.set_mads_params(enable_mads, False, False)
         self._rx(self._acc_state_msg(True))
         self.assertEqual(enable_mads, self.safety.get_controls_allowed_lateral())
@@ -272,6 +275,8 @@ class MadsSafetyTestBase(unittest.TestCase):
 
     for enable_mads in (True, False):
       with self.subTest("enable_mads", enable_mads=enable_mads):
+        self.safety.set_acc_main_on(False)
+        self.safety.set_controls_allowed_lateral(False)
         self.safety.set_mads_params(enable_mads, False, False)
 
         self._rx(self._lkas_button_msg(True))
