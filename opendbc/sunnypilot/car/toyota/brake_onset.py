@@ -344,6 +344,16 @@ HANDOVER_RATE = 1.0  # m/s^3
 # -1.46, delivered -1.72), so the extra fades out between these requests (full at -1.0 and lighter, none at -1.5).
 HANDOVER_REQ_BP = [-1.5, -1.0]  # m/s^2
 HANDOVER_REQ_W = [0.0, 1.0]
+# Owner 2026-10-10 (route 0000011c 00:19:10, Aggressive stop 1.6 m behind the lead): "the end of the stop slides too
+# much, the last two metres feel too light". With the PID held below PID_HOLD_V nothing makes up the under-delivery
+# below the hand-over band; asked / delivered by band (m/s^2), three stops of 11c (00:18:07 / 00:19:10 / 00:20:58):
+#   8-7 km/h -0.75/-0.62  -0.89/-0.58  -0.77/-0.54     6-5 km/h -0.63/-0.45  -0.75/-0.50  -0.66/-0.49
+#   5-4 km/h -0.60/-0.40  -0.67/-0.28  -0.64/-0.35     4-3 km/h -0.58/-0.62  -0.62/-0.45  -0.61/-0.57
+#   3-2 km/h on target or above. Brake force 650-850 N at 6-4 km/h, below what beats the hybrid creep torque.
+# So a second, low-speed feed-forward: LOW_EXTRA at LOW_EXTRA_V_BP (0.25 at 5-6.5 km/h, gone by 3 km/h, led by about
+# 0.5 km/h for the ~0.3 s actuator lag), added to the hand-over extra, same request gate and rate.
+LOW_EXTRA_V_BP = [3.0 / 3.6, 4.0 / 3.6, 5.0 / 3.6, 6.5 / 3.6, 8.5 / 3.6]  # m/s
+LOW_EXTRA = [0.0, 0.15, 0.25, 0.25, 0.0]  # m/s^2
 PID_HOLD_V = 9.0 / 3.6  # m/s
 PID_BLEED_NEG = 0.5  # m/s^2 per s: a braking integral fades this fast
 PID_BLEED_POS = 2.0  # m/s^2 per s: a gas integral (left from the launch) fades this fast
@@ -362,6 +372,7 @@ class BrakeHandoverFeedforward:
     if active and accel_request < HANDOVER_MIN_REQUEST:
       w = float(np.interp(v_ego, HANDOVER_V_BP, HANDOVER_V_W)) * float(np.interp(accel_request, HANDOVER_REQ_BP, HANDOVER_REQ_W))
       target = w * min(HANDOVER_EXTRA_MAX, HANDOVER_EXTRA_FRAC * -accel_request)
+      target += float(np.interp(v_ego, LOW_EXTRA_V_BP, LOW_EXTRA)) * float(np.interp(accel_request, HANDOVER_REQ_BP, HANDOVER_REQ_W))
     step = HANDOVER_RATE * self.dt
     self.extra = float(np.clip(target, self.extra - step, self.extra + step))
     return self.extra
