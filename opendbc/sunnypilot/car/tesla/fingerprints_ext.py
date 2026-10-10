@@ -7,6 +7,7 @@ FW_VERSIONS_EXT = {
   CAR.TESLA_MODEL_3: {
     (Ecu.eps, 0x730, None): [
       b'TeMYG4_Main_0.0.0 (67),E4HP015.02.1',
+      b'TeMYG4_Main_0.0.0 (92),E4H015.09.2',
     ],
   },
 }
