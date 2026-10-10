@@ -1,7 +1,8 @@
 import numpy as np
 from opendbc.can import CANPacker
-from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, structs
-from opendbc.car.lateral import apply_driver_steer_torque_limits, common_fault_avoidance
+from opendbc.car import Bus, DT_CTRL, make_tester_present_msg, rate_limit, structs
+from opendbc.car.lateral import apply_driver_steer_torque_limits, apply_steer_angle_limits_vm, common_fault_avoidance
+from opendbc.car.vehicle_model import VehicleModel
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
 from opendbc.car.hyundai.hyundaicanfd import CanBus
@@ -28,6 +29,28 @@ MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 # and triggers the "SCC Conditions Not Met" alert. Delaying the button send lets factory SCC disengage
 # naturally on brake press. We send ~100 ms later if it fails to do so, or if we want to cancel for another reason.
 CANCEL_BUTTON_DELAY_FRAMES = 10
+
+
+class SafetyVM:
+  # mirrors HYUNDAI_STEERING_PARAMS in safety/modes/hyundai_canfd.h so panda never blocks our angle
+  SLIP_FACTOR, STEER_RATIO, WHEELBASE = -0.0006085930193026732, 13.7, 2.756
+
+  def get_steer_from_curvature(self, curv, u, roll):
+    return curv * self.STEER_RATIO * self.WHEELBASE * (1. - self.SLIP_FACTOR * u ** 2)
+
+
+def compute_torque_reduction_gain(steering_torque, v_ego, lat_active, last_gain):
+  # EPS torque authority while angle steering, drops as the driver applies torque
+  target = 0.0
+  if lat_active:
+    ceiling = np.interp(v_ego, [0.5, 1.5], [1.0, 0.85])
+    shelf = np.interp(v_ego, [2, 11], [0.45, 0.6])
+    floor = np.interp(v_ego, [2, 22], [0.1, 0.3])
+    bps = [np.interp(v_ego, [2, 11], [75, 125]), np.interp(v_ego, [2, 11], [125, 150]),
+           np.interp(v_ego, [2, 11], [175, 275]), np.interp(v_ego, [2, 22], [400, 700])]
+    target = np.interp(abs(steering_torque), bps, [ceiling, shelf, shelf, floor])
+  gain = rate_limit(target, last_gain, -0.014, 0.004)
+  return round(gain / 0.004) * 0.004
 
 
 def process_hud_alert(enabled, fingerprint, hud_control):
@@ -67,6 +90,10 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.angle_limit_counter = 0
+    self.VM = VehicleModel(CP)
+    self.safety_VM = SafetyVM()
+    self.apply_angle_last = 0.
+    self.tq_redc_gain = 0.
 
     self.accel_last = 0
     self.apply_torque_last = 0
@@ -97,6 +124,16 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       apply_torque = 0
 
     self.apply_torque_last = apply_torque
+
+    # angle control
+    if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+      apply_angle = actuators.steeringAngleDeg
+      for VM in (self.VM, self.safety_VM):
+        apply_angle = apply_steer_angle_limits_vm(apply_angle, self.apply_angle_last, CS.out.vEgoRaw, CS.out.steeringAngleDeg,
+                                                  CC.latActive, self.params, VM)
+      self.apply_angle_last = apply_angle
+      self.tq_redc_gain = compute_torque_reduction_gain(CS.out.steeringTorque, CS.out.vEgoRaw, CC.latActive, self.tq_redc_gain)
+      apply_steer_req = CC.latActive
 
     # accel + longitudinal
     accel = float(np.clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
@@ -142,6 +179,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     new_actuators = actuators.as_builder()
     new_actuators.torque = apply_torque / self.params.STEER_MAX
     new_actuators.torqueOutputCan = apply_torque
+    new_actuators.steeringAngleDeg = self.apply_angle_last
     new_actuators.accel = self.tuning.actual_accel
 
     self.frame += 1
@@ -203,7 +241,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     ccnc_non_hda2 = self.CP.flags & HyundaiFlags.CCNC and not lka_steering
 
     # steering control
-    can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon))
+    can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon,
+                                                           self.apply_angle_last, self.tq_redc_gain))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU
     if self.frame % 5 == 0 and lka_steering:

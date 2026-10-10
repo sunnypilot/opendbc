@@ -334,13 +334,27 @@ class HyundaiCanfdCCNCTest:
       self.assertTrue(self._tx(self.packer.make_can_msg_safety(msg, bus, {})))
     self.assertTrue(self._tx(common.make_msg(2, 0x7C4)))
 
+  def test_lfa_alt_angle(self):
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd,
+                                 self.CCNC_SAFETY_PARAM | self.SAFETY_PARAM | HyundaiSafetyFlags.CANFD_ANGLE_STEERING)
+    self.safety.init_tests()
+
+    def lfa_alt(angle, active):
+      return self.packer.make_can_msg_safety("LFA_ALT", 0, {"ADAS_StrAnglReqVal": angle, "ADAS_ActvACILvl2Sta": 2 if active else 1})
+
+    self.assertTrue(self._tx(lfa_alt(0, False)))
+    self.assertFalse(self._tx(lfa_alt(5, True)))  # controls not allowed
+    self.safety.set_controls_allowed(True)
+    self.assertTrue(self._tx(lfa_alt(0.1, True)))
+    self.assertFalse(self._tx(lfa_alt(90, True)))  # rate limit
+
 
 @parameterized_class(CAMERA_SCC_COMBOS)
 class TestHyundaiCanfdLFASteeringCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFASteeringBase):
 
   TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x7C4, 2]]
-  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162), 2: (0x7C4, 0xEA)}
-  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162], 0: [0x7C4, 0xEA]}
+  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0xCB, 0x161, 0x162), 2: (0x7C4, 0xEA)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0xCB, 0x161, 0x162], 0: [0x7C4, 0xEA]}
 
 
 @parameterized_class(CAMERA_SCC_COMBOS)
@@ -349,8 +363,8 @@ class TestHyundaiCanfdLFASteeringLongCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfd
   CCNC_SAFETY_PARAM = HyundaiSafetyFlags.CCNC | HyundaiSafetyFlags.LONG
 
   TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x7C4, 2], [0x1A0, 0]]
-  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162, 0x1A0), 2: (0x7C4, 0xEA)}
-  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162, 0x1A0], 0: [0x7C4, 0xEA]}
+  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0xCB, 0x161, 0x162, 0x1A0), 2: (0x7C4, 0xEA)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0xCB, 0x161, 0x162, 0x1A0], 0: [0x7C4, 0xEA]}
 
 
 if __name__ == "__main__":

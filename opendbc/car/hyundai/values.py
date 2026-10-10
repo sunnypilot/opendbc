@@ -7,6 +7,7 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarHarness, CarDocs, CarParts, SupportType
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, p16
+from opendbc.car.lateral import AngleSteeringLimitsVM
 
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
@@ -16,6 +17,9 @@ Ecu = CarParams.Ecu
 class CarControllerParams:
   ACCEL_MIN = -3.5 # m/s^2
   ACCEL_MAX = 2.0 # m/s^2
+
+  # LFA_ALT max stock value is 119.9 deg
+  ANGLE_LIMITS = AngleSteeringLimitsVM(119.9, MAX_ANGLE_RATE=5)
 
   def __init__(self, CP):
     self.STEER_DELTA_UP = 3
@@ -33,6 +37,8 @@ class CarControllerParams:
       self.STEER_THRESHOLD = 250
       self.STEER_DELTA_UP = 2
       self.STEER_DELTA_DOWN = 3
+      if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+        self.STEER_THRESHOLD = 175
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.
@@ -69,6 +75,7 @@ class HyundaiSafetyFlags(IntFlag):
   FCEV_GAS = 256
   ALT_LIMITS_2 = 512
   CCNC = 1024
+  CANFD_ANGLE_STEERING = 2048
 
 
 # Hyundai/Kia/Genesis SCC (Smart Cruise Control) and steering architecture:
@@ -151,6 +158,8 @@ class HyundaiFlags(IntFlag):
   ALT_LIMITS_2 = 2 ** 26
 
   CCNC = 2 ** 27
+
+  CANFD_ANGLE_STEERING = 2 ** 28
 
 
 @dataclass

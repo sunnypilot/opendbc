@@ -46,6 +46,7 @@
   {.msg = {{0x1a0, (scc_bus), 32, 50U, .max_counter = 0xffU, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
 
 static bool hyundai_canfd_alt_buttons = false;
+static bool hyundai_canfd_angle_steering = false;
 static bool hyundai_canfd_lka_steer_msg_alt = false;
 
 static unsigned int hyundai_canfd_get_lka_addr(void) {
@@ -78,6 +79,10 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *msg) {
       int torque_driver_new = ((msg->data[11] & 0x1fU) << 8U) | msg->data[10];
       torque_driver_new -= 4095;
       update_sample(&torque_driver, torque_driver_new);
+
+      // MDPS_EstStrAnglVal
+      int angle_meas_new = to_signed((msg->data[17] << 8) | msg->data[16], 16);
+      update_sample(&angle_meas, angle_meas_new);
     }
 
     // cruise buttons
@@ -158,7 +163,30 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
     .has_steer_req_tolerance = true,
   };
 
+  const AngleSteeringLimits HYUNDAI_CANFD_ANGLE_STEERING_LIMITS = {
+    .max_angle = 3600,
+    .angle_deg_to_can = 10,
+    .frequency = 100U,
+  };
+
+  // KIA_SPORTAGE_HEV_2026, conservative baseline for all angle cars. Keep in sync with SafetyVM in carcontroller.py
+  const AngleSteeringParams HYUNDAI_CANFD_STEERING_PARAMS = {
+    .slip_factor = -0.0006085930193026732,
+    .steer_ratio = 13.7,
+    .wheelbase = 2.756,
+  };
+
   bool tx = true;
+
+  // LFA_ALT angle steering
+  if ((msg->addr == 0xCBU) && hyundai_canfd_angle_steering) {
+    const bool steer_angle_req = (msg->data[3] >> 4U) == 2U;
+    int desired_angle = to_signed(((msg->data[5] & 0x3FU) << 8U) | msg->data[4], 14);
+
+    if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, HYUNDAI_CANFD_STEERING_PARAMS)) {
+      tx = false;
+    }
+  }
 
   // steering
   const unsigned int steer_addr = (hyundai_canfd_lka_steer_msg && !hyundai_longitudinal) ? hyundai_canfd_get_lka_addr() : 0x12aU;
@@ -228,6 +256,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
   const uint16_t HYUNDAI_PARAM_CANFD_LKA_STEER_MSG_ALT = 128;
   const uint16_t HYUNDAI_PARAM_CANFD_ALT_BUTTONS = 32;
   const uint16_t HYUNDAI_PARAM_CCNC = 1024;
+  const uint16_t HYUNDAI_PARAM_CANFD_ANGLE_STEERING = 2048;
 
   static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_TX_MSGS[] = {
     HYUNDAI_CANFD_LKA_STEER_MSG_COMMON_TX_MSGS(0, 1)
@@ -276,6 +305,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(2) \
     HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0) \
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
+    {0xCB, 0, 24, .check_relay = true}, /* LFA_ALT */ \
     {0x161, 0, 32, .check_relay = true}, /* CCNC_0x161 */ \
     {0x162, 0, 32, .check_relay = true}, /* CCNC_0x162 */ \
     {0x7C4, 2, 8, .check_relay = true}, /* 0x7C4 */ \
@@ -286,6 +316,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
   gen_crc_lookup_table_16(0x1021, hyundai_canfd_crc_lut);
   hyundai_canfd_alt_buttons = GET_FLAG(param, HYUNDAI_PARAM_CANFD_ALT_BUTTONS);
   hyundai_canfd_lka_steer_msg_alt = GET_FLAG(param, HYUNDAI_PARAM_CANFD_LKA_STEER_MSG_ALT);
+  hyundai_canfd_angle_steering = GET_FLAG(param, HYUNDAI_PARAM_CANFD_ANGLE_STEERING);
   const bool hyundai_ccnc = GET_FLAG(param, HYUNDAI_PARAM_CCNC);
 
   safety_config ret;
