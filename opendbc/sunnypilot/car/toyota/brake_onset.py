@@ -50,6 +50,13 @@ URGENT_T_RAMP = 0.1  # s
 # braking: below CREEP_GAS_V the positive part of the command is now taken away at the stock rate; the soft onset
 # starts from zero, where the braking starts.
 CREEP_GAS_V = 8.0 / 3.6  # m/s
+# Above CREEP_GAS_V the gas is taken away at GAS_RELEASE_J (owner 2026-10-12, route 0000013a 00:01:44: engaged at
+# 27 km/h while accelerating, a stopped car seen at 43.5 m at 30 km/h; controlsd went +0.85 -> -1.0 in 1.0 s but the
+# soft onset ran from the first down step, so the command stayed positive for 0.9 s (+0.85 -> +0.07) and the car kept
+# accelerating: stopped 1.1 m behind the car). Replay with this shaper: gas released at 2.0 m/s^3 -> zero after 0.50 s
+# instead of 0.92, stop ~3.3 m behind (4.0 m/s^3: 0.35 s, ~5.3 m). Owner chose 2.0. The soft brake onset still starts
+# from zero, where the braking starts, so the brake side is unchanged.
+GAS_RELEASE_J = 2.0  # m/s^3
 
 
 # Friction entry (hybrid). Owner 2026-10-09: "no heavy-press jolt at the start of a brake - this is what I most want
@@ -134,9 +141,11 @@ class BrakeOnsetShaper:
 
   def _down_step(self, accel_request: float, prev_accel: float, v_ego: float, urgent: bool,
                  t_engaged: float | None) -> float:
-    if prev_accel > 0.0 and v_ego < CREEP_GAS_V and accel_request < prev_accel:
+    if prev_accel > 0.0 and accel_request < prev_accel:
+      # taking away gas is not braking: release it, then start the soft onset from zero
       self.t_onset = 0.0
-      return -min(self.stock_down_jerk * self.dt, prev_accel - max(accel_request, 0.0))
+      j_gas = self.stock_down_jerk if v_ego < CREEP_GAS_V else min(GAS_RELEASE_J, self.stock_down_jerk)
+      return -min(j_gas * self.dt, prev_accel - max(accel_request, 0.0))
 
     if urgent:
       t_bp, j_bp = [0.0, URGENT_T, URGENT_T + max(URGENT_T_RAMP, self.dt)], [URGENT_J, URGENT_J, self.stock_down_jerk]
