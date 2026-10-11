@@ -334,14 +334,13 @@ class HyundaiCanfdCCNCTest:
       self.assertTrue(self._tx(self.packer.make_can_msg_safety(msg, bus, {})))
     self.assertTrue(self._tx(common.make_msg(2, 0x7C4)))
 
-  def test_lfa2_msgs_only_on_angle_cars(self):
+  def test_lfa_alt_only_on_angle_cars(self):
     lfa_alt = self.packer.make_can_msg_safety("LFA_ALT", 0, {})
     for angle in (False, True):
       param = self.CCNC_SAFETY_PARAM | self.SAFETY_PARAM | (HyundaiSafetyFlags.CANFD_ANGLE_STEERING if angle else 0)
       self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, param)
       self.safety.init_tests()
-      for msg in (lfa_alt, common.make_msg(0, 0x2AF, 8), common.make_msg(0, 0xCC, 8)):
-        self.assertEqual(angle, self._tx(msg))
+      self.assertEqual(angle, self._tx(lfa_alt))
 
   def test_lfa_alt_angle(self):
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd,
@@ -361,7 +360,7 @@ class HyundaiCanfdCCNCTest:
 @parameterized_class(CAMERA_SCC_COMBOS)
 class TestHyundaiCanfdLFASteeringCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFASteeringBase):
 
-  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x7C4, 2], [0xCC, 0], [0x2AF, 0]]
+  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x7C4, 2]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0xCB, 0x161, 0x162), 2: (0x7C4, 0xEA)}
   FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0xCB, 0x161, 0x162], 0: [0x7C4, 0xEA]}
 
@@ -371,7 +370,7 @@ class TestHyundaiCanfdLFASteeringLongCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfd
 
   CCNC_SAFETY_PARAM = HyundaiSafetyFlags.CCNC | HyundaiSafetyFlags.LONG
 
-  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x7C4, 2], [0x1A0, 0], [0xCC, 0], [0x2AF, 0]]
+  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x7C4, 2], [0x1A0, 0]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0xCB, 0x161, 0x162, 0x1A0), 2: (0x7C4, 0xEA)}
   FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0xCB, 0x161, 0x162, 0x1A0], 0: [0x7C4, 0xEA]}
 

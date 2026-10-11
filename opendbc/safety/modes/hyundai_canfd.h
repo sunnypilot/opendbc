@@ -178,18 +178,16 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
 
   bool tx = true;
 
-  // LFA2 messages (LFA_ALT, 0xCC, HOD) are only allowed on angle steering cars
-  if (((msg->addr == 0xCBU) || (msg->addr == 0xCCU) || (msg->addr == 0x2AFU)) && !hyundai_canfd_angle_steering) {
-    tx = false;
-  }
-
-  // LFA_ALT angle steering
-  if ((msg->addr == 0xCBU) && hyundai_canfd_angle_steering) {
+  // LFA_ALT: angle steering cars only
+  if (msg->addr == 0xCBU) {
     const bool steer_angle_req = (msg->data[3] >> 4U) == 2U;
     int desired_angle = to_signed(((msg->data[5] & 0x3FU) << 8U) | msg->data[4], 14);
 
-    if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, HYUNDAI_CANFD_STEERING_PARAMS)) {
+    if (!hyundai_canfd_angle_steering) {
       tx = false;
+    } else if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, HYUNDAI_CANFD_STEERING_PARAMS)) {
+      tx = false;
+    } else {
     }
   }
 
@@ -311,8 +309,6 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0) \
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
     {0xCB, 0, 24, .check_relay = true}, /* LFA_ALT */ \
-    {0xCC, 0, 8, .check_relay = false}, /* LFA2 aux */ \
-    {0x2AF, 0, 8, .check_relay = false}, /* HOD_FD_01_100ms */ \
     {0x161, 0, 32, .check_relay = true}, /* CCNC_0x161 */ \
     {0x162, 0, 32, .check_relay = true}, /* CCNC_0x162 */ \
     {0x7C4, 2, 8, .check_relay = true}, /* 0x7C4 */ \

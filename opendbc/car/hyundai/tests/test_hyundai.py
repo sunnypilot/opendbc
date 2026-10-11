@@ -270,11 +270,3 @@ class TestHyundaiFingerprint(unittest.TestCase):
         platforms_with_shared_codes.add(platform)
 
     assert platforms_with_shared_codes == excluded_platforms
-
-
-def test_hod_crc():
-  # real HOD_FD_01_100ms frames from a Santa Fe HEV 5th gen
-  from opendbc.car.hyundai.hyundaicanfd import hod_crc8
-  for frame in ("082000010e0f0100", "b13000010e0f0100", "2b80010116130100", "f250000113140100"):
-    dat = bytes.fromhex(frame)
-    assert hod_crc8(b"\x02\xaf" + dat[1:]) == dat[0]

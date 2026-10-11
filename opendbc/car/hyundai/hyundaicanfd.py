@@ -1,7 +1,7 @@
 import numpy as np
-from opendbc.car import CanBusBase, CanData
+from opendbc.car import CanBusBase
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.crc import CRC16_XMODEM, CRC8J1850, mk_crc8_fun
+from opendbc.car.crc import CRC16_XMODEM
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.lead_data_ext import CanFdLeadData
 
@@ -65,21 +65,6 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   else:
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
 
-  return ret
-
-
-hod_crc8 = mk_crc8_fun(CRC8J1850, init_crc=0x0F)
-
-
-def create_angle_steering_aux(CAN, frame):
-  # Messages an LFA2 MDPS expects next to LFA_ALT, taken from a Santa Fe HEV 5th gen. Without HOD the MDPS won't go active.
-  ret = []
-  if frame % 10 == 0:
-    # HOD_FD_01_100ms: hands off (0), HOD_Option 1, counter 0-14, CRC8 J1850 over address + data
-    dat = bytes([((frame // 10) % 15) << 4, 0x00, 0x01, 0x0E, 0x0F, 0x01, 0x00])
-    ret.append(CanData(0x2AF, bytes([hod_crc8(b"\x02\xaf" + dat)]) + dat, CAN.ECAN))
-  if frame % 50 == 0:
-    ret.append(CanData(0xCC, bytes(8), CAN.ECAN))
   return ret
 
 
