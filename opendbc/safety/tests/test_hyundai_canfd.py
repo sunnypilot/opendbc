@@ -333,8 +333,15 @@ class HyundaiCanfdCCNCTest:
     for msg, bus in (("CCNC_0x161", 0), ("CCNC_0x162", 0), ("MDPS", 2)):
       self.assertTrue(self._tx(self.packer.make_can_msg_safety(msg, bus, {})))
     self.assertTrue(self._tx(common.make_msg(2, 0x7C4)))
-    self.assertTrue(self._tx(common.make_msg(0, 0x2AF, 8)))
-    self.assertTrue(self._tx(common.make_msg(0, 0xCC, 8)))
+
+  def test_lfa2_msgs_only_on_angle_cars(self):
+    lfa_alt = self.packer.make_can_msg_safety("LFA_ALT", 0, {})
+    for angle in (False, True):
+      param = self.CCNC_SAFETY_PARAM | self.SAFETY_PARAM | (HyundaiSafetyFlags.CANFD_ANGLE_STEERING if angle else 0)
+      self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, param)
+      self.safety.init_tests()
+      for msg in (lfa_alt, common.make_msg(0, 0x2AF, 8), common.make_msg(0, 0xCC, 8)):
+        self.assertEqual(angle, self._tx(msg))
 
   def test_lfa_alt_angle(self):
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd,

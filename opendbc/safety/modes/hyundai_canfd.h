@@ -178,6 +178,11 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
 
   bool tx = true;
 
+  // LFA2 messages (LFA_ALT, 0xCC, HOD) are only allowed on angle steering cars
+  if (((msg->addr == 0xCBU) || (msg->addr == 0xCCU) || (msg->addr == 0x2AFU)) && !hyundai_canfd_angle_steering) {
+    tx = false;
+  }
+
   // LFA_ALT angle steering
   if ((msg->addr == 0xCBU) && hyundai_canfd_angle_steering) {
     const bool steer_angle_req = (msg->data[3] >> 4U) == 2U;

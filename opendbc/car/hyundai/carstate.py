@@ -258,6 +258,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     ret.steerFaultTemporary = cp.vl["MDPS"]["MDPS_LkaFailSta"] != 0
     if self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
       ret.steeringAngleDeg = cp.vl["MDPS"]["MDPS_EstStrAnglVal"]
+      ret.steerFaultTemporary |= cp.vl["MDPS"]["MDPS_ADAS_AciFltSig_Lv2"] != 0
 
     # TODO: alt signal usage may be described by cp.vl['BLINKERS']['USE_ALT_LAMP']
     left_blinker_sig, right_blinker_sig = "LEFT_LAMP", "RIGHT_LAMP"
