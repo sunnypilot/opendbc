@@ -86,7 +86,7 @@ class TestModerateBand(unittest.TestCase):
     prev = 0.0
     for k in range(100):
       a = -1.95 if k % 2 else -1.45   # noisy aEgo around -1.70 at a steady -1.60 request
-      lift = lim.update(-1.60, a, True, v_ego=45 / 3.6, a_ego=a)
+      lift = lim.update(-1.60, a, True, v_ego=45 / 3.6)
       self.assertLessEqual(abs(lift - prev), OVERSHOOT_MOD_RATE * DT + 1e-9)
       prev = lift
     self.assertEqual(lift, 0.0)   # averaged overshoot 0.10 is inside the deadband
