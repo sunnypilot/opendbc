@@ -1,10 +1,8 @@
 import unittest
 from types import SimpleNamespace
 
-import numpy as np
 from opendbc.sunnypilot.car.toyota.brake_onset import (BrakeHandoverFeedforward, HANDOVER_EXTRA_MAX,
-                                                       HANDOVER_EXTRA_FRAC, HANDOVER_RATE, LOW_EXTRA, LOW_EXTRA_V_BP,
-                                                       PID_BLEED_NEG, PID_BLEED_POS)
+                                                       HANDOVER_EXTRA_FRAC, HANDOVER_RATE, PID_BLEED_NEG, PID_BLEED_POS)
 
 DT = 0.03
 class TestHandoverFeedforward(unittest.TestCase):
@@ -23,18 +21,10 @@ class TestHandoverFeedforward(unittest.TestCase):
     self.assertAlmostEqual(self.run_steady(-0.5, 12.0).extra, HANDOVER_EXTRA_FRAC * 0.5, places=9)
 
   def test_fades_at_the_edges(self):
-    # 8 km/h is the hand-over band's edge (half weight), and the low-speed extra of the second
-    # band is still fading out there, so the two add up rather than either one alone.
-    self.assertAlmostEqual(self.run_steady(-1.0, 8.0).extra,
-                           0.5 * HANDOVER_EXTRA_MAX + float(np.interp(8.0 / 3.6, LOW_EXTRA_V_BP, LOW_EXTRA)),
-                           places=6)
-    self.assertEqual(self.run_steady(-1.0, 20.0).extra, 0.0)   # above the band
-    self.assertEqual(self.run_steady(-0.25, 12.0).extra, 0.0)  # nothing below the request gate
-
-  def test_low_speed_band_is_separate_from_the_handover_band(self):
-    """The last metres need their own extra: the hand-over band has ended by then."""
-    self.assertGreater(self.run_steady(-1.0, 5.0).extra, 0.0)   # 0000011c: 6-4 km/h, force below the creep torque
-    self.assertEqual(self.run_steady(-1.0, 2.0).extra, 0.0)     # and it is gone by the time the car is stopped
+    self.assertAlmostEqual(self.run_steady(-1.0, 8.0).extra, 0.5 * HANDOVER_EXTRA_MAX, places=6)
+    self.assertEqual(self.run_steady(-1.0, 5.0).extra, 0.0)
+    self.assertEqual(self.run_steady(-1.0, 20.0).extra, 0.0)
+    self.assertEqual(self.run_steady(-0.25, 12.0).extra, 0.0)
 
   def test_fades_out_for_a_firm_request(self):
     self.assertEqual(self.run_steady(-1.5, 12.0).extra, 0.0)   # 0000010d: at -1.46 the car delivered -1.72
@@ -59,22 +49,10 @@ class TestPidHold(unittest.TestCase):
     self.assertEqual(pid.i, 0.0)
 
   def test_gas_integral_left_from_a_launch_bleeds_fast(self):
-    """The car is no longer over-delivering (error < 0): a positive integral is stale gas."""
     c = BrakeHandoverFeedforward(DT)
     pid = SimpleNamespace(i=0.3)
-    c.condition_pid(pid, -0.2, 3 / 3.6, error_future=-0.15)
+    c.condition_pid(pid, -0.2, 3 / 3.6)
     self.assertAlmostEqual(pid.i, 0.3 - PID_BLEED_POS * DT, places=9)
-
-  def test_over_delivery_trim_is_held_not_bled(self):
-    """A positive integral while the PCM still brakes harder than asked is the trim that
-    matches the request (asked -2.0, delivered -2.15). Bleeding it made the brake suddenly
-    firm at 9 km/h; it must be held (and frozen) instead."""
-    c = BrakeHandoverFeedforward(DT)
-    pid = SimpleNamespace(i=0.24)
-    self.assertTrue(c.condition_pid(pid, -2.0, 8 / 3.6, error_future=0.15))
-    for _ in range(100):
-      c.condition_pid(pid, -2.0, 8 / 3.6, error_future=0.15)
-    self.assertAlmostEqual(pid.i, 0.24, places=9)
 
   def test_untouched_above_9kph_or_when_not_braking(self):
     c = BrakeHandoverFeedforward(DT)

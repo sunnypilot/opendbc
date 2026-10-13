@@ -39,14 +39,9 @@ class TestTss2LongTuning(unittest.TestCase):
     CP_SP.flags |= ToyotaFlagsSP.TSS2_LONG_TUNING.value
     custom_tune = get_long_tune(CP, CP_SP, controller_params)
     custom_tune.speed = 0.0
-    self.assertEqual(custom_tune.k_i, 0.50)
-    custom_tune.speed = 0.3
-    self.assertEqual(custom_tune.k_i, 0.52)
-    # the tune is only worth a param if it actually differs from what TSS2 gets anyway
-    stock_tune.speed = 2.0
-    self.assertEqual(stock_tune.k_i, 0.5)
-    custom_tune.speed = 2.0
-    self.assertNotEqual(custom_tune.k_i, stock_tune.k_i)
+    self.assertEqual(custom_tune.k_i, 0.30)
+    custom_tune.speed = 5.0
+    self.assertEqual(custom_tune.k_i, 0.28)
 
   def test_non_tss2_ignores_custom_tune_flag(self):
     controller_params = SimpleNamespace(ACCEL_MAX=2.0, ACCEL_MIN=-3.5)

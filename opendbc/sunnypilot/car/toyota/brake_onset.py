@@ -414,23 +414,12 @@ class BrakeHandoverFeedforward:
   def apply(self, accel_cmd: float) -> float:
     return accel_cmd - self.extra
 
-  def condition_pid(self, pid, accel_request: float, v_ego: float, error_future: float | None = None) -> bool:
-    """below PID_HOLD_V while braking: keep the integrator from winding up; True = freeze it this step.
-
-    A positive integral while braking is not always a gas integral left from a launch: when the
-    PCM brakes harder than the request (firm stops: asked -2.0, delivered -2.15) the loop winds
-    the integral POSITIVE to lift the command and match the car. Dropping that trim (bleeding a
-    positive integral to zero at PID_BLEED_POS) took the brake back at once - a 2 m/s^3 step at
-    9 km/h, the "hits a firm brake" jolt at low speed. So it is only bled when the car is no
-    longer over-delivering (error_future < 0, the genuine launch leftover); while the loop is
-    still over-delivering the trim is held. A negative integral is the catch-up wound up during
-    the regen hand-over dip and is always bled, so it does not add braking at the end of the stop.
-    """
+  def condition_pid(self, pid, accel_request: float, v_ego: float) -> bool:
+    """below PID_HOLD_V while braking: bleed the integrator toward zero; returns True = freeze it this step"""
     if v_ego >= PID_HOLD_V or accel_request >= 0.0:
       return False
     if pid.i > 0.0:
-      if error_future is None or error_future < 0.0:
-        pid.i = max(0.0, pid.i - PID_BLEED_POS * self.dt)
+      pid.i = max(0.0, pid.i - PID_BLEED_POS * self.dt)
     else:
       pid.i = min(0.0, pid.i + PID_BLEED_NEG * self.dt)
     return True
@@ -456,6 +445,6 @@ class BrakeCommandCorrections:
     self.handover.update(accel_request, v_ego, active=not fcw)
     return self.handover.apply(accel_cmd)
 
-  def condition_pid(self, pid, accel_request: float, v_ego: float, error_future: float | None = None) -> bool:
+  def condition_pid(self, pid, accel_request: float, v_ego: float) -> bool:
     """called before the stock PID update; True = freeze the integrator this step"""
-    return self.handover.condition_pid(pid, accel_request, v_ego, error_future)
+    return self.handover.condition_pid(pid, accel_request, v_ego)

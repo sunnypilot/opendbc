@@ -8,18 +8,12 @@ STOCK_J = 4.0
 UP_STEP = 4.0 * DT
 
 
-# The onset schedule is speed dependent (ONSET_V_BP): these shapes are the ones the driver
-# tuned for urban speeds, so the runs below have to say which speed they are about. 50 km/h
-# is inside the flat part of the schedule (0.3 m/s^3 for 0.3 s, stock by 0.9 s).
-V_URBAN = 50.0 / 3.6
-
-
-def run(requests, a0=0.0, fcw=False, v_ego=V_URBAN):
+def run(requests, a0=0.0, fcw=False):
   shaper = BrakeOnsetShaper(DT, STOCK_J)
   a = a0
   out = []
   for req in requests:
-    step = shaper.down_step(req, a, bypass=shaper.is_urgent(req, fcw), v_ego=v_ego)
+    step = shaper.down_step(req, a, bypass=shaper.is_urgent(req, fcw))
     a = rate_limit(req, a, step, UP_STEP)
     out.append(a)
   return np.array(out)
@@ -40,8 +34,8 @@ class TestBrakeOnset:
     assert np.isclose(at(out, 1.5), -1.5, atol=1e-6)  # settled once the ramp reaches the stock limit
 
   def test_jerk_follows_the_schedule_and_never_exceeds_stock(self):
-    out = run([-1.9] * 60, a0=0.0)  # large step, still above the hard-brake bypass
-    jerks = np.diff(np.concatenate([[0.0], out])) / DT
+    out = run([-1.9] * 60, a0=1.0)  # large step, still above the hard-brake bypass
+    jerks = np.diff(np.concatenate([[1.0], out])) / DT
     assert jerks.min() >= -STOCK_J - 1e-6
     assert jerks[0] >= -ONSET_J_DOWN[0] - 1e-6
     assert jerks[int(0.09 / DT)] >= -ONSET_J_DOWN[1] - 1e-6
