@@ -27,7 +27,14 @@ GearShifter = structs.CarState.GearShifter
 # the down limit roughly matches the rate of ACCEL_NET, reducing PCM compensation windup
 ACCEL_WINDUP_LIMIT = 4.0 * DT_CTRL * 3  # m/s^2 / frame
 ACCEL_WINDDOWN_LIMIT = -4.0 * DT_CTRL * 3  # m/s^2 / frame
-ACCEL_PID_UNWIND = 0.03 * DT_CTRL * 3  # m/s^2 / frame
+# Integrator leak. It sets a persistence deadband of ACCEL_PID_UNWIND / (k_i * DT_CTRL * 3)
+# in m/s^2: a persistent accel error below that is never trimmed, so any systematic
+# PCM under/over-delivery (road load, slope) is left uncorrected. At highway speed
+# (k_i = 0.25) that deadband was 0.120 m/s^2, visible as over-braking / under-gassing.
+# The PID already clips the integrator against the current feedforward, which is what
+# actually recovers windup, so a smaller leak keeps that recovery intact.
+# 0.03 -> 0.01 takes the highway deadband to 0.040 m/s^2.
+ACCEL_PID_UNWIND = 0.01 * DT_CTRL * 3  # m/s^2 / frame
 
 MAX_PITCH_COMPENSATION = 1.5  # m/s^2
 
@@ -295,7 +302,7 @@ class CarController(CarControllerBase, GasInterceptorCarController):
             pcm_accel_cmd += pitch_compensation
 
           # sunnypilot: bleed and freeze the PID integrator at the end of the stop
-          freeze_i = self.brake_onset_enabled and self.brake_corrections.condition_pid(self.long_pid, self.prev_accel, CS.out.vEgo)
+          freeze_i = self.brake_onset_enabled and self.brake_corrections.condition_pid(self.long_pid, self.prev_accel, CS.out.vEgo, error_future)
           pcm_accel_cmd = self.long_pid.update(error_future,
                                                speed=CS.out.vEgo,
                                                feedforward=pcm_accel_cmd,
