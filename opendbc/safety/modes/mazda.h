@@ -18,6 +18,13 @@
 // track msgs coming from OP so that we know what CAM msgs to drop and what to forward
 static void mazda_rx_hook(const CANPacket_t *msg) {
   if ((int)msg->bus == MAZDA_MAIN) {
+    if (msg->addr == MAZDA_CRZ_BTNS) {
+      // Main can persist across ignition. A physical ON press (MODE_Y) re-arms MADS
+      // after the boot-time main edge expires; MODE_X-only OFF presses never arm it.
+      bool main_on_button = acc_main_on && GET_BIT(msg, 13U);
+      mads_button_press = main_on_button ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
+    }
+
     if (msg->addr == MAZDA_ENGINE_DATA) {
       // sample speed: scale by 0.01 to get kph
       int speed = (msg->data[2] << 8) | msg->data[3];

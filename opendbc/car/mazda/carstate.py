@@ -21,6 +21,7 @@ class CarState(CarStateBase):
     self.distance_button = 0
     self.accel_button = 0
     self.decel_button = 0
+    self.main_on_button = 0
 
   def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     cp = can_parsers[Bus.pt]
@@ -114,14 +115,18 @@ class CarState(CarStateBase):
     prev_distance_button = self.distance_button
     prev_accel_button = self.accel_button
     prev_decel_button = self.decel_button
+    prev_main_on_button = self.main_on_button
     self.distance_button = cp.vl["CRZ_BTNS"]["DISTANCE_LESS"]
     self.accel_button = cp.vl["CRZ_BTNS"]["RES"]
     self.decel_button = cp.vl["CRZ_BTNS"]["SET_M"]
+    # MODE_Y carries ON intent; MODE_X alone is the KE's OFF button.
+    self.main_on_button = cp.vl["CRZ_BTNS"]["MODE_Y"]
 
     ret.buttonEvents = [
       *create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise}),
       *create_button_events(self.accel_button, prev_accel_button, {1: ButtonType.accelCruise}),
       *create_button_events(self.decel_button, prev_decel_button, {1: ButtonType.decelCruise}),
+      *create_button_events(self.main_on_button, prev_main_on_button, {1: ButtonType.mainCruiseOn}),
     ]
 
     return ret, ret_sp

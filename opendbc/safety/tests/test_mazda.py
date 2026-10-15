@@ -81,6 +81,91 @@ class TestMazdaSafety(common.CarSafetyTest, common.DriverTorqueSteeringSafetyTes
     self.assertTrue(self._tx(self._button_msg(resume=True)))
 
 
+class TestMazdaMainOnMads(unittest.TestCase):
+  def setUp(self):
+    self.packer = CANPackerSafety("mazda_2017")
+    self.safety = libsafety_py.libsafety
+    self.safety.set_safety_hooks(CarParams.SafetyModel.mazda, 0)
+    self.safety.init_tests()
+    self.safety.set_mads_params(True, False, False)
+
+  def tearDown(self):
+    self.safety.set_mads_params(False, False, False)
+
+  def _crz_ctrl(self, main_on):
+    return self.packer.make_can_msg_safety("CRZ_CTRL", 0, {"CRZ_AVAILABLE": main_on})
+
+  def _btns(self, on=False, off=False, bus=0):
+    return self.packer.make_can_msg_safety("CRZ_BTNS", bus, {"MODE_Y": on, "MODE_X": off})
+
+  def _standby(self):
+    self.safety.safety_rx_hook(self._crz_ctrl(True))
+    self.safety.safety_rx_hook(self._btns())
+    self._expire_lateral()
+
+  def _expire_lateral(self):
+    self.safety.set_heartbeat_engaged_mads(False)
+    for _ in range(3):
+      self.safety.mads_heartbeat_engaged_check()
+    self.assertFalse(self.safety.get_controls_allowed_lateral())
+
+  def test_recorded_on_rearms_standby_without_engaging_cruise(self):
+    self._standby()
+    # Recorded CX-5 2022 physical ON: MODE_X=MODE_Y=1.
+    self.safety.safety_rx_hook(make_msg(0, 0x9d, dat=bytes.fromhex("0061ff0800000000")))
+    self.assertTrue(self.safety.get_controls_allowed_lateral())
+    self.assertFalse(self.safety.get_controls_allowed())
+    self.assertTrue(self.safety.get_acc_main_on())
+    self.safety.safety_rx_hook(self._btns())
+    self.safety.safety_rx_hook(self._crz_ctrl(False))
+    self.assertFalse(self.safety.get_controls_allowed_lateral())
+
+  def test_fresh_on_gets_a_new_heartbeat_grace_period(self):
+    self._standby()
+    self.safety.safety_rx_hook(self._btns(on=True))
+    for _ in range(2):
+      self.safety.mads_heartbeat_engaged_check()
+      self.assertTrue(self.safety.get_controls_allowed_lateral())
+    self.safety.mads_heartbeat_engaged_check()
+    self.assertFalse(self.safety.get_controls_allowed_lateral())
+
+  def test_held_on_does_not_rearm_after_heartbeat_exit(self):
+    self._standby()
+    self.safety.safety_rx_hook(self._btns(on=True))
+    self._expire_lateral()
+    self.safety.safety_rx_hook(self._btns(on=True))
+    self.assertFalse(self.safety.get_controls_allowed_lateral())
+    self.safety.safety_rx_hook(self._btns())
+    self.safety.safety_rx_hook(self._btns(on=True))
+    self.assertTrue(self.safety.get_controls_allowed_lateral())
+
+  def test_off_and_camera_bus_do_not_rearm(self):
+    self._standby()
+    for msg in (self._btns(off=True), self._btns(), self._btns(on=True, bus=2)):
+      self.safety.safety_rx_hook(msg)
+      self.assertFalse(self.safety.get_controls_allowed_lateral())
+
+  def test_requires_main_on_and_mads_enabled(self):
+    self.safety.safety_rx_hook(self._crz_ctrl(False))
+    self.safety.safety_rx_hook(self._btns(on=True))
+    self.assertFalse(self.safety.get_controls_allowed_lateral())
+    self._standby()
+    self.safety.set_mads_params(False, False, False)
+    self.safety.safety_rx_hook(self._btns(on=True))
+    self.assertFalse(self.safety.get_controls_allowed_lateral())
+
+  def test_pause_on_brake_keeps_request_until_release(self):
+    self._standby()
+    self.safety.set_mads_params(True, False, True)
+    self.safety.safety_rx_hook(self._crz_ctrl(True))
+    self.safety.safety_rx_hook(self.packer.make_can_msg_safety("PEDALS", 0, {"BRAKE_ON": True}))
+    self.safety.safety_rx_hook(self._btns(on=True))
+    self.assertFalse(self.safety.get_controls_allowed_lateral())
+    self.assertTrue(self.safety.get_controls_requested_lateral())
+    self.safety.safety_rx_hook(self.packer.make_can_msg_safety("PEDALS", 0, {"BRAKE_ON": False}))
+    self.assertTrue(self.safety.get_controls_allowed_lateral())
+
+
 class TestMazdaIgnition(unittest.TestCase):
   TX_MSGS: list = []
 

@@ -128,6 +128,8 @@ inline void m_update_control_state(void) {
   if (allowed && m_mads_state.system_enabled && m_mads_state.controls_requested_lateral && !controls_allowed_lateral) {
     m_mads_state.controls_requested_lateral = false;
     controls_allowed_lateral = true;
+    // A fresh request gets a full heartbeat grace period after an earlier request timed out.
+    heartbeat_engaged_mads_mismatches = 0U;
     m_mads_state.current_disengage.active_reason = MADS_DISENGAGE_REASON_NONE;
     m_mads_state.current_disengage.pending_reasons = MADS_DISENGAGE_REASON_NONE;
   }
