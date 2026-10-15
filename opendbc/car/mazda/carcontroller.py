@@ -19,6 +19,7 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
     self.brake_counter = 0
 
   def update(self, CC, CC_SP, CS, now_nanos):
+    CS.update_mads_feedback(CC, CC_SP)
     can_sends = []
 
     apply_torque = 0
