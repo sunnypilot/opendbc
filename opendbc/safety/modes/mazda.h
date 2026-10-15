@@ -7,6 +7,8 @@
 #define MAZDA_LKAS_HUD      0x440U
 #define MAZDA_CRZ_CTRL      0x21cU
 #define MAZDA_CRZ_BTNS      0x09dU
+// MRCC ON intent (MODE_Y), DBC start bit 13; the KE's OFF button sets only MODE_X.
+#define MAZDA_MODE_Y_BIT 13U
 #define MAZDA_STEER_TORQUE  0x240U
 #define MAZDA_ENGINE_DATA   0x202U
 #define MAZDA_PEDALS        0x165U
@@ -19,9 +21,9 @@
 static void mazda_rx_hook(const CANPacket_t *msg) {
   if ((int)msg->bus == MAZDA_MAIN) {
     if (msg->addr == MAZDA_CRZ_BTNS) {
-      // Main can persist across ignition. A physical ON press (MODE_Y) re-arms MADS
-      // after the boot-time main edge expires; MODE_X-only OFF presses never arm it.
-      bool main_on_button = acc_main_on && GET_BIT(msg, 13U);
+      // ON rearms lateral in standby, since a main that stayed on through boot
+      // can expire before selfdrived is ready.
+      bool main_on_button = acc_main_on && GET_BIT(msg, MAZDA_MODE_Y_BIT);
       mads_button_press = main_on_button ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
     }
 

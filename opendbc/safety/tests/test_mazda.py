@@ -95,6 +95,9 @@ class TestMazdaMainOnMads(unittest.TestCase):
   def _crz_ctrl(self, main_on):
     return self.packer.make_can_msg_safety("CRZ_CTRL", 0, {"CRZ_AVAILABLE": main_on})
 
+  def _pedals(self, brake=False):
+    return self.packer.make_can_msg_safety("PEDALS", 0, {"BRAKE_ON": brake})
+
   def _btns(self, on=False, off=False, bus=0):
     return self.packer.make_can_msg_safety("CRZ_BTNS", bus, {"MODE_Y": on, "MODE_X": off})
 
@@ -158,11 +161,11 @@ class TestMazdaMainOnMads(unittest.TestCase):
     self._standby()
     self.safety.set_mads_params(True, False, True)
     self.safety.safety_rx_hook(self._crz_ctrl(True))
-    self.safety.safety_rx_hook(self.packer.make_can_msg_safety("PEDALS", 0, {"BRAKE_ON": True}))
+    self.safety.safety_rx_hook(self._pedals(brake=True))
     self.safety.safety_rx_hook(self._btns(on=True))
     self.assertFalse(self.safety.get_controls_allowed_lateral())
     self.assertTrue(self.safety.get_controls_requested_lateral())
-    self.safety.safety_rx_hook(self.packer.make_can_msg_safety("PEDALS", 0, {"BRAKE_ON": False}))
+    self.safety.safety_rx_hook(self._pedals())
     self.assertTrue(self.safety.get_controls_allowed_lateral())
 
 
