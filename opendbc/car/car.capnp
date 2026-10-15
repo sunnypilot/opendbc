@@ -281,7 +281,6 @@ struct CarState {
       setCruise @9;
       resumeCruise @10;
       gapAdjustCruise @11;
-      mainCruiseOn @12;  # explicit ON press on wheels with separate ON/OFF buttons
     }
   }
 
