@@ -628,6 +628,7 @@ class CAR(Platforms):
   KIA_SELTOS_2027 = HyundaiCanFDPlatformConfig(
     [HyundaiCarDocs("Kia Seltos 2027", car_parts=CarParts.common([CarHarness.hyundai_n]))],
     CarSpecs(mass=3450 * CV.LB_TO_KG, wheelbase=2.69, steerRatio=13.6),
+    dbc_dict={Bus.pt: "hyundai_canfd_seltos_generated"},
     flags=HyundaiFlags.CANFD_ANGLE_STEERING | HyundaiFlags.CCNC,
   )
   KIA_SPORTAGE_5TH_GEN = HyundaiCanFDPlatformConfig(
