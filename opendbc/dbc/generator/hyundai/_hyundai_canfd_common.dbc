@@ -246,3 +246,41 @@ VAL_ 80 LKA_SysWrn 0 "No Info" 1 "Reserved" 2 "Reserved" 3 "Reserved" 4 "Hands-O
 VAL_ 80 LKA_UsmMod 0 "NONE" 1 "LKA 1 mode" 2 "LKA 2 mode" 3 "LDW";
 VAL_ 676 LEFT_LANE_LINE 0 "Not Detected" 1 "Low Confidence" 2 "Medium Confidence" 3 "High Confidence";
 VAL_ 676 RIGHT_LANE_LINE 0 "Not Detected" 1 "Low Confidence" 2 "Medium Confidence" 3 "High Confidence";
+
+BO_ 520 HOD_NEW: 16 XXX
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 17|7@1+ (1,0) [0|127] "" XXX
+ SG_ HANDS_ON_LEVEL : 80|3@1+ (1,0) [0|4] "" XXX
+ SG_ PRESSURE_1 : 103|8@0+ (1,0) [0|255] "" XXX
+ SG_ PRESSURE_2 : 111|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 992 SEATBELT_NEW: 24 XXX
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ DRIVER_SEATBELT : 24|1@1+ (1,0) [0|1] "" XXX
+ SG_ PASSENGER_SEATBELT : 28|1@1+ (1,0) [0|1] "" XXX
+
+BO_ 994 DOORS_NEW: 16 XXX
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ DRIVER_DOOR : 64|1@1+ (1,0) [0|1] "" XXX
+ SG_ PASSENGER_DOOR : 66|1@1+ (1,0) [0|1] "" XXX
+ SG_ REAR_LEFT_DOOR : 68|1@1+ (1,0) [0|1] "" XXX
+ SG_ REAR_RIGHT_DOOR : 70|1@1+ (1,0) [0|1] "" XXX
+ SG_ DRIVER_DOOR_SOMETHING : 74|1@0+ (1,0) [0|1] "" XXX
+ SG_ PASSENGER_DOOR_SOMETHING : 76|1@0+ (1,0) [0|1] "" XXX
+ SG_ REAR_LEFT_DOOR_SOMETHING : 78|1@0+ (1,0) [0|1] "" XXX
+ SG_ REAR_RIGHT_DOOR_SOMETHING : 80|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 995 BLINKERS_NEW: 16 XXX
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ LEFT_STALK : 74|1@1+ (1,0) [0|1] "" XXX
+ SG_ RIGHT_STALK : 76|1@1+ (1,0) [0|1] "" XXX
+ SG_ LEFT_LIGHT_FLASH : 89|2@1+ (1,0) [0|3] "" XXX
+ SG_ RIGHT_LIGHT_FLASH : 91|2@1+ (1,0) [0|3] "" XXX
+ SG_ LEFT_LIGHT_STATUS : 93|1@0+ (1,0) [0|1] "" XXX
+ SG_ RIGHT_LIGHT_STATUS : 95|1@0+ (1,0) [0|1] "" XXX
+ SG_ TURN_SIGNAL : 97|1@0+ (1,0) [0|1] "" XXX
+
+VAL_ 520 HANDS_ON_LEVEL 0 "OFF" 1 "LIGHT" 2 "MED" 3 "FIRM" 4 "FULL";

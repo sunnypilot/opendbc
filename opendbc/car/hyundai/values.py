@@ -625,6 +625,11 @@ class CAR(Platforms):
     CarSpecs(mass=1337, wheelbase=2.63, steerRatio=14.56),
     flags=HyundaiFlags.CHECKSUM_CRC8,
   )
+  KIA_SELTOS_2027 = HyundaiCanFDPlatformConfig(
+    [HyundaiCarDocs("Kia Seltos 2027", car_parts=CarParts.common([CarHarness.hyundai_n]))],
+    CarSpecs(mass=3450 * CV.LB_TO_KG, wheelbase=2.69, steerRatio=13.6),
+    flags=HyundaiFlags.CANFD_ANGLE_STEERING | HyundaiFlags.CCNC,
+  )
   KIA_SPORTAGE_5TH_GEN = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Kia Sportage 2023-24", car_parts=CarParts.common([CarHarness.hyundai_n])),

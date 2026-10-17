@@ -239,8 +239,12 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     ret.brakePressed = cp.vl["TCS"]["DriverBraking"] == 1
 
-    ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR"] == 1
-    ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT"] == 0
+    if self.CP.carFingerprint == CAR.KIA_SELTOS_2027:
+      ret.doorOpen = cp.vl["DOORS_NEW"]["DRIVER_DOOR"] == 1
+      ret.seatbeltUnlatched = cp.vl["SEATBELT_NEW"]["DRIVER_SEATBELT"] == 0
+    else:
+      ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR"] == 1
+      ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT"] == 0
 
     gear = cp.vl[self.gear_msg_canfd]["GEAR"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
@@ -275,8 +279,13 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
       if not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
         self.msg_161, self.msg_162, self.msg_1b5 = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"], cp_cam.vl["FR_CMR_03_50ms"]))
         self.cruise_info = copy.copy((cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp).vl["SCC_CONTROL"])
-    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"][f"LEFT_LAMP{alt}"],
-                                                                      cp.vl["BLINKERS"][f"RIGHT_LAMP{alt}"])
+    if self.CP.carFingerprint == CAR.KIA_SELTOS_2027:
+      # stalk position (not lamp) so hazards don't register as a blinker
+      ret.leftBlinker = cp.vl["BLINKERS_NEW"]["LEFT_STALK"] == 1
+      ret.rightBlinker = cp.vl["BLINKERS_NEW"]["RIGHT_STALK"] == 1
+    else:
+      ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"][f"LEFT_LAMP{alt}"],
+                                                                        cp.vl["BLINKERS"][f"RIGHT_LAMP{alt}"])
     if self.CP.enableBsm:
       ret.leftBlindspot = bool(cp.vl["ADAS_CMD_50_50ms"]["BCW_LtIndSta"])
       ret.rightBlindspot = bool(cp.vl["ADAS_CMD_50_50ms"]["BCW_RtIndSta"])

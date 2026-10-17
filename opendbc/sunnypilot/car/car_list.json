@@ -2519,6 +2519,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Kia Seltos 2027": {
+    "platform": "KIA_SELTOS_2027",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Seltos",
+    "year": [
+      "2027"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Kia Sorento 2018": {
     "platform": "KIA_SORENTO",
     "make": "Kia",

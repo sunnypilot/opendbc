@@ -1289,6 +1289,14 @@ FW_VERSIONS = {
       b'\xf1\x00NQ5__               1.01 1.03 99110-P1000         ',
     ],
   },
+  CAR.KIA_SELTOS_2027: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00SP31.011.041.012622000HKP_SP325_60306099211BS000',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00SP3__               1.00 1.02 99110BS000          ',
+    ],
+  },
   CAR.KIA_SPORTAGE_2026: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NQ51.011.021.012551000HKP_NQ524_50509099211P1110',
