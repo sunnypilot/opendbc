@@ -5,8 +5,6 @@ import unittest
 from opendbc.car.hyundai.values import HyundaiSafetyFlags
 from opendbc.car.structs import CarParams
 import opendbc.safety.tests.common as common
-from opendbc.safety.tests.common import CANPackerSafety
-from opendbc.safety.tests.libsafety import libsafety_py
 from opendbc.safety.tests.hyundai_common import HyundaiButtonBase, HyundaiLongitudinalBase
 
 # All combinations of radar/camera-SCC and gas/hybrid/EV cars
@@ -265,22 +263,16 @@ class TestHyundaiCanfdLFASteeringLongAltButtons(TestHyundaiCanfdLFASteeringLongB
 
 class HyundaiCanfdCCNCTest:
 
-  CCNC_SAFETY_PARAM = HyundaiSafetyFlags.CCNC
-
   @classmethod
   def setUpClass(cls):
-    if cls.__name__ in (
-      "TestHyundaiCanfdLFASteeringCCNC",
-      "TestHyundaiCanfdLFASteeringLongCCNC",
-    ):
-      cls.safety = None
+    super().setUpClass()
+    if cls.__name__ in ("TestHyundaiCanfdLFASteeringCCNC", "TestHyundaiCanfdLFASteeringLongCCNC"):
+      cls.packer = None
       raise unittest.SkipTest
 
-  def setUp(self):
-    self.packer = CANPackerSafety("hyundai_canfd_generated")
-    self.safety = libsafety_py.libsafety
-    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, self.CCNC_SAFETY_PARAM | self.SAFETY_PARAM)
-    self.safety.init_tests()
+  @property
+  def SAFETY_PARAM(self):
+    return HyundaiSafetyFlags.CCNC | super().SAFETY_PARAM
 
   def test_ccnc_tx_msgs(self):
     for msg, bus in (("CCNC_0x161", 0), ("CCNC_0x162", 0), ("MDPS", 2)):
@@ -298,8 +290,6 @@ class TestHyundaiCanfdLFASteeringCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFAS
 
 @parameterized_class(CAMERA_SCC_COMBOS)
 class TestHyundaiCanfdLFASteeringLongCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFASteeringLongBase):
-
-  CCNC_SAFETY_PARAM = HyundaiSafetyFlags.CCNC | HyundaiSafetyFlags.LONG
 
   TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x7C4, 2], [0x1A0, 0]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162, 0x1A0), 2: (0x7C4, 0xEA)}
