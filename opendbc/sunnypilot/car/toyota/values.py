@@ -14,6 +14,7 @@ class ToyotaFlagsSP(IntFlag):
   ZSS = 4
   STOCK_LONGITUDINAL = 8
   STOP_AND_GO_HACK = 16
+  REVERSE_CRUISE = 32
 
 
 class ToyotaSafetyFlagsSP:
