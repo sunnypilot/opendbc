@@ -135,19 +135,7 @@ def create_ccnc_mdps(packer, CAN, mdps, cam_lfa):
 
 
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, msg_1b5,
-                is_metric, out, main_cruise_enabled, lfa_icon, hide_faults=True):
-  if hide_faults:
-    for f in {"FAULT_LSS", "FAULT_HDA", "FAULT_DAS", "FAULT_LFA", "FAULT_DAW", "FAULT_ESS"}:
-      msg_162[f] = 0
-    if msg_161["ALERTS_2"] == 5:
-      msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
-    if msg_161["ALERTS_3"] == 17:
-      msg_161["ALERTS_3"] = 0
-    if msg_161["ALERTS_5"] in (2, 5):
-      msg_161["ALERTS_5"] = 0
-    if msg_161["SOUNDS_4"] == 2 and msg_161["LFA_ICON"] in (0, 3):
-      msg_161["SOUNDS_4"] = 0
-
+                is_metric, out, main_cruise_enabled, lfa_icon):
   LANE_CHANGE_SPEED_MIN = 8.9408  # 20 mph
   any_blinker = left_blinker or right_blinker
   curvature = {i: (31 if i == -1 else 13 - abs(i + 15)) if i < 0 else 15 + i for i in range(-15, 16)}

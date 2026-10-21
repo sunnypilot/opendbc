@@ -113,7 +113,6 @@ def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
   params_dict = {k: v for param in params_list for k, v in param.items()}
 
   _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params_dict)
-  _initialize_hyundai_ccnc_faults(CP, CP_SP, params_dict)
   _initialize_coop_steering(CP, CP_SP, params_dict)
   _initialize_tesla_mads_screen_button(CP, CP_SP, params_dict)
   _initialize_radar_tracks(CP, CP_SP, can_recv, can_send)
@@ -133,12 +132,6 @@ def _initialize_custom_longitudinal_tuning(CI, CP: structs.CarParams, CP_SP: str
       CP_SP.flags |= HyundaiFlagsSP.LONG_TUNING_PREDICTIVE.value
 
   _ = CI.get_longitudinal_tuning_sp(CP, CP_SP)
-
-
-def _initialize_hyundai_ccnc_faults(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
-                                    params_dict: dict[str, str]) -> None:
-  if CP.brand == 'hyundai' and int(params_dict.get("HyundaiCcncHideFaults", 1)) == 0:
-    CP_SP.flags |= HyundaiFlagsSP.CCNC_SHOW_FAULTS.value
 
 
 def _initialize_coop_steering(CP: structs.CarParams, CP_SP: structs.CarParamsSP,
