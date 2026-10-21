@@ -47,6 +47,7 @@
 
 static bool hyundai_canfd_alt_buttons = false;
 static bool hyundai_canfd_lka_steer_msg_alt = false;
+static bool hyundai_canfd_ccnc = false;
 
 static unsigned int hyundai_canfd_get_lka_addr(void) {
   return hyundai_canfd_lka_steer_msg_alt ? 0x110U : 0x50U;
@@ -138,10 +139,10 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *msg) {
 
 static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   const TorqueSteeringLimits HYUNDAI_CANFD_STEERING_LIMITS = {
-    .max_torque = 270,
+    .max_torque = hyundai_canfd_ccnc ? 384 : 270,
     .max_rt_delta = 112,
-    .max_rate_up = 2,
-    .max_rate_down = 3,
+    .max_rate_up = hyundai_canfd_ccnc ? 4 : 2,
+    .max_rate_down = hyundai_canfd_ccnc ? 4 : 3,
     .driver_torque_allowance = 250,
     .driver_torque_multiplier = 2,
     .type = TorqueDriverLimited,
@@ -283,6 +284,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
   hyundai_canfd_alt_buttons = GET_FLAG(param, HYUNDAI_PARAM_CANFD_ALT_BUTTONS);
   hyundai_canfd_lka_steer_msg_alt = GET_FLAG(param, HYUNDAI_PARAM_CANFD_LKA_STEER_MSG_ALT);
   const bool hyundai_ccnc = GET_FLAG(param, HYUNDAI_PARAM_CCNC);
+  hyundai_canfd_ccnc = hyundai_ccnc;
 
   safety_config ret;
   if (hyundai_longitudinal) {

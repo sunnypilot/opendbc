@@ -263,6 +263,10 @@ class TestHyundaiCanfdLFASteeringLongAltButtons(TestHyundaiCanfdLFASteeringLongB
 
 class HyundaiCanfdCCNCTest:
 
+  MAX_RATE_UP = 4
+  MAX_RATE_DOWN = 4
+  MAX_TORQUE_LOOKUP = [0], [384]
+
   @classmethod
   def setUpClass(cls):
     super().setUpClass()

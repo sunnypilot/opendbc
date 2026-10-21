@@ -203,7 +203,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     ccnc_non_hda2 = self.CP.flags & HyundaiFlags.CCNC and not lka_steering
 
     # steering control
-    can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon))
+    can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque,
+                                                           self.lkas_icon, CS.out.vEgo))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU
     if self.frame % 5 == 0 and lka_steering:

@@ -37,7 +37,11 @@ class CanBus(CanBusBase):
     return self._cam
 
 
-def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon):
+def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon, v_ego):
+  damping_gain = 100
+  if lat_active and CP.flags & HyundaiFlags.CCNC and not CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+    damping_gain = int(np.interp(v_ego * CV.MS_TO_KPH, [0., 30., 40., 50., 60., 100.], [10., 10., 25., 35., 40., 80.]))
+
   values = {
     "LKA_OptUsmSta": 2,
     "LKA_SysIndReq": lkas_icon,
@@ -46,7 +50,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     "ActToiSta": 1 if lat_active else 0,
     "LKA_UsmMod": 0,  # hide LKAS settings
     "LKA_RcgSta": 0,
-    "Damping_Gain": 100,  # can potentially tuned for better perf [3, 200]
+    "Damping_Gain": damping_gain,  # valid [3, 200]
   }
 
   ret = []
