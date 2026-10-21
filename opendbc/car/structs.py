@@ -144,6 +144,9 @@ class CarControlSP:
   leadOne: 'LeadData' = field(default_factory=lambda: LeadData())
   leadTwo: 'LeadData' = field(default_factory=lambda: LeadData())
   intelligentCruiseButtonManagement: 'IntelligentCruiseButtonManagement' = field(default_factory=lambda: IntelligentCruiseButtonManagement())
+  laneLeftDistance: float = auto_field()
+  laneRightDistance: float = auto_field()
+  roadCurvature: float = auto_field()
 
   @auto_dataclass
   class Param:
