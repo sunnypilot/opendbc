@@ -144,8 +144,6 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
   curvature = {i: (31 if i == -1 else 13 - abs(i + 15)) if i < 0 else 15 + i for i in range(-15, 16)}
 
   msg_161.update({
-    "DAW_ICON": 0,
-    "LKA_ICON": 0,
     "LFA_ICON": 2 if lfa_icon else 0,
     "CENTERLINE": 1 if lfa_icon else 0,
     "LANELINE_CURVATURE": curvature[max(-15, min(int(out.steeringAngleDeg / 4.5), 15))] if lfa_icon and not any_blinker else 15,
