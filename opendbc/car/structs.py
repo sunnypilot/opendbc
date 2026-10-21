@@ -146,7 +146,6 @@ class CarControlSP:
   intelligentCruiseButtonManagement: 'IntelligentCruiseButtonManagement' = field(default_factory=lambda: IntelligentCruiseButtonManagement())
   laneLeftDistance: float = auto_field()
   laneRightDistance: float = auto_field()
-  roadCurvature: float = auto_field()
 
   @auto_dataclass
   class Param:

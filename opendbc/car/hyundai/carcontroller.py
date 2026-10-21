@@ -60,6 +60,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     EsccCarController.__init__(self, CP, CP_SP)
     MadsCarController.__init__(self)
+    self.lane_position = 15  # HUD lane position, 15 = centred
+    self.lane_width = 3.6  # last lane width with both lines seen (m)
     LeadDataCarController.__init__(self, CP)
     LongitudinalController.__init__(self, CP, CP_SP)
     IntelligentCruiseButtonManagementInterface.__init__(self, CP, CP_SP)
@@ -217,9 +219,16 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     # LFA and HDA icons
     if self.frame % 5 == 0 and (not lka_steering or lka_steering_long):
       if ccnc_non_hda2:
+        # move the HUD lane position only once it is a full step away: no lag, no flicker between neighbouring steps
+        if CC_SP.laneLeftDistance and CC_SP.laneRightDistance:
+          self.lane_width = CC_SP.laneLeftDistance + CC_SP.laneRightDistance
+        target = hyundaicanfd.ccnc_lane_position(CC_SP.laneLeftDistance, CC_SP.laneRightDistance, self.lane_width)
+        if abs(target - self.lane_position) >= 1.:
+          self.lane_position = round(target)
         can_sends.extend(hyundaicanfd.create_ccnc(self.packer, self.CAN, self.CP.openpilotLongitudinalControl, CC.enabled, CC.hudControl, CC.leftBlinker,
                                                   CC.rightBlinker, CS.msg_161, CS.msg_162, CS.msg_1b5, CS.is_metric, CS.out, CS.main_cruise_enabled,
-                                                  self.lfa_icon, CC_SP.roadCurvature, CC_SP.laneLeftDistance, CC_SP.laneRightDistance))
+                                                  self.lfa_icon, CC_SP.laneLeftDistance, CC_SP.laneRightDistance,
+                                                  self.lane_position))
       else:
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
 
