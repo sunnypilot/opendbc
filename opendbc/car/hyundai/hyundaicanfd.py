@@ -140,11 +140,14 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
   LANE_CHANGE_SPEED_MIN = 8.9408  # 20 mph
   any_blinker = left_blinker or right_blinker
   curvature = {i: (31 if i == -1 else 13 - abs(i + 15)) if i < 0 else 15 + i for i in range(-15, 16)}
+  # road curve like stock: camera lane curvature 10 m ahead, ~3800 steps per 1/m (fit on HDA2 stock LFA drives), trusted lanes only
+  lane_k = [msg_1b5[f"Info_{s}LnCvtrVal"] + 10 * msg_1b5[f"Info_{s}LnCrvtrDrvtvVal"] for s in ("Lft", "Rt") if msg_1b5[f"Info_{s}LnQualSta"] >= 2]
+  curve = max(-15, min(int(-3800 * sum(lane_k) / len(lane_k)), 15)) if lane_k else 0
 
   msg_161.update({
     "LFA_ICON": 2 if lfa_icon else 0,
     "CENTERLINE": 1 if lfa_icon else 0,
-    "LANELINE_CURVATURE": curvature[max(-15, min(int(out.steeringAngleDeg / 4.5), 15))] if lfa_icon and not any_blinker else 15,
+    "LANELINE_CURVATURE": curvature[curve] if lfa_icon and not any_blinker else 15,
     "LANELINE_LEFT": (0 if not lfa_icon else 1 if not hud.leftLaneVisible else 4 if hud.leftLaneDepart else 6 if any_blinker else 2),
     "LANELINE_RIGHT": (0 if not lfa_icon else 1 if not hud.rightLaneVisible else 4 if hud.rightLaneDepart else 6 if any_blinker else 2),
     "LCA_LEFT_ICON": (0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.leftBlindspot else 2 if any_blinker else 4),
