@@ -501,13 +501,11 @@ BO_ 474 ADRV_0x1da: 32 ADRV
 BO_ 480 LFAHDA_CLUSTER: 16 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_4 : 24|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_5 : 25|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_2 : 30|1@0+ (1,0) [0|1] "" XXX
- SG_ HDA_ICON : 31|1@1+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_1 : 32|3@1+ (1,0) [0|7] "" XXX
- SG_ LFA_ICON : 47|2@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_3 : 49|1@0+ (1,0) [0|1] "" XXX
+ SG_ HDA_OptUsmSta : 24|3@1+ (1,0) [0|7] "" XXX
+ SG_ HDA_CntrlModSta : 30|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_InfoPUDis : 32|3@1+ (1,0) [0|7] "" XXX
+ SG_ HDA_LFA_SymSta : 47|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_InfoPUDis1 : 51|3@1+ (1,0) [0|7] "" XXX
 
 BO_ 485 BLINDSPOTS_FRONT_CORNER_1: 16 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -875,7 +873,6 @@ CM_ SG_ 437 Relative_Velocity "+ : Preceding, - : Oncoming - Velocity detected b
 CM_ SG_ 442 BCW_LtIndSta "Left blind-spot indicator. When a vehicle is detected, the BCW light on the side mirror illuminates. When the blinker is also on, the BCW light flashes on both the dash and the mirror to alert the driver.";
 CM_ SG_ 442 BCW_RtIndSta "Right blind-spot indicator. When a vehicle is detected, the BCW light on the side mirror illuminates. When the blinker is also on, the BCW light flashes on both the dash and the mirror to alert the driver.";
 CM_ SG_ 416 SCC_ObjSta "state of in-path object and information of controllable state.";
-CM_ SG_ 480 NEW_SIGNAL_5 "todo: figure out why always set to 1";
 CM_ BO_ 506 "Sent by the camera containing speed limit information. ISLW stands for Intelligent Speed Limit Warning, and ISLA is Intelligent Speed Limit Assist. it also contains road sign information.";
 CM_ SG_ 506 FR_CMR_Crc2Val "The data area for CRC calculation is based on the data length (DLC) of the message DB.The CRC shall be calculated over the entire data block (excluding the CRC bytes) including the user data, alive counter and Data ID - CRC Polynomial (0x1021) , In";
 CM_ SG_ 506 FR_CMR_AlvCnt2Val "For the first transmission request for a data element the counter shall be initialized with 0 and shall be incremented by 1 for every subsequent send request. When the counter reaches the maximum value(0xFF), then it shall restart with 0 for the next s";
@@ -952,6 +949,11 @@ CM_ SG_ 1041 COUNTER_ALT "only increments on change";
 CM_ BO_ 1043 "Lamp signals do not seem universal on cars that use LKAS_ALT, but stalk signals do.";
 CM_ SG_ 1043 COUNTER_ALT "only increments on change";
 CM_ SG_ 1043 USE_ALT_LAMP "likely 1 on cars that use alt lamp signals";
+CM_ SG_ 480 HDA_OptUsmSta "HDA option: 2 = on. A faulted CCNC camera sends 6-7.";
+CM_ SG_ 480 HDA_CntrlModSta "HDA control mode.";
+CM_ SG_ 480 HDA_InfoPUDis "HDA/LFA pop-up. CCNC camera uses 5 and 6 for the hands-off warnings.";
+CM_ SG_ 480 HDA_LFA_SymSta "LFA symbol shown on the cluster.";
+CM_ SG_ 480 HDA_InfoPUDis1 "CCNC camera sends 1 for 5 s when LFA cancels after the hands-off warnings.";
 VAL_ 53 GEAR 0 "P" 4 "S" 5 "D" 6 "N" 7 "R";
 VAL_ 64 GEAR 0 "P" 5 "D" 6 "N" 7 "R";
 VAL_ 69 GEAR 0 "P" 5 "D" 6 "N" 7 "R";
@@ -1190,3 +1192,8 @@ VAL_ 1041 DRIVER_REAR_DOOR 0 "Closed" 1 "Opened";
 VAL_ 1041 PASSENGER_REAR_DOOR 0 "Closed" 1 "Opened";
 VAL_ 1144 DRIVE_MODE2 3 "Set Sport" 1 "Set Normal" 2 "Set Eco";
 VAL_ 1240 DISTANCE_UNIT 1 "Miles" 0 "Kilometers";
+VAL_ 480 HDA_OptUsmSta 0 "Not Applied" 1 "Function Off" 2 "Function On" 7 "Invalid (Fail)";
+VAL_ 480 HDA_CntrlModSta 0 "System Off" 1 "System Standby" 2 "System Active";
+VAL_ 480 HDA_InfoPUDis 0 "No pop-up" 1 "System start pop-up" 2 "Auto disengaged by highway off" 3 "System fail pop-up (LFA)" 4 "System fail pop-up (HDA)" 5 "Hands-off pop-up" 6 "Hands-off pop-up w/ sound" 7 "System automatic off";
+VAL_ 480 HDA_LFA_SymSta 0 "Off" 1 "Gray" 2 "Green" 3 "White blink";
+VAL_ 480 HDA_InfoPUDis1 0 "No pop-up" 1 "System automatic off (LFA)" 2 "System automatic off (HDA)" 7 "Error indicator";

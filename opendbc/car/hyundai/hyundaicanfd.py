@@ -130,13 +130,13 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
 
 def create_lfahda_cluster(packer, CAN, enabled, lfa_icon, ccnc=False):
   values = {
-    "HDA_ICON": 1 if enabled else 0,
-    "LFA_ICON": lfa_icon,
+    "HDA_CntrlModSta": 2 if enabled else 0,  # HDA active
+    "HDA_LFA_SymSta": lfa_icon,
   }
   if ccnc:
     values.update({
-      "HDA_ICON": 0,  # stock CCNC camera sends 0; HDA shows on 0x161
-      "NEW_SIGNAL_5": 1,  # constant 1 from stock camera
+      "HDA_CntrlModSta": 0,  # stock CCNC camera sends 0; HDA shows on 0x161
+      "HDA_OptUsmSta": 2,  # HDA function on, as the stock camera sends
     })
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
