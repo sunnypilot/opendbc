@@ -126,18 +126,27 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
 
+def create_ccnc_mdps(packer, CAN, mdps, cam_lfa):
+  # the real 0xEA is blocked from the camera (it faults if MDPS reports torque it never requested),
+  # but with no 0xEA at all it faults too; send a copy that mirrors the camera's own torque request
+  values = {k: v for k, v in mdps.items() if k != "CHECKSUM"}
+  values["MDPS_LkaToiActvSta"] = cam_lfa.get("ActToiSta", 0)
+  return packer.make_can_msg("MDPS", CAN.CAM, values)
+
+
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, msg_1b5,
-                is_metric, out, main_cruise_enabled, lfa_icon):
-  for f in {"FAULT_LSS", "FAULT_HDA", "FAULT_DAS", "FAULT_LFA", "FAULT_DAW", "FAULT_ESS"}:
-    msg_162[f] = 0
-  if msg_161["ALERTS_2"] == 5:
-    msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
-  if msg_161["ALERTS_3"] == 17:
-    msg_161["ALERTS_3"] = 0
-  if msg_161["ALERTS_5"] in (2, 5):
-    msg_161["ALERTS_5"] = 0
-  if msg_161["SOUNDS_4"] == 2 and msg_161["LFA_ICON"] in (0, 3):
-    msg_161["SOUNDS_4"] = 0
+                is_metric, out, main_cruise_enabled, lfa_icon, hide_faults=True):
+  if hide_faults:
+    for f in {"FAULT_LSS", "FAULT_HDA", "FAULT_DAS", "FAULT_LFA", "FAULT_DAW", "FAULT_ESS"}:
+      msg_162[f] = 0
+    if msg_161["ALERTS_2"] == 5:
+      msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
+    if msg_161["ALERTS_3"] == 17:
+      msg_161["ALERTS_3"] = 0
+    if msg_161["ALERTS_5"] in (2, 5):
+      msg_161["ALERTS_5"] = 0
+    if msg_161["SOUNDS_4"] == 2 and msg_161["LFA_ICON"] in (0, 3):
+      msg_161["SOUNDS_4"] = 0
 
   LANE_CHANGE_SPEED_MIN = 8.9408  # 20 mph
   any_blinker = left_blinker or right_blinker
