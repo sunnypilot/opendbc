@@ -154,9 +154,9 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
   msg_161.update({
     "LFA_ICON": 2 if lfa_icon else 0,
     "CENTERLINE": 1 if lfa_icon else 0,
-    # lane lines shown only when op's model is confident in them (distance is 0 below 50%), like the mici UI fading them out
-    "LANELINE_LEFT": (0 if not lfa_icon else 1 if not lane_left else 4 if hud.leftLaneDepart else 6 if any_blinker else 2),
-    "LANELINE_RIGHT": (0 if not lfa_icon else 1 if not lane_right else 4 if hud.rightLaneDepart else 6 if any_blinker else 2),
+    # lane lines: 0 gray, 2 white, 4 orange (departure), 6 green (blinker); gray while op's model isn't confident in that line
+    "LANELINE_LEFT": (0 if not lfa_icon or not lane_left else 4 if hud.leftLaneDepart else 6 if any_blinker else 2),
+    "LANELINE_RIGHT": (0 if not lfa_icon or not lane_right else 4 if hud.rightLaneDepart else 6 if any_blinker else 2),
     "LCA_LEFT_ICON": (0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.leftBlindspot else 2 if any_blinker else 4),
     "LCA_RIGHT_ICON": (0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.rightBlindspot else 2 if any_blinker else 4),
     "LCA_LEFT_ARROW": 2 if left_blinker else 0,
