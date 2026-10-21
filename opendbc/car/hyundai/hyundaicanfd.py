@@ -37,11 +37,7 @@ class CanBus(CanBusBase):
     return self._cam
 
 
-def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon, v_ego):
-  damping_gain = 100
-  if lat_active and CP.flags & HyundaiFlags.CCNC and not CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
-    damping_gain = int(np.interp(v_ego * CV.MS_TO_KPH, [0., 30., 40., 50., 60., 100.], [10., 10., 25., 35., 40., 80.]))
-
+def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, lkas_icon, v_ego, hud):
   values = {
     "LKA_OptUsmSta": 2,
     "LKA_SysIndReq": lkas_icon,
@@ -50,8 +46,18 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
     "ActToiSta": 1 if lat_active else 0,
     "LKA_UsmMod": 0,  # hide LKAS settings
     "LKA_RcgSta": 0,
-    "Damping_Gain": damping_gain,  # valid [3, 200]
+    "Damping_Gain": 100,  # valid [3, 200]
   }
+
+  if CP.flags & HyundaiFlags.CCNC and not CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+    values.update({
+      "LKA_OptUsmSta": 0,  # stock camera always sends 0, LFA or LKA mode
+      "LKA_SysIndReq": 0,  # LKA icon: 0 in LFA mode; LKA-only mode sends 2 armed, 3 steering
+      "LKA_RcgSta": hud.leftLaneVisible + 2 * hud.rightLaneVisible if lat_active else 0,  # lanes seen: 1 left, 2 right, 3 both
+      "LKA_OnOffEquip2Sta": 1,  # mode: 1 LFA, 2 LKA only, 3 fault
+      "NEW_SIGNAL_1": 2,  # rest of byte 9 nibble, 2 on Sonata HEV 2024 stock camera
+      "Damping_Gain": int(np.interp(v_ego * CV.MS_TO_KPH, [0., 30., 40., 50., 60., 100.], [10., 10., 25., 35., 40., 80.])) if lat_active else 100,
+    })
 
   ret = []
   if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
@@ -122,34 +128,39 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
 
-def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
+def create_lfahda_cluster(packer, CAN, enabled, lfa_icon, ccnc=False):
   values = {
     "HDA_ICON": 1 if enabled else 0,
     "LFA_ICON": lfa_icon,
   }
+  if ccnc:
+    values.update({
+      "HDA_ICON": 0,  # stock CCNC camera sends 0; HDA shows on 0x161
+      "NEW_SIGNAL_5": 1,  # constant 1 from stock camera
+    })
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
 
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, msg_1b5,
-                is_metric, out, main_cruise_enabled, lfa_icon):
-  for f in {"FAULT_LSS", "FAULT_HDA", "FAULT_DAS", "FAULT_LFA", "FAULT_DAW", "FAULT_ESS"}:
-    msg_162[f] = 0
-  if msg_161["ALERTS_2"] == 5:
-    msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
-  if msg_161["ALERTS_3"] == 17:
-    msg_161["ALERTS_3"] = 0
-  if msg_161["ALERTS_5"] in (2, 5):
-    msg_161["ALERTS_5"] = 0
-  if msg_161["SOUNDS_4"] == 2 and msg_161["LFA_ICON"] in (0, 3):
-    msg_161["SOUNDS_4"] = 0
+                is_metric, out, main_cruise_enabled, lfa_icon, hide_faults=True):
+  if hide_faults:
+    for f in {"FAULT_LSS", "FAULT_HDA", "FAULT_DAS", "FAULT_LFA", "FAULT_DAW", "FAULT_ESS"}:
+      msg_162[f] = 0
+    if msg_161["ALERTS_2"] == 5:
+      msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
+    if msg_161["ALERTS_3"] == 17:
+      msg_161["ALERTS_3"] = 0
+    if msg_161["ALERTS_5"] in (2, 5):
+      msg_161["ALERTS_5"] = 0
+    if msg_161["SOUNDS_4"] == 2 and msg_161["LFA_ICON"] in (0, 3):
+      msg_161["SOUNDS_4"] = 0
+    msg_161.update({"DAW_ICON": 0, "LKA_ICON": 0})
 
   LANE_CHANGE_SPEED_MIN = 8.9408  # 20 mph
   any_blinker = left_blinker or right_blinker
   curvature = {i: (31 if i == -1 else 13 - abs(i + 15)) if i < 0 else 15 + i for i in range(-15, 16)}
 
   msg_161.update({
-    "DAW_ICON": 0,
-    "LKA_ICON": 0,
     "LFA_ICON": 2 if lfa_icon else 0,
     "CENTERLINE": 1 if lfa_icon else 0,
     "LANELINE_CURVATURE": curvature[max(-15, min(int(out.steeringAngleDeg / 4.5), 15))] if lfa_icon and not any_blinker else 15,
