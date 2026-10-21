@@ -212,7 +212,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
     # MDPS copy for the camera, every frame like the real 0xEA (100 Hz)
     if ccnc_non_hda2 and CS.mdps:
-      can_sends.append(hyundaicanfd.create_ccnc_mdps(self.packer, self.CAN, CS.mdps, CS.cam_lfa))
+      can_sends.append(hyundaicanfd.create_ccnc_mdps(self.packer, self.CAN, CS.mdps))
 
     # LFA and HDA icons
     if self.frame % 5 == 0 and (not lka_steering or lka_steering_long):
