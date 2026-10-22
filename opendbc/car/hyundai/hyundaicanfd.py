@@ -141,7 +141,6 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
   any_blinker = left_blinker or right_blinker
 
   msg_161.update({
-    "LKA_ICON": 0,  # op has no LKA; hide the camera's gray LKA icon in LKA-only mode
     "LFA_ICON": 2 if lfa_icon else 0,
     "CENTERLINE": 1 if lfa_icon else 0,
     "LANELINE_LEFT": (0 if not lfa_icon else 1 if not hud.leftLaneVisible else 4 if hud.leftLaneDepart else 6 if any_blinker else 2),
