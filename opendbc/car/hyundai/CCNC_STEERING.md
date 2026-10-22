@@ -136,7 +136,7 @@ op and panda use `STEER_DRIVER_ALLOWANCE` 250 and `MULTIPLIER` 2 on the hand-tor
 |---|---|---|---|
 | 0x12A | `LFA` / `ADAS_CMD_30_10ms` | steering command | sends (camera copy blocked) |
 | 0x1E0 | `LFAHDA_CLUSTER` / `ADAS_CMD_31_50ms` | cluster LFA/HDA status | sends |
-| 0x161 / 0x162 | CCNC HUD | lane lines, icons, alerts, faults, vibrate | sends (camera copy with op's lane lines and position from the model) |
+| 0x161 / 0x162 | CCNC HUD | lane lines, icons, alerts, faults, vibrate | sends (camera copy with op's LFA icon and lane line colours) |
 | 0xEA | `MDPS` / `MDPS_01_10ms` | MDPS feedback | reads; sends the camera a copy (LKA torque inactive and unavailable); the real one reaches the camera only until op's copy starts |
 | 0x125 | `STEERING_SENSORS` | angle and rate | reads |
 | 0x1B5 | `FR_CMR_03_50ms` | lane geometry and lead car | reads (lead distance with op longitudinal) |
@@ -205,19 +205,12 @@ Nothing in 0x161/0x162 is cleared anymore, so the camera's own messages reach th
 | `ALERTS_5` | 5 | stopped in traffic with cruise holding | likely the "press resume or accelerator to go" message, about 4 s |
 | `LKA_OnOffEquip2Sta` | 2 with `LKA_ICON` 3 | whole drive | camera in LKA-only mode, likely the car's lane safety setting; the gray LKA icon now shows because op no longer overrides it |
 
-## HUD lane position and lane lines
+## HUD lane position and road curve
 
-op drives these from its own model, not the camera. `controlsd_ext` fills two `CarControlSP` fields each frame and the Hyundai car controller turns them into 0x161 values:
+Not set by op: the camera's own `LANELINE_*_POSITION` and `LANELINE_CURVATURE` pass through (the Sonata camera sends centred and straight). op only sets the lane line colours from its HUD state. Tried and dropped as not good enough on the road:
 
-| Field | What it is |
-|---|---|
-| `laneLeftDistance` / `laneRightDistance` | model distance to the left/right lane line (m), 0 while that line is hidden |
-
-Lane lines (`LANELINE_LEFT` / `LANELINE_RIGHT`): a line appears once its `laneLineProbs` has been above 70% for 1 s and hides once it has been below 50% for 0.5 s. On a 3.8 min drive on unmarked streets the plain 50% cut toggled the left line 148 times; this toggled it 8.
-
-Lane position (`LANELINE_LEFT_POSITION` / `LANELINE_RIGHT_POSITION`): stock sends whole numbers 0-30 that always add up to 30 (15/15 = centred); there is no finer bit, and stock cameras only move them during a lane change. op shows the car's position whenever its LFA icon is on: `30 * left / (left + right)`, or with one line visible the last lane width seen with both. The shown value only changes once the real one is a full step away, which stops flicker between neighbouring steps without adding delay (83 changes a minute raw, 18 with it, never more than 1 step off).
-
-Road curve (`LANELINE_CURVATURE`): not set by op; the camera's own value passes through (the Sonata camera always sends straight). Tried and dropped because none looked right on the road: stock HDA2 cameras follow their lane curvature 10 m ahead (`k + 10 * dk` from 0x1B5, x -3800: 73% exact, 94% within 1 step); the model's plan 10 m ahead (x -3250) got 59% / 85%, `desiredCurvature` 46% / 71%, and `steeringAngleDeg / 4.5` about 33%. `desiredCurvature` and `actuators.curvature` also follow the steering wheel when op is not steering, because modeld and controlsd reset them to the steering-angle curvature.
+- Lane position from op's model lane lines (debounced, one-line fallback with the last lane width, hysteresis). Stock sends whole numbers 0-30 that always add up to 30 and only moves them during a lane change.
+- Road curve. Against stock HDA2 cameras (steps per 1/m, truncated, ±15): camera lane curvature 10 m ahead (`k + 10 * dk` from 0x1B5, x -3800) 73% exact / 94% within 1; model plan 10 m ahead (x -3250) 59% / 85%; `modelV2.action.desiredCurvature` 46% / 71%; `steeringAngleDeg / 4.5` about 33%. `desiredCurvature` and `actuators.curvature` also follow the steering wheel whenever op is not steering.
 
 ## Other cars
 

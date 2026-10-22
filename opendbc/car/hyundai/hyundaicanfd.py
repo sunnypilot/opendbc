@@ -135,36 +135,21 @@ def create_ccnc_mdps(packer, CAN, mdps):
   return packer.make_can_msg("MDPS", CAN.CAM, values)
 
 
-def ccnc_lane_position(lane_left, lane_right, lane_width):
-  # HUD lane position 0-30 (15 = centred, left + right = 30) from op's model lane distances; one line seen: use the last lane width
-  if lane_left and lane_right:
-    left = 30 * lane_left / (lane_left + lane_right)
-  elif lane_left or lane_right:
-    left = 30 * lane_left / lane_width if lane_left else 30 - 30 * lane_right / lane_width
-  else:
-    left = 15.
-  return max(0., min(left, 30.))
-
-
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, msg_1b5,
-                is_metric, out, main_cruise_enabled, lfa_icon, lane_left, lane_right, lane_position):
+                is_metric, out, main_cruise_enabled, lfa_icon):
   LANE_CHANGE_SPEED_MIN = 8.9408  # 20 mph
   any_blinker = left_blinker or right_blinker
 
   msg_161.update({
     "LFA_ICON": 2 if lfa_icon else 0,
     "CENTERLINE": 1 if lfa_icon else 0,
-    # lane lines: 0 gray, 2 white, 4 orange (departure), 6 green (blinker); gray while op's model isn't confident in that line
-    "LANELINE_LEFT": (0 if not lfa_icon or not lane_left else 4 if hud.leftLaneDepart else 6 if any_blinker else 2),
-    "LANELINE_RIGHT": (0 if not lfa_icon or not lane_right else 4 if hud.rightLaneDepart else 6 if any_blinker else 2),
+    "LANELINE_LEFT": (0 if not lfa_icon else 1 if not hud.leftLaneVisible else 4 if hud.leftLaneDepart else 6 if any_blinker else 2),
+    "LANELINE_RIGHT": (0 if not lfa_icon else 1 if not hud.rightLaneVisible else 4 if hud.rightLaneDepart else 6 if any_blinker else 2),
     "LCA_LEFT_ICON": (0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.leftBlindspot else 2 if any_blinker else 4),
     "LCA_RIGHT_ICON": (0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.rightBlindspot else 2 if any_blinker else 4),
     "LCA_LEFT_ARROW": 2 if left_blinker else 0,
     "LCA_RIGHT_ARROW": 2 if right_blinker else 0,
   })
-
-  if lfa_icon:
-    msg_161.update({"LANELINE_LEFT_POSITION": lane_position, "LANELINE_RIGHT_POSITION": 30 - lane_position})
 
   if hud.leftLaneDepart or hud.rightLaneDepart:
     msg_162["VIBRATE"] = 1
