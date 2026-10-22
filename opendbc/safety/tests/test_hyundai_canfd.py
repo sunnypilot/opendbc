@@ -280,6 +280,17 @@ class HyundaiCanfdCCNCTest:
     self.assertTrue(self._tx(self.packer.make_can_msg_safety("MDPS", 2, {})))
     self.assertEqual(-1, self.safety.safety_fwd_hook(0, 0xEA))
 
+  def test_ccnc_camera_lfa_forwarded_while_op_silent(self):
+    # the camera's own LFA/LKA steering (0x12A) reaches the car only while op isn't sending its own
+    self.safety.set_timer(1000)
+    self.assertEqual(0, self.safety.safety_fwd_hook(2, 0x12A))
+    self.assertTrue(self._tx(self._torque_cmd_msg(0, steer_req=0)))
+    self.assertEqual(-1, self.safety.safety_fwd_hook(2, 0x12A))
+    self.safety.set_timer(1000 + 49000)
+    self.assertEqual(-1, self.safety.safety_fwd_hook(2, 0x12A))
+    self.safety.set_timer(1000 + 51000)
+    self.assertEqual(0, self.safety.safety_fwd_hook(2, 0x12A))
+
   def test_ccnc_tx_msgs(self):
     for msg, bus in (("CCNC_0x161", 0), ("CCNC_0x162", 0), ("MDPS", 2)):
       self.assertTrue(self._tx(self.packer.make_can_msg_safety(msg, bus, {})))
@@ -290,7 +301,7 @@ class TestHyundaiCanfdLFASteeringCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFAS
 
   TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162), 2: (0xEA,)}
-  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162]}
+  FWD_BLACKLISTED_ADDRS = {2: [0x1E0, 0x161, 0x162]}
 
 
 @parameterized_class(CAMERA_SCC_COMBOS)
@@ -298,7 +309,7 @@ class TestHyundaiCanfdLFASteeringLongCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfd
 
   TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x1A0, 0]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162, 0x1A0), 2: (0xEA,)}
-  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162, 0x1A0]}
+  FWD_BLACKLISTED_ADDRS = {2: [0x1E0, 0x161, 0x162, 0x1A0]}
 
 
 if __name__ == "__main__":

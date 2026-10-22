@@ -126,12 +126,13 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
 
-def create_ccnc_mdps(packer, CAN, mdps):
+def create_ccnc_mdps(packer, CAN, mdps, camera_steering):
   # the camera faults without MDPS 0xEA, and faults if it sees LKA torque it never requested.
-  # its own LFA can never steer under op (op replaces its LFA message), so report LKA torque inactive and unavailable;
-  # its LFA then stays in standby and never runs the stock hands-on-wheel timer
+  # while op steers, its LFA can't steer (op replaces its LFA message): report LKA torque inactive and unavailable, so its
+  # LFA stays in standby and never runs the stock hands-on-wheel timer. While the camera steers itself, pass the real values.
   values = {k: v for k, v in mdps.items() if k != "CHECKSUM"}
-  values.update({"MDPS_LkaToiActvSta": 0, "MDPS_LkaToiUnblSta": 1})
+  if not camera_steering:
+    values.update({"MDPS_LkaToiActvSta": 0, "MDPS_LkaToiUnblSta": 1})
   return packer.make_can_msg("MDPS", CAN.CAM, values)
 
 
