@@ -139,7 +139,7 @@ op and panda use `STEER_DRIVER_ALLOWANCE` 250 and `MULTIPLIER` 2 on the hand-tor
 | 0x161 / 0x162 | CCNC HUD | lane lines, icons, alerts, faults, vibrate | sends (camera copy with op's LFA icon and lane line colours) |
 | 0xEA | `MDPS` / `MDPS_01_10ms` | MDPS feedback | reads; sends the camera a copy (LKA torque inactive and unavailable); the real one reaches the camera only until op's copy starts |
 | 0x125 | `STEERING_SENSORS` | angle and rate | reads |
-| 0x1B5 | `FR_CMR_03_50ms` | lane geometry and lead car | reads (lead distance with op longitudinal) |
+| 0x1B5 | `FR_CMR_03_50ms` | lane geometry and lead car | not used (with op longitudinal the HUD lead distance comes from op's own lead) |
 | 0x7C4 | camera diagnostics | fault-code queries | passes through |
 
 Paths that exist but are not ours on these cars: `0xCB` angle command (angle MDPS only), `0x50`/`0x110` LKAS on HDA2 cars, `ESC_StrTqReq` in 0x60 (ESC stability torque), parking angle request (private bus).

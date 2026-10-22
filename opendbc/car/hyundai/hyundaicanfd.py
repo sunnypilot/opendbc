@@ -135,7 +135,7 @@ def create_ccnc_mdps(packer, CAN, mdps):
   return packer.make_can_msg("MDPS", CAN.CAM, values)
 
 
-def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, msg_1b5,
+def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, lead_distance,
                 is_metric, out, main_cruise_enabled, lfa_icon):
   LANE_CHANGE_SPEED_MIN = 8.9408  # 20 mph
   any_blinker = left_blinker or right_blinker
@@ -180,7 +180,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     })
 
     msg_162["LEAD"] = 0 if not main_cruise_enabled else 2 if enabled else 1
-    msg_162["LEAD_DISTANCE"] = msg_1b5["Longitudinal_Distance"]
+    msg_162["LEAD_DISTANCE"] = lead_distance
 
   return [packer.make_can_msg(msg, CAN.ECAN, data) for msg, data in [("CCNC_0x161", msg_161), ("CCNC_0x162", msg_162)]]
 
