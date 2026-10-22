@@ -139,12 +139,6 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *msg) {
 // CCNC: the camera needs MDPS 0xEA at all times, so pass the real one until op sends its own copy
 static bool hyundai_canfd_ccnc_mdps_tx = false;
 
-// CCNC: while op isn't steering it stops sending LFA (0x12A) and the camera's own LFA/LKA steering reaches the car,
-// like stock. The camera's 0x12A is blocked again as soon as op sends one.
-static bool hyundai_canfd_ccnc = false;
-static bool hyundai_canfd_ccnc_lfa_tx = false;
-static uint32_t hyundai_canfd_ccnc_lfa_tx_ts = 0U;
-
 static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   const TorqueSteeringLimits HYUNDAI_CANFD_STEERING_LIMITS = {
     .max_torque = 270,
@@ -230,21 +224,11 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
     hyundai_common_acc_main_on_sync();
   }
 
-  if (tx && hyundai_canfd_ccnc && (msg->addr == 0x12aU) && (msg->bus == 0U)) {
-    hyundai_canfd_ccnc_lfa_tx = true;
-    hyundai_canfd_ccnc_lfa_tx_ts = microsecond_timer_get();
-  }
-
   return tx;
 }
 
 static bool hyundai_canfd_fwd_hook(int bus_num, int addr) {
-  const uint32_t LFA_TX_TIMEOUT = 50000U;  // 50 ms: op sends LFA at 100 Hz while it steers
-  bool block = (bus_num == 0) && (addr == 0xea) && hyundai_canfd_ccnc_mdps_tx;
-  if ((bus_num == 2) && (addr == 0x12a) && hyundai_canfd_ccnc_lfa_tx) {
-    block = safety_get_ts_elapsed(microsecond_timer_get(), hyundai_canfd_ccnc_lfa_tx_ts) < LFA_TX_TIMEOUT;
-  }
-  return block;
+  return (bus_num == 0) && (addr == 0xea) && hyundai_canfd_ccnc_mdps_tx;
 }
 
 static safety_config hyundai_canfd_init(uint16_t param) {
@@ -297,8 +281,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
 
 #define HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS(longitudinal) \
     HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(2) \
-    {0x12A, 0, 16, .check_relay = true, .disable_static_blocking = true}, /* LFA, camera's passes while op is silent */ \
-    {0x1E0, 0, 16, .check_relay = true}, /* LFAHDA_CLUSTER */ \
+    HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0) \
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
     {0x161, 0, 32, .check_relay = true}, /* CCNC_0x161 */ \
     {0x162, 0, 32, .check_relay = true}, /* CCNC_0x162 */ \
@@ -306,14 +289,11 @@ static safety_config hyundai_canfd_init(uint16_t param) {
 
   hyundai_common_init(param);
   hyundai_canfd_ccnc_mdps_tx = false;
-  hyundai_canfd_ccnc_lfa_tx = false;
-  hyundai_canfd_ccnc_lfa_tx_ts = 0U;
 
   gen_crc_lookup_table_16(0x1021, hyundai_canfd_crc_lut);
   hyundai_canfd_alt_buttons = GET_FLAG(param, HYUNDAI_PARAM_CANFD_ALT_BUTTONS);
   hyundai_canfd_lka_steer_msg_alt = GET_FLAG(param, HYUNDAI_PARAM_CANFD_LKA_STEER_MSG_ALT);
   const bool hyundai_ccnc = GET_FLAG(param, HYUNDAI_PARAM_CCNC);
-  hyundai_canfd_ccnc = hyundai_ccnc;
 
   safety_config ret;
   if (hyundai_longitudinal) {

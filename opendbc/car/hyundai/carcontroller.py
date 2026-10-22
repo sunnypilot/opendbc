@@ -202,13 +202,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     lka_steering_long = lka_steering and self.CP.openpilotLongitudinalControl
     ccnc_non_hda2 = self.CP.flags & HyundaiFlags.CCNC and not lka_steering
 
-    # CCNC in LKA-only mode (LFA button held ~5 s) while op isn't steering: send no LFA, so panda passes the camera's own
-    # and stock LKA works. Not in LFA mode: there the LFA button is also the MADS button and would turn on the camera's LFA
-    camera_steering = ccnc_non_hda2 and not CC.latActive and CS.cam_lfa.get("LKA_OnOffEquip2Sta") == 2
-
     # steering control
-    if not camera_steering:
-      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon))
+    can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.lkas_icon))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU
     if self.frame % 5 == 0 and lka_steering:
@@ -217,7 +212,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
 
     # MDPS copy for the camera, every frame like the real 0xEA (100 Hz)
     if ccnc_non_hda2 and CS.mdps:
-      can_sends.append(hyundaicanfd.create_ccnc_mdps(self.packer, self.CAN, CS.mdps, camera_steering))
+      can_sends.append(hyundaicanfd.create_ccnc_mdps(self.packer, self.CAN, CS.mdps))
 
     # LFA and HDA icons
     if self.frame % 5 == 0 and (not lka_steering or lka_steering_long):

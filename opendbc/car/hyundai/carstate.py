@@ -65,7 +65,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     self.cruise_info = {}
     self.msg_161, self.msg_162 = {}, {}
-    self.mdps, self.cam_lfa = {}, {}
+    self.mdps = {}
 
     # On some cars, CLU15->CF_Clu_VehicleSpeed can oscillate faster than the dash updates. Sample at 5 Hz
     self.cluster_speed = 0
@@ -265,8 +265,6 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
       if not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
         self.msg_161, self.msg_162 = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"]))
         self.mdps = copy.copy(cp.vl["MDPS"]) if cp.ts_nanos["MDPS"]["COUNTER"] else {}  # never copy before the real one arrived
-        cam_lfa = cp_cam.vl["LFA"]
-        self.cam_lfa = copy.copy(cam_lfa) if cp_cam.ts_nanos["LFA"]["COUNTER"] else {}
         self.cruise_info = copy.copy((cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp).vl["SCC_CONTROL"])
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"][left_blinker_sig],
                                                                       cp.vl["BLINKERS"][right_blinker_sig])
