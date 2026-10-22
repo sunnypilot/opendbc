@@ -27,6 +27,7 @@ NO_DATES_PLATFORMS = {
   CAR.HYUNDAI_ELANTRA,
   CAR.HYUNDAI_ELANTRA_GT_I30,
   CAR.KIA_CEED,
+  CAR.KIA_CEED_PHEV,
   CAR.KIA_FORTE,
   CAR.KIA_OPTIMA_G4,
   CAR.KIA_OPTIMA_G4_FL,
@@ -53,6 +54,18 @@ def cars_with(flags):
 
 
 class TestHyundaiFingerprint(unittest.TestCase):
+  def test_niro_plus_port_parameters(self):
+    # Keep the port constructible as upstream's vehicle specification API evolves.
+    candidate = CAR.KIA_NIRO_PLUS_EV
+    CP = CarInterface.get_non_essential_params(candidate)
+    CP_SP = CarInterface.get_non_essential_params_sp(CP, candidate)
+    self.assertAlmostEqual(CP.wheelbase, 2.7, places=5)
+    self.assertAlmostEqual(CP.steerRatio, 13.6, places=5)
+    self.assertAlmostEqual(CP_SP.torqueV0KpHighSpeed, 0.6)
+    assert candidate in FW_VERSIONS
+    assert candidate.config.flags & HyundaiFlags.EV
+    assert candidate.config.flags & HyundaiFlags.MANDO_RADAR
+
   def test_feature_detection(self):
     # LKA steering
     for lka_steering in (True, False):
