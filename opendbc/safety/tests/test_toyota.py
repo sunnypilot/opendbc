@@ -37,6 +37,10 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
 
   SAFETY_PARAM_SP: int = 0
 
+  def setUp(self):
+    libsafety_py.libsafety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
+    super().setUp()
+
   packer: CANPackerSafety
   safety: libsafety_py.LibSafety
 
@@ -94,6 +98,9 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
     msg = "DSU_CRUISE" if self.SAFETY_PARAM_SP & ToyotaSafetyFlagsSP.UNSUPPORTED_DSU else "PCM_CRUISE_2"
     values = {"MAIN_ON": enabled}
     return self.packer.make_can_msg_safety(msg, 0, values)
+
+  def _ignore_frequency_check_msgs(self):
+    return [self._acc_state_msg(False)] if self.SAFETY_PARAM_SP & ToyotaSafetyFlagsSP.UNSUPPORTED_DSU else []
 
   def test_diagnostics(self, stock_longitudinal: bool = False, ecu_disabled: bool = True):
     for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present
