@@ -386,8 +386,18 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
   // UDS: Only tester present ("\x0F\x02\x3E\x00\x00\x00\x00\x00") allowed on diagnostics address
   if (msg->addr == 0x750U) {
     // this address is sub-addressed. only allow tester present to radar (0xF)
-    bool invalid_uds_msg = GET_BYTES_64_LE(msg, 0, 8) != 0x00000000003E020FULL;
-    if (invalid_uds_msg) {
+    const uint64_t uds_msg = GET_BYTES_64_LE(msg, 0, 8);
+    bool invalid_uds_msg = uds_msg != 0x00000000003E020FULL;
+
+    // Enhanced BSM (@arne182, @rav4kumar)
+    bool sp_valid_uds_msg = (uds_msg == 0x0000000001100241ULL) ||  // disable left BSM debug
+                            (uds_msg == 0x0000000060100241ULL) ||  // enable left BSM debug
+                            (uds_msg == 0x0000000069210241ULL) ||  // poll left BSM status
+                            (uds_msg == 0x0000000001100242ULL) ||  // disable right BSM debug
+                            (uds_msg == 0x0000000060100242ULL) ||  // enable right BSM debug
+                            (uds_msg == 0x0000000069210242ULL);   // poll right BSM status
+
+    if (invalid_uds_msg && !sp_valid_uds_msg) {
       tx = false;
     }
   }
