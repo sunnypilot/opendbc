@@ -216,6 +216,12 @@ class CarInterface(CarInterfaceBase):
 
     ret.intelligentCruiseButtonManagementAvailable = not (stock_cp.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
 
+    # CD210 has a stronger high-speed closed-loop response than the legacy Niro EV
+    # tune it previously inherited. Keep this override scoped to Torque V0 and this
+    # platform; feedforward, integral gain, and EPS safety limits remain unchanged.
+    if candidate == CAR.KIA_NIRO_PLUS_EV:
+      ret.torqueV0KpHighSpeed = 0.6
+
     return ret
 
   @staticmethod
