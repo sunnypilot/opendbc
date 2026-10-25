@@ -12,12 +12,19 @@ from collections.abc import Callable
 
 from opendbc.car import structs
 from opendbc.car.can_definitions import CanRecvCallable, CanSendCallable
+from opendbc.car.chrysler.values import ChryslerFlags
+from opendbc.car.ford.values import FordFlags
+from opendbc.car.gm.values import GMFlags
+from opendbc.car.honda.values import HondaFlags
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.car.subaru.values import SubaruFlags
+from opendbc.car.toyota.values import ToyotaFlags
+from opendbc.car.volkswagen.values import VolkswagenFlags
 from opendbc.car.toyota.values import ToyotaSafetyFlags
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks as hyundai_enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+from opendbc.sunnypilot.car.rivian.values import RivianFlagsSP
 from opendbc.sunnypilot.car.subaru.values_ext import SubaruFlagsSP, SubaruSafetyFlagsSP
 from opendbc.sunnypilot.car.tesla.values import MadsScreenButtonType, TeslaFlagsSP, TeslaSafetyFlagsSP
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
@@ -74,6 +81,27 @@ class NanoFFModel:
       pred = x[0]
     pred = pred * (self.weights['output_norm_mat'][1] - self.weights['output_norm_mat'][0]) + self.weights['output_norm_mat'][0]
     return pred
+
+
+# upstream detects BSM per brand into each brand's HAS_BSM flag
+BSM_FLAGS = {
+  "chrysler": ChryslerFlags.HAS_BSM,
+  "ford": FordFlags.HAS_BSM,
+  "gm": GMFlags.HAS_BSM,
+  "honda": HondaFlags.HAS_BSM,
+  "hyundai": HyundaiFlags.HAS_BSM,
+  "subaru": SubaruFlags.HAS_BSM,
+  "toyota": ToyotaFlags.HAS_BSM,
+  "volkswagen": VolkswagenFlags.HAS_BSM,
+}
+
+
+def has_bsm(CP: structs.CarParams, CP_SP: structs.CarParamsSP | None) -> bool:
+  if CP.brand == "tesla":
+    return True
+  if CP.brand == "rivian":
+    return CP_SP is not None and bool(CP_SP.flags & RivianFlagsSP.LONGITUDINAL_HARNESS_UPGRADE)
+  return CP.brand in BSM_FLAGS and bool(CP.flags & BSM_FLAGS[CP.brand])
 
 
 def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
