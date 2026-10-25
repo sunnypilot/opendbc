@@ -46,6 +46,46 @@ void tick_mads_state(bool vm, bool acc_main, bool op_allowed, bool braking, bool
   mads_state_update(vm, acc_main, op_allowed, braking, steering_disengage);
 }
 
+void set_unseen_rx_checks_valid(void){
+  for (int i = 0; i < current_safety_config.rx_checks_len; i++) {
+    RxStatus *status = &current_safety_config.rx_checks[i].status;
+    if (!status->msg_seen) {
+      status->msg_seen = true;
+      status->index = 0;
+      status->valid_checksum = true;
+      status->wrong_counters = 0;
+      status->valid_quality_flag = true;
+      status->last_timestamp = microsecond_timer_get();
+      status->lagging = false;
+    }
+  }
+}
+
+int get_ignore_frequency_check_count(void){
+  int count = 0;
+  for (int i = 0; i < current_safety_config.rx_checks_len; i++) {
+    for (uint8_t j = 0U; (j < MAX_ADDR_CHECK_MSGS) && (current_safety_config.rx_checks[i].msg[j].addr != 0); j++) {
+      if (current_safety_config.rx_checks[i].msg[j].ignore_frequency_check) {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
+bool get_rx_check_ignore_frequency(int addr, int bus){
+  bool ignore = false;
+  for (int i = 0; i < current_safety_config.rx_checks_len; i++) {
+    for (uint8_t j = 0U; (j < MAX_ADDR_CHECK_MSGS) && (current_safety_config.rx_checks[i].msg[j].addr != 0); j++) {
+      const CanMsgCheck *msg = &current_safety_config.rx_checks[i].msg[j];
+      if ((msg->addr == addr) && ((int)msg->bus == bus) && msg->ignore_frequency_check) {
+        ignore = true;
+      }
+    }
+  }
+  return ignore;
+}
+
 void set_relay_malfunction(bool c){
   relay_malfunction = c;
 }

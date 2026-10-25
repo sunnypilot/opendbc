@@ -489,6 +489,9 @@ class TestTeslaVehicleBusSafety(TestTeslaSafetyBase):
     values = {"UI_activeTouchPoints": 3 if enabled else 0}
     return self.packer_adas.make_can_msg_safety("UI_status2", CANBUS.vehicle, values)
 
+  def _ignore_frequency_check_msgs(self):
+    return [self._lkas_button_msg(False)]
+
   def _set_mads_screen_button_config(self, finger_flag):
     param_sp = TeslaSafetyFlagsSP.HAS_VEHICLE_BUS
     if finger_flag is not None:
