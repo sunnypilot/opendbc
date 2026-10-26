@@ -22,3 +22,4 @@ class ToyotaSafetyFlagsSP:
   DEFAULT = 0
   UNSUPPORTED_DSU = 1
   GAS_INTERCEPTOR = 2
+  ENHANCED_BSM = 4

@@ -69,6 +69,7 @@ static bool toyota_secoc = false;
 static bool toyota_alt_brake = false;
 static bool toyota_stock_longitudinal = false;
 static bool toyota_lta = false;
+static bool toyota_enhanced_bsm = false;
 static int toyota_dbc_eps_torque_factor = 100;   // conversion factor for STEER_TORQUE_EPS in %: see dbc file
 
 static uint32_t toyota_compute_checksum(const CANPacket_t *msg) {
@@ -390,14 +391,15 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
     bool invalid_uds_msg = uds_msg != 0x00000000003E020FULL;
 
     // Enhanced BSM (@arne182, @rav4kumar)
-    bool sp_valid_uds_msg = (uds_msg == 0x0000000001100241ULL) ||  // disable left BSM debug
-                            (uds_msg == 0x0000000060100241ULL) ||  // enable left BSM debug
-                            (uds_msg == 0x0000000069210241ULL) ||  // poll left BSM status
-                            (uds_msg == 0x0000000001100242ULL) ||  // disable right BSM debug
-                            (uds_msg == 0x0000000060100242ULL) ||  // enable right BSM debug
-                            (uds_msg == 0x0000000069210242ULL);   // poll right BSM status
+    bool sunnypilot_valid_uds_msg = toyota_enhanced_bsm && (
+                                      (uds_msg == 0x0000000001100241ULL) ||  // disable left BSM debug
+                                      (uds_msg == 0x0000000060100241ULL) ||  // enable left BSM debug
+                                      (uds_msg == 0x0000000069210241ULL) ||  // poll left BSM status
+                                      (uds_msg == 0x0000000001100242ULL) ||  // disable right BSM debug
+                                      (uds_msg == 0x0000000060100242ULL) ||  // enable right BSM debug
+                                      (uds_msg == 0x0000000069210242ULL));   // poll right BSM status
 
-    if (invalid_uds_msg && !sp_valid_uds_msg) {
+    if (invalid_uds_msg && !sunnypilot_valid_uds_msg) {
       tx = false;
     }
   }
@@ -437,6 +439,7 @@ static safety_config toyota_init(uint16_t param) {
 
   const uint16_t TOYOTA_PARAM_SP_UNSUPPORTED_DSU = 1;
   const uint16_t TOYTOA_PARAM_SP_GAS_INTERCEPTOR = 2;
+  const uint16_t TOYOTA_PARAM_SP_ENHANCED_BSM = 4;
 
 #ifdef ALLOW_DEBUG
   const uint32_t TOYOTA_PARAM_SECOC = 8UL << TOYOTA_PARAM_OFFSET;
@@ -450,6 +453,7 @@ static safety_config toyota_init(uint16_t param) {
 
   const bool toyota_unsupported_dsu = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_UNSUPPORTED_DSU);
   enable_gas_interceptor = GET_FLAG(current_safety_param_sp, TOYTOA_PARAM_SP_GAS_INTERCEPTOR);
+  toyota_enhanced_bsm = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_ENHANCED_BSM);
 
   // gas interceptor should not be used if openpilot is not controlling longitudinal or is a TSK car
   if (toyota_stock_longitudinal || toyota_secoc) {

@@ -18,7 +18,7 @@ from opendbc.car.gm.values import GMFlags
 from opendbc.car.honda.values import HondaFlags
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.car.subaru.values import SubaruFlags
-from opendbc.car.toyota.values import SECOC_CAR, TSS2_CAR, ToyotaFlags, ToyotaSafetyFlags
+from opendbc.car.toyota.values import CAR as TOYOTA_CAR, SECOC_CAR, TSS2_CAR, ToyotaFlags, ToyotaSafetyFlags
 from opendbc.car.volkswagen.values import VolkswagenFlags
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks as hyundai_enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
@@ -26,7 +26,7 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.sunnypilot.car.rivian.values import RivianFlagsSP
 from opendbc.sunnypilot.car.subaru.values_ext import SubaruFlagsSP, SubaruSafetyFlagsSP
 from opendbc.sunnypilot.car.tesla.values import MadsScreenButtonType, TeslaFlagsSP, TeslaSafetyFlagsSP
-from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
+from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP, ToyotaSafetyFlagsSP
 
 
 class LatControlInputs(NamedTuple):
@@ -198,5 +198,9 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
     if toyota_stop_and_go_hack and CP.openpilotLongitudinalControl:
       CP_SP.flags |= ToyotaFlagsSP.STOP_AND_GO_HACK.value
 
-    if toyota_enhanced_bsm and CP.carFingerprint in (TSS2_CAR - SECOC_CAR):
+    if toyota_enhanced_bsm and not toyota_stock_long and CP.carFingerprint in (TSS2_CAR - SECOC_CAR):
       CP_SP.flags |= ToyotaFlagsSP.SP_ENHANCED_BSM.value
+      CP_SP.safetyParam |= ToyotaSafetyFlagsSP.ENHANCED_BSM
+
+    if CP.carFingerprint == TOYOTA_CAR.TOYOTA_PRIUS_TSS2:
+      CP_SP.flags |= ToyotaFlagsSP.SP_NEED_DEBUG_BSM.value
