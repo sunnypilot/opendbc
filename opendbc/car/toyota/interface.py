@@ -65,9 +65,6 @@ class CarInterface(CarInterfaceBase):
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B47060\x00\x00\x00\x00\x00\x00':
           ret.steerActuatorDelay = 0.25
           CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg=0.2)
-        # 2021+ TSS2 steering rack swapped into a TSS-P car, not supported
-        if fw.ecu == "eps" and fw.fwVersion == b'8965B47070\x00\x00\x00\x00\x00\x00':
-          ret.dashcamOnly = True
 
     elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RX_TSS2):
       stop_and_go = True
@@ -86,7 +83,8 @@ class CarInterface(CarInterfaceBase):
 
     # TODO: Some TSS-P platforms have BSM, but are flipped based on region or driving direction.
     # Detect flipped signals and enable for C-HR and others
-    ret.enableBsm = 0x3F6 in fingerprint[0] and bool(ret.flags & ToyotaFlags.TSS2)
+    if 0x3F6 in fingerprint[0] and ret.flags & ToyotaFlags.TSS2:
+      ret.flags |= ToyotaFlags.HAS_BSM.value
 
     # No radar dbc for cars without DSU which are not TSS 2.0
     # TODO: make an adas dbc file for dsu-less models
@@ -149,7 +147,6 @@ class CarInterface(CarInterfaceBase):
     if candidate == CAR.TOYOTA_PRIUS:
       if ret.flags & ToyotaFlagsSP.ZSS:
         stock_cp.steerRatio = 15.0
-        stock_cp.mass = 3370.
 
         # reuse logic from _get_params
         # Only give steer angle deadzone to for bad angle sensor prius
