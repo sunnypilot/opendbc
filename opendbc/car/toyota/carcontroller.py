@@ -13,7 +13,7 @@ from opendbc.car.toyota.values import CAR, NO_STOP_TIMER_CAR, TSS2_CAR, \
 from opendbc.can import CANPacker
 
 from opendbc.sunnypilot.car.toyota.gas_interceptor import GasInterceptorCarController
-from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
+from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP, TSS2_SMOOTH_KI
 
 Ecu = structs.CarParams.Ecu
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -39,15 +39,14 @@ MAX_USER_TORQUE = 500
 
 def get_long_tune(CP, params, CP_SP):
   if CP.flags & ToyotaFlags.TSS2:
-    if CP_SP.flags & ToyotaFlagsSP.TSS2_SMOOTH:
-      kiBP = [0., 3., 5., 10., 25., 36.]
-      kiV = [0.46, 0.46, 0.31, 0.22, 0.20, 0.19]
-    else:
-      kiBP = [2., 5.]
-      kiV = [0.5, 0.25]
+    kiBP = [2., 5.]
+    kiV = [0.5, 0.25]
   else:
     kiBP = [0., 5., 35.]
     kiV = [3.6, 2.4, 1.5]
+
+  if CP_SP.flags & ToyotaFlagsSP.TSS2_SMOOTH:
+    kiBP, kiV = TSS2_SMOOTH_KI
 
   return PIDController(0.0, (kiBP, kiV), k_f=1.0,
                        pos_limit=params.ACCEL_MAX, neg_limit=params.ACCEL_MIN,

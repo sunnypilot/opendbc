@@ -17,6 +17,10 @@ class ToyotaFlagsSP(IntFlag):
   TSS2_SMOOTH = 32
 
 
+# kiBP, kiV for the PCM accel PID with TSS2_SMOOTH
+TSS2_SMOOTH_KI = ([0., 3., 5., 10., 25., 36.], [0.46, 0.46, 0.31, 0.22, 0.20, 0.19])
+
+
 class ToyotaSafetyFlagsSP:
   DEFAULT = 0
   UNSUPPORTED_DSU = 1
