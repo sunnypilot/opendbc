@@ -4,7 +4,7 @@ from dataclasses import dataclass, field, replace
 from enum import Enum, IntFlag
 
 from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
-from opendbc.car.lateral import AngleSteeringLimits
+from opendbc.car.lateral import CurvatureSteeringLimits
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column
 from opendbc.car.fw_query_definitions import FwQueryConfig, LiveFwVersions, OfflineFwVersions, Request, StdQueries, p16
@@ -22,16 +22,12 @@ class CarControllerParams:
 
   STEER_DRIVER_ALLOWANCE = 1.0  # Driver intervention threshold, Nm
 
-  ANGLE_LIMITS: AngleSteeringLimits = AngleSteeringLimits(
-    0.02,  # Max curvature for steering command, m^-1
-    # Curvature rate limits
-    # Max curvature is limited by the EPS to an equivalent of ~2.0 m/s^2 at all speeds,
-    #  however max curvature rate linearly decreases as speed increases:
-    #  ~0.009 m^-1/sec at 7 m/s, ~0.002 m^-1/sec at 35 m/s
-    # Limit to ~2 m/s^3 up, ~3.3 m/s^3 down at 75 mph and match EPS limit at low speed
-    ([5, 25], [0.00045, 0.0001]),
-    ([5, 25], [0.00045, 0.00015])
-  )
+  # Curvature rate limits
+  # Max curvature is limited by the EPS to an equivalent of ~2.0 m/s^2 at all speeds,
+  #  however max curvature rate linearly decreases as speed increases:
+  #  ~0.009 m^-1/sec at 7 m/s, ~0.002 m^-1/sec at 35 m/s
+  # We observed no windup so we allow higher than EPS
+  CURVATURE_LIMITS: CurvatureSteeringLimits = CurvatureSteeringLimits(0.02)  # Max curvature for steering command, m^-1
   CURVATURE_ERROR = 0.002  # ~6 degrees at 10 m/s, ~10 degrees at 35 m/s
 
   ACCEL_MAX = 2.0               # m/s^2 max acceleration
@@ -49,6 +45,9 @@ class FordSafetyFlags(IntFlag):
 
 
 class FordFlags(IntFlag):
+  # Detected flags
+  HAS_BSM = 2  # blind spot monitoring
+
   # Static flags
   CANFD = 1
 
@@ -123,14 +122,14 @@ class FordF150LightningPlatform(FordCANFDPlatformConfig):
 class CAR(Platforms):
   FORD_BRONCO_SPORT_MK1 = FordPlatformConfig(
     [FordCarDocs("Ford Bronco Sport 2021-24")],
-    CarSpecs(mass=1625, wheelbase=2.67, steerRatio=17.7),
+    CarSpecs(wheelbase=2.67, steerRatio=17.7),
   )
   FORD_ESCAPE_MK4 = FordPlatformConfig(
     [
       FordCarDocs("Ford Escape 2020-22", hybrid=True, plug_in_hybrid=True),
       FordCarDocs("Ford Kuga 2020-23", "Adaptive Cruise Control with Lane Centering", hybrid=True, plug_in_hybrid=True),
     ],
-    CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
+    CarSpecs(wheelbase=2.71, steerRatio=16.7),
   )
   FORD_ESCAPE_MK4_5 = FordCANFDPlatformConfig(
     [
@@ -138,45 +137,45 @@ class CAR(Platforms):
       FordCarDocs("Ford Kuga Hybrid 2024", "All"),
       FordCarDocs("Ford Kuga Plug-in Hybrid 2024", "All"),
     ],
-    CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
+    CarSpecs(wheelbase=2.71, steerRatio=16.7),
   )
   FORD_EXPLORER_MK6 = FordPlatformConfig(
     [
       FordCarDocs("Ford Explorer 2020-24", hybrid=True),  # Hybrid: Limited and Platinum only
       FordCarDocs("Lincoln Aviator 2020-24", "Co-Pilot360 Plus", plug_in_hybrid=True),  # Hybrid: Grand Touring only
     ],
-    CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
+    CarSpecs(wheelbase=3.025, steerRatio=16.8),
   )
   FORD_EXPEDITION_MK4 = FordCANFDPlatformConfig(
     [FordCarDocs("Ford Expedition 2022-24", "Co-Pilot360 Assist 2.0", hybrid=False)],
-    CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
+    CarSpecs(wheelbase=3.69, steerRatio=17.0),
   )
   FORD_F_150_MK14 = FordCANFDPlatformConfig(
     [FordCarDocs("Ford F-150 2021-23", "Co-Pilot360 Assist 2.0", hybrid=True)],
-    CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
+    CarSpecs(wheelbase=3.69, steerRatio=17.0),
   )
   FORD_F_150_LIGHTNING_MK1 = FordF150LightningPlatform(
     [FordCarDocs("Ford F-150 Lightning 2022-23", "Co-Pilot360 Assist 2.0")],
-    CarSpecs(mass=2948, wheelbase=3.70, steerRatio=16.9),
+    CarSpecs(wheelbase=3.70, steerRatio=16.9),
   )
   FORD_FOCUS_MK4 = FordPlatformConfig(
     [FordCarDocs("Ford Focus 2018-22", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS], hybrid=True)],  # mHEV only
-    CarSpecs(mass=1350, wheelbase=2.7, steerRatio=15.0),
+    CarSpecs(wheelbase=2.7, steerRatio=15.0),
   )
   FORD_MAVERICK_MK1 = FordPlatformConfig(
     [
       FordCarDocs("Ford Maverick 2022", "LARIAT Luxury", hybrid=True),
       FordCarDocs("Ford Maverick 2023-24", "Co-Pilot360 Assist", hybrid=True),
     ],
-    CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
+    CarSpecs(wheelbase=3.076, steerRatio=17.0),
   )
   FORD_MUSTANG_MACH_E_MK1 = FordCANFDPlatformConfig(
     [FordCarDocs("Ford Mustang Mach-E 2021-24", "All", setup_video="https://www.youtube.com/watch?v=AR4_eTF3b_A")],
-    CarSpecs(mass=2200, wheelbase=2.984, steerRatio=17.0),  # TODO: check steer ratio
+    CarSpecs(wheelbase=2.984, steerRatio=17.0),  # TODO: check steer ratio
   )
   FORD_RANGER_MK2 = FordCANFDPlatformConfig(
     [FordCarDocs("Ford Ranger 2024", "Adaptive Cruise Control with Lane Centering", setup_video="https://www.youtube.com/watch?v=2oJlXCKYOy0")],
-    CarSpecs(mass=2000, wheelbase=3.27, steerRatio=17.0),
+    CarSpecs(wheelbase=3.27, steerRatio=17.0),
   )
 
 
@@ -278,6 +277,7 @@ def ford_asbuilt_block_response(block_id: int):
 
 
 FW_QUERY_CONFIG = FwQueryConfig(
+  fw_version_regex=br"[A-HJ-NP-VX-Z][0-9A-HJ-NP-VX-Z]{3}-[0-9A-HJ-NP-VX-Z]{5,6}-[A-HJ-NP-VX-Z]{2,}\x00*",
   requests=[
     # CAN and CAN FD queries are combined.
     # FIXME: For CAN FD, ECUs respond with frames larger than 8 bytes on the powertrain bus

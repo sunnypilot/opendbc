@@ -10,8 +10,8 @@ from opendbc.car.tesla.carcontroller import get_safety_CP
 from opendbc.car.structs import CarParams
 from opendbc.car.vehicle_model import VehicleModel
 from opendbc.can import CANDefine
-from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
+from opendbc.safety.tests.libsafety import libsafety_py
 from opendbc.safety.tests.common import CANPackerSafety, MAX_SPEED_DELTA, MAX_WRONG_COUNTERS, away_round, round_speed
 
 from opendbc.sunnypilot.car.tesla.values import TeslaSafetyFlagsSP
@@ -19,17 +19,15 @@ from opendbc.sunnypilot.car.tesla.values import TeslaSafetyFlagsSP
 MSG_DAS_steeringControl = 0x488
 MSG_APS_eacMonitor = 0x27d
 MSG_DAS_Control = 0x2b9
-
-
 def round_angle(apply_angle, can_offset=0):
   apply_angle_can = (apply_angle + 1638.35) / 0.1 + can_offset
   # 0.49999_ == 0.5
   rnd_offset = 1e-5 if apply_angle >= 0 else -1e-5
   return away_round(apply_angle_can + rnd_offset) * 0.1 - 1638.35
-
-
 class TestTeslaSafetyBase(common.CarSafetyTest, common.AngleSteeringSafetyTest, common.LongitudinalAccelSafetyTest):
-  SAFETY_PARAM = 0
+
+  DBC = "tesla_model3_party"
+  SAFETY_MODEL = CarParams.SafetyModel.tesla
 
   RELAY_MALFUNCTION_ADDRS = {0: (MSG_DAS_steeringControl, MSG_APS_eacMonitor)}
   FWD_BLACKLISTED_ADDRS = {2: [MSG_DAS_steeringControl, MSG_APS_eacMonitor]}
@@ -56,34 +54,27 @@ class TestTeslaSafetyBase(common.CarSafetyTest, common.AngleSteeringSafetyTest, 
   MIN_ACCEL = -3.48
   INACTIVE_ACCEL = 0.0
 
-  cnt_epas = 0
   cnt_angle_cmd = 0
-
-  packer: CANPackerSafety
 
   def _get_steer_cmd_angle_max(self, speed):
     return get_max_angle_vm(max(speed, 1), self.VM, CarControllerParams)
 
   def setUp(self):
+    super().setUp()
     self.VM = VehicleModel(get_safety_CP())
-    self.packer = CANPackerSafety("tesla_model3_party")
-    self.define = CANDefine("tesla_model3_party")
+    self.define = CANDefine(self.DBC)
     self.acc_states = {d: v for v, d in self.define.dv["DAS_control"]["DAS_accState"].items()}
     self.autopark_states = {d: v for v, d in self.define.dv["DI_state"]["DI_autoparkState"].items()}
     self.active_autopark_states = [self.autopark_states[s] for s in ('ACTIVE', 'COMPLETE', 'SELFPARK_STARTED')]
 
     self.steer_control_types = {d: v for v, d in self.define.dv["DAS_steeringControl"]["DAS_steeringControlType"].items()}
 
-    self.safety = libsafety_py.libsafety
-    self.safety.set_safety_hooks(CarParams.SafetyModel.tesla, self.SAFETY_PARAM)
-    self.safety.init_tests()
-
   def _angle_cmd_msg(self, angle: float, state: bool | int, increment_timer: bool = True, bus: int = 0):
     # If FSD 14, translate steer control type to new flipped definition
     if self.safety.get_current_safety_param() & TeslaSafetyFlags.FSD_14:
       state = get_steer_ctrl_type(TeslaFlags.FSD_14, int(state))
 
-    values = {"DAS_steeringAngleRequest": angle, "DAS_steeringControlType": state}
+    values = {"DAS_steeringAngleRequest": angle, "DAS_steeringControlType": int(state)}
     if increment_timer:
       self.safety.set_timer(self.cnt_angle_cmd * int(1e6 / self.LATERAL_FREQUENCY))
       self.__class__.cnt_angle_cmd += 1
@@ -91,9 +82,7 @@ class TestTeslaSafetyBase(common.CarSafetyTest, common.AngleSteeringSafetyTest, 
 
   def _angle_meas_msg(self, angle: float, hands_on_level: int = 0, eac_status: int = 1, eac_error_code: int = 0):
     values = {"EPAS3S_internalSAS": angle, "EPAS3S_handsOnLevel": hands_on_level,
-              "EPAS3S_eacStatus": eac_status, "EPAS3S_eacErrorCode": eac_error_code,
-              "EPAS3S_sysStatusCounter": self.cnt_epas % 16}
-    self.__class__.cnt_epas += 1
+              "EPAS3S_eacStatus": eac_status, "EPAS3S_eacErrorCode": eac_error_code}
     return self.packer.make_can_msg_safety("EPAS3S_sysStatus", 0, values)
 
   def _user_brake_msg(self, brake, quality_flag: bool = True):
@@ -272,9 +261,9 @@ class TestTeslaSafetyBase(common.CarSafetyTest, common.AngleSteeringSafetyTest, 
       self.assertEqual(self.LONGITUDINAL, self._tx(self._long_control_msg(0, acc_state=self.acc_states["ACC_ON"])))
 
   def test_steering_control_type(self):
-    # Only angle control is allowed (no LANE_KEEP_ASSIST or EMERGENCY_LANE_KEEP)
+    # Only angle control is allowed (no LANE_KEEP_ASSIST, EMERGENCY_LANE_KEEP, or FSD)
     self.safety.set_controls_allowed(True)
-    for steer_control_type in range(4):
+    for steer_control_type in range(8):
       should_tx = steer_control_type in (self.steer_control_types["NONE"],
                                          self.steer_control_types["ANGLE_CONTROL"],
                                          self.steer_control_types["LANE_KEEP_ASSIST"])
@@ -366,8 +355,6 @@ class TestTeslaSafetyBase(common.CarSafetyTest, common.AngleSteeringSafetyTest, 
 
         # Recover
         self.assertTrue(self._tx(self._angle_cmd_msg(0, True)))
-
-
 class TestTeslaStockSafety(TestTeslaSafetyBase):
 
   LONGITUDINAL = False
@@ -459,13 +446,11 @@ class TestTeslaFSD14LongitudinalSafety(TestTeslaLongitudinalSafety):
   SAFETY_PARAM = TeslaSafetyFlags.LONG_CONTROL | TeslaSafetyFlags.FSD_14
 
 
-class TestTeslaIgnition(unittest.TestCase):
-  TX_MSGS: list = []
+class TestTeslaIgnition(common.SafetyTestBase):
+  DBC = "tesla_model3_party"
+  SAFETY_MODEL = None
 
-  def setUp(self):
-    self.safety = libsafety_py.libsafety
-    self.safety.init_tests()
-    self.packer = CANPackerSafety("tesla_model3_party")
+  TX_MSGS: list = []
 
   def _msg(self, counter, state):
     return self.packer.make_can_msg_safety("VCFRONT_LVPowerState", 0,
@@ -488,8 +473,6 @@ class TestTeslaIgnition(unittest.TestCase):
     self.safety.ignition_can_hook(self._msg(2, 2))
     self.safety.ignition_can_hook(self._msg(3, 2))
     self.assertFalse(self.safety.get_ignition_can())
-
-
 class TestTeslaVehicleBusSafety(TestTeslaSafetyBase):
 
   LONGITUDINAL = False
@@ -498,7 +481,7 @@ class TestTeslaVehicleBusSafety(TestTeslaSafetyBase):
     super().setUp()
     self.safety = libsafety_py.libsafety
     self.packer_adas = CANPackerSafety("tesla_model3_vehicle")
-    self.safety.set_current_safety_param_sp(TeslaSafetyFlagsSP.HAS_VEHICLE_BUS)
+    self.safety.set_current_safety_param_sp(TeslaSafetyFlagsSP.HAS_VEHICLE_BUS | TeslaSafetyFlagsSP.MADS_SCREEN_BUTTON_3_FINGER)
     self.safety.set_safety_hooks(CarParams.SafetyModel.tesla, 0)
     self.safety.init_tests()
 
@@ -506,6 +489,41 @@ class TestTeslaVehicleBusSafety(TestTeslaSafetyBase):
     values = {"UI_activeTouchPoints": 3 if enabled else 0}
     return self.packer_adas.make_can_msg_safety("UI_status2", CANBUS.vehicle, values)
 
+  def _ignore_frequency_check_msgs(self):
+    return [self._lkas_button_msg(False)]
 
+  def _set_mads_screen_button_config(self, finger_flag):
+    param_sp = TeslaSafetyFlagsSP.HAS_VEHICLE_BUS
+    if finger_flag is not None:
+      param_sp |= finger_flag
+    self.safety.set_current_safety_param_sp(param_sp)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.tesla, 0)
+    self.safety.init_tests()
+
+  def _touch_points_msg(self, touch_points):
+    return self.packer_adas.make_can_msg_safety("UI_status2", CANBUS.vehicle, {"UI_activeTouchPoints": touch_points})
+
+  def test_mads_screen_button_finger_count_match(self):
+    """Configured finger count must match received touch-point count to register a MADS button press."""
+    configs = [
+      (TeslaSafetyFlagsSP.MADS_SCREEN_BUTTON_3_FINGER, 3),
+      (TeslaSafetyFlagsSP.MADS_SCREEN_BUTTON_4_FINGER, 4),
+      (TeslaSafetyFlagsSP.MADS_SCREEN_BUTTON_5_FINGER, 5),
+    ]
+    for config_flag, config_count in configs:
+      for actual in (0, 3, 4, 5):
+        with self.subTest(configured=config_count, actual=actual):
+          self._set_mads_screen_button_config(config_flag)
+          self._rx(self._touch_points_msg(actual))
+          expected = 1 if actual == config_count else 0  # PRESSED vs NOT_PRESSED
+          self.assertEqual(expected, self.safety.get_mads_button_press())
+
+  def test_mads_screen_button_disabled(self):
+    """With no finger-count flag set, touch messages must not change the MADS button state from UNAVAILABLE."""
+    self._set_mads_screen_button_config(None)
+    for actual in (0, 3, 4, 5):
+      with self.subTest(actual=actual):
+        self._rx(self._touch_points_msg(actual))
+        self.assertEqual(-1, self.safety.get_mads_button_press())  # UNAVAILABLE
 if __name__ == "__main__":
   unittest.main()
