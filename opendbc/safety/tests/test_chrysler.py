@@ -89,6 +89,11 @@ class TestChryslerSafety(common.CarSafetyTest, common.MotorTorqueSteeringSafetyT
   def _lkas_button_msg(self, enabled):
     values = {"TOGGLE_LKAS": enabled}
     return self.packer.make_can_msg_safety("TRACTION_BUTTON", 0, values)
+
+  def _ignore_frequency_check_msgs(self):
+    return [self._lkas_button_msg(False)]
+
+
 class TestChryslerRamDTSafety(TestChryslerSafety):
   DBC = "chrysler_ram_dt_generated"
 
