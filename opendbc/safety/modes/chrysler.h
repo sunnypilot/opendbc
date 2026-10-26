@@ -52,21 +52,20 @@ static ChryslerPlatform chrysler_platform;
 #define CHRYSLER_ADDR(name) ((uint32_t)((chrysler_platform == CHRYSLER_RAM_DT) ? CHRYSLER_RAM_DT_##name : \
                                         ((chrysler_platform == CHRYSLER_RAM_HD) ? CHRYSLER_RAM_HD_##name : CHRYSLER_##name)))
 
-
 static uint8_t chrysler_get_counter(const CANPacket_t *msg) {
   return (uint8_t)(msg->data[6] >> 4);
 }
 
 static void chrysler_rx_hook(const CANPacket_t *msg) {
   // Measured EPS torque
-  if ((msg->bus == 0U) && (msg->addr == CHRYSLER_ADDR(EPS_2))) {
+  if (msg_matches(msg, CHRYSLER_ADDR(EPS_2), 0U)) {
     int torque_meas_new = ((msg->data[4] & 0x7U) << 8) + msg->data[5] - 1024U;
     update_sample(&torque_meas, torque_meas_new);
   }
 
   // enter controls on rising edge of ACC, exit controls on ACC off
   const unsigned int das_3_bus = (chrysler_platform == CHRYSLER_PACIFICA) ? 0U : 2U;
-  if ((msg->bus == das_3_bus) && (msg->addr == CHRYSLER_ADDR(DAS_3))) {
+  if (msg_matches(msg, CHRYSLER_ADDR(DAS_3), das_3_bus)) {
     bool cruise_engaged = GET_BIT(msg, 21U);
     pcm_cruise_check(cruise_engaged);
     acc_main_on = GET_BIT(msg, 20U);
@@ -74,22 +73,22 @@ static void chrysler_rx_hook(const CANPacket_t *msg) {
 
   // TODO: use the same message for both
   // update vehicle moving
-  if ((chrysler_platform != CHRYSLER_PACIFICA) && (msg->bus == 0U) && (msg->addr == CHRYSLER_ADDR(ESP_8))) {
+  if ((chrysler_platform != CHRYSLER_PACIFICA) && msg_matches(msg, CHRYSLER_ADDR(ESP_8), 0U)) {
     vehicle_moving = ((msg->data[4] << 8) + msg->data[5]) != 0U;
   }
-  if ((chrysler_platform == CHRYSLER_PACIFICA) && (msg->bus == 0U) && (msg->addr == 514U)) {
+  if ((chrysler_platform == CHRYSLER_PACIFICA) && msg_matches(msg, 514U, 0U)) {
     int speed_l = (msg->data[0] << 4) + (msg->data[1] >> 4);
     int speed_r = (msg->data[2] << 4) + (msg->data[3] >> 4);
-    vehicle_moving = (speed_l != 0) || (speed_r != 0);
+    vehicle_moving = (speed_l | speed_r) != 0;
   }
 
   // exit controls on rising edge of gas press
-  if ((msg->bus == 0U) && (msg->addr == CHRYSLER_ADDR(ECM_5))) {
+  if (msg_matches(msg, CHRYSLER_ADDR(ECM_5), 0U)) {
     gas_pressed = msg->data[0U] != 0U;
   }
 
   // exit controls on rising edge of brake press
-  if ((msg->bus == 0U) && (msg->addr == CHRYSLER_ADDR(ESP_1))) {
+  if (msg_matches(msg, CHRYSLER_ADDR(ESP_1), 0U)) {
     brake_pressed = ((msg->data[0U] & 0xFU) >> 2U) == 1U;
   }
 
@@ -173,7 +172,7 @@ static safety_config chrysler_init(uint16_t param) {
     {.msg = {{CHRYSLER_RAM_DT_ESP_8, 0, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
     {.msg = {{CHRYSLER_RAM_DT_ECM_5, 0, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
     {.msg = {{CHRYSLER_RAM_DT_DAS_3, 2, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
-    {.msg = {{CHRYSLER_RAM_DT_Center_Stack_2, 0, 8, 1U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{CHRYSLER_RAM_DT_Center_Stack_2, 0, 8, 1U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .ignore_frequency_check = true}, { 0 }, { 0 }}},
   };
 
   static RxCheck chrysler_rx_checks[] = {
@@ -182,7 +181,7 @@ static safety_config chrysler_init(uint16_t param) {
     {.msg = {{514, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
     {.msg = {{CHRYSLER_ECM_5, 0, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
     {.msg = {{CHRYSLER_DAS_3, 0, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
-    {.msg = {{CHRYSLER_TRACTION_BUTTON, 0, 8, 1U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{CHRYSLER_TRACTION_BUTTON, 0, 8, 1U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .ignore_frequency_check = true}, { 0 }, { 0 }}},
   };
 
   static const CanMsg CHRYSLER_TX_MSGS[] = {
@@ -205,7 +204,7 @@ static safety_config chrysler_init(uint16_t param) {
     {.msg = {{CHRYSLER_RAM_HD_ESP_8, 0, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
     {.msg = {{CHRYSLER_RAM_HD_ECM_5, 0, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
     {.msg = {{CHRYSLER_RAM_HD_DAS_3, 2, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
-    {.msg = {{CHRYSLER_RAM_HD_Center_Stack_2, 0, 8, 1U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{CHRYSLER_RAM_HD_Center_Stack_2, 0, 8, 1U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .ignore_frequency_check = true}, { 0 }, { 0 }}},
   };
 
   static const CanMsg CHRYSLER_RAM_HD_TX_MSGS[] = {

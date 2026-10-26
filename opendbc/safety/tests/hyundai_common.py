@@ -1,5 +1,3 @@
-import unittest
-
 from opendbc.sunnypilot.car.hyundai.values import HyundaiSafetyFlagsSP
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.libsafety import libsafety_py
@@ -78,12 +76,6 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
   DISABLED_ECU_UDS_MSG: tuple[int, int]
   DISABLED_ECU_ACTUATION_MSG: tuple[int, int]
 
-  @classmethod
-  def setUpClass(cls):
-    if cls.__name__ == "HyundaiLongitudinalBase":
-      cls.safety = None
-      raise unittest.SkipTest
-
   # override these tests from CarSafetyTest, hyundai longitudinal uses button enable
   def test_disable_control_allowed_from_cruise(self):
     pass
@@ -161,17 +153,17 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
 
             self._rx(self._main_cruise_button_msg(0))
             self._rx(self._main_cruise_button_msg(1))
-            self.assertEqual(enable_mads and main_cruise_toggleable, self.safety.get_controls_allowed_lat())
+            self.assertEqual(enable_mads and main_cruise_toggleable, self.safety.get_controls_allowed_lateral())
 
             self._rx(self._main_cruise_button_msg(0))
-            self.assertEqual(enable_mads and main_cruise_toggleable, self.safety.get_controls_allowed_lat())
+            self.assertEqual(enable_mads and main_cruise_toggleable, self.safety.get_controls_allowed_lateral())
 
             self._rx(self._main_cruise_button_msg(1))
-            self.assertFalse(self.safety.get_controls_allowed_lat())
+            self.assertFalse(self.safety.get_controls_allowed_lateral())
 
             for _ in range(10):
               self._rx(self._main_cruise_button_msg(1))
-              self.assertFalse(self.safety.get_controls_allowed_lat())
+              self.assertFalse(self.safety.get_controls_allowed_lateral())
     self.safety.set_current_safety_param_sp(default_safety_param_sp)
 
   def test_acc_main_sync_mismatches_reset(self):
@@ -220,7 +212,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self.safety.set_safety_hooks(default_safety_mode, default_safety_param)
 
         self.safety.set_mads_params(enable_mads, False, False)
-        self.safety.set_controls_allowed_lat(True)
+        self.safety.set_controls_allowed_lateral(True)
 
         # Start with matched states
         self._rx(self._main_cruise_button_msg(0))
@@ -242,7 +234,7 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         # Third mismatch should trigger disengagement
         self._tx(self._tx_acc_state_msg(False))
         self.assertFalse(self.safety.get_acc_main_on())
-        self.assertFalse(self.safety.get_controls_allowed_lat())
+        self.assertFalse(self.safety.get_controls_allowed_lateral())
         # Counter should reset after disengagement
         self._tx(self._tx_acc_state_msg(False))
         self.assertEqual(0, self.safety.get_acc_main_on_mismatches())
