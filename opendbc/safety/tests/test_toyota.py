@@ -109,6 +109,50 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
       tester_present = libsafety_py.make_CANPacket(0x750, 0, msg)
       self.assertEqual(should_tx and ecu_disabled and not stock_longitudinal, self._tx(tester_present))
 
+  def test_enhanced_bsm(self):
+    # enable/disable/poll left+right blind spot debug mode, sent to the radar diagnostic address.
+    # only allowed when the feature's safety param bit is set, and only where 0x750 is in the TX
+    # allowlist at all (stock longitudinal and SecOC configs don't have it - same restriction
+    # tester present runs into).
+    addr_allowed = any(addr == 0x750 for addr, _ in self.TX_MSGS)
+    base_param_sp = self.SAFETY_PARAM_SP
+
+    valid_msgs = [
+      b"\x41\x02\x10\x60\x00\x00\x00\x00",  # enable left
+      b"\x41\x02\x10\x01\x00\x00\x00\x00",  # disable left
+      b"\x41\x02\x21\x69\x00\x00\x00\x00",  # poll left
+      b"\x42\x02\x10\x60\x00\x00\x00\x00",  # enable right
+      b"\x42\x02\x10\x01\x00\x00\x00\x00",  # disable right
+      b"\x42\x02\x21\x69\x00\x00\x00\x00",  # poll right
+    ]
+    invalid_msgs = [
+      b"\x41\x02\x10\x61\x00\x00\x00\x00",  # wrong subfunction
+      b"\x43\x02\x10\x60\x00\x00\x00\x00",  # wrong sub-address (not left/right)
+      b"\x41\x02\x10\x60\x01\x00\x00\x00",  # non-zero trailing bytes
+    ]
+
+    try:
+      for feature_on in (False, True):
+        self.safety.set_current_safety_param_sp(base_param_sp | (ToyotaSafetyFlagsSP.ENHANCED_BSM if feature_on else 0))
+        self.safety.set_safety_hooks(self.SAFETY_MODEL, self.SAFETY_PARAM)
+        self.safety.init_tests()
+
+        allowed = addr_allowed and feature_on
+        for msg in valid_msgs:
+          pkt = libsafety_py.make_CANPacket(0x750, 0, msg)
+          self.assertEqual(allowed, self._tx(pkt), f"{msg.hex()} feature_on={feature_on}")
+
+        if not allowed:
+          continue
+
+        for msg in invalid_msgs:
+          pkt = libsafety_py.make_CANPacket(0x750, 0, msg)
+          self.assertFalse(self._tx(pkt), msg.hex())
+    finally:
+      self.safety.set_current_safety_param_sp(base_param_sp)
+      self.safety.set_safety_hooks(self.SAFETY_MODEL, self.SAFETY_PARAM)
+      self.safety.init_tests()
+
   def test_block_aeb(self, stock_longitudinal: bool = False):
     for controls_allowed in (True, False):
       for bad in (True, False):
