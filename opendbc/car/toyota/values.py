@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 
 from opendbc.car import Bus, CarSpecs, PlatformConfig, Platforms
-from opendbc.car.lateral import AngleSteeringLimits
+from opendbc.car.lateral import AngleSteeringLimits, AngleSteeringLimitsVM
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarFootnote, CarDocs, Column, CarParts, CarHarness, SupportType
@@ -34,6 +34,32 @@ class CarControllerParams:
   )
 
   MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
+
+  # sunnypilot angle control limits for EPSs that accept LTA angle commands without
+  # native openpilot LTA support (ToyotaFlagsSP.SP_ANGLE_STEERING)
+  LTA_ANGLE_LIMITS_VM: AngleSteeringLimitsVM = AngleSteeringLimitsVM(
+    # EPS ignores commands above this angle and causes PCS to fault
+    94.9461,  # deg
+    # The EPS faults if the steering rate stays above 100 deg/s; 1.5 deg per 20 ms
+    # LTA frame is ~75 deg/s, a 25% margin
+    MAX_ANGLE_RATE=1.5,  # deg/20ms frame
+    # The stock EPS cannot track faster than ~20 deg/s on tight low speed turns and faults
+    # (LTA_STATE 25/9) if the command races ahead of the wheel; 6 deg is ~300 ms of headroom
+    MAX_TRACKING_ERROR=6.0,  # deg
+  )
+  LTA_STEER_STEP = 2  # LTA angle commands are sent at 50 Hz
+
+  # High-output mode of an EPS that was patched to widen its internal monitors: target-angle
+  # monitor at 180.0366 deg, 534 deg/s for 40 EPS cycles and a 3200 measured torque monitor.
+  # The stock EPS ignores commands above 94.9461 deg and faults on torque above 1500, so this
+  # is only valid together with the firmware patch.
+  LTA_ANGLE_LIMITS_VM_HIGH_OUTPUT: AngleSteeringLimitsVM = AngleSteeringLimitsVM(
+    180.0366,  # deg, patched EPS target-angle monitor threshold
+    MAX_ANGLE_RATE=5,  # deg/20ms frame, 250 deg/s rate cap
+  )
+  LTA_HIGH_OUTPUT_MAX_STEER_RATE = 500  # deg/s, 20% margin below the EPS' 534 deg/s counter
+  LTA_HIGH_OUTPUT_MAX_STEER_RATE_FRAMES = 32
+  LTA_HIGH_OUTPUT_MAX_MEAS_TORQUE = 3200  # patched EPS measured torque monitor
 
   def __init__(self, CP):
     if CP.flags & ToyotaFlags.RAISED_ACCEL_LIMIT:

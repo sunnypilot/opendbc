@@ -69,6 +69,8 @@ static bool toyota_secoc = false;
 static bool toyota_alt_brake = false;
 static bool toyota_stock_longitudinal = false;
 static bool toyota_lta = false;
+static bool toyota_sp_angle_steering = false;
+static bool toyota_sp_lta_high_output = false;
 static bool toyota_enhanced_bsm = false;
 static int toyota_dbc_eps_torque_factor = 100;   // conversion factor for STEER_TORQUE_EPS in %: see dbc file
 
@@ -242,7 +244,31 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
     },
   };
 
+  // sunnypilot LTA on cars whose EPS accepts angle commands but isn't a native openpilot LTA
+  // platform: same vehicle model as apply_steer_angle_limits_vm, like Tesla/BYD
+  static const AngleSteeringLimits TOYOTA_SP_LTA_ANGLE_STEERING_LIMITS = {
+    .max_angle = 1657,  // EPS only accepts up to 94.9461
+    .angle_deg_to_can = 17.452007,
+    .frequency = 50U,
+  };
+
+  // sunnypilot high-output mode on an EPS patched to widen its internal monitors. The target-angle
+  // monitor on the patched EPS is 180.0366 deg instead of the stock 94.9461 deg
+  static const AngleSteeringLimits TOYOTA_SP_LTA_HIGH_OUTPUT_ANGLE_STEERING_LIMITS = {
+    .max_angle = 3142,  // patched EPS target-angle monitor threshold: 180.0366 deg
+    .angle_deg_to_can = 17.452007,
+    .frequency = 50U,
+  };
+
+  // Toyota Prius TSS2 (2021-22) vehicle model, from opendbc.car.vehicle_model.calc_slip_factor
+  const AngleSteeringParams TOYOTA_SP_LTA_STEERING_PARAMS = {
+    .slip_factor = -0.0009750603723810179,
+    .steer_ratio = 13.4,
+    .wheelbase = 2.70002,
+  };
+
   const int TOYOTA_LTA_MAX_MEAS_TORQUE = 1500;
+  const int TOYOTA_LTA_HIGH_OUTPUT_MAX_MEAS_TORQUE = 3200;  // patched EPS measured torque monitor
   const int TOYOTA_LTA_MAX_DRIVER_TORQUE = 150;
 
   // longitudinal limits
@@ -315,8 +341,22 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
       }
     } else {
       // check angle rate limits and inactive angle
-      if (steer_angle_cmd_checks(lta_angle, steer_control_enabled, TOYOTA_ANGLE_STEERING_LIMITS)) {
-        tx = false;
+      // sunnypilot LTA cars use the vehicle model: their EPS does not set the native angle
+      // quality flag, and the model gives constant lateral accel/jerk limits across speed
+      if (toyota_sp_angle_steering) {
+        if (toyota_sp_lta_high_output) {
+          if (steer_angle_cmd_checks_vm(lta_angle, steer_control_enabled, TOYOTA_SP_LTA_HIGH_OUTPUT_ANGLE_STEERING_LIMITS, TOYOTA_SP_LTA_STEERING_PARAMS)) {
+            tx = false;
+          }
+        } else {
+          if (steer_angle_cmd_checks_vm(lta_angle, steer_control_enabled, TOYOTA_SP_LTA_ANGLE_STEERING_LIMITS, TOYOTA_SP_LTA_STEERING_PARAMS)) {
+            tx = false;
+          }
+        }
+      } else {
+        if (steer_angle_cmd_checks(lta_angle, steer_control_enabled, TOYOTA_ANGLE_STEERING_LIMITS)) {
+          tx = false;
+        }
       }
 
       if (lta_request != lta_request2) {
@@ -339,8 +379,9 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
         tx = false;
       }
 
+      const int max_meas_torque = toyota_sp_lta_high_output ? TOYOTA_LTA_HIGH_OUTPUT_MAX_MEAS_TORQUE : TOYOTA_LTA_MAX_MEAS_TORQUE;
       int eps_torque = SAFETY_MIN(SAFETY_ABS(torque_meas.min), SAFETY_ABS(torque_meas.max));
-      if ((eps_torque > TOYOTA_LTA_MAX_MEAS_TORQUE) && (torque_wind_down != 0)) {
+      if ((eps_torque > max_meas_torque) && (torque_wind_down != 0)) {
         tx = false;
       }
     }
@@ -440,6 +481,8 @@ static safety_config toyota_init(uint16_t param) {
   const uint16_t TOYOTA_PARAM_SP_UNSUPPORTED_DSU = 1;
   const uint16_t TOYTOA_PARAM_SP_GAS_INTERCEPTOR = 2;
   const uint16_t TOYOTA_PARAM_SP_ENHANCED_BSM = 4;
+  const uint16_t TOYOTA_PARAM_SP_ANGLE_STEERING = 8;
+  const uint16_t TOYOTA_PARAM_SP_ANGLE_STEERING_HIGH_OUTPUT = 16;
 
 #ifdef ALLOW_DEBUG
   const uint32_t TOYOTA_PARAM_SECOC = 8UL << TOYOTA_PARAM_OFFSET;
@@ -454,6 +497,8 @@ static safety_config toyota_init(uint16_t param) {
   const bool toyota_unsupported_dsu = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_UNSUPPORTED_DSU);
   enable_gas_interceptor = GET_FLAG(current_safety_param_sp, TOYTOA_PARAM_SP_GAS_INTERCEPTOR);
   toyota_enhanced_bsm = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_ENHANCED_BSM);
+  toyota_sp_angle_steering = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_ANGLE_STEERING);
+  toyota_sp_lta_high_output = GET_FLAG(current_safety_param_sp, TOYOTA_PARAM_SP_ANGLE_STEERING_HIGH_OUTPUT);
 
   // gas interceptor should not be used if openpilot is not controlling longitudinal or is a TSK car
   if (toyota_stock_longitudinal || toyota_secoc) {
@@ -483,13 +528,24 @@ static safety_config toyota_init(uint16_t param) {
 
     SET_RX_CHECKS(toyota_secoc_rx_checks, ret);
   } else if (toyota_lta) {
-    // Check the quality flag for angle measurement when using LTA, since it's not set on TSS-P cars
-    static RxCheck toyota_lta_rx_checks[] = {
-      TOYOTA_RX_CHECKS(true)
-      TOYOTA_PCM_CRUISE_2_ADDR_CHECK
-    };
+    if (toyota_sp_angle_steering) {
+      // The stock EPS on these cars doesn't set the angle measurement quality flag that
+      // native LTA platforms do
+      static RxCheck toyota_sp_lta_rx_checks[] = {
+        TOYOTA_RX_CHECKS(false)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+      };
 
-    SET_RX_CHECKS(toyota_lta_rx_checks, ret);
+      SET_RX_CHECKS(toyota_sp_lta_rx_checks, ret);
+    } else {
+      // Check the quality flag for angle measurement when using LTA, since it's not set on TSS-P cars
+      static RxCheck toyota_lta_rx_checks[] = {
+        TOYOTA_RX_CHECKS(true)
+        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+      };
+
+      SET_RX_CHECKS(toyota_lta_rx_checks, ret);
+    }
   } else {
     static RxCheck toyota_lka_rx_checks[] = {
       TOYOTA_RX_CHECKS(false)
@@ -527,13 +583,23 @@ static safety_config toyota_init(uint16_t param) {
     SET_TX_MSGS(TOYOTA_INTERCEPTOR_TX_MSGS, ret);
 
     if (toyota_lta) {
-      static RxCheck toyota_lta_interceptor_rx_checks[] = {
-        TOYOTA_RX_CHECKS(true)
-        TOYOTA_PCM_CRUISE_2_ADDR_CHECK
-        TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
-      };
+      if (toyota_sp_angle_steering) {
+        static RxCheck toyota_sp_lta_interceptor_rx_checks[] = {
+          TOYOTA_RX_CHECKS(false)
+          TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+          TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+        };
 
-      SET_RX_CHECKS(toyota_lta_interceptor_rx_checks, ret);
+        SET_RX_CHECKS(toyota_sp_lta_interceptor_rx_checks, ret);
+      } else {
+        static RxCheck toyota_lta_interceptor_rx_checks[] = {
+          TOYOTA_RX_CHECKS(true)
+          TOYOTA_PCM_CRUISE_2_ADDR_CHECK
+          TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
+        };
+
+        SET_RX_CHECKS(toyota_lta_interceptor_rx_checks, ret);
+      }
     } else {
       static RxCheck toyota_lka_interceptor_rx_checks[] = {
         TOYOTA_RX_CHECKS(false)

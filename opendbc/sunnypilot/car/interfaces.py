@@ -188,6 +188,8 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
     toyota_stock_long = int(params_dict.get("ToyotaEnforceStockLongitudinal", 0)) == 1
     toyota_stop_and_go_hack = int(params_dict.get("ToyotaStopAndGoHack", 0)) == 1
     toyota_enhanced_bsm = int(params_dict.get("ToyotaEnhancedBsm", 0)) == 1
+    toyota_angle_steering = int(params_dict.get("ToyotaAngleSteering", 0)) == 1
+    toyota_angle_steering_high_output = int(params_dict.get("ToyotaAngleSteeringHighOutput", 0)) == 1
 
     if toyota_stock_long:
       CP_SP.flags |= ToyotaFlagsSP.STOCK_LONGITUDINAL.value
@@ -201,6 +203,26 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
     if toyota_enhanced_bsm and not toyota_stock_long and CP.carFingerprint in (TSS2_CAR - SECOC_CAR):
       CP_SP.flags |= ToyotaFlagsSP.SP_ENHANCED_BSM.value
       CP_SP.safetyParam |= ToyotaSafetyFlagsSP.ENHANCED_BSM
+
+    # Prius TSS2 (2021-22) follows LTA angle commands; use the vehicle-model angle controller
+    # when the user opts in. The stock LKA path stays the default.
+    if toyota_angle_steering and CP.carFingerprint == TOYOTA_CAR.TOYOTA_PRIUS_TSS2:
+      CP.steerControlType = structs.CarParams.SteerControlType.angle
+      CP.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.LTA.value
+
+      # LTA control can be more delayed and winds up more often
+      CP.steerActuatorDelay = 0.18
+      CP.steerLimitTimer = 0.8
+
+      CP_SP.flags |= ToyotaFlagsSP.SP_ANGLE_STEERING.value
+      CP_SP.safetyParam |= ToyotaSafetyFlagsSP.SP_ANGLE_STEERING
+
+      # High-output mode is only valid with an EPS patched to widen its angle, rate and torque
+      # monitors. The select mechanism for the patched EPS is not confirmed yet, so this only
+      # widens the command envelope and the safety checks to match the patch's monitors.
+      if toyota_angle_steering_high_output:
+        CP_SP.flags |= ToyotaFlagsSP.SP_ANGLE_STEERING_HIGH_OUTPUT.value
+        CP_SP.safetyParam |= ToyotaSafetyFlagsSP.SP_ANGLE_STEERING_HIGH_OUTPUT
 
     if CP.carFingerprint == TOYOTA_CAR.TOYOTA_PRIUS_TSS2:
       CP_SP.flags |= ToyotaFlagsSP.SP_NEED_DEBUG_BSM.value

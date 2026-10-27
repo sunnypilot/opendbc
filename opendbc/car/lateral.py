@@ -37,6 +37,9 @@ class AngleSteeringLimitsVM:
   MAX_LATERAL_JERK: float = MAX_LATERAL_JERK
   # Used for comfort or to prevent faults at low speed
   MAX_ANGLE_RATE: float = math.inf
+  # Max allowed command error from the measured angle, for EPSs that fault when asked to
+  # track a target they physically cannot reach
+  MAX_TRACKING_ERROR: float = math.inf
 
 
 @dataclass
@@ -162,6 +165,10 @@ def apply_steer_angle_limits_vm(apply_angle: float, apply_angle_last: float, v_e
   # *** max lateral accel limit ***
   max_angle = get_max_angle_vm(v_ego_raw, VM, limits)
   new_apply_angle = np.clip(new_apply_angle, -max_angle, max_angle)
+
+  # *** max tracking error limit ***
+  max_error = limits.ANGLE_LIMITS.MAX_TRACKING_ERROR
+  new_apply_angle = np.clip(new_apply_angle, steering_angle - max_error, steering_angle + max_error)
 
   # angle is current angle when inactive
   if not lat_active:

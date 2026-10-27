@@ -40,6 +40,15 @@ class CANPacker:
       set_value(dat, sig_checksum, checksum)
     return dat
 
+  def fix_checksum(self, address: int, dat: bytearray) -> None:
+    """Recompute a message checksum after editing an already packed payload."""
+    msg = self.dbc.addr_to_msg.get(address)
+    if msg is None:
+      return
+    sig_checksum = next((s for s in msg.sigs.values() if s.type > SignalType.COUNTER), None)
+    if sig_checksum is not None and sig_checksum.calc_checksum:
+      set_value(dat, sig_checksum, sig_checksum.calc_checksum(address, sig_checksum, dat))
+
   def make_can_msg(self, name_or_addr, bus: int, values: dict[str, float]):
     if isinstance(name_or_addr, int):
       addr = name_or_addr

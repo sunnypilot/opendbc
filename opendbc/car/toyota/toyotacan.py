@@ -14,7 +14,14 @@ def create_steer_command(packer, steer, steer_req):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_lta_steer_command(packer, steer_control_type, steer_angle, steer_req, frame, torque_wind_down):
+# EPS high-output mode request, taken from lochuan's SecOC LTA frame (0x131 STEERING_LTA_2) where
+# bit 1 of byte 0 is unused. NOTE: on 0x191 STEERING_LTA that bit is the LSB of the 6-bit COUNTER
+# (bits 1-6 in toyota_nodsu_pt_generated.dbc), so requesting high output this way also forces the
+# counter's LSB and breaks the counter sequence the EPS expects. Bench test only for now.
+LTA_HIGH_OUTPUT_MASK = 0x02
+
+
+def create_lta_steer_command(packer, steer_control_type, steer_angle, steer_req, frame, torque_wind_down, high_output=False):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
   values = {
@@ -30,7 +37,13 @@ def create_lta_steer_command(packer, steer_control_type, steer_angle, steer_req,
     "STEER_REQUEST_2": steer_req,
     "CLEAR_HOLD_STEERING_ALERT": 0,
   }
-  return packer.make_can_msg("STEERING_LTA", 0, values)
+  address, payload, bus = packer.make_can_msg("STEERING_LTA", 0, values)
+  if high_output and steer_req and len(payload) > 0:
+    dat = bytearray(payload)
+    dat[0] |= LTA_HIGH_OUTPUT_MASK
+    packer.fix_checksum(address, dat)
+    payload = bytes(dat)
+  return address, payload, bus
 
 
 def create_lta_steer_command_2(packer, frame):

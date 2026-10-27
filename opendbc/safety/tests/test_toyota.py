@@ -373,6 +373,146 @@ class TestToyotaSafetyAngle(TestToyotaSafetyBase, common.AngleSteeringSafetyTest
         self.assertEqual(self.safety.get_angle_meas_max(), 0)
 class TestToyotaSafetyAngleGasInterceptor(TestToyotaSafetyGasInterceptorBase, TestToyotaSafetyAngle):
   pass
+class TestToyotaSafetyAngleSteeringSP(TestToyotaSafetyAngle):
+  # sunnypilot angle steering on a stock EPS car: the vehicle model replaces the fixed angle
+  # rate tables (steer_angle_cmd_checks_vm), and the angle measurement quality flag is not
+  # required since the stock EPS doesn't set it the way native LTA platforms do.
+
+  SAFETY_PARAM_SP = ToyotaSafetyFlagsSP.SP_ANGLE_STEERING
+  LATERAL_FREQUENCY = 50  # Hz
+
+  # Prius TSS2 vehicle model, mirrors the safety mode's TOYOTA_SP_LTA_STEERING_PARAMS
+  VM_SLIP_FACTOR = -0.0009750603723810179
+  VM_STEER_RATIO = 13.4
+  VM_WHEELBASE = 2.70002
+  VM_MAX_LATERAL_ACCEL = 3.0 + (9.81 * 0.06)
+  VM_MAX_LATERAL_JERK = 3.0 + (9.81 * 0.06)
+  VM_FREQUENCY = 50.
+
+  def setUp(self):
+    super().setUp()
+    self.lta_frame = 0
+
+  def _lta_msg(self, req, req2, angle_cmd, torque_wind_down=100, increment_timer: bool = True):
+    # emulate the 50 Hz angle command rate that the car controller uses
+    if increment_timer:
+      self.lta_frame += 1
+      self.safety.set_timer(self.lta_frame * int(1e6 / self.LATERAL_FREQUENCY))
+
+    return super()._lta_msg(req, req2, angle_cmd, torque_wind_down)
+
+  def _angle_cmd_msg(self, angle: float, enabled: bool, increment_timer: bool = True):
+    return self._lta_msg(int(enabled), int(enabled), angle, torque_wind_down=100 if enabled else 0,
+                         increment_timer=increment_timer)
+
+  def _vm_curvature_factor(self, speed: float) -> float:
+    return 1. / (1. - (self.VM_SLIP_FACTOR * (speed ** 2))) / self.VM_WHEELBASE
+
+  def _vm_max_angle_rate_deg(self, speed: float) -> float:
+    # matches steer_angle_cmd_checks_vm, which fudges the speed by -1 m/s
+    fudged_speed = max(speed - 1.0, 1.0)
+    max_curvature_rate_sec = self.VM_MAX_LATERAL_JERK / (fudged_speed ** 2)
+    return max_curvature_rate_sec * self.VM_STEER_RATIO / self._vm_curvature_factor(fudged_speed) * 180. / np.pi / self.VM_FREQUENCY
+
+  def _vm_max_angle_deg(self, speed: float) -> float:
+    fudged_speed = max(speed - 1.0, 1.0)
+    max_curvature = self.VM_MAX_LATERAL_ACCEL / (fudged_speed ** 2)
+    return max_curvature * self.VM_STEER_RATIO / self._vm_curvature_factor(fudged_speed) * 180. / np.pi
+
+  def test_angle_cmd_when_enabled(self):
+    # angle commands are limited by the vehicle model instead of the fixed rate tables
+    for speed in (1., 5., 10., 20., 30.):
+      self._reset_angle_measurement(0)
+      self._reset_speed_measurement(speed)
+      self.safety.set_controls_allowed(True)
+
+      # allowed at the model's rate limit (safety adds one CAN unit of tolerance), blocked just above
+      max_rate_deg = self._vm_max_angle_rate_deg(speed)
+      self._set_prev_desired_angle(0)
+      self.assertTrue(self._tx(self._lta_msg(1, 1, max_rate_deg, 100)), f"{speed=} {max_rate_deg=}")
+      self._set_prev_desired_angle(0)
+      self.assertFalse(self._tx(self._lta_msg(1, 1, max_rate_deg + 2., 100)), f"{speed=} {max_rate_deg=}")
+
+    # the fixed tables are not applied: 0.3 deg exceeds the 25 m/s table value (0.15 deg)
+    # but is within the vehicle model limit
+    self._reset_angle_measurement(0)
+    self._reset_speed_measurement(25.)
+    self.safety.set_controls_allowed(True)
+    self._set_prev_desired_angle(0)
+    self.assertTrue(self._tx(self._lta_msg(1, 1, 0.3, 100)))
+
+  def test_vm_lateral_accel_limit(self):
+    # winding up into a curve is stopped by the lateral accel limit
+    speed = 30.
+    self._reset_angle_measurement(0)
+    self._reset_speed_measurement(speed)
+    self.safety.set_controls_allowed(True)
+
+    max_accel_deg = self._vm_max_angle_deg(speed)
+    max_rate_deg = self._vm_max_angle_rate_deg(speed)
+
+    angle = 0.
+    for _ in range(500):
+      next_angle = angle + max_rate_deg
+      self._set_prev_desired_angle(angle)
+      if not self._tx(self._lta_msg(1, 1, next_angle, 100)):
+        break
+      angle = next_angle
+    else:
+      self.fail("angle command was never limited")
+
+    self.assertLessEqual(angle, max_accel_deg + 1.)
+    self.assertGreater(angle, max_accel_deg - 2.)
+
+  def test_angle_violation(self):
+    # a violating angle cmd is blocked until it's reset to the measured angle
+    self.safety.set_controls_allowed(True)
+    for speed in (5., 10., 15., 50.):
+      self._reset_angle_measurement(0)
+      self._reset_speed_measurement(speed)
+      self._set_prev_desired_angle(0)
+
+      for _ in range(20):
+        self.assertFalse(self._tx(self._lta_msg(1, 1, 90., 100)))
+      self.assertTrue(self._tx(self._lta_msg(1, 1, 0., 100)))
+
+  def test_angle_measurements(self):
+    # the STEER_ANGLE_INITIALIZING quality flag does not gate rx, but angle measurements
+    # are still only parsed once it is cleared
+    for steer_angle_initializing in (True, False):
+      for angle in np.arange(0, self.STEER_ANGLE_MAX * 2, 1):
+        for a in (angle, -angle, 0, 0, 0, 0):
+          self.assertTrue(self._rx(self._angle_meas_msg(a, steer_angle_initializing)))
+
+        final_angle = 0 if steer_angle_initializing else round(angle * self.DEG_TO_CAN)
+        self.assertEqual(self.safety.get_angle_meas_min(), -final_angle)
+        self.assertEqual(self.safety.get_angle_meas_max(), final_angle)
+
+        self._rx(self._angle_meas_msg(0))
+        self.assertEqual(self.safety.get_angle_meas_min(), -final_angle)
+        self.assertEqual(self.safety.get_angle_meas_max(), 0)
+
+        self._rx(self._angle_meas_msg(0))
+        self.assertEqual(self.safety.get_angle_meas_min(), 0)
+        self.assertEqual(self.safety.get_angle_meas_max(), 0)
+
+  def test_inactive_angle_envelope(self):
+    # while the LTA request is off the command has to match the measured angle, clipped to the
+    # angle the EPS is expected to accept (94.9461 deg on a stock EPS)
+    self.safety.set_controls_allowed(True)
+    for angle in (0., 90., 96., 180., -180.):
+      self._reset_angle_measurement(angle)
+      self._set_prev_desired_angle(angle)
+
+      should_tx = abs(angle) <= self.STEER_ANGLE_MAX
+      self.assertEqual(should_tx, self._tx(self._lta_msg(0, 0, angle, 0)), f"{angle=}")
+class TestToyotaSafetyAngleSteeringSPHighOutput(TestToyotaSafetyAngleSteeringSP):
+  # High-output mode on an EPS patched to widen its monitors: the angle envelope follows the
+  # patched 180.0366 deg target-angle monitor and the 3200 measured torque monitor.
+  SAFETY_PARAM_SP = ToyotaSafetyFlagsSP.SP_ANGLE_STEERING | ToyotaSafetyFlagsSP.SP_ANGLE_STEERING_HIGH_OUTPUT
+
+  STEER_ANGLE_MAX = 180.0366  # deg
+  MAX_MEAS_TORQUE = 3200  # max allowed measured EPS torque before wind down
 @parameterized_class(UNSUPPORTED_DSU)
 class TestToyotaAltBrakeSafety(TestToyotaSafetyTorque):
 

@@ -1,12 +1,15 @@
 import math
 import numpy as np
+from dataclasses import dataclass
 from opendbc.car import Bus, make_tester_present_msg, rate_limit, structs, ACCELERATION_DUE_TO_GRAVITY, DT_CTRL
-from opendbc.car.lateral import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance
+from opendbc.car.lateral import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, apply_steer_angle_limits_vm, \
+                                AngleSteeringLimitsVM, common_fault_avoidance
 from opendbc.car.carlog import carlog
 from opendbc.car.common.filter_simple import FirstOrderFilter, HighPassFilter
 from opendbc.car.common.pid import PIDController
 from opendbc.car.secoc import add_mac, build_sync_mac
 from opendbc.car.interfaces import CarControllerBase
+from opendbc.car.vehicle_model import VehicleModel
 from opendbc.car.toyota import toyotacan
 from opendbc.car.toyota.values import CAR, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         CarControllerParams, ToyotaFlags
@@ -37,6 +40,20 @@ MAX_STEER_RATE_FRAMES = 17  # tx control frames needed before torque can be cut
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
 
+# sunnypilot LTA driver override: winding down torque alone leaves the EPS angle controller
+# active with a stale target angle after the driver takes over, so latch the request off until
+# the driver releases
+LTA_DRIVER_OVERRIDE_RELEASE_TORQUE = 80  # below the steeringPressed threshold of 100
+LTA_DRIVER_OVERRIDE_RELEASE_FRAMES = int(1.0 / DT_CTRL)
+
+
+@dataclass
+class _LtaAngleLimits:
+  """Limits container for apply_steer_angle_limits_vm (LTA commands are sent at 50 Hz)."""
+
+  ANGLE_LIMITS: AngleSteeringLimitsVM
+  STEER_STEP: int = CarControllerParams.LTA_STEER_STEP
+
 
 def get_long_tune(CP, params):
   if CP.flags & ToyotaFlags.TSS2:
@@ -56,8 +73,19 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
     GasInterceptorCarController.__init__(self, CP, CP_SP)
     self.params = CarControllerParams(self.CP)
+    self.sp_angle_steering = bool(CP_SP.flags & ToyotaFlagsSP.SP_ANGLE_STEERING)
+    self.sp_angle_steering_high_output = bool(CP_SP.flags & ToyotaFlagsSP.SP_ANGLE_STEERING_HIGH_OUTPUT)
+    self.VM = VehicleModel(CP) if self.sp_angle_steering else None
+    self.lta_limits = _LtaAngleLimits(CarControllerParams.LTA_ANGLE_LIMITS_VM_HIGH_OUTPUT if self.sp_angle_steering_high_output
+                                      else CarControllerParams.LTA_ANGLE_LIMITS_VM)
+    # the wider limits are only valid with the patched EPS high-output monitors
+    self.max_steer_rate = CarControllerParams.LTA_HIGH_OUTPUT_MAX_STEER_RATE if self.sp_angle_steering_high_output else MAX_STEER_RATE
+    self.max_steer_rate_frames = CarControllerParams.LTA_HIGH_OUTPUT_MAX_STEER_RATE_FRAMES if self.sp_angle_steering_high_output else MAX_STEER_RATE_FRAMES
+    self.lta_max_meas_torque = CarControllerParams.LTA_HIGH_OUTPUT_MAX_MEAS_TORQUE if self.sp_angle_steering_high_output else self.params.STEER_MAX
     self.last_torque = 0
     self.last_angle = 0
+    self.lta_driver_override = False
+    self.lta_release_counter = 0
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
@@ -114,9 +142,28 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     new_torque = int(round(actuators.torque * self.params.STEER_MAX))
     apply_torque = apply_meas_steer_torque_limits(new_torque, self.last_torque, CS.out.steeringTorqueEps, self.params)
 
-    # >100 degree/sec steering fault prevention
-    self.steer_rate_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE, lat_active,
-                                                                      self.steer_rate_counter, MAX_STEER_RATE_FRAMES)
+    # SP angle steering latches off on driver override, until the driver releases
+    sp_angle_steering = self.sp_angle_steering and self.CP.steerControlType == SteerControlType.angle
+    if sp_angle_steering:
+      driver_torque = abs(CS.out.steeringTorque)
+      if CS.out.steeringPressed or driver_torque >= self.params.MAX_LTA_DRIVER_TORQUE_ALLOWANCE:
+        self.lta_driver_override = True
+      if self.lta_driver_override:
+        if not CS.out.steeringPressed and driver_torque < LTA_DRIVER_OVERRIDE_RELEASE_TORQUE:
+          self.lta_release_counter += 1
+        else:
+          self.lta_release_counter = 0
+        if self.lta_release_counter >= LTA_DRIVER_OVERRIDE_RELEASE_FRAMES:
+          self.lta_driver_override = False
+          self.lta_release_counter = 0
+      lat_active = lat_active and not self.lta_driver_override
+
+    # steering rate fault avoidance: above the EPS limit (100 deg/s, or 534 in high-output mode)
+    # cut two frames for the 50 Hz LTA command so one inactive message is always sent
+    self.steer_rate_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringRateDeg) >= self.max_steer_rate, lat_active,
+                                                                      self.steer_rate_counter, self.max_steer_rate_frames,
+                                                                      max_mismatching_frames=2 if sp_angle_steering else 1)
+    lta_active = apply_steer_req if sp_angle_steering else (lat_active and self.CP.steerControlType == SteerControlType.angle)
 
     if not lat_active:
       apply_torque = 0
@@ -129,11 +176,18 @@ class CarController(CarControllerBase, GasInterceptorCarController):
       if self.frame % 2 == 0:
         # EPS uses the torque sensor angle to control with, offset to compensate
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+        measured_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
-        # Angular rate limit based on speed
-        self.last_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgoRaw,
-                                                       CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
-                                                       CC.latActive, self.params.ANGLE_LIMITS)
+        if sp_angle_steering:
+          # Vehicle-model (lateral accel/jerk) limiting with a tracking error clamp. Follows the
+          # measured angle whenever the LTA request is not active, including fault avoidance cuts.
+          self.last_angle = apply_steer_angle_limits_vm(apply_angle, self.last_angle, CS.out.vEgoRaw,
+                                                        measured_angle, lta_active, self.lta_limits, self.VM)
+        else:
+          # Angular rate limit based on speed
+          self.last_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgoRaw,
+                                                         measured_angle,
+                                                         CC.latActive, self.params.ANGLE_LIMITS)
 
     self.last_torque = apply_torque
 
@@ -153,16 +207,19 @@ class CarController(CarControllerBase, GasInterceptorCarController):
 
     # STEERING_LTA does not seem to allow more rate by sending faster, and may wind up easier
     if self.frame % 2 == 0 and self.CP.flags & ToyotaFlags.TSS2:
-      lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
       # cut steering torque with TORQUE_WIND_DOWN when either EPS torque or driver torque is above
       # the threshold, to limit max lateral acceleration and for driver torque blending respectively.
-      full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.params.STEER_MAX and
+      full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.lta_max_meas_torque and
                                abs(CS.out.steeringTorque) < self.params.MAX_LTA_DRIVER_TORQUE_ALLOWANCE)
 
       # TORQUE_WIND_DOWN at 0 ramps down torque at roughly the max down rate of 1500 units/sec
       torque_wind_down = 100 if lta_active and full_torque_condition else 0
+      # High-output mode is requested by setting 0x191 B0[1], the same bit the SecOC LTA_2 frame
+      # uses. On 0x191 that bit is also the COUNTER LSB (see toyotacan.LTA_HIGH_OUTPUT_MASK), so
+      # this stays a bench experiment until the EPS' counter handling is confirmed.
       can_sends.append(toyotacan.create_lta_steer_command(self.packer, self.CP.steerControlType, self.last_angle,
-                                                          lta_active, self.frame // 2, torque_wind_down))
+                                                          lta_active, self.frame // 2, torque_wind_down,
+                                                          high_output=self.sp_angle_steering_high_output))
 
       if self.CP.flags & ToyotaFlags.SECOC.value:
         lta_steer_2 = toyotacan.create_lta_steer_command_2(self.packer, self.frame // 2)
