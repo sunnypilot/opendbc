@@ -37,6 +37,11 @@ class TestToyotaAngleSteering(unittest.TestCase):
     self.assertTrue(CP_SP.flags & ToyotaFlagsSP.SP_ANGLE_STEERING)
     self.assertTrue(CP_SP.safetyParam & ToyotaSafetyFlagsSP.SP_ANGLE_STEERING)
 
+    # sunnypilot reads a torque tune as "torque control in use" and drives the torque
+    # controller's extension from it, which an angle car doesn't have. Stock Toyota angle
+    # platforms skip configure_torque_tune, so an angle car must not keep the torque tune.
+    self.assertNotEqual(CP.lateralTuning.which(), 'torque')
+
     # native LTA actuator delays
     self.assertAlmostEqual(CP.steerActuatorDelay, 0.18)
     self.assertAlmostEqual(CP.steerLimitTimer, 0.8)
@@ -48,6 +53,9 @@ class TestToyotaAngleSteering(unittest.TestCase):
     self.assertFalse(CP.safetyConfigs[0].safetyParam & ToyotaSafetyFlags.LTA.value)
     self.assertFalse(CP_SP.flags & ToyotaFlagsSP.SP_ANGLE_STEERING)
     self.assertFalse(CP_SP.safetyParam & ToyotaSafetyFlagsSP.SP_ANGLE_STEERING)
+
+    # the torque tune stays for the stock LKA path
+    self.assertEqual(CP.lateralTuning.which(), 'torque')
 
   def test_prius_tss2_angle_steering_high_output(self):
     # the wider envelope has its own flag and safety param, only with angle steering on the Prius

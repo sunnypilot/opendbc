@@ -210,6 +210,12 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
       CP.steerControlType = structs.CarParams.SteerControlType.angle
       CP.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.LTA.value
 
+      # Angle cars don't run a torque tune, matching the stock Toyota angle platforms that skip
+      # configure_torque_tune. sunnypilot reads lateralTuning.which() == 'torque' as "torque
+      # control in use" and drives the torque controller's extension from it, which an angle car
+      # doesn't have.
+      CP.lateralTuning.init('pid')
+
       # LTA control can be more delayed and winds up more often
       CP.steerActuatorDelay = 0.18
       CP.steerLimitTimer = 0.8
