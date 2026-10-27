@@ -663,6 +663,11 @@ class CAR(Platforms):
     HYUNDAI_KONA_EV.specs,
     flags=HyundaiFlags.EV | HyundaiFlags.ALT_LIMITS,
   )
+  HYUNDAI_SANTA_FE_2022_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Hyundai Santa Fe Non-SCC 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_l]))],
+    HYUNDAI_SANTA_FE.specs,
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8,
+  )
   KIA_CEED_PHEV_2022_NON_SCC = HyundaiNonSccPlatformConfig(
     [HyundaiNonSccCarDocs("Kia Ceed Plug-in Hybrid Non-SCC 2022", car_parts=CarParts.common([CarHarness.hyundai_i]))],
     CarSpecs(wheelbase=2.65, steerRatio=13.75, tireStiffnessFactor=0.5),
@@ -723,7 +728,8 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
   # electric or specify electric in the platform code.
   canfd_cars = {c for c in CAR if c.config.flags & HyundaiFlags.CANFD}
   ev_cars = {c for c in CAR if c.config.flags & HyundaiFlags.EV}
-  fuzzy_platform_blacklist = {str(c) for c in canfd_cars - ev_cars - CANFD_FUZZY_WHITELIST}
+  non_scc_cars = {c for c in CAR if c.config.sp_flags & HyundaiFlagsSP.NON_SCC}
+  fuzzy_platform_blacklist = {str(c) for c in (canfd_cars - ev_cars - CANFD_FUZZY_WHITELIST) | non_scc_cars}
   candidates: set[str] = set()
 
   for candidate, fws in offline_fw_versions.items():
@@ -853,7 +859,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   non_essential_ecus={
     Ecu.abs: [CAR.HYUNDAI_PALISADE, CAR.HYUNDAI_SONATA, CAR.HYUNDAI_SANTA_FE_2022, CAR.KIA_K5_2021, CAR.HYUNDAI_ELANTRA_2021,
               CAR.HYUNDAI_SANTA_FE, CAR.HYUNDAI_KONA_EV_2022, CAR.HYUNDAI_KONA_EV, CAR.HYUNDAI_CUSTIN_1ST_GEN, CAR.KIA_SORENTO,
-              CAR.KIA_CEED, CAR.KIA_SELTOS],
+              CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.HYUNDAI_SANTA_FE_2022_NON_SCC],
   },
   extra_ecus=[
     (Ecu.adas, 0x730, None),              # ADAS Driving ECU on platforms with LKA steering
