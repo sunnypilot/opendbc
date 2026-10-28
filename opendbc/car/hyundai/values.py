@@ -371,11 +371,6 @@ class CAR(Platforms):
     CarSpecs(wheelbase=2.8, steerRatio=13.75 * 1.15, tireStiffnessFactor=0.5),
     flags=HyundaiFlags.LEGACY | HyundaiFlags.TCU_GEARS,
   )
-  HYUNDAI_VENUE_2021_NON_SCC = HyundaiNonSccPlatformConfig(
-    [HyundaiNonSccCarDocs("Hyundai Venue Non-SCC 2021", car_parts=CarParts.common([CarHarness.hyundai_f]))],
-    CarSpecs(mass=1280, wheelbase=2.52, steerRatio=14.4),
-    flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.TCU_GEARS,
-  )
   HYUNDAI_SONATA_HYBRID = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Sonata Hybrid 2020-23", "All", car_parts=CarParts.common([CarHarness.hyundai_a]))],
     HYUNDAI_SONATA.specs,
@@ -667,6 +662,11 @@ class CAR(Platforms):
     [HyundaiNonSccCarDocs("Hyundai Kona Electric Non-SCC 2019", car_parts=CarParts.common([CarHarness.hyundai_g]))],
     HYUNDAI_KONA_EV.specs,
     flags=HyundaiFlags.EV | HyundaiFlags.ALT_LIMITS,
+  )
+  HYUNDAI_VENUE_2021_NON_SCC = HyundaiNonSccPlatformConfig(
+    [HyundaiNonSccCarDocs("Hyundai Venue Non-SCC 2021", car_parts=CarParts.common([CarHarness.hyundai_f]))],
+    CarSpecs(wheelbase=2.52, steerRatio=14.4),
+    flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.TCU_GEARS,
   )
   KIA_CEED_PHEV_2022_NON_SCC = HyundaiNonSccPlatformConfig(
     [HyundaiNonSccCarDocs("Kia Ceed Plug-in Hybrid Non-SCC 2022", car_parts=CarParts.common([CarHarness.hyundai_i]))],
