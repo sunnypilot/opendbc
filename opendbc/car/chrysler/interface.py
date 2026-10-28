@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from opendbc.car import get_safety_config, structs
+from opendbc.car import get_safety_config, scale_tire_stiffness_per_mass, structs
 from opendbc.car.chrysler.carcontroller import CarController
 from opendbc.car.chrysler.carstate import CarState
 from opendbc.car.chrysler.radar_interface import RadarInterface
@@ -67,7 +67,6 @@ class CarInterface(CarInterfaceBase):
     # Ram
     elif candidate == CAR.RAM_1500_5TH_GEN:
       ret.steerActuatorDelay = 0.2
-      ret.wheelbase = 3.88
       # Older EPS FW allow steer to zero
       if any(fw.ecu == 'eps' and b"68" < fw.fwVersion[:4] <= b"6831" for fw in car_fw):
         ret.minSteerSpeed = 0.
@@ -84,7 +83,8 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
 
     ret.centerToFront = ret.wheelbase * 0.44
-    ret.enableBsm = (0x62cc033 if candidate in CUSW_CARS else 0x2d0) in fingerprint[0]
+    if (0x62cc033 if candidate in CUSW_CARS else 0x2d0) in fingerprint[0]:
+      ret.flags |= ChryslerFlags.HAS_BSM.value
 
     return ret
 
@@ -101,9 +101,9 @@ class CarInterface(CarInterfaceBase):
     if candidate == CAR.RAM_HD_5TH_GEN:
       stock_cp.dashcamOnly = False
       # https://github.com/commaai/openpilot/issues/25389
-      stock_cp.tireStiffnessFactor = 1.0
-      stock_cp.tireStiffnessFront = 65155.
-      stock_cp.tireStiffnessRear = 80926.
+      stock_cp.tireStiffnessFactor = 0.15
+      stock_cp.tireStiffnessFrontPerMass, stock_cp.tireStiffnessRearPerMass = \
+        scale_tire_stiffness_per_mass(stock_cp.wheelbase, stock_cp.centerToFront, stock_cp.tireStiffnessFactor)
       stock_cp.wheelbase = 3.79
       stock_cp.steerRatio = 19.
 

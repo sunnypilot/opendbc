@@ -25,59 +25,54 @@ static const AngleSteeringLimits NISSAN_STEERING_LIMITS = {
   .angle_deg_to_can = 100,
   .angle_rate_up_lookup = {
     {0., 5., 15.},
-    {5., .8, .15}
+    {5., .8, .15},
   },
   .angle_rate_down_lookup = {
     {0., 5., 15.},
-    {5., 3.5, .4}
+    {5., 3.5, .4},
   },
 };
 
 static void nissan_rx_hook(const CANPacket_t *msg) {
-
   // Altima: on camera bus, others: on pt bus
-  if (msg->bus == 0U) {
-    if (msg->addr == 0x185U) {
-      // Current steering angle
-      int angle_meas_new = (msg->data[2] << 10) | (msg->data[3] << 2) | (msg->data[4] >> 6);
-      // Factor is -0.01, offset is 1310. Flip to correct sign, but keep units in CAN scale
-      angle_meas_new = -angle_meas_new + (1310.0f * NISSAN_STEERING_LIMITS.angle_deg_to_can);
+  if (msg_matches(msg, 0x185U, 0U)) {
+    // Current steering angle
+    int angle_meas_new = (msg->data[2] << 10) | (msg->data[3] << 2) | (msg->data[4] >> 6);
+    // Factor is -0.01, offset is 1310. Flip to correct sign, but keep units in CAN scale
+    angle_meas_new = -angle_meas_new + (1310.0f * NISSAN_STEERING_LIMITS.angle_deg_to_can);
 
-      // update array of samples
-      update_sample(&angle_meas, angle_meas_new);
+    // update array of samples
+    update_sample(&angle_meas, angle_meas_new);
+  }
+
+  if (msg_matches(msg, 0x285U, nissan_alt_eps ? 1U : 0U)) {
+    // Get current speed and standstill
+    uint16_t right_rear = (msg->data[0] << 8) | (msg->data[1]);
+    uint16_t left_rear = (msg->data[2] << 8) | (msg->data[3]);
+    vehicle_moving = (right_rear | left_rear) != 0U;
+    UPDATE_VEHICLE_SPEED((right_rear + left_rear) / 2.0 * 0.005 * KPH_TO_MS);
+  }
+
+  // X-Trail 0x15c, Leaf 0x239
+  if (msg_matches(msg, 0x15cU, nissan_alt_eps ? 1U : 0U) || msg_matches(msg, 0x239U, nissan_alt_eps ? 1U : 0U)) {
+    if (msg->addr == 0x15cU) {
+      gas_pressed = ((msg->data[5] << 2) | ((msg->data[6] >> 6) & 0x3U)) > 3U;
+    } else {
+      gas_pressed = msg->data[0] > 3U;
     }
   }
 
-  if (msg->bus == (nissan_alt_eps ? 1U : 0U)) {
-    if (msg->addr == 0x285U) {
-      // Get current speed and standstill
-      uint16_t right_rear = (msg->data[0] << 8) | (msg->data[1]);
-      uint16_t left_rear = (msg->data[2] << 8) | (msg->data[3]);
-      vehicle_moving = (right_rear | left_rear) != 0U;
-      UPDATE_VEHICLE_SPEED((right_rear + left_rear) / 2.0 * 0.005 * KPH_TO_MS);
-    }
-
-    // X-Trail 0x15c, Leaf 0x239
-    if ((msg->addr == 0x15cU) || (msg->addr == 0x239U)) {
-      if (msg->addr == 0x15cU){
-        gas_pressed = ((msg->data[5] << 2) | ((msg->data[6] >> 6) & 0x3U)) > 3U;
-      } else {
-        gas_pressed = msg->data[0] > 3U;
-      }
-    }
-
-    // X-trail 0x454, Leaf 0x239
-    if ((msg->addr == 0x454U) || (msg->addr == 0x239U)) {
-      if (msg->addr == 0x454U){
-        brake_pressed = (msg->data[2] & 0x80U) != 0U;
-      } else {
-        brake_pressed = ((msg->data[4] >> 5) & 1U) != 0U;
-      }
+  // X-trail 0x454, Leaf 0x239
+  if (msg_matches(msg, 0x454U, nissan_alt_eps ? 1U : 0U) || msg_matches(msg, 0x239U, nissan_alt_eps ? 1U : 0U)) {
+    if (msg->addr == 0x454U) {
+      brake_pressed = (msg->data[2] & 0x80U) != 0U;
+    } else {
+      brake_pressed = ((msg->data[4] >> 5) & 1U) != 0U;
     }
   }
 
   // Handle cruise enabled
-  if ((msg->addr == 0x30fU) && (msg->bus == (nissan_alt_eps ? 1U : 2U))) {
+  if (msg_matches(msg, 0x30fU, nissan_alt_eps ? 1U : 2U)) {
     bool cruise_engaged = (msg->data[0] >> 3) & 1U;
     pcm_cruise_check(cruise_engaged);
   }
@@ -90,7 +85,6 @@ static void nissan_rx_hook(const CANPacket_t *msg) {
     acc_main_on = GET_BIT(msg, 36U);
   }
 }
-
 
 static bool nissan_tx_hook(const CANPacket_t *msg) {
   bool tx = true;
@@ -109,12 +103,6 @@ static bool nissan_tx_hook(const CANPacket_t *msg) {
     }
   }
 
-  // acc button check, only allow cancel button to be sent
-  if (msg->addr == 0x20bU) {
-    // Violation of any button other than cancel is pressed
-    violation |= ((msg->data[1] & 0x3dU) > 0U);
-  }
-
   if (violation) {
     tx = false;
   }
@@ -122,15 +110,26 @@ static bool nissan_tx_hook(const CANPacket_t *msg) {
   return tx;
 }
 
-
 static safety_config nissan_init(uint16_t param) {
-  static const CanMsg NISSAN_TX_MSGS[] = {
+  static const CanMsg NISSAN_TX_MSGS_LEAF[] = {
     {0x169, 0, 8, .check_relay = true},   // LKAS
     {0x2b1, 0, 8, .check_relay = true},   // PROPILOT_HUD
     {0x4cc, 0, 8, .check_relay = true},   // PROPILOT_HUD_INFO_MSG
-    {0x20b, 2, 6, .check_relay = false},  // CRUISE_THROTTLE (X-Trail)
-    {0x20b, 1, 6, .check_relay = false},  // CRUISE_THROTTLE (Altima)
-    {0x280, 2, 8, .check_relay = true}    // CANCEL_MSG (Leaf)
+    {0x239, 2, 8, .check_relay = true}    // CRUISE_THROTTLE (Leaf)
+  };
+
+  static const CanMsg NISSAN_TX_MSGS_XTRAIL[] = {
+    {0x169, 0, 8, .check_relay = true},   // LKAS
+    {0x2b1, 0, 8, .check_relay = true},   // PROPILOT_HUD
+    {0x4cc, 0, 8, .check_relay = true},   // PROPILOT_HUD_INFO_MSG
+    {0x20b, 2, 6, .check_relay = true}    // CRUISE_THROTTLE (X-Trail)
+  };
+
+  static const CanMsg NISSAN_TX_MSGS_ALTIMA[] = {
+    {0x169, 0, 8, .check_relay = true},   // LKAS
+    {0x2b1, 0, 8, .check_relay = true},   // PROPILOT_HUD
+    {0x4cc, 0, 8, .check_relay = true},   // PROPILOT_HUD_INFO_MSG
+    {0x20b, 1, 6, .check_relay = false}   // CRUISE_THROTTLE (Altima)
   };
 
   // Signals duplicated below due to the fact that these messages can come in on either CAN bus, depending on car model.
@@ -157,12 +156,14 @@ static safety_config nissan_init(uint16_t param) {
   const bool nissan_leaf = GET_FLAG(current_safety_param_sp, NISSAN_PARAM_SP_LEAF);
 
   safety_config ret;
-  SET_TX_MSGS(NISSAN_TX_MSGS, ret);
   if (nissan_leaf) {
+    SET_TX_MSGS(NISSAN_TX_MSGS_LEAF, ret);
     SET_RX_CHECKS(nissan_leaf_rx_checks, ret);
   } else if (nissan_alt_eps) {
+    SET_TX_MSGS(NISSAN_TX_MSGS_ALTIMA, ret);
     SET_RX_CHECKS(nissan_alt_eps_rx_checks, ret);
   } else {
+    SET_TX_MSGS(NISSAN_TX_MSGS_XTRAIL, ret);
     SET_RX_CHECKS(nissan_rx_checks, ret);
   }
 

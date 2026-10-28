@@ -8,7 +8,7 @@ from typing import Any
 from collections.abc import Callable
 from functools import cache
 
-from opendbc.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
+from opendbc.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia_per_mass, scale_tire_stiffness_per_mass
 from opendbc.car import structs
 from opendbc.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from opendbc.car.common.basedir import BASEDIR
@@ -44,8 +44,8 @@ GEAR_SHIFTER_MAP: dict[str, structs.CarState.GearShifter] = {
   'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
 }
 
-TorqueFromLateralAccelCallbackType = Callable[[float, structs.CarParams.LateralTorqueTuning, bool], float]
-LateralAccelFromTorqueCallbackType = Callable[[float, structs.CarParams.LateralTorqueTuning, bool], float]
+TorqueFromLateralAccelCallbackType = Callable[[float, structs.CarParams.LateralTorqueTuning], float]
+LateralAccelFromTorqueCallbackType = Callable[[float, structs.CarParams.LateralTorqueTuning], float]
 
 
 @cache
@@ -86,6 +86,7 @@ class RadarInterfaceBase(ABC):
     self.CP_SP = CP_SP
     self.rcp = None
     self.pts: dict[int, structs.RadarData.RadarPoint] = {}
+    self.track_id: int = 0
     self.frame = 0
 
   def update(self, can_packets: list[tuple[int, list[CanData]]]) -> structs.RadarDataT | None:
@@ -141,7 +142,6 @@ class CarInterfaceBase(ABC, CarInterfaceBaseSP):
     ret = CarInterfaceBase.get_std_params(candidate)
 
     platform = PLATFORMS[candidate]
-    ret.mass = platform.config.specs.mass
     ret.wheelbase = platform.config.specs.wheelbase
     ret.steerRatio = platform.config.specs.steerRatio
     ret.centerToFront = ret.wheelbase * platform.config.specs.centerToFrontRatio
@@ -152,13 +152,10 @@ class CarInterfaceBase(ABC, CarInterfaceBaseSP):
 
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, alpha_long, is_release, docs)
 
-    # Vehicle mass is published curb weight plus assumed payload such as a human driver; notCars have no assumed payload
-    if not ret.notCar:
-      ret.mass = ret.mass + STD_CARGO_KG
-
     # Set params dependent on values set by the car interface
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront, ret.tireStiffnessFactor)
+    ret.rotationalInertiaPerMass = scale_rot_inertia_per_mass(ret.wheelbase)
+    ret.tireStiffnessFrontPerMass, ret.tireStiffnessRearPerMass = scale_tire_stiffness_per_mass(ret.wheelbase, ret.centerToFront,
+                                                                                              ret.tireStiffnessFactor)
 
     return ret
 
@@ -242,14 +239,8 @@ class CarInterfaceBase(ABC, CarInterfaceBaseSP):
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
-    ret.steerRatioRear = 0.  # no rear steering, at least on the listed cars aboveA
     ret.openpilotLongitudinalControl = False
     ret.stopAccel = -2.0
-    ret.stoppingDecelRate = 0.8 # brake_travel/s while trying to stop
-    ret.vEgoStopping = 0.5
-    ret.vEgoStarting = 0.5
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.]
     # TODO estimate car specific lag, use .15s for now
