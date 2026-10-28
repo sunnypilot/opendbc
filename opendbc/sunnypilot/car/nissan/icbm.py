@@ -72,11 +72,16 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
         if (self.frame - self.last_button_frame) * DT_CTRL >= 0.06:
           if not self.queued_buttons and self.ICBM.sendButton != SendButtonState.none:
             self.queued_buttons.append(BUTTONS[self.ICBM.sendButton])
-          self.button_send_state = ButtonSendState.PRESS if self.queued_buttons else ButtonSendState.IDLE
+          if self.queued_buttons:
+            self.button_send_state = ButtonSendState.PRESS
+            self.last_button_frame = self.frame
+          # Hold release until the driver lets go, so a swallowed press is not passed through again
+          elif not any(buttons.values()):
+            self.button_send_state = ButtonSendState.IDLE
 
       elif self.button_send_state == ButtonSendState.PRESS:
         send_button = self.queued_buttons[0]
-        if (self.frame - self.last_button_frame) * DT_CTRL >= 0.12:
+        if (self.frame - self.last_button_frame) * DT_CTRL >= 0.06:
           self.queued_buttons.popleft()
           self.button_send_state = ButtonSendState.RELEASE
           self.last_button_frame = self.frame
