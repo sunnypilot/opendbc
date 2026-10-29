@@ -7,10 +7,12 @@ See the LICENSE.md file in the root directory for more details.
 
 from enum import StrEnum
 
-from opendbc.car import Bus, structs
+from opendbc.car import Bus, create_button_events, structs
 from opendbc.can.parser import CANParser
 from opendbc.car.hyundai.values import HyundaiFlags, CAR
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+
+ButtonType = structs.CarState.ButtonEvent.Type
 
 
 class CarStateExt:
@@ -42,20 +44,11 @@ class CarStateExt:
 
     return speed_limit
 
-  def get_custom_button_events(self, cp) -> list[structs.CarState.ButtonEvent]:
-    if not (self.CP_SP.flags & HyundaiFlagsSP.HAS_CUSTOM_BUTTON):
-      return []
-
-    prev = self.custom_button
-    self.custom_button = cp.vl["STEERING_WHEEL_MEDIA_BUTTONS"]["CUSTOM_BUTTON"]
-
-    if self.custom_button == prev:
-      return []
-
-    return [structs.CarState.ButtonEvent(
-      type=structs.CarState.ButtonEvent.Type.altButton2,
-      pressed=(self.custom_button == 1),
-    )]
+  def update_custom_button(self, ret: structs.CarState, cp) -> None:
+    if self.CP_SP.flags & HyundaiFlagsSP.HAS_CUSTOM_BUTTON:
+      prev_custom_button = self.custom_button
+      self.custom_button = cp.vl["STEERING_WHEEL_MEDIA_BUTTONS"]["CUSTOM_BUTTON"]
+      ret.buttonEvents = [*ret.buttonEvents, *create_button_events(self.custom_button, prev_custom_button, {1: ButtonType.altButton2})]
 
   def update(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser], speed_conv: float) -> None:
     cp = can_parsers[Bus.pt]
@@ -102,3 +95,4 @@ class CarStateExt:
     self.aBasis = cp.vl["TCS"]["aBasis"]
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
+    self.update_custom_button(ret, cp)

@@ -202,6 +202,10 @@ class CarInterface(CarInterfaceBase):
     if stock_cp.flags & HyundaiFlags.CANFD:
       if 0x1fa in fingerprint[CAN.ECAN]:
         ret.flags |= HyundaiFlagsSP.SPEED_LIMIT_AVAILABLE.value
+
+      # Steering wheel custom (star) button
+      if 0x448 in fingerprint[CAN.ECAN]:
+        ret.flags |= HyundaiFlagsSP.HAS_CUSTOM_BUTTON.value
     else:
       # Detect smartMDPS, which bypasses EPS low-speed lockout, allowing sunnypilot to send steering commands down to 0
       if 0x2AA in fingerprint[0]:
@@ -215,10 +219,6 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HyundaiFlagsSP.HAS_LKAS12.value
 
     ret.intelligentCruiseButtonManagementAvailable = not (stock_cp.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
-
-    # These cars have a custom star button on the steering wheel
-    if 0x448 in fingerprint[CAN.ECAN]:
-      ret.flags |= HyundaiFlagsSP.HAS_CUSTOM_BUTTON.value
 
     return ret
 
