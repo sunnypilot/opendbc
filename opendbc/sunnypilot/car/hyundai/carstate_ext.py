@@ -48,7 +48,8 @@ class CarStateExt:
     if self.CP_SP.flags & HyundaiFlagsSP.HAS_CUSTOM_BUTTON:
       prev_custom_button = self.custom_button
       self.custom_button = cp.vl["STEERING_WHEEL_MEDIA_BUTTONS"]["CUSTOM_BUTTON"]
-      ret.buttonEvents = [*ret.buttonEvents, *create_button_events(self.custom_button, prev_custom_button, {1: ButtonType.altButton2})]
+      ret.buttonEvents = [*(be.copy() for be in ret.buttonEvents),
+                          *create_button_events(self.custom_button, prev_custom_button, {1: ButtonType.altButton2})]
 
   def update(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser], speed_conv: float) -> None:
     cp = can_parsers[Bus.pt]
