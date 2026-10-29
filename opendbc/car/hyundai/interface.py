@@ -185,9 +185,10 @@ class CarInterface(CarInterfaceBase):
     else:
       if ADAS_INTERCEPTOR_HEARTBEAT_MSG in fingerprint[0]:
         ret.flags |= HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR.value
+        # interceptor makes longitudinal available, the alpha long toggle decides
         stock_cp.alphaLongitudinalAvailable = True
-        stock_cp.openpilotLongitudinalControl = True
-        stock_cp.pcmCruise = False
+        stock_cp.openpilotLongitudinalControl = alpha_long
+        stock_cp.pcmCruise = not alpha_long
 
     if ret.flags & HyundaiFlagsSP.ENHANCED_SCC:
       ret.safetyParam |= HyundaiSafetyFlagsSP.ESCC
