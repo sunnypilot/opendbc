@@ -11,7 +11,7 @@ from opendbc.car.hyundai.radar_interface import RadarInterface
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
 from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import ADAS_INTERCEPTOR_HEARTBEAT_MSG
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
-from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP, ANGLE_STEERING_MODEL_BY_CAR, encode_angle_model_id
 
 ButtonType = structs.CarState.ButtonEvent.Type
 Ecu = structs.CarParams.Ecu
@@ -51,7 +51,8 @@ class CarInterface(CarInterfaceBase):
       if lka_steering and ret.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
         ret.alphaLongitudinalAvailable = False
 
-      ret.enableBsm = 0x1ba in fingerprint[CAN.ECAN]
+      if 0x1ba in fingerprint[CAN.ECAN]:
+        ret.flags |= HyundaiFlags.HAS_BSM.value
 
       # Check if the car is hybrid. Only HEV/PHEV cars have 0xFA on E-CAN.
       if 0xFA in fingerprint[CAN.ECAN]:
@@ -97,7 +98,8 @@ class CarInterface(CarInterfaceBase):
     else:
       # Shared configuration for non CAN-FD cars
       ret.alphaLongitudinalAvailable = not (ret.flags & (HyundaiFlags.LEGACY | HyundaiFlags.UNSUPPORTED_LONGITUDINAL))
-      ret.enableBsm = 0x58b in fingerprint[0]
+      if 0x58b in fingerprint[0]:
+        ret.flags |= HyundaiFlags.HAS_BSM.value
 
       # Send LFA message on cars with HDA
       if 0x485 in fingerprint[2]:
@@ -236,6 +238,11 @@ class CarInterface(CarInterfaceBase):
 
     if stock_cp.openpilotLongitudinalControl:
       stock_cp.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.LONG.value
+
+    # Encode angle steering vehicle model ID so the panda can use per-vehicle physics
+    if stock_cp.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+      angle_model_id = ANGLE_STEERING_MODEL_BY_CAR.get(candidate, 0)
+      ret.safetyParam |= encode_angle_model_id(angle_model_id)
 
     return ret
 
