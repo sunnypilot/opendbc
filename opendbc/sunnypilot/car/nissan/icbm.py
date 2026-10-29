@@ -12,7 +12,6 @@ from opendbc.car.can_definitions import CanData
 from opendbc.sunnypilot.car.intelligent_cruise_button_management_interface_base import IntelligentCruiseButtonManagementInterfaceBase
 from opendbc.sunnypilot.car.nissan.nissancan_ext import create_cruise_throttle_msg
 
-ButtonType = structs.CarState.ButtonEvent.Type
 SendButtonState = structs.IntelligentCruiseButtonManagement.SendButtonState
 
 BUTTONS = {
