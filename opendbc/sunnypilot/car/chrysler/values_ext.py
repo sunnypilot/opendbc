@@ -23,9 +23,6 @@ def get_buttons(cruise_btns_msg="CRUISE_BUTTONS"):
   ]
 
 
-BUTTONS = get_buttons()
-
-
 class ChryslerSafetyFlagsSP:
   RAM_HD_ALT_BUTTONS = 1
 

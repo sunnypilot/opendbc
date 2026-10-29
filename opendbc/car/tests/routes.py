@@ -80,7 +80,6 @@ routes = [
   CarTestRoute("3d84727705fecd04/2021-05-25--08-38-56", CHRYSLER.CHRYSLER_PACIFICA_2020),
   CarTestRoute("221c253375af4ee9/2022-06-15--18-38-24", CHRYSLER.RAM_1500_5TH_GEN),
   CarTestRoute("8fb5eabf914632ae/2022-08-04--17-28-53", CHRYSLER.RAM_HD_5TH_GEN, segment=6),
-  CarTestRoute("b057fc7b43ade5f2/00000000--dc472d9446", CHRYSLER.RAM_HD_5TH_GEN),  # 2024 Ram HD with alt cruise buttons
   CarTestRoute("3379c85aeedc8285/2023-12-07--17-49-39", CHRYSLER.DODGE_DURANGO),
 
   CarTestRoute("54827bf84c38b14f/2023-01-25--14-14-11", FORD.FORD_BRONCO_SPORT_MK1),
@@ -391,4 +390,5 @@ routes = [
   # port extensions
   CarTestRoute("be7ad2b087973544/0000002b--ec261cc821", HYUNDAI.HYUNDAI_VENUE_2021_NON_SCC),
   CarTestRoute("dc7bf18c8af12e37/00000006--ea06255cd0", HYUNDAI.KIA_CEED_PHEV_2022_NON_SCC),
+  CarTestRoute("8bae07514ce06ad4/00000008--9f43d90441", CHRYSLER.RAM_HD_5TH_GEN),  # 2024 Ram HD with alt cruise buttons
 ]
