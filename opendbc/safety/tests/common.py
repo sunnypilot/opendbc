@@ -989,6 +989,8 @@ class SafetyTest(SafetyTestBase):
               continue
             if attr.startswith('TestFord') and current_test.startswith('TestFord'):
               continue
+            if attr.startswith('TestChryslerRamHD') and current_test.startswith('TestChryslerRamHD'):
+              continue
             if attr.startswith('TestHyundaiCanfd') and current_test.startswith('TestHyundaiCanfd'):
               continue
             if attr == 'TestElm327' and current_test.startswith(('TestHyundaiCanfdLFASteeringCCNC', 'TestHyundaiCanfdLFASteeringLongCCNC')):
