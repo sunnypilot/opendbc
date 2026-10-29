@@ -260,6 +260,15 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   }
   return tx;
 
+  // ECU interceptor request: only the mode and protocol version the interceptor accepts
+  if (msg->addr == 0x256U) {
+    const int interceptor_mode = (msg->data[3] << 8) | msg->data[4];
+    const int interceptor_param = (msg->data[5] << 8) | msg->data[6];
+    if ((interceptor_mode != 5) || (interceptor_param != 1)) {
+      tx = false;
+    }
+  }
+
   // ACCEL: safety check
   if (msg->addr == 0x1a0U) {
     int desired_accel_raw = (((msg->data[17] & 0x7U) << 8) | msg->data[16]) - 1023U;
