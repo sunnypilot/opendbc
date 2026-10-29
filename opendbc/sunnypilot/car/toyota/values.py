@@ -14,7 +14,12 @@ class ToyotaFlagsSP(IntFlag):
   ZSS = 4
   STOCK_LONGITUDINAL = 8
   STOP_AND_GO_HACK = 16
-  REVERSE_CRUISE = 32
+  TSS2_SMOOTH = 32
+  REVERSE_CRUISE = 64
+
+
+# kiBP, kiV for the PCM accel PID with TSS2_SMOOTH
+TSS2_SMOOTH_KI = ([0., 3., 5., 10., 25., 36.], [0.46, 0.46, 0.31, 0.22, 0.20, 0.19])
 
 
 class ToyotaSafetyFlagsSP:
