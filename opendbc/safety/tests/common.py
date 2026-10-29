@@ -12,6 +12,7 @@ from opendbc.safety.tests.libsafety import libsafety_py
 from opendbc.car.lateral import MAX_LATERAL_ACCEL, MAX_LATERAL_JERK
 
 from opendbc.safety.tests.mads_common import MadsSafetyTestBase
+from opendbc.safety.tests.rx_checks_common import RxChecksSafetyTestBase
 
 MAX_WRONG_COUNTERS = 5
 MAX_SAMPLE_VALS = 6
@@ -988,6 +989,8 @@ class SafetyTest(SafetyTestBase):
               continue
             if attr.startswith('TestFord') and current_test.startswith('TestFord'):
               continue
+            if attr.startswith('TestChryslerRamHD') and current_test.startswith('TestChryslerRamHD'):
+              continue
             if attr.startswith('TestHyundaiCanfd') and current_test.startswith('TestHyundaiCanfd'):
               continue
             if attr == 'TestElm327' and current_test.startswith(('TestHyundaiCanfdLFASteeringCCNC', 'TestHyundaiCanfdLFASteeringLongCCNC')):
@@ -1042,7 +1045,7 @@ class SafetyTest(SafetyTestBase):
 
 
 @add_regen_tests
-class CarSafetyTest(SafetyTest, MadsSafetyTestBase):
+class CarSafetyTest(SafetyTest, MadsSafetyTestBase, RxChecksSafetyTestBase):
   STANDSTILL_THRESHOLD: float = 0.0
   GAS_PRESSED_THRESHOLD = 0
   RELAY_MALFUNCTION_ADDRS: dict[int, tuple[int, ...]] | None = None

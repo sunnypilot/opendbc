@@ -340,7 +340,7 @@ void safety_tick(void) {
     }
 
     // enforce minimum frequency for safety-relevant messages
-    bool frequency_invalid = frequency < 10U;
+    bool frequency_invalid = !current_safety_config.rx_checks[i].msg[current_safety_config.rx_checks[i].status.index].ignore_frequency_check && (frequency < 10U);
     if (lagging || frequency_invalid || !is_msg_valid(current_safety_config.rx_checks, i)) {
       rx_checks_invalid = true;
       controls_allowed = false;
