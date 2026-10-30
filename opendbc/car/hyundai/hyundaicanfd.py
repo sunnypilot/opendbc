@@ -160,9 +160,6 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     "LCA_RIGHT_ARROW": 2 if right_blinker else 0,
   })
 
-  # if hud.leftLaneDepart or hud.rightLaneDepart:
-  #   msg_162["VIBRATE"] = 1
-
   if openpilot_longitudinal_control:
     if msg_161["ALERTS_3"] in (1, 2, 3, 4, 7, 8, 9, 10):
       msg_161["ALERTS_3"] = 0
