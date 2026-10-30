@@ -18,9 +18,9 @@ class HyundaiSafetyFlagsSP:
   ADAS_DRV_ECU_LONG_INTERCEPTOR = 32
 
 
-# Angle steering vehicle model IDs — encoded in safety_param_sp bits [12:15].
+# Angle steering vehicle model IDs — encoded in safety_param_sp bits [11:14]. Bit 15 stays unused: CarParamsSP.safetyParam is Int16.
 # Must stay in sync with the C enum in hyundai_canfd_angle_models.h.
-ANGLE_MODEL_SHIFT = 12
+ANGLE_MODEL_SHIFT = 11
 ANGLE_MODEL_MASK = 0xF
 
 
