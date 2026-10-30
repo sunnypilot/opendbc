@@ -301,6 +301,15 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)
   };
 
+  // interceptor blocks the ADAS DRV ECU's own CCNC HUD messages, we send ours on E-CAN
+  static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_CCNC_TX_MSGS[] = {
+    HYUNDAI_CANFD_LKA_STEER_MSG_ALT_COMMON_TX_MSGS(0, 1)
+    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(1, true)
+    HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)
+    {0x161, 1, 32, .check_relay = false},  // CCNC_0x161
+    {0x162, 1, 32, .check_relay = false},  // CCNC_0x162
+  };
+
   static const CanMsg HYUNDAI_CANFD_LFA_STEERING_TX_MSGS[] = {
     HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(2)
     HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0)
@@ -346,7 +355,9 @@ static safety_config hyundai_canfd_init(uint16_t param) {
         HYUNDAI_CANFD_STD_BUTTONS_RX_CHECKS(1)
       };
 
-      if (hyundai_canfd_adas_drv_interceptor) {
+      if (hyundai_canfd_adas_drv_interceptor && hyundai_ccnc) {
+        ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_CCNC_TX_MSGS);
+      } else if (hyundai_canfd_adas_drv_interceptor) {
         ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_TX_MSGS);
       } else {
         ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_TX_MSGS);

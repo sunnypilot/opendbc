@@ -8,6 +8,7 @@ from opendbc.car.hyundai.carcontroller import CarController
 from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.radar_interface import RadarInterface
 
+from opendbc.sunnypilot.car.hyundai.ccnc import ccnc_hud_enabled
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
 from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import ADAS_INTERCEPTOR_HEARTBEAT_MSG
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
@@ -214,7 +215,7 @@ class CarInterface(CarInterfaceBase):
       stock_cp.pcmCruise = True
       ret.safetyParam |= HyundaiSafetyFlagsSP.NON_SCC
 
-    if ret.flags & HyundaiFlagsSP.CCNC and not stock_cp.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+    if ccnc_hud_enabled(stock_cp, ret):
       ret.safetyParam |= HyundaiSafetyFlagsSP.CCNC
 
     # untested non-SCC platforms, need user validations

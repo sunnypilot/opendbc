@@ -578,6 +578,14 @@ class TestHyundaiCanfdLKASteeringLongEV(HyundaiLongitudinalBase, TestHyundaiCanf
   def _tx_acc_state_msg(self, enable):
     values = {"MainMode_ACC": enable}
     return self.packer.make_can_msg_safety("SCC_CONTROL", self.PT_BUS, values)
+
+  def test_ccnc_interceptor_tx_msgs(self):
+    for safety_param_sp, allowed in ((HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR | HyundaiSafetyFlagsSP.CCNC, True),
+                                     (HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR, False), (HyundaiSafetyFlagsSP.CCNC, False)):
+      self.safety.set_current_safety_param_sp(safety_param_sp)
+      self._reset_safety_hooks()
+      for addr in (0x161, 0x162):
+        self.assertEqual(allowed, self._tx(libsafety_py.make_CANPacket(addr, 1, bytes(32))), (safety_param_sp, hex(addr)))
 # Tests longitudinal for ICE, hybrid, EV cars with LFA steering
 class TestHyundaiCanfdLFASteeringLongBase(HyundaiLongitudinalBase, TestHyundaiCanfdLFASteeringBase):
 

@@ -5,7 +5,19 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
+from opendbc.car import structs
 from opendbc.car.common.conversions import Conversions as CV
+from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+
+
+def ccnc_hud_enabled(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> bool:
+  if not CP_SP.flags & HyundaiFlagsSP.CCNC:
+    return False
+  if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+    # HDA2: only with openpilot long through the ADAS DRV interceptor, which blocks the ADAS DRV ECU's own copies
+    return bool(CP.openpilotLongitudinalControl and CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR)
+  return True
 
 
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, msg_1b5,
