@@ -740,6 +740,7 @@ class CAR(Platforms):
                      car_parts=CarParts.common([CarHarness.hyundai_q])),
     ],
     GENESIS_GV80.specs,
+    {Bus.pt: "hyundai_canfd_generated", Bus.radar: "hyundai_radar_3a5_3c4_generated"},
     flags=HyundaiFlags.CANFD_ANGLE_STEERING,
   )
 

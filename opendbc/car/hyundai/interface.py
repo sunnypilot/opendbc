@@ -12,6 +12,7 @@ from opendbc.sunnypilot.car.hyundai.ccnc import ccnc_hud_enabled
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
 from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import ADAS_INTERCEPTOR_HEARTBEAT_MSG
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
+from opendbc.sunnypilot.car.hyundai.radar_interface_ext import has_radar_tracks
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP, ANGLE_STEERING_MODEL_BY_CAR, encode_angle_model_id
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -230,6 +231,9 @@ class CarInterface(CarInterfaceBase):
     if stock_cp.flags & HyundaiFlags.CANFD:
       if 0x1fa in fingerprint[CAN.ECAN]:
         ret.flags |= HyundaiFlagsSP.SPEED_LIMIT_AVAILABLE.value
+
+      if Bus.radar in DBC[candidate]:
+        stock_cp.radarUnavailable = not has_radar_tracks(fingerprint, CAN.ACAN)
     else:
       # Detect smartMDPS, which bypasses EPS low-speed lockout, allowing sunnypilot to send steering commands down to 0
       if 0x2AA in fingerprint[0]:
