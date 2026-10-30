@@ -560,9 +560,9 @@ class TestHyundaiCanfdLKASteeringAltAngle(TestHyundaiCanfdAngleSteering):
 
 class TestHyundaiCanfdLKASteeringAltAngleInterceptor(TestHyundaiCanfdLKASteeringAltAngle):
 
-  TX_MSGS = [[0xCB, 1], [0x1CF, 1], [0x256, 0]]
-  RELAY_MALFUNCTION_ADDRS = {}
-  FWD_BLACKLISTED_ADDRS = {}
+  TX_MSGS = [[0xCB, 1], [0x1CF, 1], [0x256, 0], [0x362, 0]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x362,)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x362]}
 
   STEER_MSG = "LFA_ALT"
   STEER_BUS = 1
@@ -585,9 +585,9 @@ class TestHyundaiCanfdLKASteeringAltAngleInterceptor(TestHyundaiCanfdLKASteering
             0x162: ("CCNC_0x162", 1, {}), 0x110: ("LKAS_ALT", 0, {"LKAS_ANGLE_ACTIVE": 1}), 0x362: ("CAM_0x362", 0, {})}
     interceptor = HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR
     for safety_param, safety_param_sp, allowed in (
-      (self.SAFETY_PARAM, interceptor, {0xCB}),
-      (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor, {0xCB, 0x1A0}),
-      (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor | HyundaiSafetyFlagsSP.CCNC, {0xCB, 0x1A0, 0x161, 0x162}),
+      (self.SAFETY_PARAM, interceptor, {0xCB, 0x362}),
+      (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor, {0xCB, 0x1A0, 0x362}),
+      (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor | HyundaiSafetyFlagsSP.CCNC, {0xCB, 0x1A0, 0x161, 0x162, 0x362}),
       (self.SAFETY_PARAM, 0, {0x110, 0x362}),
     ):
       self.safety.set_current_safety_param_sp(safety_param_sp)
