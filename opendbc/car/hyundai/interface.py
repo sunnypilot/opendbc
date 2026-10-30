@@ -245,6 +245,7 @@ class CarInterface(CarInterfaceBase):
 
     # Encode angle steering vehicle model ID so the panda can use per-vehicle physics
     if stock_cp.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+      ret.flags |= HyundaiFlagsSP.CCNC.value
       angle_model_id = ANGLE_STEERING_MODEL_BY_CAR.get(candidate, 0)
       ret.safetyParam |= encode_angle_model_id(angle_model_id)
 
