@@ -205,6 +205,11 @@ class CarState(CarStateBase, CarStateExt):
         self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
 
         buttonEvents += create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
+      elif self.CP.flags & ToyotaFlags.RADAR_ACC and self.CP_SP.flags & ToyotaFlagsSP.SMART_DSU and not self.CP_SP.flags & ToyotaFlagsSP.RADAR_CAN_FILTER:
+        # radar-ACC cars: the filter drops the radar's ACC_CONTROL, so it forwards the button on its 0x2FF heartbeat
+        self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
+
+        buttonEvents += create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
     elif self.CP_SP.flags & ToyotaFlagsSP.SMART_DSU and not self.CP_SP.flags & ToyotaFlagsSP.RADAR_CAN_FILTER:
       self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
 
