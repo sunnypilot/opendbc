@@ -10,7 +10,8 @@ from enum import StrEnum
 
 from opendbc.car import Bus, structs
 from opendbc.can.parser import CANParser
-from opendbc.car.hyundai.values import HyundaiFlags, CAR
+from opendbc.car.hyundai.hyundaicanfd import CanBus
+from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC
 from opendbc.sunnypilot.car.hyundai.ccnc import ccnc_hud_enabled
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
@@ -89,7 +90,23 @@ class CarStateExt:
     self.aBasis = cp.vl["TCS"]["aBasis"]
 
     if ccnc_hud_enabled(self.CP, self.CP_SP):
-      cp_ccnc = cp if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG else cp_cam
-      self.msg_161, self.msg_162, self.msg_1b5 = map(copy.copy, (cp_ccnc.vl["CCNC_0x161"], cp_ccnc.vl["CCNC_0x162"], cp_ccnc.vl["FR_CMR_03_50ms"]))
+      if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+        # the interceptor redirects the ADAS DRV ECU's copies to A-CAN once ours are seen on E-CAN
+        cp_hud, cp_1b5 = can_parsers[Bus.adas], cp
+      else:
+        cp_hud = cp_1b5 = cp_cam
+      self.msg_161, self.msg_162, self.msg_1b5 = map(copy.copy, (cp_hud.vl["CCNC_0x161"], cp_hud.vl["CCNC_0x162"], cp_1b5.vl["FR_CMR_03_50ms"]))
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
+
+  @staticmethod
+  def get_parser(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> dict[StrEnum, CANParser]:
+    messages = {}
+
+    if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and ccnc_hud_enabled(CP, CP_SP):
+      # stock copies reach A-CAN only after the interceptor sees ours, and we only send after canValid
+      # initializes selfdrived, so they can't gate canValid
+      messages[Bus.adas] = CANParser(DBC[CP.carFingerprint][Bus.pt], [("CCNC_0x161", float('nan')), ("CCNC_0x162", float('nan'))],
+                                     CanBus(CP).ACAN)
+
+    return messages

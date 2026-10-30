@@ -340,7 +340,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
   def get_can_parsers(self, CP, CP_SP):
     if CP.flags & HyundaiFlags.CANFD:
-      return self.get_can_parsers_canfd(CP)
+      return {**self.get_can_parsers_canfd(CP), **CarStateExt.get_parser(CP, CP_SP)}
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 0),
