@@ -15,6 +15,7 @@ class HyundaiSafetyFlagsSP:
   HAS_LDA_BUTTON = 4
   NON_SCC = 8
   ADAS_DRV_ECU_LONG_INTERCEPTOR = 16
+  CCNC = 256
 
 
 # Angle steering vehicle model IDs — encoded in safety_param_sp bits [4:7].
@@ -74,3 +75,4 @@ class HyundaiFlagsSP(IntFlag):
   SPEED_LIMIT_AVAILABLE = 2 ** 9  # platforms with speed limit data available
   HAS_LKAS12 = 2 ** 10
   ADAS_ECU_INTERCEPTOR = 2 ** 11 # whether we have the ADAS ECU interceptor available/present
+  CCNC = 2 ** 12
