@@ -656,7 +656,6 @@ class CAR(Platforms):
   HYUNDAI_KONA_2ND_GEN = HyundaiCanFDPlatformConfig(
     [HyundaiCarDocs("Hyundai Kona (SX2) 2023-24", car_parts=CarParts.common([CarHarness.hyundai_r]))],
     HYUNDAI_KONA_EV_2ND_GEN.specs,
-    flags=HyundaiFlags.CANFD_NO_RADAR_DISABLE,
   )
   HYUNDAI_KONA_NON_SCC = HyundaiNonSccPlatformConfig(
     [HyundaiNonSccCarDocs("Hyundai Kona Non-SCC 2019", car_parts=CarParts.common([CarHarness.hyundai_b]))],
