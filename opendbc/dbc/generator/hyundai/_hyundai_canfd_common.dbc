@@ -223,6 +223,17 @@ BO_ 702 CAM_0x2be: 32 CAMERA
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
 
+BO_ 1096 STEERING_WHEEL_MEDIA_BUTTONS: 8 XXX
+ SG_ VOICE_BUTTON : 16|1@0+ (1,0) [0|1] "" XXX
+ SG_ PHONE_BUTTON : 18|1@0+ (1,0) [0|1] "" XXX
+ SG_ MODE_BUTTON : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ RIGHT_SCROLL_PRESS : 24|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEXT_BUTTON : 26|1@0+ (1,0) [0|1] "" XXX
+ SG_ PREVIOUS_BUTTON : 28|1@0+ (1,0) [0|1] "" XXX
+ SG_ MENU_BUTTON : 34|1@0+ (1,0) [0|1] "" XXX
+ SG_ LEFT_SCROLL_PRESS : 38|1@0+ (1,0) [0|1] "" XXX
+ SG_ CUSTOM_BUTTON : 44|1@0+ (1,0) [0|1] "" XXX
+
 CM_ BO_ 80 "Known in official DBC as L_ADAS_CMD_30_10ms";
 CM_ SG_ 80 StrTqReqVal "This is the driver torque overlay demand value. A negative value represents a torque that would accelerate the steering wheel in a clockwise direction. This signal is always zero whilst the TOI is inactive. (the official DBC defines this as SG_ StrTqReqVal : xx|11@1+ (0.0078125,-8) [-8|7.9921875] \"Nm\" XXX but I am not changing it since it has a broader impact on the OP code)";
 CM_ SG_ 80 ActToiSta "This is a flag that is set to 1 when requesting the steering to activate the torque overlay interface (TOI).  This must be done before an attempt is made to request non-zero steering torque overlay.";
