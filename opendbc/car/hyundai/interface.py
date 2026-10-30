@@ -193,6 +193,10 @@ class CarInterface(CarInterfaceBase):
         stock_cp.openpilotLongitudinalControl = alpha_long
         stock_cp.pcmCruise = not alpha_long
 
+    # all angle cars have ccNC; set before the CCNC safety bit check below
+    if stock_cp.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+      ret.flags |= HyundaiFlagsSP.CCNC.value
+
     if ret.flags & HyundaiFlagsSP.ENHANCED_SCC:
       ret.safetyParam |= HyundaiSafetyFlagsSP.ESCC
       stock_cp.radarUnavailable = False
@@ -245,7 +249,6 @@ class CarInterface(CarInterfaceBase):
 
     # Encode angle steering vehicle model ID so the panda can use per-vehicle physics
     if stock_cp.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
-      ret.flags |= HyundaiFlagsSP.CCNC.value
       angle_model_id = ANGLE_STEERING_MODEL_BY_CAR.get(candidate, 0)
       ret.safetyParam |= encode_angle_model_id(angle_model_id)
 

@@ -13,6 +13,8 @@ from opendbc.car.hyundai.values import CAR, DATE_FW_ECUS, \
                                          NON_SCC_CAR
 from opendbc.car.hyundai.fingerprints import FW_VERSIONS
 from opendbc.testing import fuzzy_test
+from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import ADAS_INTERCEPTOR_HEARTBEAT_MSG
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
 Ecu = CarParams.Ecu
 
@@ -72,6 +74,18 @@ class TestHyundaiFingerprint(unittest.TestCase):
         fingerprint[1][RADAR_START_ADDR] = 8
       CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
       assert CP.radarUnavailable != radar
+
+  def test_angle_interceptor_ccnc_safety_bit(self):
+    # CCNC flag must be set before the safety bit is derived from it, or panda refuses our 0x161/0x162
+    fingerprint = gen_empty_fingerprint()
+    fingerprint[0][ADAS_INTERCEPTOR_HEARTBEAT_MSG] = 8
+    cam_can = CanBus(None, fingerprint).CAM
+    fingerprint[cam_can] = {0x50: 16, 0x110: 32}
+    CP = CarInterface.get_params(CAR.GENESIS_GV80_2025, fingerprint, [], True, False, False)
+    CP_SP = CarInterface.get_params_sp(CP, CAR.GENESIS_GV80_2025, fingerprint, [], True, False, False)
+    assert CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG
+    assert CP_SP.flags & HyundaiFlagsSP.CCNC
+    assert CP_SP.safetyParam & HyundaiSafetyFlagsSP.CCNC
 
   def test_alternate_limits(self):
     # Alternate lateral control limits, for high torque cars, verify Panda safety mode flag is set
