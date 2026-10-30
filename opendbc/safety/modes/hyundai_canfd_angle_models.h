@@ -7,13 +7,13 @@
 // Each angle steering vehicle has unique physics (wheelbase, steer ratio, mass/tire stiffness
 // → slip factor) that determine the ISO lateral accel/jerk limits at the steering angle level.
 //
-// The model ID is passed from openpilot via safety_param_sp bits [4:7] (4 bits = 16 possible models).
+// The model ID is passed from openpilot via safety_param_sp bits [12:15] (4 bits = 16 possible models).
 // ID 0 is reserved for "unknown/fallback" and uses the baseline (most conservative) model.
 //
 // The slip_factor is pre-computed from calc_slip_factor(VehicleModel(CP)) in Python.
 // See opendbc/car/vehicle_model.py for the formula.
 
-// Model IDs — passed via safety_param_sp bits [4:7]
+// Model IDs — passed via safety_param_sp bits [12:15]
 // These must stay in sync with HyundaiAngleSteeringModel in values.py
 enum {
   HYUNDAI_ANGLE_MODEL_BASELINE = 0,             // fallback: uses KIA_SPORTAGE_HEV_2026 (most conservative)
@@ -32,7 +32,7 @@ enum {
 };
 
 // Bit field extraction for model ID from safety_param_sp
-#define HYUNDAI_ANGLE_MODEL_SHIFT 4U
+#define HYUNDAI_ANGLE_MODEL_SHIFT 12U
 #define HYUNDAI_ANGLE_MODEL_MASK  0xFU  // 4 bits
 
 static inline uint8_t hyundai_get_angle_model_id(uint16_t safety_param_sp) {

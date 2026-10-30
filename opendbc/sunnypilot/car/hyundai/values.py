@@ -14,13 +14,13 @@ class HyundaiSafetyFlagsSP:
   LONG_MAIN_CRUISE_TOGGLEABLE = 2
   HAS_LDA_BUTTON = 4
   NON_SCC = 8
-  ADAS_DRV_ECU_LONG_INTERCEPTOR = 16
-  CCNC = 256
+  CCNC = 16
+  ADAS_DRV_ECU_LONG_INTERCEPTOR = 32
 
 
-# Angle steering vehicle model IDs — encoded in safety_param_sp bits [4:7].
+# Angle steering vehicle model IDs — encoded in safety_param_sp bits [12:15].
 # Must stay in sync with the C enum in hyundai_canfd_angle_models.h.
-ANGLE_MODEL_SHIFT = 4
+ANGLE_MODEL_SHIFT = 12
 ANGLE_MODEL_MASK = 0xF
 
 
