@@ -130,6 +130,7 @@ class TestHyundaiCanfdTorqueSteering(TestHyundaiCanfdBase, common.DriverTorqueSt
 class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSafetyTest):
 
   SAFETY_PARAM = HyundaiSafetyFlags.CANFD_ANGLE_STEERING
+  SAFETY_PARAM_SP = 0  # sunnypilot flags kept alongside the angle model ID
 
   PLATFORMS = {str(platform): platform for platform in CAR if
                platform.config.flags & HyundaiFlags.CANFD_ANGLE_STEERING and not CarInterface.get_non_essential_params(str(platform)).dashcamOnly}
@@ -186,6 +187,11 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
       cls.packer = None
       raise unittest.SkipTest
 
+  def tearDown(self):
+    # libsafety is shared by every test in the process, don't leak model IDs or flags into the next test
+    self.safety.set_current_safety_param_sp(0)
+    super().tearDown()
+
   def get_vm(self, car_name):
     return VehicleModel(CarInterface.get_non_essential_params(car_name))
 
@@ -223,7 +229,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
   def test_lateral_jerk_limit(self, car_name):
     # car_name = ANGLE_SAFETY_BASELINE_MODEL
     angle_model_id = ANGLE_STEERING_MODEL_BY_CAR.get(car_name, 0)
-    self.safety.set_current_safety_param_sp(encode_angle_model_id(angle_model_id))
+    self.safety.set_current_safety_param_sp(encode_angle_model_id(angle_model_id) | self.SAFETY_PARAM_SP)
     self._reset_safety_hooks()
 
     for speed in np.linspace(0, 40, 100):
@@ -384,7 +390,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     angle steering model ID from the safety_param_sp bitmask for every supported platform.
     """
     angle_model_id = ANGLE_STEERING_MODEL_BY_CAR.get(car_name, 0)
-    self.safety.set_current_safety_param_sp(encode_angle_model_id(angle_model_id))
+    self.safety.set_current_safety_param_sp(encode_angle_model_id(angle_model_id) | self.SAFETY_PARAM_SP)
     self._reset_safety_hooks()
     self.assertEqual(self.safety.get_hyundai_angle_model_id(), angle_model_id)
 
@@ -552,6 +558,45 @@ class TestHyundaiCanfdLKASteeringAltAngle(TestHyundaiCanfdAngleSteering):
     pass
 
 
+class TestHyundaiCanfdLKASteeringAltAngleInterceptor(TestHyundaiCanfdLKASteeringAltAngle):
+
+  TX_MSGS = [[0xCB, 1], [0x1CF, 1], [0x256, 0]]
+  RELAY_MALFUNCTION_ADDRS = {}
+  FWD_BLACKLISTED_ADDRS = {}
+
+  STEER_MSG = "LFA_ALT"
+  STEER_BUS = 1
+  SAFETY_PARAM_SP = HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR
+
+  def setUp(self):
+    libsafety_py.libsafety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
+    super().setUp()
+    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
+
+  def _angle_cmd_msg(self, angle: float, enabled: bool, increment_timer: bool = True, gain: float = 0.0):
+    if increment_timer:
+      self.safety.set_timer(self.cnt_angle_cmd * int(1e6 / self.LATERAL_FREQUENCY))
+      self.__class__.cnt_angle_cmd += 1
+    values = {"ADAS_StrAnglReqVal": angle, "ADAS_ActvACILvl2Sta": 2 if enabled else 1, "ADAS_ACIAnglTqRedcGainVal": gain}
+    return self.packer.make_can_msg_safety(self.STEER_MSG, self.STEER_BUS, values)
+
+  def test_interceptor_tx_msgs(self):
+    msgs = {0xCB: ("LFA_ALT", 1, {"ADAS_ActvACILvl2Sta": 1}), 0x1A0: ("SCC_CONTROL", 1, {}), 0x161: ("CCNC_0x161", 1, {}),
+            0x162: ("CCNC_0x162", 1, {}), 0x110: ("LKAS_ALT", 0, {"LKAS_ANGLE_ACTIVE": 1}), 0x362: ("CAM_0x362", 0, {})}
+    interceptor = HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR
+    for safety_param, safety_param_sp, allowed in (
+      (self.SAFETY_PARAM, interceptor, {0xCB}),
+      (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor, {0xCB, 0x1A0}),
+      (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor | HyundaiSafetyFlagsSP.CCNC, {0xCB, 0x1A0, 0x161, 0x162}),
+      (self.SAFETY_PARAM, 0, {0x110, 0x362}),
+    ):
+      self.safety.set_current_safety_param_sp(safety_param_sp)
+      self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, safety_param)
+      self.safety.init_tests()
+      for addr, (name, bus, values) in msgs.items():
+        self.assertEqual(addr in allowed, self._tx(self.packer.make_can_msg_safety(name, bus, values)), (safety_param, safety_param_sp, hex(addr)))
+
+
 class TestHyundaiCanfdLKASteeringLongEV(HyundaiLongitudinalBase, TestHyundaiCanfdLKASteeringEV):
 
   SAFETY_PARAM = HyundaiSafetyFlags.CANFD_LKA_STEER_MSG | HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.EV_GAS
@@ -580,8 +625,8 @@ class TestHyundaiCanfdLKASteeringLongEV(HyundaiLongitudinalBase, TestHyundaiCanf
     return self.packer.make_can_msg_safety("SCC_CONTROL", self.PT_BUS, values)
 
   def test_ccnc_interceptor_tx_msgs(self):
-    for safety_param_sp, allowed in ((HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR | HyundaiSafetyFlagsSP.CCNC, True),
-                                     (HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR, False), (HyundaiSafetyFlagsSP.CCNC, False)):
+    for safety_param_sp, allowed in ((HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR | HyundaiSafetyFlagsSP.CCNC, True),
+                                     (HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR, False), (HyundaiSafetyFlagsSP.CCNC, False)):
       self.safety.set_current_safety_param_sp(safety_param_sp)
       self._reset_safety_hooks()
       for addr in (0x161, 0x162):

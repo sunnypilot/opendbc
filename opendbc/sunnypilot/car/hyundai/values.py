@@ -15,7 +15,7 @@ class HyundaiSafetyFlagsSP:
   HAS_LDA_BUTTON = 4
   NON_SCC = 8
   CCNC = 16
-  ADAS_DRV_ECU_LONG_INTERCEPTOR = 32
+  ADAS_DRV_ECU_INTERCEPTOR = 32
 
 
 # Angle steering vehicle model IDs — encoded in safety_param_sp bits [11:14]. Bit 15 stays unused: CarParamsSP.safetyParam is Int16.

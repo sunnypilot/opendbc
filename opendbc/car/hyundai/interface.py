@@ -197,8 +197,8 @@ class CarInterface(CarInterfaceBase):
       ret.safetyParam |= HyundaiSafetyFlagsSP.ESCC
       stock_cp.radarUnavailable = False
 
-    if alpha_long and ret.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
-      ret.safetyParam |= HyundaiSafetyFlagsSP.ADAS_DRV_ECU_LONG_INTERCEPTOR
+    if ret.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
+      ret.safetyParam |= HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR
 
     if stock_cp.flags & HyundaiFlags.HAS_LDA_BUTTON:
       ret.safetyParam |= HyundaiSafetyFlagsSP.HAS_LDA_BUTTON
