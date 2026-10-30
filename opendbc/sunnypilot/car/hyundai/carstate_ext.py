@@ -5,6 +5,7 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
+import copy
 from enum import StrEnum
 
 from opendbc.car import Bus, structs
@@ -19,6 +20,7 @@ class CarStateExt:
     self.CP_SP = CP_SP
 
     self.aBasis = 0.0
+    self.msg_161, self.msg_162, self.msg_1b5 = {}, {}, {}
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -84,5 +86,8 @@ class CarStateExt:
     cp_cam = can_parsers[Bus.cam]
 
     self.aBasis = cp.vl["TCS"]["aBasis"]
+
+    if self.CP_SP.flags & HyundaiFlagsSP.CCNC and not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+      self.msg_161, self.msg_162, self.msg_1b5 = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"], cp_cam.vl["FR_CMR_03_50ms"]))
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
