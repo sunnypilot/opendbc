@@ -157,40 +157,6 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     "LCA_RIGHT_ARROW": 2 if right_blinker else 0,
   })
 
-  if lfa_icon and any_blinker:
-    left_lane_raw, right_lane_raw = msg_1b5["Info_LftLnPosVal"], msg_1b5["Info_RtLnPosVal"]
-
-    scale_per_m = 15 / 1.7
-    left_lane = abs(int(round(15 + (left_lane_raw - 1.7) * scale_per_m)))
-    right_lane = abs(int(round(15 + (right_lane_raw - 1.7) * scale_per_m)))
-
-    if msg_1b5["Info_LftLnQualSta"] not in (2, 3):
-      left_lane = 0
-    if msg_1b5["Info_RtLnQualSta"] not in (2, 3):
-      right_lane = 0
-
-    if left_lane_raw == -2.0248375:
-      left_lane = 30 - right_lane
-    if right_lane_raw == 2.0248375:
-      right_lane = 30 - left_lane
-
-    if left_lane_raw == right_lane_raw == 0:
-      left_lane = right_lane = 15
-    elif left_lane_raw == 0:
-      left_lane = 30 - right_lane
-    elif right_lane_raw == 0:
-      right_lane = 30 - left_lane
-
-    total = left_lane + right_lane
-    if total == 0:
-      left_lane = right_lane = 15
-    else:
-      left_lane = round((left_lane / total) * 30)
-      right_lane = 30 - left_lane
-
-    msg_161["LANELINE_LEFT_POSITION"] = left_lane
-    msg_161["LANELINE_RIGHT_POSITION"] = right_lane
-
   if hud.leftLaneDepart or hud.rightLaneDepart:
     msg_162["VIBRATE"] = 1
 
