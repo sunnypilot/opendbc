@@ -130,9 +130,7 @@ def create_ccnc_mdps(packer, CAN, mdps):
   # the camera faults without MDPS 0xEA, and faults if it sees LKA torque it never requested.
   # its own LFA can never steer under op (op replaces its LFA message), so report LKA torque inactive and unavailable;
   # its LFA then stays in standby and never runs the stock hands-on-wheel timer
-  values = {k: v for k, v in mdps.items() if k != "CHECKSUM"}
-  values.update({"MDPS_LkaToiActvSta": 0, "MDPS_LkaToiUnblSta": 1})
-  return packer.make_can_msg("MDPS", CAN.CAM, values)
+  return packer.make_can_msg("MDPS", CAN.CAM, {**mdps, "MDPS_LkaToiActvSta": 0, "MDPS_LkaToiUnblSta": 1})
 
 
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, lead_distance,
