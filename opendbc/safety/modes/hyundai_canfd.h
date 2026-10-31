@@ -25,7 +25,7 @@
   {0x1A0, e_can, 32, .check_relay = (longitudinal)},  /* SCC_CONTROL */ \
 
 #define HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(a_can) \
-  {0x256, a_can, 8, .check_relay = false},  /* */ \
+  {0x256, a_can, 8, .check_relay = false}, \
 
 // angle steering with the ADAS DRV intercepted: we steer the MDPS directly on LFA_ALT,
 // the ADAS DRV's own copy is still on E-CAN until the interceptor sees ours
@@ -255,11 +255,10 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   }
   return tx;
 
-  // ECU interceptor request: only the mode and protocol version the interceptor accepts
   if (msg->addr == 0x256U) {
     const int interceptor_mode = (msg->data[3] << 8) | msg->data[4];
     const int interceptor_param = (msg->data[5] << 8) | msg->data[6];
-    if ((interceptor_mode != 5) || (interceptor_param != 1)) {
+    if ((interceptor_mode != 5) || (interceptor_param != 1) || ((msg->data[7] & ~0x1U) != 0U)) {
       tx = false;
     }
   }

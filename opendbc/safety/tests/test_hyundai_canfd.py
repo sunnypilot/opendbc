@@ -111,10 +111,10 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.CarSafetyTest, common.Drive
     return self._button_msg(0, enabled)
 
   def test_interceptor_opt_msg(self):
-    # (mode, param): only the interceptor mode with protocol version 1 may be sent
-    for mode, param, allowed in ((5, 1, True), (5, 0, False), (5, 2, False), (5, 48, False), (0, 1, False), (0x105, 1, False)):
-      dat = bytes(3) + mode.to_bytes(2, 'big') + param.to_bytes(2, 'big') + bytes(1)
-      self.assertEqual(allowed, self._tx(libsafety_py.make_CANPacket(0x256, 0, dat)), (mode, param))
+    for mode, param, features, allowed in ((5, 1, 0, True), (5, 1, 1, True), (5, 1, 2, False), (5, 1, 0x81, False), (5, 0, 0, False),
+                                           (5, 2, 0, False), (5, 48, 0, False), (0, 1, 0, False), (0x105, 1, 0, False)):
+      dat = bytes(3) + mode.to_bytes(2, 'big') + param.to_bytes(2, 'big') + bytes([features])
+      self.assertEqual(allowed, self._tx(libsafety_py.make_CANPacket(0x256, 0, dat)), (mode, param, features))
 
 
 class TestHyundaiCanfdTorqueSteering(TestHyundaiCanfdBase, common.DriverTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):

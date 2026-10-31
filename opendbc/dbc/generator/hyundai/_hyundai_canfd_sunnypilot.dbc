@@ -3,6 +3,7 @@ BO_ 598 ADAS_DRV_INTERCEPT_OPT: 8 SP
  SG_ COUNTER : 16|8@1+ (1,0) [0|0] "0" interceptor
  SG_ REQUESTED_SAFETY_MODE : 31|16@0+ (1,0) [0|65535] "" interceptor
  SG_ REQUESTED_SAFETY_PARAM : 47|16@0+ (1,0) [0|65535] "" interceptor
+ SG_ FEATURE_1 : 56|1@1+ (1,0) [0|1] "" interceptor
 
 
 BO_ 600 INTERCEPTOR_HEARTBEAT: 64 interceptor
@@ -34,6 +35,5 @@ BO_ 600 INTERCEPTOR_HEARTBEAT: 64 interceptor
  SG_ CAN_2_BUS_OFF_CNT : 407|16@0+ (1,0) [0|65535] "" SP
  SG_ CAN_0_TX_LOST : 423|32@0+ (1,0) [0|4294967295] "" SP
  SG_ CAN_2_TX_LOST : 455|32@0+ (1,0) [0|4294967295] "" SP
+ SG_ CURRENT_FEATURE_1 : 480|1@1+ (1,0) [0|1] "" SP
 
-CM_ BO_ 598 "Message sent by SP to the interceptor";
-CM_ BO_ 600 "Message sent from the interceptor to SP (CAN FD)";

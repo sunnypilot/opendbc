@@ -7,8 +7,7 @@ from opendbc.sunnypilot.car.hyundai.interceptors.ecu_interceptor import EcuInter
   EcuInterceptorCarStateBase, EcuInterceptorCarControllerBase, EcuInterceptorRadarInterfaceBase
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
-SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR = 5  # This value is the safety mode and it's embedded on the panda interceptor.
-# must match ADAS_DRV_INTERCEPTOR_PROTOCOL_VERSION in the interceptor firmware
+SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR = 5
 ADAS_DRV_INTERCEPTOR_PROTOCOL_VERSION = 1
 ADAS_INTERCEPTOR_HEARTBEAT_MSG = 0x258
 
@@ -46,10 +45,10 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
     return packer.make_can_msg("LFA_ALT", CAN.ECAN, values)
 
   def create_adas_drv_intercept_msg(self, packer, CAN):
-    # interceptor decides what to block from the messages we send, 0x256 only keeps it active
     values = {
       "REQUESTED_SAFETY_MODE": SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR,
       "REQUESTED_SAFETY_PARAM": ADAS_DRV_INTERCEPTOR_PROTOCOL_VERSION,
+      "FEATURE_1": 1,
     }
     return [packer.make_can_msg("ADAS_DRV_INTERCEPT_OPT", CAN.ACAN, values)]
 
