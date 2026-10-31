@@ -127,7 +127,7 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
 
 
 def create_ccnc_mdps(packer, CAN, mdps):
-  # camera faults without 0xEA; report LKA torque inactive/unavailable so its LFA stays in standby
+  # report LKA torque inactive/unavailable so the camera LFA stays in standby
   return packer.make_can_msg("MDPS", CAN.CAM, {**mdps, "MDPS_LkaToiActvSta": 0, "MDPS_LkaToiUnblSta": 1})
 
 

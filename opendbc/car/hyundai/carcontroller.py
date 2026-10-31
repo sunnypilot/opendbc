@@ -210,7 +210,6 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       can_sends.append(hyundaicanfd.create_suppress_lfa(self.packer, self.CAN, CS.lfa_block_msg,
                                                         self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT))
 
-    # MDPS copy for the camera, every frame like the real 0xEA (100 Hz)
     if ccnc_non_hda2 and CS.mdps:
       can_sends.append(hyundaicanfd.create_ccnc_mdps(self.packer, self.CAN, CS.mdps))
 

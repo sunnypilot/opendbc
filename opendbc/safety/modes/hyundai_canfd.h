@@ -285,7 +285,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
     {0x161, 0, 32, .check_relay = true}, /* CCNC_0x161 */ \
     {0x162, 0, 32, .check_relay = true}, /* CCNC_0x162 */ \
-    {0xEA, 2, 24, .check_relay = true, .disable_static_blocking = true}, /* MDPS, blocked once op sends its copy */ \
+    {0xEA, 2, 24, .check_relay = true, .disable_static_blocking = true}, /* MDPS */ \
 
   hyundai_common_init(param);
   hyundai_canfd_ccnc_mdps_tx = false;

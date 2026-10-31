@@ -275,7 +275,6 @@ class HyundaiCanfdCCNCTest:
     return HyundaiSafetyFlags.CCNC | super().SAFETY_PARAM
 
   def test_ccnc_mdps_forwarded_until_op_sends(self):
-    # the camera always needs 0xEA: the real one passes until op sends its copy, then only op's copy reaches it
     self.assertEqual(2, self.safety.safety_fwd_hook(0, 0xEA))
     self.assertTrue(self._tx(self.packer.make_can_msg_safety("MDPS", 2, {})))
     self.assertEqual(-1, self.safety.safety_fwd_hook(0, 0xEA))
