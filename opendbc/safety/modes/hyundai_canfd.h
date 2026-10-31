@@ -179,6 +179,13 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
     .frequency = 100U,
   };
 
+  // the MDPS faults when LFA_ALT requests more than ~175 deg
+  const AngleSteeringLimits HYUNDAI_CANFD_ANGLE_STEERING_LIMITS_LFA_ALT = {
+    .max_angle = 1750,
+    .angle_deg_to_can = 10,
+    .frequency = 100U,
+  };
+
   // Per-vehicle angle steering params, resolved at init from safety_param_sp
   const AngleSteeringParams *HYUNDAI_STEERING_PARAMS = hyundai_get_angle_params(hyundai_canfd_angle_model_id);
 
@@ -215,7 +222,8 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
         gain_violation = true;
       }
 
-      if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, HYUNDAI_CANFD_ANGLE_STEERING_LIMITS, *HYUNDAI_STEERING_PARAMS) || gain_violation) {
+      const AngleSteeringLimits *angle_limits = lfa_alt_steering ? &HYUNDAI_CANFD_ANGLE_STEERING_LIMITS_LFA_ALT : &HYUNDAI_CANFD_ANGLE_STEERING_LIMITS;
+      if (steer_angle_cmd_checks_vm(desired_angle, steer_angle_req, *angle_limits, *HYUNDAI_STEERING_PARAMS) || gain_violation) {
         tx = false;
       }
     } else {

@@ -568,6 +568,13 @@ class TestHyundaiCanfdLKASteeringAltAngleInterceptor(TestHyundaiCanfdLKASteering
   STEER_BUS = 1
   SAFETY_PARAM_SP = HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR
 
+  BASELINE_PANDA_ANGLE_LIMITS: AngleSteeringLimitsVM = AngleSteeringLimitsVM(
+    175,
+    MAX_ANGLE_RATE=5
+  )
+
+  STEER_ANGLE_MAX = 175
+
   def setUp(self):
     libsafety_py.libsafety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
     super().setUp()
