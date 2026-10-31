@@ -150,6 +150,8 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
   any_blinker = left_blinker or right_blinker
 
   msg_161.update({
+    "DAW_ICON": 0,
+    "LKA_ICON": 0,
     "LFA_ICON": 2 if lfa_icon else 0,
     "CENTERLINE": 1 if lfa_icon else 0,
     "LANELINE_LEFT": (0 if not lfa_icon else 1 if not hud.leftLaneVisible else 4 if hud.leftLaneDepart else 6 if any_blinker else 2),
@@ -159,6 +161,9 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     "LCA_LEFT_ARROW": 2 if left_blinker else 0,
     "LCA_RIGHT_ARROW": 2 if right_blinker else 0,
   })
+
+  if hud.leftLaneDepart or hud.rightLaneDepart:
+    msg_162["VIBRATE"] = 1
 
   if openpilot_longitudinal_control:
     # 1/3 adjusting to speed limit, 2/4 set speed changed, 7-10 distance 1-4
