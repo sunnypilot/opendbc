@@ -131,7 +131,7 @@ def create_ccnc_mdps(packer, CAN, mdps):
   return packer.make_can_msg("MDPS", CAN.CAM, {**mdps, "MDPS_LkaToiActvSta": 0, "MDPS_LkaToiUnblSta": 1})
 
 
-def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, lead_distance,
+def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, lead_distance, lead_rel_speed,
                 is_metric, out, main_cruise_enabled, lfa_icon):
   # consider taking a break, with its chime
   if msg_161["ALERTS_2"] == 5:
@@ -189,7 +189,11 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
       "DISTANCE_CAR": 0 if not main_cruise_enabled else 2 if enabled else 1,
       "SLA_ICON": 0,
       "NAV_ICON": 0,
-      "TARGET": 0,
+      "TARGET": 1 if enabled else 0,
+      # op's desired follow distance (long_mpc): v²/(2*2.5) + t_follow * v + 6 - v_lead²/(2*2.5)
+      "TARGET_DISTANCE": float(np.clip((out.vEgo ** 2 - (out.vEgo + lead_rel_speed) ** 2) / 5.0 + 6.0 +
+                                       (1.25, 1.45, 1.75)[min(max(hud.leadDistanceBars, 1), 3) - 1] * out.vEgo, 0.0, 204.7))
+                         if enabled else msg_161["TARGET_DISTANCE"],
     })
 
     msg_162["LEAD"] = 0 if not main_cruise_enabled else 2 if enabled else 1
