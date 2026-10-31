@@ -30,7 +30,13 @@ class CarStateExt:
     self.distance_button = 0
     self.increase_counter = 0
     self.decrease_counter = 0
-    self.stalk_down_counter = 0
+    self.last_active_set_speed: float | None = None
+    self._prev_cruise_enabled: bool = False
+    self._resume_eligible: bool = False
+    self._resume_acc_counter: int = 0
+    self._prev_stalk_down2: bool = False
+    self._prev_stalk_down: bool = False
+    self._frames_since_acc_on: int = 0
 
   def update_longitudinal_upgrade(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp_park = can_parsers[Bus.alt]
@@ -72,15 +78,56 @@ class CarStateExt:
         elif not prev_decrease_button:
           self.set_speed -= conversion
 
+      # VDM_UserAdasRequest: 0=IDLE, 1=UP_1, 2=UP_2, 3=DOWN_1, 4=DOWN_2
+      vdm_request = int(cp.vl["VDM_AdasSts"]["VDM_UserAdasRequest"])
+      stalk_down2 = vdm_request == 4
+      stalk_down = vdm_request in (3, 4)
+
+      # Save the last active set speed when ACC turns off.
+      if self._prev_cruise_enabled and not ret.cruiseState.enabled:
+        self.last_active_set_speed = self.set_speed
+        self._resume_eligible = False
+        self._resume_acc_counter = 0
+
+      # Arm resume if ACC is enabled while DOWN_2 is held.
+      if not self._prev_cruise_enabled and ret.cruiseState.enabled and stalk_down2:
+        self._resume_eligible = True
+      # Also arm on DOWN_2 rising edge shortly after ACC activation. This covers
+      # the transition through DOWN_1 before the stalk reaches the full detent.
+      elif (ret.cruiseState.enabled and not self._prev_stalk_down2 and stalk_down2
+            and not self._resume_eligible and self._frames_since_acc_on < 10):
+        self._resume_eligible = True
+      # Also arm resume from a stop when ACC has remained engaged and the driver
+      # presses DOWN_2 to return to the previously active higher set speed.
+      elif (ret.cruiseState.enabled and not self._prev_stalk_down2 and stalk_down2
+            and ret.vEgoCluster < MIN_SET_SPEED and not self._resume_eligible):
+        self._resume_eligible = True
+
       if not ret.cruiseState.enabled:
         self.set_speed = ret.vEgoCluster
 
-      # VDM_UserAdasRequest: 0=IDLE, 1=UP_1, 2=UP_2, 3=DOWN_1, 4=DOWN_2
-      stalk_down = int(cp.vl["VDM_AdasSts"]["VDM_UserAdasRequest"]) in (3, 4)
-      self.stalk_down_counter = self.stalk_down_counter + 1 if stalk_down else 0
-      if self.stalk_down_counter == 50:
-        # Mimic Rivian ACC: holding stalk 0.5s sets speed to current speed (never decreases)
+      if stalk_down and not self._prev_stalk_down and not self._resume_eligible:
+        # Mimic Rivian ACC: tapping stalk down snaps set speed to current speed
+        # without lowering an already higher requested set speed.
         self.set_speed = max(self.set_speed, ret.vEgoCluster)
+
+      self._prev_cruise_enabled = ret.cruiseState.enabled
+      self._prev_stalk_down2 = stalk_down2
+      self._prev_stalk_down = stalk_down
+      self._frames_since_acc_on = (self._frames_since_acc_on + 1) if ret.cruiseState.enabled else 0
+
+      # Resume after ACC is on and DOWN_2 has been held for 0.5s.
+      if self._resume_eligible and ret.cruiseState.enabled and stalk_down2:
+        self._resume_acc_counter += 1
+      else:
+        if self._resume_eligible and not stalk_down2:
+          self._resume_eligible = False
+        self._resume_acc_counter = 0
+
+      if self._resume_acc_counter == 50 and self.last_active_set_speed is not None:
+        self.set_speed = self.last_active_set_speed
+        self._resume_eligible = False
+        self._resume_acc_counter = 0
 
       self.set_speed = max(MIN_SET_SPEED, min(self.set_speed, MAX_SET_SPEED))
       ret.cruiseState.speed = self.set_speed
