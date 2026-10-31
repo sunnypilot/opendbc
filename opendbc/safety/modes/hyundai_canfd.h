@@ -28,13 +28,11 @@
   {0x256, a_can, 8, .check_relay = false},  /* */ \
 
 // angle steering with the ADAS DRV intercepted: we steer the MDPS directly on LFA_ALT,
-// the ADAS DRV's own copy is still on E-CAN until the interceptor sees ours.
-// CAM_0x362 keeps the ADAS DRV's own LFA from engaging under ours (angle interceptor cars are LKA_STEER_MSG_ALT)
+// the ADAS DRV's own copy is still on E-CAN until the interceptor sees ours
 #define HYUNDAI_CANFD_LKA_STEER_MSG_ANGLE_ADAS_DRV_INTERCEPTOR_COMMON_TX_MSGS \
   HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(1)                                     \
   HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)                                 \
   {0xCB, 1, 24, .check_relay = false},  /* LFA_ALT */                        \
-  {0x362, 0, 32, .check_relay = true},  /* CAM_0x362 */                      \
 
 // *** Addresses checked in rx hook ***
 // EV, ICE, HYBRID: ACCELERATOR (0x35), ACCELERATOR_BRAKE_ALT (0x100), ACCELERATOR_ALT (0x105)
