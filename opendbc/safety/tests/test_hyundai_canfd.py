@@ -593,6 +593,7 @@ class TestHyundaiCanfdLKASteeringAltAngleInterceptor(TestHyundaiCanfdLKASteering
     interceptor = HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR
     for safety_param, safety_param_sp, allowed in (
       (self.SAFETY_PARAM, interceptor, {0xCB, 0x362}),
+      (self.SAFETY_PARAM, interceptor | HyundaiSafetyFlagsSP.CCNC, {0xCB, 0x161, 0x162, 0x362}),
       (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor, {0xCB, 0x1A0, 0x362}),
       (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor | HyundaiSafetyFlagsSP.CCNC, {0xCB, 0x1A0, 0x161, 0x162, 0x362}),
       (self.SAFETY_PARAM, 0, {0x110, 0x362}),

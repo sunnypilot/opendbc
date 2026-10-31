@@ -15,8 +15,10 @@ def ccnc_hud_enabled(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> bool:
   if not CP_SP.flags & HyundaiFlagsSP.CCNC:
     return False
   if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
-    # HDA2: only with openpilot long through the ADAS DRV interceptor, which blocks the ADAS DRV ECU's own copies
-    return bool(CP.openpilotLongitudinalControl and CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR)
+    # HDA2: only through the ADAS DRV interceptor, which blocks the ADAS DRV ECU's own copies. Needed without
+    # openpilot long on angle cars: we steer the MDPS directly, so the ADAS DRV ECU's LFA icon stays gray
+    return bool(CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and
+                (CP.openpilotLongitudinalControl or CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING))
   return True
 
 
