@@ -192,7 +192,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
       "TARGET": 0,
     })
 
-    msg_162["LEAD"] = 0 if not main_cruise_enabled else 2 if enabled else 1
+    msg_162["LEAD"] = 0 if not main_cruise_enabled else 2 if enabled and hud.leadVisible else 1 and hud.leadVisible
     msg_162["LEAD_DISTANCE"] = lead_distance
 
   return [packer.make_can_msg(msg, CAN.ECAN, data) for msg, data in [("CCNC_0x161", msg_161), ("CCNC_0x162", msg_162)]]
