@@ -210,6 +210,9 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       can_sends.append(hyundaicanfd.create_suppress_lfa(self.packer, self.CAN, CS.lfa_block_msg,
                                                         self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT))
 
+    if ccnc_non_hda2 and CS.mdps:
+      can_sends.append(hyundaicanfd.create_ccnc_mdps(self.packer, self.CAN, CS.mdps))
+
     # LFA and HDA icons
     if self.frame % 5 == 0 and (not lka_steering or lka_steering_long):
       if ccnc_non_hda2:
