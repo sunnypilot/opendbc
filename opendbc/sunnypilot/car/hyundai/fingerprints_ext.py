@@ -5,17 +5,6 @@ Ecu = CarParams.Ecu
 
 
 FW_VERSIONS_EXT = {
-  CAR.KIA_NIRO_PLUS_EV: {
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00DEev SCC FHCUP      1.00 1.00 99110-Q4510         ',
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00DE  MDPS C 1.00 1.06 56310Q4200\x00 4DEEC106',
-    ],
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00DEE MFC  AT KOR LHD 1.00 1.00 99211-DB100 211206',
-    ],
-  },
   CAR.KIA_CEED_PHEV_2022_NON_SCC: {
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\x00CD  MDPS C 1.00 1.01 56310-XX000 4CPHC101',
@@ -132,6 +121,25 @@ FW_VERSIONS_EXT = {
     # TODO: Check working route for more FW
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00BC3 LKA  AT EUR LHD 1.00 1.01 99211-Q0100 261'
+    ],
+  },
+  CAR.HYUNDAI_VENUE_2021_NON_SCC: {
+    (Ecu.eps, 0x7D4, None): [
+      b'\xf1\x00QX  MDPS C 1.00 1.04 56340-K2000 9812',
+    ],
+    (Ecu.fwdCamera, 0x7C4, None): [
+      b'\xf1\x00QX  MFC  AT USA LHD 1.00 1.01 99211-K2000 191014',
+    ],
+  },
+  CAR.KIA_NIRO_PLUS_EV: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00DEev SCC FHCUP      1.00 1.00 99110-Q4510         ',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00DE  MDPS C 1.00 1.06 56310Q4200\x00 4DEEC106',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DEE MFC  AT KOR LHD 1.00 1.00 99211-DB100 211206',
     ],
   },
 }

@@ -388,6 +388,8 @@ routes = [
   CarTestRoute("bec2dcfde6a64235/2022-04-08--14-21-32", HONDA.HONDA_CRV_HYBRID, segment=22),
 
   # port extensions
+  CarTestRoute("be7ad2b087973544/0000002b--ec261cc821", HYUNDAI.HYUNDAI_VENUE_2021_NON_SCC),
   CarTestRoute("dc7bf18c8af12e37/00000006--ea06255cd0", HYUNDAI.KIA_CEED_PHEV_2022_NON_SCC),
+  CarTestRoute("8bae07514ce06ad4/00000008--9f43d90441", CHRYSLER.RAM_HD_5TH_GEN),  # 2024 Ram HD with alt cruise buttons
   CarTestRoute("804a03cbd21df697/00000009--45f9e8e8c5", HYUNDAI.KIA_NIRO_PLUS_EV),
 ]
