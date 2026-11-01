@@ -259,7 +259,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
 
     # TODO: alt signal usage may be described by cp.vl['BLINKERS']['USE_ALT_LAMP']
     left_blinker_sig, right_blinker_sig = "LEFT_LAMP", "RIGHT_LAMP"
-    if self.CP.flags & HyundaiFlags.CCNC:
+    if self.CP_SP.flags & HyundaiFlagsSP.CCNC:
       left_blinker_sig, right_blinker_sig = "LEFT_LAMP_ALT", "RIGHT_LAMP_ALT"
       if not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
         self.msg_161, self.msg_162 = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"]))

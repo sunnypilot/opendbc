@@ -3,8 +3,10 @@ from opendbc.testing import parameterized_class
 import unittest
 
 from opendbc.car.hyundai.values import HyundaiSafetyFlags
+from opendbc.sunnypilot.car.hyundai.values import HyundaiSafetyFlagsSP
 from opendbc.car.structs import CarParams
 import opendbc.safety.tests.common as common
+from opendbc.safety.tests.libsafety import libsafety_py
 from opendbc.safety.tests.hyundai_common import HyundaiButtonBase, HyundaiLongitudinalBase
 
 # All combinations of radar/camera-SCC and gas/hybrid/EV cars
@@ -270,9 +272,12 @@ class HyundaiCanfdCCNCTest:
       cls.packer = None
       raise unittest.SkipTest
 
-  @property
-  def SAFETY_PARAM(self):
-    return HyundaiSafetyFlags.CCNC | super().SAFETY_PARAM
+  def setUp(self):
+    libsafety_py.libsafety.set_current_safety_param_sp(HyundaiSafetyFlagsSP.CCNC)
+    super().setUp()
+
+  def tearDown(self):
+    self.safety.set_current_safety_param_sp(0)
 
   def test_ccnc_mdps_forwarded_until_op_sends(self):
     self.assertEqual(2, self.safety.safety_fwd_hook(0, 0xEA))

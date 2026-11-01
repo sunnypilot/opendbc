@@ -86,8 +86,6 @@ class CarInterface(CarInterfaceBase):
         ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CANFD_ALT_BUTTONS.value
       if ret.flags & HyundaiFlags.CANFD_CAMERA_SCC:
         ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CAMERA_SCC.value
-      if ret.flags & HyundaiFlags.CCNC and not ret.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
-        ret.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CCNC.value
 
     else:
       # Shared configuration for non CAN-FD cars
@@ -189,6 +187,9 @@ class CarInterface(CarInterfaceBase):
 
     if stock_cp.flags & HyundaiFlags.ALT_LIMITS_2:
       stock_cp.dashcamOnly = False
+
+    if ret.flags & HyundaiFlagsSP.CCNC and not stock_cp.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+      ret.safetyParam |= HyundaiSafetyFlagsSP.CCNC
 
     if ret.flags & HyundaiFlagsSP.NON_SCC:
       stock_cp.alphaLongitudinalAvailable = False
