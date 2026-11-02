@@ -144,6 +144,30 @@ class CarControlSP:
   leadOne: 'LeadData' = field(default_factory=lambda: LeadData())
   leadTwo: 'LeadData' = field(default_factory=lambda: LeadData())
   intelligentCruiseButtonManagement: 'IntelligentCruiseButtonManagement' = field(default_factory=lambda: IntelligentCruiseButtonManagement())
+  smartCruiseControl: 'CarControlSP.SmartCruiseControl' = field(default_factory=lambda: CarControlSP.SmartCruiseControl())
+
+  @auto_dataclass
+  class SmartCruiseControl:
+    visionState: 'CarControlSP.SmartCruiseControl.VisionState' = field(
+      default_factory=lambda: CarControlSP.SmartCruiseControl.VisionState.disabled
+    )
+    mapState: 'CarControlSP.SmartCruiseControl.MapState' = field(
+      default_factory=lambda: CarControlSP.SmartCruiseControl.MapState.disabled
+    )
+
+    class VisionState(StrEnum):
+      disabled = auto()
+      enabled = auto()
+      entering = auto()
+      turning = auto()
+      leaving = auto()
+      overriding = auto()
+
+    class MapState(StrEnum):
+      disabled = auto()
+      enabled = auto()
+      turning = auto()
+      overriding = auto()
 
   @auto_dataclass
   class Param:
