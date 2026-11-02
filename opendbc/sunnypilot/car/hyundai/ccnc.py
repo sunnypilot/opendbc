@@ -178,11 +178,15 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     scc_states = {scc.visionState, scc.mapState}
 
     # set speed in cluster units, above the cluster max (145 km/h, 90 mph) shows the minimum
-    set_speed = round(out.vCruiseCluster * (1 if is_metric else CV.KPH_TO_MPH))
-    set_speed = (40 if is_metric else 25) if set_speed > (145 if is_metric else 90) else set_speed
+    cluster_set_speed = round(out.vCruiseCluster * (1 if is_metric else CV.KPH_TO_MPH))
+    set_speed = (40 if is_metric else 25) if cluster_set_speed > (145 if is_metric else 90) else cluster_set_speed
 
-    # speed limit at or above the set speed, SLA arrow points up
-    sla_up = round(sl.speedLimitFinalLast * CV.MS_TO_KPH) >= round(out.vCruiseCluster)
+    # speed limit in cluster units, compared to the set speed like Speed Limit Assist does
+    sla_limit = round(sl.speedLimitFinalLast * (CV.MS_TO_KPH if is_metric else CV.MS_TO_MPH))
+    sla_up = sla_limit >= cluster_set_speed
+
+    # after confirming, SLA writes the new set speed itself and briefly reports inactive, keep it active while the set speed sits on the limit
+    sla_active = sl.assistState == "active" or (sl.assistState == "inactive" and sla_limit == cluster_set_speed)
 
     # target gap in m: speed times the openpilot follow time for the distance bars
     target_gap = out.vEgo * FOLLOW_TIME[min(max(hud.leadDistanceBars, 1), 3) - 1]
@@ -216,7 +220,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
       "SLA_ICON": ((1 if sla_up else 2) if sl.assistState in ("preActive", "pending") else  # white up/down: waiting to confirm
                    4 if sl.assistState == "adapting" else                                   # green down: slowing to the limit
-                   3 if sl.assistState == "active" else                                     # green up: holding the limit
+                   3 if sla_active else                                                     # green up: holding the limit
                    0),                                                                      # hidden: speed limit assist off or inactive
 
       # DBC mismatch (cosmetic): the max is 3 but 4 white is used
