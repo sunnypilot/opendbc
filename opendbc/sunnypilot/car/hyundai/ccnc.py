@@ -1,3 +1,4 @@
+from opendbc.car import DT_CTRL
 from opendbc.car.common.conversions import Conversions as CV
 
 
@@ -5,10 +6,14 @@ LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS  # keep in sync with openpilot desire_
 FOLLOW_TIME = (1.25, 1.45, 1.75)           # keep in sync with openpilot long_mpc.get_T_FOLLOW, seconds for distance bars 1-3
 LANE_POSITION_GAIN = 12                    # stock LANELINE_*_POSITION steps per m of lane offset
 LANE_HALF_WIDTH = 1.75                     # m, lane center from a single line
+SLA_CONFIRMED_SHOW_TIME = 2.0              # s, the green speed limit arrow shows this long after confirming, then hides
 LANE_CROSS_JUMP = 1.0                      # m, the camera lane offset jumps about 2 m when it relabels the lanes at the crossing
 
 # remembered across calls: whether the current lane change crossed the line yet, and the last lane offset
 lane_change_progress = {"crossed": False, "offset": None}
+
+# remembered across calls: whether speed limit assist was active last time, and the frame it became active
+sla_progress = {"active": False, "frame": 0}
 
 
 def create_ccnc_mdps(packer, CAN, mdps):
@@ -150,6 +155,8 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     "LANE_RIGHT": 1 if lane_changing and lane_change.direction == "right" and not crossed else 0,  # green target lane while moving right
 
     "LANE_HIGHLIGHT": 1 if lane_changing and crossed else 0,  # green new lane after crossing the line, until the lane change ends
+
+    "LANE_HIGHLIGHT_DISTANCE": 150 if lane_changing and crossed else 0,  # m, stock always draws the highlight 150 m long
   })
 
   if hud.leftLaneDepart or hud.rightLaneDepart:
@@ -190,6 +197,10 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
     # after confirming, SLA writes the new set speed itself and briefly reports inactive, keep it active while the set speed sits on the limit
     sla_active = sl.assistState == "active" or (sl.assistState == "inactive" and sla_limit == cluster_set_speed)
+    if sla_active and not sla_progress["active"]:
+      sla_progress["frame"] = frame
+    sla_progress["active"] = sla_active
+    sla_confirmed_recently = sla_active and (frame - sla_progress["frame"]) * DT_CTRL < SLA_CONFIRMED_SHOW_TIME
 
     # target gap in m: speed times the openpilot follow time for the distance bars
     target_gap = out.vEgo * FOLLOW_TIME[min(max(hud.leadDistanceBars, 1), 3) - 1]
@@ -223,7 +234,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
       "SLA_ICON": ((1 if sla_up else 2) if sl.assistState in ("preActive", "pending") else  # white up/down: waiting to confirm
                    4 if sl.assistState == "adapting" else                                   # green down: slowing to the limit
-                   3 if sla_active else                                                     # green up: holding the limit
+                   3 if sla_confirmed_recently else                                         # green up: just confirmed, hides after a moment
                    0),                                                                      # hidden: speed limit assist off or inactive
 
       # DBC mismatch (cosmetic): the max is 3 but 4 white is used
