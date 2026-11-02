@@ -7,7 +7,7 @@ def create_ccnc_mdps(packer, CAN, mdps):
 
 
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, lead_distance,
-                is_metric, out, main_cruise_enabled, lat_active, lkas_icon, lfa_icon, scc):
+                is_metric, out, main_cruise_enabled, lat_active, lkas_icon, lfa_icon, scc, sl):
   # consider taking a break, with its chime
   if msg_161["ALERTS_2"] == 5:
     msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
@@ -63,7 +63,9 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
       "DISTANCE_SPACING": 0 if not main_cruise_enabled else 1 if enabled else 3,
       "DISTANCE_LEAD": 0 if not main_cruise_enabled else 2 if enabled and hud.leadVisible else 1 if hud.leadVisible else 0,
       "DISTANCE_CAR": 0 if not main_cruise_enabled else 2 if enabled else 1,
-      "SLA_ICON": 0, # TODO-SP: match with sp
+      # 0 hidden, 1 white up, 2 white down, 3 green up, 4 green down
+      "SLA_ICON": ((1 if round(sl.speedLimitFinalLast * CV.MS_TO_KPH) >= round(out.vCruiseCluster) else 2) if sl.assistState in ("preActive", "pending") else
+                   4 if sl.assistState == "adapting" else 3 if sl.assistState == "active" else 0),
       "NAV_ICON": (2 if {"entering", "turning"} & (scc_states := {scc.visionState, scc.mapState}) else
                    1 if "overriding" in scc_states else 4 if {"enabled", "leaving"} & scc_states else 0),
       "TARGET": 0,

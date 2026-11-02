@@ -220,7 +220,8 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
       if ccnc_non_hda2:
         can_sends.extend(create_ccnc(self.packer, self.CAN, self.CP.openpilotLongitudinalControl, CC.enabled, CC.hudControl, CC.leftBlinker,
                                      CC.rightBlinker, CS.msg_161, CS.msg_162, self.lead_distance, CS.is_metric, CS.out, CS.main_cruise_enabled,
-                                     CC.latActive, self.lkas_icon, self.lfa_icon, CC_SP.smartCruiseControl))
+                                     CC.latActive, self.lkas_icon, self.lfa_icon, CC_SP.smartCruiseControl,
+                                     CC_SP.speedLimit))
       else:
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
 

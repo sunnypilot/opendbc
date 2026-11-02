@@ -145,6 +145,7 @@ class CarControlSP:
   leadTwo: 'LeadData' = field(default_factory=lambda: LeadData())
   intelligentCruiseButtonManagement: 'IntelligentCruiseButtonManagement' = field(default_factory=lambda: IntelligentCruiseButtonManagement())
   smartCruiseControl: 'CarControlSP.SmartCruiseControl' = field(default_factory=lambda: CarControlSP.SmartCruiseControl())
+  speedLimit: 'CarControlSP.SpeedLimit' = field(default_factory=lambda: CarControlSP.SpeedLimit())
 
   @auto_dataclass
   class SmartCruiseControl:
@@ -168,6 +169,21 @@ class CarControlSP:
       enabled = auto()
       turning = auto()
       overriding = auto()
+
+  @auto_dataclass
+  class SpeedLimit:
+    assistState: 'CarControlSP.SpeedLimit.AssistState' = field(
+      default_factory=lambda: CarControlSP.SpeedLimit.AssistState.disabled
+    )
+    speedLimitFinalLast: float = auto_field()
+
+    class AssistState(StrEnum):
+      disabled = auto()
+      inactive = auto()
+      preActive = auto()
+      pending = auto()
+      adapting = auto()
+      active = auto()
 
   @auto_dataclass
   class Param:
