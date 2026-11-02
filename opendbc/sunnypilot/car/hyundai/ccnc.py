@@ -81,6 +81,10 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
               2)                                                 # green: ready
 
   msg_161.update({
+    "CAR_CIRCLE": (0 if not (lat_active and CC_SP.blendfulEnabled) else  # hidden: Blendful off or not steering
+                   2 if CC_SP.blendfulTrust > 0 else                    # cyan: Blendful centering on the lane lines, like its blue line on the comma screen
+                   1),                                                  # gray: Blendful on, not blending
+
     "DAW_ICON": 0,  # hidden: no coffee cup, openpilot handles driver monitoring
 
     "LKA_ICON": ((4 if blink_fast else 0) if hud.leftLaneDepart or hud.rightLaneDepart else  # green fast blink: lane departure warning
