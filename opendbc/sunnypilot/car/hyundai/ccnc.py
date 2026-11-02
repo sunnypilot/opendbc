@@ -7,7 +7,7 @@ def create_ccnc_mdps(packer, CAN, mdps):
 
 
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, lead_distance,
-                is_metric, out, main_cruise_enabled, lfa_icon):
+                is_metric, out, main_cruise_enabled, lat_active, lkas_icon, lfa_icon):
   # consider taking a break, with its chime
   if msg_161["ALERTS_2"] == 5:
     msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
@@ -26,13 +26,13 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
   msg_161.update({
     "DAW_ICON": 0,
-    "LKA_ICON": 0,
-    "LFA_ICON": 2 if lfa_icon else 0,
-    "CENTERLINE": 1 if lfa_icon else 0,
-    "LANELINE_LEFT": (0 if not lfa_icon else 1 if not hud.leftLaneVisible else 4 if hud.leftLaneDepart else 6 if any_blinker else 2),
-    "LANELINE_RIGHT": (0 if not lfa_icon else 1 if not hud.rightLaneVisible else 4 if hud.rightLaneDepart else 6 if any_blinker else 2),
-    "LCA_LEFT_ICON": (0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.leftBlindspot else 2 if any_blinker else 4),
-    "LCA_RIGHT_ICON": (0 if not lfa_icon or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.rightBlindspot else 2 if any_blinker else 4),
+    "LKA_ICON": lkas_icon,
+    "LFA_ICON": lfa_icon,
+    "CENTERLINE": 1 if lat_active else 0,
+    "LANELINE_LEFT": (0 if not lat_active else 1 if not hud.leftLaneVisible else 4 if hud.leftLaneDepart else 6 if any_blinker else 2),
+    "LANELINE_RIGHT": (0 if not lat_active else 1 if not hud.rightLaneVisible else 4 if hud.rightLaneDepart else 6 if any_blinker else 2),
+    "LCA_LEFT_ICON": (0 if not lat_active or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.leftBlindspot else 2 if any_blinker else 4),
+    "LCA_RIGHT_ICON": (0 if not lat_active or out.vEgo < LANE_CHANGE_SPEED_MIN else 1 if out.rightBlindspot else 2 if any_blinker else 4),
     "LCA_LEFT_ARROW": 2 if left_blinker else 0,
     "LCA_RIGHT_ARROW": 2 if right_blinker else 0,
   })
@@ -62,9 +62,10 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
       "DISTANCE_SPACING": 0 if not main_cruise_enabled else 1 if enabled else 3,
       "DISTANCE_LEAD": 0 if not main_cruise_enabled else 2 if enabled and hud.leadVisible else 1 if hud.leadVisible else 0,
       "DISTANCE_CAR": 0 if not main_cruise_enabled else 2 if enabled else 1,
-      "SLA_ICON": 0,
-      "NAV_ICON": 0,
+      "SLA_ICON": 0, # TODO-SP: match with sp
+      "NAV_ICON": 0, # TODO-SP: match with sp
       "TARGET": 0,
+      "ALERTS_3": 6 + hud.leadDistanceBars,
     })
 
     msg_162["LEAD"] = (2 if enabled else 1) if main_cruise_enabled and hud.leadVisible else 0
