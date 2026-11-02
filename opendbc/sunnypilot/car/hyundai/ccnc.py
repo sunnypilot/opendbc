@@ -26,8 +26,9 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
   msg_161.update({
     "DAW_ICON": 0,
-    "LKA_ICON": lkas_icon,
-    "LFA_ICON": lfa_icon,
+    # old 0 hidden, 1 grey/white, 2 green, 3 flashing green; 161 has no flashing
+    "LKA_ICON": (0, 3, 4, 3)[lkas_icon],
+    "LFA_ICON": (0, 3, 2, 3)[lfa_icon],
     "CENTERLINE": 1 if lat_active else 0,
     "LANELINE_LEFT": (0 if not lat_active else 1 if not hud.leftLaneVisible else 4 if hud.leftLaneDepart else 6 if any_blinker else 2),
     "LANELINE_RIGHT": (0 if not lat_active else 1 if not hud.rightLaneVisible else 4 if hud.rightLaneDepart else 6 if any_blinker else 2),
