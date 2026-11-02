@@ -26,43 +26,43 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
   # openpilot driver monitoring alert in the stock HDP style
   if dm.alertLevel == 3:
-    msg_161["ALERTS_2"] = 9                                  # take control of the vehicle immediately
+    msg_161["ALERTS_2"] = 9  # take control of the vehicle immediately
   elif dm.alertLevel > 0:
-    msg_161["ALERTS_2"] = (12 if dm.visionPolicy else        # keep your eyes on the road, driver camera sees the face
-                           1 if dm.alertLevel == 1 else      # keep hands on steering wheel, no face seen
-                           2)                                # keep hands on steering wheel in red, no face seen
+    msg_161["ALERTS_2"] = (12 if dm.visionPolicy else    # keep your eyes on the road, driver camera sees the face
+                           1 if dm.alertLevel == 1 else  # keep hands on steering wheel, no face seen
+                           2)                            # keep hands on steering wheel in red, no face seen
 
-  LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS  # below this lane change assist is in standby
+  LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS  # openpilot lane change minimum speed
   FOLLOW_TIME = (1.25, 1.45, 1.75)           # openpilot follow time in seconds for distance bars 1-3
 
   blink = frame % 100 < 60      # stock blink for most icons: 0.6 s on, 0.4 s off
-  blink_fast = frame % 50 < 30  # stock LFA disengage blink: 0.3 s on, 0.2 s off
+  blink_fast = frame % 50 < 30  # stock LFA disengage and LKA departure blink: 0.3 s on, 0.2 s off
   override = out.gasPressed     # driver on the gas while engaged, icons blink
 
-  lane_change_standby = out.vEgo < LANE_CHANGE_SPEED_MIN
-  # lane change in progress: blinker on, lane change assist ready, and that side's blind spot is clear
-  changing_left = lat_active and enabled and not lane_change_standby and left_blinker and not out.leftBlindspot
-  changing_right = lat_active and enabled and not lane_change_standby and right_blinker and not out.rightBlindspot
+  # lane change ready like openpilot: steering and above the minimum speed
+  lca_ready = lat_active and out.vEgo >= LANE_CHANGE_SPEED_MIN
+  # lane change in progress: ready, blinker on, and that side's blind spot is clear
+  changing_left = lca_ready and left_blinker and not out.leftBlindspot
+  changing_right = lca_ready and right_blinker and not out.rightBlindspot
   changing = changing_left or changing_right
-  # lane change assist ready: steering, SCC on, and above 20 mph
-  lca_ready = main_cruise_enabled and lat_active and enabled and not lane_change_standby
   # lane change assist icon, stock sends the same value to both sides
-  lca_icon = (0 if not (main_cruise_enabled and lat_active) else  # hidden: cruise main off or not steering
-              1 if not lca_ready else                             # gray: standby, SCC canceled or below 20 mph
-              (2 if blink else 0) if changing else                # green blinking: changing lanes
-              2)                                                  # green: ready
+  lca_icon = (0 if not (main_cruise_enabled or lat_active) else  # hidden: cruise main off and not steering
+              1 if not lca_ready else                            # gray: standby, not steering or below 20 mph
+              (2 if blink else 0) if changing else               # green blinking: changing lanes
+              2)                                                 # green: ready
 
   msg_161.update({
     "DAW_ICON": 0,  # hidden: no coffee cup, openpilot handles driver monitoring
 
-    "LKA_ICON": (0, 3, 4, 3)[lkas_icon],  # MADS 0 hidden, 1 available = 3 gray, 2 steering = 4 green, 3 disengaging = 3 gray
+    "LKA_ICON": ((4 if blink_fast else 0) if hud.leftLaneDepart or hud.rightLaneDepart else  # green fast blink: lane departure warning
+                 (0, 3, 4, 3)[lkas_icon]),                                                   # 3 gray: available or disengaging, 4 green: steering
 
     "LFA_ICON": (0, 1, 2, 3 if blink_fast else 0)[lfa_icon],  # 0 hidden, 1 gray standby, 2 green steering, 3/0 white fast blink on disengage
 
-    "HDA_ICON": (0 if not (main_cruise_enabled and lat_active) else  # hidden: cruise main off or not steering
-                 1 if not enabled else                               # gray: SCC canceled, steering still on
-                 (3 if blink else 0) if override else                # white blinking: gas override
-                 2),                                                 # green: SCC and steering both on
+    "HDA_ICON": (0 if not main_cruise_enabled else     # hidden: cruise main off
+                 1 if not enabled else                 # gray: SCC canceled
+                 (3 if blink else 0) if override else  # white blinking: gas override
+                 2),                                   # green: SCC on, steering paused keeps it green like stock
 
     "CENTERLINE": 1 if lat_active else 0,  # green center path while steering, hidden otherwise
 
@@ -143,8 +143,8 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
                            1),                                   # blue: SCC on
 
       "DISTANCE_LEAD": (0 if not main_cruise_enabled or not hud.leadVisible else  # hidden: cruise main off or no lead
-                        2 if enabled else                                         # white: lead followed by SCC
-                        1),                                                       # gray: lead seen, SCC canceled
+                        2 if enabled and CC_SP.leadFollowing else                 # white: SCC is following this lead
+                        1),                                                       # gray: lead seen, cruising at set speed or SCC canceled
 
       "DISTANCE_CAR": 0 if not main_cruise_enabled else 2 if enabled else 1,  # own car in gap graphic: white SCC on, gray canceled
 
@@ -163,8 +163,8 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
       "TARGET_DISTANCE": target_gap if scc_on else 204.6,  # target gap in m, 204.6 when off
     })
 
-    msg_162["LEAD"] = (2 if enabled else 1) if main_cruise_enabled and hud.leadVisible else 0  # lead box: white followed, gray seen
-    msg_162["LEAD_DISTANCE"] = lead_distance                                                   # lead distance in m
+    msg_162["LEAD"] = (2 if enabled and CC_SP.leadFollowing else 1) if main_cruise_enabled and hud.leadVisible else 0  # lead box: white followed, gray seen
+    msg_162["LEAD_DISTANCE"] = lead_distance                                                                           # lead distance in m
 
   # stock long: show ICBM set speed changes, otherwise keep the stock icon (vTarget is in cluster units)
   elif icbm.state in ("preActive", "increasing", "decreasing"):
