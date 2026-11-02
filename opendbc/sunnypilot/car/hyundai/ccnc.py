@@ -5,6 +5,7 @@ from opendbc.car.common.conversions import Conversions as CV
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS  # keep in sync with openpilot desire_helper.LANE_CHANGE_SPEED_MIN
 LANE_POSITION_GAIN = 12                    # stock LANELINE_*_POSITION steps per m of lane offset
 LANE_HALF_WIDTH = 1.75                     # m, lane center from a single line
+DISTANCE_HOLD_TIME = 0.2                   # s, a new distance setting has to hold this long before it shows, hides openpilot's brief flip-back
 SLA_CONFIRMED_SHOW_TIME = 2.0              # s, the green speed limit arrow shows this long after confirming, then hides
 LANE_CROSS_JUMP = 1.0                      # m, the camera lane offset jumps about 2 m when it relabels the lanes at the crossing
 
@@ -13,6 +14,9 @@ lane_change_progress = {"crossed": False, "offset": None}
 
 # remembered across calls: whether speed limit assist was active last time, and the frame it became active
 sla_progress = {"active": False, "frame": 0}
+
+# remembered across calls: the distance bars shown, and a new value waiting to hold long enough
+distance_progress = {"shown": None, "pending": None, "frame": 0}
 
 
 def create_ccnc_mdps(packer, CAN, mdps):
@@ -52,6 +56,15 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
   blink = frame % 100 < 60      # stock blink for most icons: 0.6 s on, 0.4 s off
   blink_fast = frame % 50 < 30  # stock LFA disengage and LKA departure blink: 0.3 s on, 0.2 s off
   override = out.gasPressed     # driver on the gas while engaged, icons blink
+
+  # distance bars with a hold-off: openpilot can flip the distance setting back for up to 0.1 s right after the button press
+  if distance_progress["shown"] is None or hud.leadDistanceBars == distance_progress["shown"]:
+    distance_progress.update(shown=hud.leadDistanceBars, pending=None)
+  elif hud.leadDistanceBars != distance_progress["pending"]:
+    distance_progress.update(pending=hud.leadDistanceBars, frame=frame)
+  elif (frame - distance_progress["frame"]) * DT_CTRL >= DISTANCE_HOLD_TIME:
+    distance_progress.update(shown=hud.leadDistanceBars, pending=None)
+  distance_bars = distance_progress["shown"]
 
   # lane change ready like openpilot: steering and above the minimum speed
   lca_ready = lat_active and out.vEgo >= LANE_CHANGE_SPEED_MIN
@@ -169,7 +182,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     # the camera still pops up the distance on the distance button (7-10 distance 1-4, 11-14 with driving style)
     # keep its timing but show the openpilot distance, 7-9 distance 1-3
     if 7 <= msg_161["ALERTS_3"] <= 14:
-      msg_161["ALERTS_3"] = 6 + hud.leadDistanceBars
+      msg_161["ALERTS_3"] = 6 + distance_bars
 
     # smart cruise conditions not met
     if msg_161["ALERTS_5"] == 4:
@@ -210,7 +223,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
       "SETSPEED_SPEED": 255 if not main_cruise_enabled else set_speed,  # set speed, 255 blank when cruise main off
 
-      "DISTANCE": hud.leadDistanceBars if main_cruise_enabled else 0,  # distance bars 1-3, hidden when cruise main off
+      "DISTANCE": distance_bars if main_cruise_enabled else 0,  # distance bars 1-3, hidden when cruise main off
 
       # gap graphic: blue is normal distance (popups 7-10), white is SCC machine learning "Based on Driving Style" (popups 11-14)
       # openpilot has no driving style mode, so always blue
