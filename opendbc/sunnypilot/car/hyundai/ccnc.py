@@ -3,7 +3,6 @@ from opendbc.car.common.conversions import Conversions as CV
 
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS  # keep in sync with openpilot desire_helper.LANE_CHANGE_SPEED_MIN
 FOLLOW_TIME = (1.25, 1.45, 1.75)           # keep in sync with openpilot long_mpc.get_T_FOLLOW, seconds for distance bars 1-3
-LANE_CURVATURE_STEP = 0.00026              # 1/m per stock LANELINE_CURVATURE step
 LANE_POSITION_GAIN = 12                    # stock LANELINE_*_POSITION steps per m of lane offset
 LANE_HALF_WIDTH = 1.75                     # m, lane center from a single line
 LANE_CROSS_JUMP = 1.0                      # m, the camera lane offset jumps about 2 m when it relabels the lanes at the crossing
@@ -61,12 +60,6 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
   # lane lines from the camera (0x1b5), quality 2/3 means the line is tracked
   left_ok = msg_1b5.get("Info_LftLnQualSta", 0) in (2, 3)
   right_ok = msg_1b5.get("Info_RtLnQualSta", 0) in (2, 3)
-  lane_curvatures = [msg_1b5[k] for k, ok in (("Info_LftLnCvtrVal", left_ok), ("Info_RtLnCvtrVal", right_ok)) if ok]
-  lane_curvature = sum(lane_curvatures) / len(lane_curvatures) if lane_curvatures else 0.
-
-  # stock raw curvature: 0 straight, 1-14 curving left, 16-30 curving right (15 + steps)
-  curvature_steps = min(int(abs(lane_curvature) / LANE_CURVATURE_STEP), 14 if lane_curvature < 0 else 15)
-  curvature_raw = 0 if not lat_active or curvature_steps == 0 else curvature_steps if lane_curvature < 0 else 15 + curvature_steps
 
   # stock lines stay centered (15) and slide with the lane offset during a lane change, left + right = 30
   # openpilot has no laneChangeFinishing anymore, the whole lane change is laneChangeStarting
@@ -129,11 +122,6 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
                        (6 if blink else 2) if changing else            # green/white blinking: changing lanes, both lines blink
                        6 if lca_ready and not out.rightBlindspot else  # green: lane change possible to this side
                        2),                                             # white: lane change not possible to this side
-
-    # DBC mismatch (changes the bits): defined signed with offset 15 but stock sends a raw 5 bit value, so pass the value that packs to that raw
-    # current:   SG_ LANELINE_CURVATURE : 100|5@1- (1,15) [0|31] "" XXX
-    # corrected: SG_ LANELINE_CURVATURE : 100|5@1+ (1,0) [0|31] "" XXX
-    "LANELINE_CURVATURE": (curvature_raw - 32 if curvature_raw >= 16 else curvature_raw) + 15,
 
     # DBC mismatch (cosmetic): stock sends 0-30 on both, the max is 15 and 3 instead of the full 6 bits
     # current:   SG_ LANELINE_LEFT_POSITION : 84|6@1+ (1,0) [0|15] "" XXX
