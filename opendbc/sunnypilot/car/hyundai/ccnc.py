@@ -3,7 +3,6 @@ from opendbc.car.common.conversions import Conversions as CV
 
 
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS  # keep in sync with openpilot desire_helper.LANE_CHANGE_SPEED_MIN
-FOLLOW_TIME = (1.25, 1.45, 1.75)           # keep in sync with openpilot long_mpc.get_T_FOLLOW, seconds for distance bars 1-3
 LANE_POSITION_GAIN = 12                    # stock LANELINE_*_POSITION steps per m of lane offset
 LANE_HALF_WIDTH = 1.75                     # m, lane center from a single line
 SLA_CONFIRMED_SHOW_TIME = 2.0              # s, the green speed limit arrow shows this long after confirming, then hides
@@ -198,9 +197,6 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     sla_progress["active"] = sla_active
     sla_confirmed_recently = sla_active and (frame - sla_progress["frame"]) * DT_CTRL < SLA_CONFIRMED_SHOW_TIME
 
-    # target gap in m: speed times the openpilot follow time for the distance bars
-    target_gap = out.vEgo * FOLLOW_TIME[min(max(hud.leadDistanceBars, 1), 3) - 1]
-
     msg_161.update({
       "SETSPEED": (0 if not main_cruise_enabled else     # hidden: cruise main off
                    1 if not enabled else                 # gray: SCC canceled
@@ -241,9 +237,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
                    2 if {"enabled", "leaving"} & scc_states else                     # green: ready
                    0),                                                               # hidden: vision and map SCC off
 
-      "TARGET": 0 if not scc_on else (1 if blink else 0) if override else 1,  # target gap marker, same as DISTANCE_SPACING
-
-      "TARGET_DISTANCE": target_gap if scc_on else 204.6,  # target gap in m, 204.6 when off
+      "TARGET": 0,  # hidden: target gap marker, openpilot doesn't hold a fixed gap like stock SCC
     })
 
     msg_162["LEAD"] = (2 if enabled and lead_following else 1) if main_cruise_enabled and hud.leadVisible else 0  # lead box: white followed, gray seen
