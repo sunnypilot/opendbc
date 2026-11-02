@@ -82,6 +82,9 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
               2)                                                 # green: ready
 
   msg_161.update({
+    # DBC mismatch (cosmetic): the max is 3 but 4 green is used
+    # current:   SG_ LKA_ICON : 30|3@1+ (1,0) [0|3] "" XXX
+    # corrected: SG_ LKA_ICON : 30|3@1+ (1,0) [0|7] "" XXX
     "LKA_ICON": ((4 if blink_fast else 0) if hud.leftLaneDepart or hud.rightLaneDepart else  # green fast blink: lane departure warning
                  (0, 3, 4, 3)[lkas_icon]),                                                   # 3 gray: available or disengaging, 4 green: steering
 
@@ -112,12 +115,16 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
                        6 if lca_ready and not out.rightBlindspot else  # green: lane change possible to this side
                        2),                                             # white: lane change not possible to this side
 
-    # DBC mismatch: LANELINE_CURVATURE is defined signed with offset 15 but stock sends a raw 5 bit value, so pass the value that packs to that raw
+    # DBC mismatch (changes the bits): defined signed with offset 15 but stock sends a raw 5 bit value, so pass the value that packs to that raw
+    # current:   SG_ LANELINE_CURVATURE : 100|5@1- (1,15) [0|31] "" XXX
     # corrected: SG_ LANELINE_CURVATURE : 100|5@1+ (1,0) [0|31] "" XXX
     "LANELINE_CURVATURE": (curvature_raw - 32 if curvature_raw >= 16 else curvature_raw) + 15,
 
-    # DBC mismatch: positions are 0-30, the DBC ranges say [0|15] and [0|3]
-    # corrected: SG_ LANELINE_LEFT_POSITION : 84|6@1+ (1,0) [0|30] "" XXX  and  SG_ LANELINE_RIGHT_POSITION : 94|6@1+ (1,0) [0|30] "" XXX
+    # DBC mismatch (cosmetic): stock sends 0-30 on both, the max is 15 and 3 instead of the full 6 bits
+    # current:   SG_ LANELINE_LEFT_POSITION : 84|6@1+ (1,0) [0|15] "" XXX
+    # corrected: SG_ LANELINE_LEFT_POSITION : 84|6@1+ (1,0) [0|63] "" XXX
+    # current:   SG_ LANELINE_RIGHT_POSITION : 94|6@1+ (1,0) [0|3] "" XXX
+    # corrected: SG_ LANELINE_RIGHT_POSITION : 94|6@1+ (1,0) [0|63] "" XXX
     "LANELINE_LEFT_POSITION": left_position,  # 15 centered, slides toward 0 moving left and 30 moving right
 
     "LANELINE_RIGHT_POSITION": 30 - left_position,  # mirror of the left position
@@ -126,6 +133,11 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
     "LCA_RIGHT_ICON": lca_icon,  # lane change assist icon, same as left
 
+    # DBC mismatch (cosmetic): the value table says 1 is visible, stock sends 2
+    # current:   VAL_ 353 LCA_LEFT_ARROW 0 "HIDDEN" 1 "VISIBLE";
+    # corrected: VAL_ 353 LCA_LEFT_ARROW 0 "HIDDEN" 2 "VISIBLE";
+    # current:   VAL_ 353 LCA_RIGHT_ARROW 0 "HIDDEN" 1 "VISIBLE";
+    # corrected: VAL_ 353 LCA_RIGHT_ARROW 0 "HIDDEN" 2 "VISIBLE";
     "LCA_LEFT_ARROW": 2 if changing_left else 0,  # left arrow only while changing lanes left
 
     "LCA_RIGHT_ARROW": 2 if changing_right else 0,  # right arrow only while changing lanes right
@@ -145,6 +157,9 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     if msg_161["ALERTS_3"] in (1, 2, 3, 4):
       msg_161["ALERTS_3"] = 0
 
+    # DBC mismatch (cosmetic): the max is 15 but stock sends up to 28, and 11-14 (driving style distance 1-4) have no labels
+    # current:   SG_ ALERTS_3 : 139|5@1+ (1,0) [0|15] "" XXX
+    # corrected: SG_ ALERTS_3 : 139|5@1+ (1,0) [0|31] "" XXX
     # the camera still pops up the distance on the distance button (7-10 distance 1-4, 11-14 with driving style)
     # keep its timing but show the openpilot distance, 7-9 distance 1-3
     if 7 <= msg_161["ALERTS_3"] <= 14:
@@ -203,6 +218,9 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
                    3 if sl.assistState == "active" else                                     # green up: holding the limit
                    0),                                                                      # hidden: speed limit assist off or inactive
 
+      # DBC mismatch (cosmetic): the max is 3 but 4 white is used
+      # current:   SG_ NAV_ICON : 220|4@1+ (1,0) [0|3] "" XXX
+      # corrected: SG_ NAV_ICON : 220|4@1+ (1,0) [0|15] "" XXX
       "NAV_ICON": ((2 if blink else 0) if {"entering", "turning"} & scc_states else  # green blinking: slowing for a curve
                    (4 if blink else 0) if "overriding" in scc_states else            # white blinking: gas override
                    2 if {"enabled", "leaving"} & scc_states else                     # green: ready
