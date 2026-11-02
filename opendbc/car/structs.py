@@ -149,7 +149,6 @@ class CarControlSP:
   laneChange: 'CarControlSP.LaneChange' = field(default_factory=lambda: CarControlSP.LaneChange())
   driverMonitoring: 'CarControlSP.DriverMonitoring' = field(default_factory=lambda: CarControlSP.DriverMonitoring())
   leadFollowing: bool = auto_field()
-  blendfulTrust: float = auto_field()
 
   @auto_dataclass
   class SmartCruiseControl:

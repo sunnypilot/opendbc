@@ -85,9 +85,6 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
   lane_change_progress["offset"] = lane_offset if left_ok or right_ok else None
   crossed = lane_change_progress["crossed"]
 
-  # Blendful is centering on the lane lines
-  blending = lat_active and CC_SP.blendfulTrust > 0
-
   # no usable line: stay centered, openpilot still changes lanes
   left_position = min(max(round(15 - LANE_POSITION_GAIN * lane_offset), 0), 30) if lane_changing and (left_ok or right_ok) else 15
 
@@ -153,11 +150,9 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
     "LANE_RIGHT": 1 if lane_changing and lane_change.direction == "right" and not crossed else 0,  # green target lane while moving right
 
-    "LANE_HIGHLIGHT": (1 if lane_changing and crossed else  # green: new lane after crossing the line, until the lane change ends
-                       3 if blending else                   # blue: Blendful centering on the lane lines, like its blue line on the comma screen
-                       0),                                  # hidden
+    "LANE_HIGHLIGHT": 1 if lane_changing and crossed else 0,  # green new lane after crossing the line, until the lane change ends
 
-    "LANE_HIGHLIGHT_DISTANCE": 150 if (lane_changing and crossed) or blending else 0,  # m, stock draws the highlight 150 m long
+    "LANE_HIGHLIGHT_DISTANCE": 150 if lane_changing and crossed else 0,  # m, stock always draws the highlight 150 m long
   })
 
   if hud.leftLaneDepart or hud.rightLaneDepart:
