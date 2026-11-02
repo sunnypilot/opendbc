@@ -160,6 +160,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     # DBC mismatch (cosmetic): the max is 15 but stock sends up to 28, and 11-14 (driving style distance 1-4) have no labels
     # current:   SG_ ALERTS_3 : 139|5@1+ (1,0) [0|15] "" XXX
     # corrected: SG_ ALERTS_3 : 139|5@1+ (1,0) [0|31] "" XXX
+    # missing:   11 "DISTANCE_1_DRIVING_STYLE" 12 "DISTANCE_2_DRIVING_STYLE" 13 "DISTANCE_3_DRIVING_STYLE" 14 "DISTANCE_4_DRIVING_STYLE"
     # the camera still pops up the distance on the distance button (7-10 distance 1-4, 11-14 with driving style)
     # keep its timing but show the openpilot distance, 7-9 distance 1-3
     if 7 <= msg_161["ALERTS_3"] <= 14:
