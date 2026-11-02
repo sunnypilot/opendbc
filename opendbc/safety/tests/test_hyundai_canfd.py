@@ -560,9 +560,9 @@ class TestHyundaiCanfdLKASteeringAltAngle(TestHyundaiCanfdAngleSteering):
 
 class TestHyundaiCanfdLKASteeringAltAngleInterceptor(TestHyundaiCanfdLKASteeringAltAngle):
 
-  TX_MSGS = [[0xCB, 1], [0x1CF, 1], [0x256, 0]]
-  RELAY_MALFUNCTION_ADDRS = {}
-  FWD_BLACKLISTED_ADDRS = {}
+  TX_MSGS = [[0xCB, 1], [0x1CF, 1], [0x256, 0], [0x110, 0]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x110,)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x110]}
 
   STEER_MSG = "LFA_ALT"
   STEER_BUS = 1
@@ -592,10 +592,10 @@ class TestHyundaiCanfdLKASteeringAltAngleInterceptor(TestHyundaiCanfdLKASteering
             0x162: ("CCNC_0x162", 1, {}), 0x110: ("LKAS_ALT", 0, {"LKAS_ANGLE_ACTIVE": 1}), 0x362: ("CAM_0x362", 0, {})}
     interceptor = HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR
     for safety_param, safety_param_sp, allowed in (
-      (self.SAFETY_PARAM, interceptor, {0xCB}),
-      (self.SAFETY_PARAM, interceptor | HyundaiSafetyFlagsSP.CCNC, {0xCB, 0x161, 0x162}),
-      (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor, {0xCB, 0x1A0}),
-      (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor | HyundaiSafetyFlagsSP.CCNC, {0xCB, 0x1A0, 0x161, 0x162}),
+      (self.SAFETY_PARAM, interceptor, {0xCB, 0x110}),
+      (self.SAFETY_PARAM, interceptor | HyundaiSafetyFlagsSP.CCNC, {0xCB, 0x110, 0x161, 0x162}),
+      (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor, {0xCB, 0x110, 0x1A0}),
+      (self.SAFETY_PARAM | HyundaiSafetyFlags.LONG, interceptor | HyundaiSafetyFlagsSP.CCNC, {0xCB, 0x110, 0x1A0, 0x161, 0x162}),
       (self.SAFETY_PARAM, 0, {0x110, 0x362}),
     ):
       self.safety.set_current_safety_param_sp(safety_param_sp)
@@ -603,6 +603,13 @@ class TestHyundaiCanfdLKASteeringAltAngleInterceptor(TestHyundaiCanfdLKASteering
       self.safety.init_tests()
       for addr, (name, bus, values) in msgs.items():
         self.assertEqual(addr in allowed, self._tx(self.packer.make_can_msg_safety(name, bus, values)), (safety_param, safety_param_sp, hex(addr)))
+
+  def test_lkas_alt_standby_only(self):
+    for active, gain, allowed in ((1, 0, True), (0, 0, False), (2, 0, False), (3, 0, False), (1, 0.004, False)):
+      for controls_allowed in (True, False):
+        self.safety.set_controls_allowed(controls_allowed)
+        msg = self.packer.make_can_msg_safety("LKAS_ALT", 0, {"LKAS_ANGLE_ACTIVE": active, "ADAS_ACIAnglTqRedcGainVal": gain, "ADAS_StrAnglReqVal": 90})
+        self.assertEqual(allowed, self._tx(msg), (active, gain, controls_allowed))
 
 
 class TestHyundaiCanfdLKASteeringLongEV(HyundaiLongitudinalBase, TestHyundaiCanfdLKASteeringEV):

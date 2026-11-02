@@ -297,6 +297,7 @@ class CarController(CarControllerBase, EsccCarController, LeadDataCarController,
     # steering control
     if self.interceptor.lfa_alt_steering:
       can_sends.append(self.interceptor.create_lfa_alt(self.packer, self.CAN, apply_steer_req, self.apply_angle_last, apply_torque))
+      can_sends.extend(self.interceptor.create_lkas_alt(self.packer, self.CAN, CC.enabled, self.apply_angle_last))
     else:
       can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.apply_angle_last
                                                              , self.lkas_icon))

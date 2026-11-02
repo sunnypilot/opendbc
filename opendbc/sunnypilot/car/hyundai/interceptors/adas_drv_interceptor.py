@@ -44,6 +44,25 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
     }
     return packer.make_can_msg("LFA_ALT", CAN.ECAN, values)
 
+  def create_lkas_alt(self, packer, CAN, enabled, apply_angle):
+    # our usual LKAS_ALT, never engaged: replaces the camera's copy so the ADAS DRV is never asked to steer
+    if not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT:
+      return []
+    values = {
+      "LKA_OptUsmSta": 0,
+      "LKA_SysIndReq": 2 if enabled else 1,
+      "StrTqReqVal": 0,
+      "LKA_SysWrn": 0,
+      "ActToiSta": 0,
+      "LKA_UsmMod": 0,
+      "LKA_RcgSta": 0,
+      "Damping_Gain": 100,
+      "ADAS_StrAnglReqVal": apply_angle,
+      "LKAS_ANGLE_ACTIVE": 1,
+      "ADAS_ACIAnglTqRedcGainVal": 0,
+    }
+    return [packer.make_can_msg("LKAS_ALT", CAN.ACAN, values)]
+
   def create_adas_drv_intercept_msg(self, packer, CAN):
     values = {
       "REQUESTED_SAFETY_MODE": SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR,
