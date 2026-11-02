@@ -1,6 +1,13 @@
 from opendbc.car.common.conversions import Conversions as CV
 
 
+LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS  # keep in sync with openpilot desire_helper.LANE_CHANGE_SPEED_MIN
+FOLLOW_TIME = (1.25, 1.45, 1.75)           # keep in sync with openpilot long_mpc.get_T_FOLLOW, seconds for distance bars 1-3
+LANE_CURVATURE_STEP = 0.00026              # 1/m per stock LANELINE_CURVATURE step
+LANE_POSITION_GAIN = 12                    # stock LANELINE_*_POSITION steps per m of lane offset
+LANE_HALF_WIDTH = 1.75                     # m, lane center from a single line
+
+
 def create_ccnc_mdps(packer, CAN, mdps):
   # report LKA torque inactive/unavailable so the camera LFA stays in standby
   return packer.make_can_msg("MDPS", CAN.CAM, {**mdps, "MDPS_LkaToiActvSta": 0, "MDPS_LkaToiUnblSta": 1})
@@ -34,12 +41,6 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     msg_161["ALERTS_2"] = (12 if dm.visionPolicy else    # keep your eyes on the road, driver camera sees the face
                            1 if dm.alertLevel == 1 else  # keep hands on steering wheel, no face seen
                            2)                            # keep hands on steering wheel in red, no face seen
-
-  LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS  # openpilot lane change minimum speed
-  FOLLOW_TIME = (1.25, 1.45, 1.75)           # openpilot follow time in seconds for distance bars 1-3
-  LANE_CURVATURE_STEP = 0.00026              # 1/m per stock LANELINE_CURVATURE step
-  LANE_POSITION_GAIN = 12                    # stock LANELINE_*_POSITION steps per m of lane offset
-  LANE_HALF_WIDTH = 1.75                     # m, lane center from a single line
 
   blink = frame % 100 < 60      # stock blink for most icons: 0.6 s on, 0.4 s off
   blink_fast = frame % 50 < 30  # stock LFA disengage and LKA departure blink: 0.3 s on, 0.2 s off
@@ -81,12 +82,6 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
               2)                                                 # green: ready
 
   msg_161.update({
-    "CAR_CIRCLE": (0 if not (lat_active and CC_SP.blendfulEnabled) else  # hidden: Blendful off or not steering
-                   2 if CC_SP.blendfulTrust > 0 else                    # cyan: Blendful centering on the lane lines, like its blue line on the comma screen
-                   1),                                                  # gray: Blendful on, not blending
-
-    "DAW_ICON": 0,  # hidden: no coffee cup, openpilot handles driver monitoring
-
     "LKA_ICON": ((4 if blink_fast else 0) if hud.leftLaneDepart or hud.rightLaneDepart else  # green fast blink: lane departure warning
                  (0, 3, 4, 3)[lkas_icon]),                                                   # 3 gray: available or disengaging, 4 green: steering
 
@@ -97,19 +92,25 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
                  (3 if blink else 0) if override else  # white blinking: gas override
                  2),                                   # green: SCC on, steering paused keeps it green like stock
 
+    "CAR_CIRCLE": (0 if not (lat_active and CC_SP.blendfulEnabled) else  # hidden: Blendful off or not steering
+                   2 if CC_SP.blendfulTrust > 0 else                     # cyan: Blendful centering on the lane lines, like its blue line on the comma screen
+                   1),                                                   # gray: Blendful on, not blending
+
+    "DAW_ICON": 0,  # hidden: no coffee cup, openpilot handles driver monitoring
+
     "CENTERLINE": 1 if lat_active else 0,  # green center path while steering, hidden otherwise
 
     "LANELINE_LEFT": (4 if hud.leftLaneDepart else                   # orange: departing over this line, openpilot only warns while not steering
                       0 if not lat_active else                       # gray: not steering
                       (6 if blink else 2) if changing else           # green/white blinking: changing lanes, both lines blink
                       6 if lca_ready and not out.leftBlindspot else  # green: lane change possible to this side
-                      2),                                            # white: line seen, lane change not possible to this side
+                      2),                                            # white: lane change not possible to this side
 
     "LANELINE_RIGHT": (4 if hud.rightLaneDepart else                   # orange: departing over this line, openpilot only warns while not steering
                        0 if not lat_active else                        # gray: not steering
                        (6 if blink else 2) if changing else            # green/white blinking: changing lanes, both lines blink
                        6 if lca_ready and not out.rightBlindspot else  # green: lane change possible to this side
-                       2),                                             # white: line seen, lane change not possible to this side
+                       2),                                             # white: lane change not possible to this side
 
     # DBC mismatch: LANELINE_CURVATURE is defined signed with offset 15 but stock sends a raw 5 bit value, so pass the value that packs to that raw
     # corrected: SG_ LANELINE_CURVATURE : 100|5@1+ (1,0) [0|31] "" XXX
