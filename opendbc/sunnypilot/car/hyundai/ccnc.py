@@ -6,6 +6,10 @@ FOLLOW_TIME = (1.25, 1.45, 1.75)           # keep in sync with openpilot long_mp
 LANE_CURVATURE_STEP = 0.00026              # 1/m per stock LANELINE_CURVATURE step
 LANE_POSITION_GAIN = 12                    # stock LANELINE_*_POSITION steps per m of lane offset
 LANE_HALF_WIDTH = 1.75                     # m, lane center from a single line
+LANE_CROSS_JUMP = 1.0                      # m, the camera lane offset jumps about 2 m when it relabels the lanes at the crossing
+
+# remembered across calls: whether the current lane change crossed the line yet, and the last lane offset
+lane_change_progress = {"crossed": False, "offset": None}
 
 
 def create_ccnc_mdps(packer, CAN, mdps):
@@ -65,12 +69,23 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
   curvature_raw = 0 if not lat_active or curvature_steps == 0 else curvature_steps if lane_curvature < 0 else 15 + curvature_steps
 
   # stock lines stay centered (15) and slide with the lane offset during a lane change, left + right = 30
-  lane_changing = lane_change.state in ("laneChangeStarting", "laneChangeFinishing")
+  # openpilot has no laneChangeFinishing anymore, the whole lane change is laneChangeStarting
+  lane_changing = lane_change.state == "laneChangeStarting"
 
   # lane offset from both tracked lines, or from one line and half a lane when the camera lost the other
   lane_offset = ((msg_1b5["Info_LftLnPosVal"] + msg_1b5["Info_RtLnPosVal"]) / 2 if left_ok and right_ok else
                  msg_1b5["Info_LftLnPosVal"] + LANE_HALF_WIDTH if left_ok else
                  msg_1b5["Info_RtLnPosVal"] - LANE_HALF_WIDTH if right_ok else 0.)
+
+  # crossed the line: the camera relabels the lanes and the offset jumps to the other side, against the lane change direction
+  prev_offset = lane_change_progress["offset"]
+  jump = lane_offset - prev_offset if prev_offset is not None and (left_ok or right_ok) else 0.
+  if not lane_changing:
+    lane_change_progress["crossed"] = False
+  elif (lane_change.direction == "left" and jump < -LANE_CROSS_JUMP) or (lane_change.direction == "right" and jump > LANE_CROSS_JUMP):
+    lane_change_progress["crossed"] = True
+  lane_change_progress["offset"] = lane_offset if left_ok or right_ok else None
+  crossed = lane_change_progress["crossed"]
 
   # no usable line: stay centered, openpilot still changes lanes
   left_position = min(max(round(15 - LANE_POSITION_GAIN * lane_offset), 0), 30) if lane_changing and (left_ok or right_ok) else 15
@@ -142,11 +157,11 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
     "LCA_RIGHT_ARROW": 2 if changing_right else 0,  # right arrow only while changing lanes right
 
-    "LANE_LEFT": 1 if lane_change.state == "laneChangeStarting" and lane_change.direction == "left" else 0,  # green target lane while moving left
+    "LANE_LEFT": 1 if lane_changing and lane_change.direction == "left" and not crossed else 0,  # green target lane while moving left
 
-    "LANE_RIGHT": 1 if lane_change.state == "laneChangeStarting" and lane_change.direction == "right" else 0,  # green target lane while moving right
+    "LANE_RIGHT": 1 if lane_changing and lane_change.direction == "right" and not crossed else 0,  # green target lane while moving right
 
-    "LANE_HIGHLIGHT": 1 if lane_change.state == "laneChangeFinishing" else 0,  # green new lane after crossing the line
+    "LANE_HIGHLIGHT": 1 if lane_changing and crossed else 0,  # green new lane after crossing the line, until the lane change ends
   })
 
   if hud.leftLaneDepart or hud.rightLaneDepart:
