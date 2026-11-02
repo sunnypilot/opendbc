@@ -6,17 +6,20 @@ def create_ccnc_mdps(packer, CAN, mdps):
   return packer.make_can_msg("MDPS", CAN.CAM, {**mdps, "MDPS_LkaToiActvSta": 0, "MDPS_LkaToiUnblSta": 1})
 
 
-def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, lead_distance,
+def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, msg_1b5, lead_distance,
                 is_metric, out, main_cruise_enabled, lat_active, lkas_icon, lfa_icon, CC_SP, frame):
   # consider taking a break, with its chime
   if msg_161["ALERTS_2"] == 5:
     msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
+
   # drive carefully
   if msg_161["ALERTS_3"] == 17:
     msg_161["ALERTS_3"] = 0
+
   # 2 watch for surrounding vehicles, 5 use switch or pedal to accelerate
   if msg_161["ALERTS_5"] in (2, 5):
     msg_161["ALERTS_5"] = 0
+
   # double chime while LFA icon is hidden or white
   if msg_161["SOUNDS_4"] == 2 and msg_161["LFA_ICON"] in (0, 3):
     msg_161["SOUNDS_4"] = 0
@@ -34,6 +37,9 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
   LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS  # openpilot lane change minimum speed
   FOLLOW_TIME = (1.25, 1.45, 1.75)           # openpilot follow time in seconds for distance bars 1-3
+  LANE_CURVATURE_STEP = 0.00026              # 1/m per stock LANELINE_CURVATURE step
+  LANE_POSITION_GAIN = 12                    # stock LANELINE_*_POSITION steps per m of lane offset
+  LANE_HALF_WIDTH = 1.75                     # m, lane center from a single line
 
   blink = frame % 100 < 60      # stock blink for most icons: 0.6 s on, 0.4 s off
   blink_fast = frame % 50 < 30  # stock LFA disengage and LKA departure blink: 0.3 s on, 0.2 s off
@@ -41,10 +47,33 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
   # lane change ready like openpilot: steering and above the minimum speed
   lca_ready = lat_active and out.vEgo >= LANE_CHANGE_SPEED_MIN
+
   # lane change in progress: ready, blinker on, and that side's blind spot is clear
   changing_left = lca_ready and left_blinker and not out.leftBlindspot
   changing_right = lca_ready and right_blinker and not out.rightBlindspot
   changing = changing_left or changing_right
+
+  # lane lines from the camera (0x1b5), quality 2/3 means the line is tracked
+  left_ok = msg_1b5.get("Info_LftLnQualSta", 0) in (2, 3)
+  right_ok = msg_1b5.get("Info_RtLnQualSta", 0) in (2, 3)
+  lane_curvatures = [msg_1b5[k] for k, ok in (("Info_LftLnCvtrVal", left_ok), ("Info_RtLnCvtrVal", right_ok)) if ok]
+  lane_curvature = sum(lane_curvatures) / len(lane_curvatures) if lane_curvatures else 0.
+
+  # stock raw curvature: 0 straight, 1-14 curving left, 16-30 curving right (15 + steps)
+  curvature_steps = min(int(abs(lane_curvature) / LANE_CURVATURE_STEP), 14 if lane_curvature < 0 else 15)
+  curvature_raw = 0 if not lat_active or curvature_steps == 0 else curvature_steps if lane_curvature < 0 else 15 + curvature_steps
+
+  # stock lines stay centered (15) and slide with the lane offset during a lane change, left + right = 30
+  lane_changing = lane_change.state in ("laneChangeStarting", "laneChangeFinishing")
+
+  # lane offset from both tracked lines, or from one line and half a lane when the camera lost the other
+  lane_offset = ((msg_1b5["Info_LftLnPosVal"] + msg_1b5["Info_RtLnPosVal"]) / 2 if left_ok and right_ok else
+                 msg_1b5["Info_LftLnPosVal"] + LANE_HALF_WIDTH if left_ok else
+                 msg_1b5["Info_RtLnPosVal"] - LANE_HALF_WIDTH if right_ok else 0.)
+
+  # no usable line: stay centered, openpilot still changes lanes
+  left_position = min(max(round(15 - LANE_POSITION_GAIN * lane_offset), 0), 30) if lane_changing and (left_ok or right_ok) else 15
+
   # lane change assist icon, stock sends the same value to both sides
   lca_icon = (0 if not (main_cruise_enabled or lat_active) else  # hidden: cruise main off and not steering
               1 if not lca_ready else                            # gray: standby, not steering or below 20 mph
@@ -78,6 +107,16 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
                        6 if lca_ready and not out.rightBlindspot else  # green: lane change possible to this side
                        2),                                             # white: line seen, lane change not possible to this side
 
+    # DBC mismatch: LANELINE_CURVATURE is defined signed with offset 15 but stock sends a raw 5 bit value, so pass the value that packs to that raw
+    # corrected: SG_ LANELINE_CURVATURE : 100|5@1+ (1,0) [0|31] "" XXX
+    "LANELINE_CURVATURE": (curvature_raw - 32 if curvature_raw >= 16 else curvature_raw) + 15,
+
+    # DBC mismatch: positions are 0-30, the DBC ranges say [0|15] and [0|3]
+    # corrected: SG_ LANELINE_LEFT_POSITION : 84|6@1+ (1,0) [0|30] "" XXX  and  SG_ LANELINE_RIGHT_POSITION : 94|6@1+ (1,0) [0|30] "" XXX
+    "LANELINE_LEFT_POSITION": left_position,  # 15 centered, slides toward 0 moving left and 30 moving right
+
+    "LANELINE_RIGHT_POSITION": 30 - left_position,  # mirror of the left position
+
     "LCA_LEFT_ICON": lca_icon,  # lane change assist icon, same as right
 
     "LCA_RIGHT_ICON": lca_icon,  # lane change assist icon, same as left
@@ -100,24 +139,30 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     # 1/3 adjusting to speed limit, 2/4 set speed changed
     if msg_161["ALERTS_3"] in (1, 2, 3, 4):
       msg_161["ALERTS_3"] = 0
+
     # the camera still pops up the distance on the distance button (7-10 distance 1-4, 11-14 with driving style)
     # keep its timing but show the openpilot distance, 7-9 distance 1-3
     if 7 <= msg_161["ALERTS_3"] <= 14:
       msg_161["ALERTS_3"] = 6 + hud.leadDistanceBars
+
     # smart cruise conditions not met
     if msg_161["ALERTS_5"] == 4:
       msg_161["ALERTS_5"] = 0
+
     # single chime
     if msg_161["SOUNDS_3"] == 5:
       msg_161["SOUNDS_3"] = 0
 
     scc_on = main_cruise_enabled and enabled
     scc_states = {scc.visionState, scc.mapState}
+
     # set speed in cluster units, above the cluster max (145 km/h, 90 mph) shows the minimum
     set_speed = round(out.vCruiseCluster * (1 if is_metric else CV.KPH_TO_MPH))
     set_speed = (40 if is_metric else 25) if set_speed > (145 if is_metric else 90) else set_speed
+
     # speed limit at or above the set speed, SLA arrow points up
     sla_up = round(sl.speedLimitFinalLast * CV.MS_TO_KPH) >= round(out.vCruiseCluster)
+
     # target gap in m: speed times the openpilot follow time for the distance bars
     target_gap = out.vEgo * FOLLOW_TIME[min(max(hud.leadDistanceBars, 1), 3) - 1]
 
