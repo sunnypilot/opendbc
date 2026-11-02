@@ -7,7 +7,7 @@ def create_ccnc_mdps(packer, CAN, mdps):
 
 
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, lead_distance,
-                is_metric, out, main_cruise_enabled, lat_active, lkas_icon, lfa_icon, scc, sl, icbm, frame):
+                is_metric, out, main_cruise_enabled, lat_active, lkas_icon, lfa_icon, CC_SP, frame):
   # consider taking a break, with its chime
   if msg_161["ALERTS_2"] == 5:
     msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
@@ -20,6 +20,8 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
   # double chime while LFA icon is hidden or white
   if msg_161["SOUNDS_4"] == 2 and msg_161["LFA_ICON"] in (0, 3):
     msg_161["SOUNDS_4"] = 0
+
+  scc, sl, icbm, lane_change = CC_SP.smartCruiseControl, CC_SP.speedLimit, CC_SP.intelligentCruiseButtonManagement, CC_SP.laneChange
 
   LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS  # below this lane change assist is in standby
   FOLLOW_TIME = (1.25, 1.45, 1.75)           # openpilot follow time in seconds for distance bars 1-3
@@ -74,6 +76,12 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     "LCA_LEFT_ARROW": 2 if changing_left else 0,  # left arrow only while changing lanes left
 
     "LCA_RIGHT_ARROW": 2 if changing_right else 0,  # right arrow only while changing lanes right
+
+    "LANE_LEFT": 1 if lane_change.state == "laneChangeStarting" and lane_change.direction == "left" else 0,  # green target lane while moving left
+
+    "LANE_RIGHT": 1 if lane_change.state == "laneChangeStarting" and lane_change.direction == "right" else 0,  # green target lane while moving right
+
+    "LANE_HIGHLIGHT": 1 if lane_change.state == "laneChangeFinishing" else 0,  # green new lane after crossing the line
   })
 
   if hud.leftLaneDepart or hud.rightLaneDepart:

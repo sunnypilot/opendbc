@@ -146,6 +146,7 @@ class CarControlSP:
   intelligentCruiseButtonManagement: 'IntelligentCruiseButtonManagement' = field(default_factory=lambda: IntelligentCruiseButtonManagement())
   smartCruiseControl: 'CarControlSP.SmartCruiseControl' = field(default_factory=lambda: CarControlSP.SmartCruiseControl())
   speedLimit: 'CarControlSP.SpeedLimit' = field(default_factory=lambda: CarControlSP.SpeedLimit())
+  laneChange: 'CarControlSP.LaneChange' = field(default_factory=lambda: CarControlSP.LaneChange())
 
   @auto_dataclass
   class SmartCruiseControl:
@@ -184,6 +185,22 @@ class CarControlSP:
       pending = auto()
       adapting = auto()
       active = auto()
+
+  @auto_dataclass
+  class LaneChange:
+    state: 'CarControlSP.LaneChange.State' = field(default_factory=lambda: CarControlSP.LaneChange.State.off)
+    direction: 'CarControlSP.LaneChange.Direction' = field(default_factory=lambda: CarControlSP.LaneChange.Direction.none)
+
+    class State(StrEnum):
+      off = auto()
+      preLaneChange = auto()
+      laneChangeStarting = auto()
+      laneChangeFinishing = auto()
+
+    class Direction(StrEnum):
+      none = auto()
+      left = auto()
+      right = auto()
 
   @auto_dataclass
   class Param:
