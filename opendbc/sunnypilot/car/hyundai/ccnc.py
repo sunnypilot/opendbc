@@ -7,7 +7,7 @@ def create_ccnc_mdps(packer, CAN, mdps):
 
 
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_blinker, right_blinker, msg_161, msg_162, lead_distance,
-                is_metric, out, main_cruise_enabled, lat_active, lkas_icon, lfa_icon, scc, sl):
+                is_metric, out, main_cruise_enabled, lat_active, lkas_icon, lfa_icon, scc, sl, icbm):
   # consider taking a break, with its chime
   if msg_161["ALERTS_2"] == 5:
     msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
@@ -74,5 +74,10 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
     msg_162["LEAD"] = (2 if enabled else 1) if main_cruise_enabled and hud.leadVisible else 0
     msg_162["LEAD_DISTANCE"] = lead_distance
+
+  # stock long: show ICBM set speed changes, otherwise keep the stock icon (vTarget is in cluster units)
+  elif icbm.state in ("preActive", "increasing", "decreasing"):
+    msg_161["SLA_ICON"] = (3 if icbm.state == "increasing" else 4 if icbm.state == "decreasing" else
+                           1 if icbm.vTarget >= round(out.vCruiseCluster * (1 if is_metric else CV.KPH_TO_MPH)) else 2)
 
   return [packer.make_can_msg(msg, CAN.ECAN, data) for msg, data in [("CCNC_0x161", msg_161), ("CCNC_0x162", msg_162)]]
