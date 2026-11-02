@@ -22,6 +22,15 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     msg_161["SOUNDS_4"] = 0
 
   scc, sl, icbm, lane_change = CC_SP.smartCruiseControl, CC_SP.speedLimit, CC_SP.intelligentCruiseButtonManagement, CC_SP.laneChange
+  dm = CC_SP.driverMonitoring
+
+  # openpilot driver monitoring alert in the stock HDP style
+  if dm.alertLevel == 3:
+    msg_161["ALERTS_2"] = 9                                  # take control of the vehicle immediately
+  elif dm.alertLevel > 0:
+    msg_161["ALERTS_2"] = (12 if dm.visionPolicy else        # keep your eyes on the road, driver camera sees the face
+                           1 if dm.alertLevel == 1 else      # keep hands on steering wheel, no face seen
+                           2)                                # keep hands on steering wheel in red, no face seen
 
   LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS  # below this lane change assist is in standby
   FOLLOW_TIME = (1.25, 1.45, 1.75)           # openpilot follow time in seconds for distance bars 1-3

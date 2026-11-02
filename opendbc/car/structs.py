@@ -147,6 +147,7 @@ class CarControlSP:
   smartCruiseControl: 'CarControlSP.SmartCruiseControl' = field(default_factory=lambda: CarControlSP.SmartCruiseControl())
   speedLimit: 'CarControlSP.SpeedLimit' = field(default_factory=lambda: CarControlSP.SpeedLimit())
   laneChange: 'CarControlSP.LaneChange' = field(default_factory=lambda: CarControlSP.LaneChange())
+  driverMonitoring: 'CarControlSP.DriverMonitoring' = field(default_factory=lambda: CarControlSP.DriverMonitoring())
 
   @auto_dataclass
   class SmartCruiseControl:
@@ -185,6 +186,11 @@ class CarControlSP:
       pending = auto()
       adapting = auto()
       active = auto()
+
+  @auto_dataclass
+  class DriverMonitoring:
+    alertLevel: int = auto_field()
+    visionPolicy: bool = auto_field()
 
   @auto_dataclass
   class LaneChange:
