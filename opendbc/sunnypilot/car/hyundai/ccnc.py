@@ -26,19 +26,20 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
   blink = frame % 100 < 60      # stock blink for most icons: 0.6 s on, 0.4 s off
   blink_fast = frame % 50 < 30  # stock LFA disengage blink: 0.3 s on, 0.2 s off
-  override = out.gasPressed  # driver on the gas while engaged, icons blink
+  override = out.gasPressed     # driver on the gas while engaged, icons blink
 
   lane_change_standby = out.vEgo < LANE_CHANGE_SPEED_MIN
   # lane change in progress: blinker on, lane change assist ready, and that side's blind spot is clear
   changing_left = lat_active and enabled and not lane_change_standby and left_blinker and not out.leftBlindspot
   changing_right = lat_active and enabled and not lane_change_standby and right_blinker and not out.rightBlindspot
+  changing = changing_left or changing_right
   # lane change assist ready: steering, SCC on, and above 20 mph
   lca_ready = main_cruise_enabled and lat_active and enabled and not lane_change_standby
   # lane change assist icon, stock sends the same value to both sides
-  lca_icon = (0 if not (main_cruise_enabled and lat_active) else           # hidden: cruise main off or not steering
-              1 if not lca_ready else                                      # gray: standby, SCC canceled or below 20 mph
-              (2 if blink else 0) if changing_left or changing_right else  # green blinking: changing lanes
-              2)                                                           # green: ready
+  lca_icon = (0 if not (main_cruise_enabled and lat_active) else  # hidden: cruise main off or not steering
+              1 if not lca_ready else                             # gray: standby, SCC canceled or below 20 mph
+              (2 if blink else 0) if changing else                # green blinking: changing lanes
+              2)                                                  # green: ready
 
   msg_161.update({
     "DAW_ICON": 0,  # hidden: no coffee cup, openpilot handles driver monitoring
@@ -56,13 +57,13 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
     "LANELINE_LEFT": (0 if not lat_active or not hud.leftLaneVisible else  # gray: not steering or line not seen
                       4 if hud.leftLaneDepart else                         # orange: departing over this line
-                      (6 if blink else 2) if changing_left else            # green/white blinking: changing lanes over this line
+                      (6 if blink else 2) if changing else                 # green/white blinking: changing lanes, both lines blink
                       6 if lca_ready and not out.leftBlindspot else        # green: lane change possible to this side
                       2),                                                  # white: line seen, lane change not possible to this side
 
     "LANELINE_RIGHT": (0 if not lat_active or not hud.rightLaneVisible else  # gray: not steering or line not seen
                        4 if hud.rightLaneDepart else                         # orange: departing over this line
-                       (6 if blink else 2) if changing_right else            # green/white blinking: changing lanes over this line
+                       (6 if blink else 2) if changing else                  # green/white blinking: changing lanes, both lines blink
                        6 if lca_ready and not out.rightBlindspot else        # green: lane change possible to this side
                        2),                                                   # white: line seen, lane change not possible to this side
 
