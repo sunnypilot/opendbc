@@ -66,17 +66,17 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
     "CENTERLINE": 1 if lat_active else 0,  # green center path while steering, hidden otherwise
 
-    "LANELINE_LEFT": (0 if not lat_active or not hud.leftLaneVisible else  # gray: not steering or line not seen
-                      4 if hud.leftLaneDepart else                         # orange: departing over this line
-                      (6 if blink else 2) if changing else                 # green/white blinking: changing lanes, both lines blink
-                      6 if lca_ready and not out.leftBlindspot else        # green: lane change possible to this side
-                      2),                                                  # white: line seen, lane change not possible to this side
+    "LANELINE_LEFT": (4 if hud.leftLaneDepart else                   # orange: departing over this line, openpilot only warns while not steering
+                      0 if not lat_active else                       # gray: not steering
+                      (6 if blink else 2) if changing else           # green/white blinking: changing lanes, both lines blink
+                      6 if lca_ready and not out.leftBlindspot else  # green: lane change possible to this side
+                      2),                                            # white: line seen, lane change not possible to this side
 
-    "LANELINE_RIGHT": (0 if not lat_active or not hud.rightLaneVisible else  # gray: not steering or line not seen
-                       4 if hud.rightLaneDepart else                         # orange: departing over this line
-                       (6 if blink else 2) if changing else                  # green/white blinking: changing lanes, both lines blink
-                       6 if lca_ready and not out.rightBlindspot else        # green: lane change possible to this side
-                       2),                                                   # white: line seen, lane change not possible to this side
+    "LANELINE_RIGHT": (4 if hud.rightLaneDepart else                   # orange: departing over this line, openpilot only warns while not steering
+                       0 if not lat_active else                        # gray: not steering
+                       (6 if blink else 2) if changing else            # green/white blinking: changing lanes, both lines blink
+                       6 if lca_ready and not out.rightBlindspot else  # green: lane change possible to this side
+                       2),                                             # white: line seen, lane change not possible to this side
 
     "LCA_LEFT_ICON": lca_icon,  # lane change assist icon, same as right
 
@@ -148,10 +148,10 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
       "DISTANCE_CAR": 0 if not main_cruise_enabled else 2 if enabled else 1,  # own car in gap graphic: white SCC on, gray canceled
 
-      "SLA_ICON": (0 if sl.assistState not in ("preActive", "pending", "adapting", "active") else  # hidden: speed limit assist off
-                   (1 if sla_up else 2) if sl.assistState in ("preActive", "pending") else         # white up/down: waiting to confirm
-                   4 if sl.assistState == "adapting" else                                          # green down: slowing to the limit
-                   3),                                                                             # green up: holding the limit
+      "SLA_ICON": ((1 if sla_up else 2) if sl.assistState in ("preActive", "pending") else  # white up/down: waiting to confirm
+                   4 if sl.assistState == "adapting" else                                   # green down: slowing to the limit
+                   3 if sl.assistState == "active" else                                     # green up: holding the limit
+                   0),                                                                      # hidden: speed limit assist off or inactive
 
       "NAV_ICON": ((2 if blink else 0) if {"entering", "turning"} & scc_states else  # green blinking: slowing for a curve
                    (4 if blink else 0) if "overriding" in scc_states else            # white blinking: gas override
