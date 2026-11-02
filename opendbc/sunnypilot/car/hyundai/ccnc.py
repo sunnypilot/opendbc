@@ -32,7 +32,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     msg_161["SOUNDS_4"] = 0
 
   scc, sl, icbm, lane_change = CC_SP.smartCruiseControl, CC_SP.speedLimit, CC_SP.intelligentCruiseButtonManagement, CC_SP.laneChange
-  dm = CC_SP.driverMonitoring
+  dm, lead_following = CC_SP.driverMonitoring, CC_SP.leadFollowing
 
   # openpilot driver monitoring alert in the stock HDP style
   if dm.alertLevel == 3:
@@ -193,7 +193,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
                            1),                                   # blue: SCC on
 
       "DISTANCE_LEAD": (0 if not main_cruise_enabled or not hud.leadVisible else  # hidden: cruise main off or no lead
-                        2 if enabled and CC_SP.leadFollowing else                 # white: SCC is following this lead
+                        2 if enabled and lead_following else                      # white: SCC is following this lead
                         1),                                                       # gray: lead seen, cruising at set speed or SCC canceled
 
       "DISTANCE_CAR": 0 if not main_cruise_enabled else 2 if enabled else 1,  # own car in gap graphic: white SCC on, gray canceled
@@ -213,8 +213,8 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
       "TARGET_DISTANCE": target_gap if scc_on else 204.6,  # target gap in m, 204.6 when off
     })
 
-    msg_162["LEAD"] = (2 if enabled and CC_SP.leadFollowing else 1) if main_cruise_enabled and hud.leadVisible else 0  # lead box: white followed, gray seen
-    msg_162["LEAD_DISTANCE"] = lead_distance                                                                           # lead distance in m
+    msg_162["LEAD"] = (2 if enabled and lead_following else 1) if main_cruise_enabled and hud.leadVisible else 0  # lead box: white followed, gray seen
+    msg_162["LEAD_DISTANCE"] = lead_distance                                                                      # lead distance in m
 
   # stock long: show ICBM set speed changes, otherwise keep the stock icon (vTarget is in cluster units)
   elif icbm.state in ("preActive", "increasing", "decreasing"):
