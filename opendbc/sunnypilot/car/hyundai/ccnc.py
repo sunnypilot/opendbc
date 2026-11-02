@@ -12,8 +12,8 @@ LANE_CROSS_JUMP = 1.0                      # m, the camera lane offset jumps abo
 # remembered across calls: whether the current lane change crossed the line yet, and the last lane offset
 lane_change_progress = {"crossed": False, "offset": None}
 
-# remembered across calls: whether speed limit assist was active last time, and the frame it became active
-sla_progress = {"active": False, "frame": 0}
+# remembered across calls: the speed limit arrow shown (1/2 white up/down asking, 3/4 green up/down confirmed) and the frame it was set
+sla_progress = {"arrow": 0, "frame": 0}
 
 # remembered across calls: the distance bars shown, and a new value waiting to hold long enough
 distance_progress = {"shown": None, "pending": None, "frame": 0}
@@ -203,12 +203,16 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
     sla_limit = round(sl.speedLimitFinalLast * (CV.MS_TO_KPH if is_metric else CV.MS_TO_MPH))
     sla_up = sla_limit >= cluster_set_speed
 
-    # after confirming, SLA writes the new set speed itself and briefly reports inactive, keep it active while the set speed sits on the limit
-    sla_active = sl.assistState == "active" or (sl.assistState == "inactive" and sla_limit == cluster_set_speed)
-    if sla_active and not sla_progress["active"]:
-      sla_progress["frame"] = frame
-    sla_progress["active"] = sla_active
-    sla_confirmed_recently = sla_active and (frame - sla_progress["frame"]) * DT_CTRL < SLA_CONFIRMED_SHOW_TIME
+    # after confirming, SLA writes the new set speed itself and briefly reports inactive, keep it confirmed while the set speed sits on the limit
+    sla_asking = sl.assistState in ("preActive", "pending")
+    sla_confirmed = sl.assistState in ("active", "adapting") or (sl.assistState == "inactive" and sla_limit == cluster_set_speed)
+    if sla_asking:
+      sla_progress.update(arrow=1 if sla_up else 2, frame=frame)  # white up/down: waiting to confirm
+    elif sla_confirmed and sla_progress["arrow"] in (1, 2):
+      sla_progress.update(arrow=sla_progress["arrow"] + 2, frame=frame)  # same arrow turns green on confirm
+    elif not sla_confirmed:
+      sla_progress["arrow"] = 0  # hidden: speed limit assist off, or set speed changed by hand
+    sla_arrow = sla_progress["arrow"]
 
     msg_161.update({
       "SETSPEED": (0 if not main_cruise_enabled else     # hidden: cruise main off
@@ -237,10 +241,8 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, left_
 
       "DISTANCE_CAR": 0 if not main_cruise_enabled else 2 if enabled else 1,  # own car in gap graphic: white SCC on, gray canceled
 
-      "SLA_ICON": ((1 if sla_up else 2) if sl.assistState in ("preActive", "pending") else  # white up/down: waiting to confirm
-                   4 if sl.assistState == "adapting" else                                   # green down: slowing to the limit
-                   3 if sla_confirmed_recently else                                         # green up: just confirmed, hides after a moment
-                   0),                                                                      # hidden: speed limit assist off or inactive
+      "SLA_ICON": (sla_arrow if sla_arrow in (1, 2) or (frame - sla_progress["frame"]) * DT_CTRL < SLA_CONFIRMED_SHOW_TIME else  # green hides after a moment
+                   0),
 
       # DBC mismatch (cosmetic): the max is 3 but 4 white is used
       # current:   SG_ NAV_ICON : 220|4@1+ (1,0) [0|3] "" XXX
