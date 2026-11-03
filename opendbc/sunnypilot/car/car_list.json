@@ -2030,6 +2030,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Hyundai Venue Non-SCC 2021": {
+    "platform": "HYUNDAI_VENUE_2021_NON_SCC",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Venue Non-SCC",
+    "year": [
+      "2021"
+    ],
+    "package": "No Smart Cruise Control (Non-SCC)"
+  },
   "Jeep Grand Cherokee 2016-18": {
     "platform": "JEEP_GRAND_CHEROKEE",
     "make": "Jeep",
@@ -2995,7 +3005,7 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
-  "Ram 3500 2019-22": {
+  "Ram 3500 2019-24": {
     "platform": "RAM_HD_5TH_GEN",
     "make": "Ram",
     "brand": "chrysler",
@@ -3004,7 +3014,9 @@
       "2019",
       "2020",
       "2021",
-      "2022"
+      "2022",
+      "2023",
+      "2024"
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
