@@ -199,7 +199,14 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
     if toyota_stop_and_go_hack and CP.openpilotLongitudinalControl:
       CP_SP.flags |= ToyotaFlagsSP.STOP_AND_GO_HACK.value
 
-    if toyota_enhanced_bsm and not toyota_stock_long and CP.carFingerprint in (TSS2_CAR - SECOC_CAR):
+    # Enhanced BSM talks to the radar diagnostic address, so 0x750 must be in the TX allowlist.
+    # TSS2 (non-SecOC) cars always have it; TSS-P cars only once a smartDSU lets openpilot send
+    # the long-control messages, which is what makes openpilot longitudinal control possible.
+    enhanced_bsm_car = (CP.carFingerprint in (TSS2_CAR - SECOC_CAR) or
+                        (not CP.flags & ToyotaFlags.SECOC and bool(CP_SP.flags & ToyotaFlagsSP.SMART_DSU) and
+                         CP.openpilotLongitudinalControl))
+
+    if toyota_enhanced_bsm and not toyota_stock_long and enhanced_bsm_car:
       CP_SP.flags |= ToyotaFlagsSP.SP_ENHANCED_BSM.value
       CP_SP.safetyParam |= ToyotaSafetyFlagsSP.ENHANCED_BSM
 

@@ -37,3 +37,19 @@ class TestHasBsm(unittest.TestCase):
 
       setup_interfaces(CarInterface, CP, CP_SP, [{"ToyotaEnhancedBsm": "1"}])
       self.assertEqual(has_bsm(CP, CP_SP), enhanced)
+
+  def test_has_bsm_enhanced_toyota_sdsu(self):
+    # TSS-P cars reach the radar debug session the same way once a smartDSU lets openpilot control
+    # longitudinal - that's when 0x750 lands in the long-control TX allowlist
+    for alpha_long, smart_dsu, enhanced in ((True, True, True), (True, False, False), (False, True, False)):
+      fingerprint = gen_empty_fingerprint()
+      if smart_dsu:
+        fingerprint[0][0x2FF] = 8
+
+      CarInterface = interfaces["TOYOTA_RAV4H"]
+      CP = CarInterface.get_params("TOYOTA_RAV4H", fingerprint, [], alpha_long, False, False)
+      CP_SP = CarInterface.get_params_sp(CP, "TOYOTA_RAV4H", fingerprint, [], alpha_long, False, False)
+      self.assertFalse(has_bsm(CP, CP_SP))
+
+      setup_interfaces(CarInterface, CP, CP_SP, [{"ToyotaEnhancedBsm": "1"}])
+      self.assertEqual(has_bsm(CP, CP_SP), enhanced, f"alpha_long={alpha_long} smart_dsu={smart_dsu}")
