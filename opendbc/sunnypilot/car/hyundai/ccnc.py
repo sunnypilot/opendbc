@@ -7,7 +7,7 @@ def create_ccnc_mdps(packer, CAN, mdps):
 
 
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, msg_161, msg_162, lead_distance, is_metric,
-                v_cruise_cluster, main_cruise_enabled, lat_active):
+                v_cruise_cluster, main_cruise_enabled, lat_enabled):
   # consider taking a break, with its chime
   if msg_161["ALERTS_2"] == 5:
     msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
@@ -21,11 +21,11 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, msg_1
     msg_161["ALERTS_5"] = 0
 
   msg_161.update({
-    "LKA_ICON": 4 if lat_active else 3,        # green steering, gray otherwise
-    "LFA_ICON": 2 if lat_active else 1,        # green steering, gray otherwise
-    "LANELINE_LEFT": 6 if lat_active else 0,   # green steering, gray otherwise
-    "LANELINE_RIGHT": 6 if lat_active else 0,  # green steering, gray otherwise
-    "CENTERLINE": 1 if lat_active else 0,      # green steering, hidden otherwise (no gray)
+    "LKA_ICON": 4 if lat_enabled else 3,        # green lateral enabled, gray otherwise
+    "LFA_ICON": 2 if lat_enabled else 1,        # green lateral enabled, gray otherwise
+    "LANELINE_LEFT": 6 if lat_enabled else 0,   # green lateral enabled, gray otherwise
+    "LANELINE_RIGHT": 6 if lat_enabled else 0,  # green lateral enabled, gray otherwise
+    "CENTERLINE": 1 if lat_enabled else 0,      # green lateral enabled, hidden otherwise (no gray)
     "DAW_ICON": 0,
   })
 
