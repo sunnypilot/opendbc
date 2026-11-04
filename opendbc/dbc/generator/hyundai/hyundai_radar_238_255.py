@@ -6,13 +6,14 @@ def _comment(*parts: str) -> str:
 
 
 # Partial decode of the front radar object list seen on bus 1 of the 2021-23 Hyundai Elantra (CN7, CAN, radar SCC).
-# Radar FW: "CN7_ SCC F-CUP 1.00 1.01 99110-AA000". Validated on route 4db9a4d26f328177/000001f9--145655d2f1 (segments 12-13).
+# Radar FW: "CN7_ SCC F-CUP 1.00 1.01 99110-AA000". Validated on routes 4db9a4d26f328177/000001f9--145655d2f1 (segments 12-13)
+# and 4db9a4d26f328177/000001fe--762db300bd (segments 23-24).
 RADAR_238_255_MESSAGE_COMMENT = _comment(
   "CN7 front radar object list on bus 1: ten object slots, three 8-byte messages per slot, approximately 33 Hz.",
-  "Slot n uses 0x238+3n (position), 0x239+3n and 0x23A+3n (not yet decoded).",
+  "Slot n uses 0x238+3n (position and speed), 0x239+3n and 0x23A+3n (not yet decoded).",
   "An empty slot is all zero apart from the shared 2-bit counter.",
   "The stream keeps running on bus 1 while openpilot longitudinal holds the radar quiet on bus 0 via 0x7D0.",
-  "Partial decode: relative speed has not been identified yet.",
+  "Speed is reported over ground: relative speed = ABS_SPEED - ego speed. Ego speed is not on bus 1.",
 )
 
 POSITION_SIGNAL_COMMENTS = (
@@ -23,6 +24,11 @@ POSITION_SIGNAL_COMMENTS = (
   ("LAT_DIST", _comment(
     "Lateral position, left positive (openpilot yRel convention); raw value is 2048 at center, raw increases to the right.",
     "Fit against the vision lead: r = -0.98 under 40 m. Side confirmed on video; scale is approximate.",
+  )),
+  ("ABS_SPEED", _comment(
+    "Longitudinal object speed over ground (0 for stationary objects). REL_SPEED = ABS_SPEED - vEgo:",
+    "matches the slope of LONG_DIST with R^2 = 0.94 over all slots in three segments (median error 0.23 m/s, fitted vEgo coefficient -0.99)",
+    "and the vision lead's vLead (median difference 0.0-0.3 m/s).",
   )),
   ("COUNTER", "2-bit counter, identical in all three messages of a slot and in every slot for a given cycle; increments by 1 per cycle."),
 )
@@ -75,6 +81,7 @@ BU_: FR_RDR ADAS_DRV
 BO_ {a} RADAR_TRACK_{a:x}: 8 FR_RDR
  SG_ LONG_DIST : 7|12@0+ (0.1,0) [0|409.5] "m" ADAS_DRV
  SG_ LAT_DIST : 23|12@0+ (-0.05,102.4) [-102.35|102.4] "m" ADAS_DRV
+ SG_ ABS_SPEED : 39|12@0+ (0.05,-100) [-100|104.75] "m/s" ADAS_DRV
  SG_ COUNTER : 43|2@0+ (1,0) [0|3] "" ADAS_DRV
 
 BO_ {a + 1} RADAR_TRACK_{a + 1:x}: 8 FR_RDR
