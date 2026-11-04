@@ -8,6 +8,7 @@ def create_ccnc_mdps(packer, CAN, mdps):
 
 def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, msg_161, msg_162, lead_distance, is_metric,
                 v_cruise_cluster, main_cruise_enabled, lat_enabled):
+  # TODO-SP: confirm these alert blocks are still needed
   # consider taking a break, with its chime
   if msg_161["ALERTS_2"] == 5:
     msg_161.update({"ALERTS_2": 0, "SOUNDS_2": 0})
@@ -20,6 +21,10 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, msg_1
   if msg_161["ALERTS_5"] in (2, 5):
     msg_161["ALERTS_5"] = 0
 
+  # double chime while LFA icon is hidden or white
+  if msg_161["SOUNDS_4"] == 2 and msg_161["LFA_ICON"] in (0, 3):
+    msg_161["SOUNDS_4"] = 0
+
   msg_161.update({
     "LKA_ICON": 4 if lat_enabled else 3,        # green lateral enabled, gray otherwise
     "LFA_ICON": 2 if lat_enabled else 1,        # green lateral enabled, gray otherwise
@@ -30,7 +35,8 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, msg_1
   })
 
   if openpilot_longitudinal_control:
-    # 1/3 speed limit, 2/4 set speed changed, 7-10 distance, 11-14 driving style
+    # TODO-SP: confirm these alert blocks are still needed
+    # 1/3 adjusting to speed limit, 2/4 set speed changed, 7-10 distance, 11-14 driving style
     if msg_161["ALERTS_3"] in (1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14):
       msg_161["ALERTS_3"] = 0
 
