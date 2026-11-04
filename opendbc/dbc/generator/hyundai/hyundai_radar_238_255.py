@@ -21,7 +21,7 @@ POSITION_SIGNAL_COMMENTS = (
     "(median 0.3 m under 40 m) and lands on the lead vehicle when projected onto qcamera.",
   )),
   ("LAT_DIST", _comment(
-    "Lateral position, left positive (openpilot yRel convention); raw value is 2048 at centre, raw increases to the right.",
+    "Lateral position, left positive (openpilot yRel convention); raw value is 2048 at center, raw increases to the right.",
     "Fit against the vision lead: r = -0.98 under 40 m. Side confirmed on video; scale is approximate.",
   )),
   ("COUNTER", "2-bit counter, identical in all three messages of a slot and in every slot for a given cycle; increments by 1 per cycle."),
