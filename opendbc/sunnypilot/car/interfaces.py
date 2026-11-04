@@ -101,7 +101,6 @@ def has_bsm(CP: structs.CarParams, CP_SP: structs.CarParamsSP | None) -> bool:
   if CP.brand == "rivian":
     return CP_SP is not None and bool(CP_SP.flags & RivianFlagsSP.LONGITUDINAL_HARNESS_UPGRADE)
   if CP.brand == "toyota" and CP_SP is not None and bool(CP_SP.flags & ToyotaFlagsSP.SP_ENHANCED_BSM):
-    # Enhanced BSM synthesizes the blind spot state for cars without a stock BSM signal
     return True
   return CP.brand in BSM_FLAGS and bool(CP.flags & BSM_FLAGS[CP.brand])
 
@@ -199,9 +198,6 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
     if toyota_stop_and_go_hack and CP.openpilotLongitudinalControl:
       CP_SP.flags |= ToyotaFlagsSP.STOP_AND_GO_HACK.value
 
-    # Enhanced BSM talks to the radar diagnostic address, so 0x750 must be in the TX allowlist.
-    # TSS2 (non-SecOC) cars always have it; TSS-P cars only once a smartDSU lets openpilot send
-    # the long-control messages, which is what makes openpilot longitudinal control possible.
     enhanced_bsm_car = (CP.carFingerprint in (TSS2_CAR - SECOC_CAR) or
                         (not CP.flags & ToyotaFlags.SECOC and bool(CP_SP.flags & ToyotaFlagsSP.SMART_DSU) and
                          CP.openpilotLongitudinalControl))

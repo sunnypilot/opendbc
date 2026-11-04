@@ -110,10 +110,8 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
       self.assertEqual(should_tx and ecu_disabled and not stock_longitudinal, self._tx(tester_present))
 
   def test_enhanced_bsm(self):
-    # enable/disable/poll left+right blind spot debug mode, sent to the radar diagnostic address.
-    # only allowed when the feature's safety param bit is set, and only where 0x750 is in the TX
-    # allowlist at all (stock longitudinal and SecOC configs don't have it - same restriction
-    # tester present runs into).
+    # enable/disable/poll left and right blind spot debug, only with the safety param bit set
+    # and 0x750 in the TX allowlist
     addr_allowed = any(addr == 0x750 for addr, _ in self.TX_MSGS)
     base_param_sp = self.SAFETY_PARAM_SP
 

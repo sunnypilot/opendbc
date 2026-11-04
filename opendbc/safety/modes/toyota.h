@@ -390,7 +390,7 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
     const uint64_t uds_msg = GET_BYTES_64_LE(msg, 0, 8);
     bool invalid_uds_msg = uds_msg != 0x00000000003E020FULL;
 
-    // Enhanced BSM (@arne182, @rav4kumar)
+    // Enhanced BSM: enable, disable, or poll each side's blind spot debug session
     bool sunnypilot_valid_uds_msg = toyota_enhanced_bsm && (
                                       (uds_msg == 0x0000000001100241ULL) ||  // disable left BSM debug
                                       (uds_msg == 0x0000000060100241ULL) ||  // enable left BSM debug

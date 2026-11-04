@@ -27,7 +27,7 @@ class TestHasBsm(unittest.TestCase):
       self.assertEqual(has_bsm(CP, CP_SP), present or addr is None)
 
   def test_has_bsm_enhanced_toyota(self):
-    # TSS2 cars without a stock BSM signal get it back through the radar debug polling
+    # TSS2 cars without a stock BSM signal get it through radar debug polling
     for car_name, enhanced in (("TOYOTA_PRIUS_TSS2", True), ("TOYOTA_RAV4_PRIME", False)):
       fingerprint = gen_empty_fingerprint()
       CarInterface = interfaces[car_name]
@@ -39,8 +39,7 @@ class TestHasBsm(unittest.TestCase):
       self.assertEqual(has_bsm(CP, CP_SP), enhanced)
 
   def test_has_bsm_enhanced_toyota_sdsu(self):
-    # TSS-P cars reach the radar debug session the same way once a smartDSU lets openpilot control
-    # longitudinal - that's when 0x750 lands in the long-control TX allowlist
+    # TSS-P cars need a smartDSU and openpilot longitudinal for 0x750 to be in the TX allowlist
     for alpha_long, smart_dsu, enhanced in ((True, True, True), (True, False, False), (False, True, False)):
       fingerprint = gen_empty_fingerprint()
       if smart_dsu:
