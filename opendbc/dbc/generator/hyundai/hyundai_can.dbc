@@ -1502,6 +1502,7 @@ BO_ 913 BCM_PO_11: 8 Vector__XXX
 BO_ 1426 LABEL11: 8 XXX
  SG_ CC_React : 34|1@1+ (1,0) [0|1] "" XXX
  SG_ CC_ACT : 35|1@1+ (1,0) [0|1] "" XXX
+ SG_ EV_MOTOR_POWER : 40|8@1- (1,0) [-128|127] "" XXX
 
 BO_ 910 WHL_SPD12_FS: 5 iBAU
  SG_ CRC : 0|8@1+ (1,0) [0|0] "" Vector__XXX
@@ -1525,6 +1526,7 @@ BO_ 882 ELECT_GEAR: 8 XXX
  SG_ Elect_Gear_Shifter : 16|4@1+ (1,0) [0|7] "" CLU
  SG_ SLC_ON : 31|1@0+ (1,0) [0|1] "" CLU
  SG_ SLC_SET_SPEED : 32|8@1+ (1,0) [0|255] "" CLU
+ SG_ EV_MOTOR_TORQUE : 32|13@1- (1,0) [-4096|4095] "" XXX
 
 BO_ 881 E_EMS11: 8 XXX
  SG_ Brake_Pedal_Pos : 0|8@1+ (1,0) [0|127] "" XXX
@@ -1541,6 +1543,7 @@ BO_ 1355 EV_PC6: 8 CGW
 BO_ 1429 E_CRUISE_CONTROL: 8 XXX
  SG_ CRUISE_LAMP_M : 50|1@0+ (1,0) [0|1] "" XXX
  SG_ CRUISE_LAMP_S : 51|1@0+ (1,0) [0|1] "" XXX
+ SG_ EV_BATTERY_POWER : 16|16@1- (1,0) [-32768|32767] "" XXX
 
 BO_ 1430 EV_PC2: 8 CGW
  SG_ CR_Ldc_ActVol_LS_V : 32|8@1+ (0.1,0) [0|0] "V" Vector__XXX
@@ -1679,6 +1682,9 @@ CM_ 512 "Contains signal with gear shifter. Used by fuel cell hydrogen-powered (
 CM_ SG_ 871 CF_Lvr_IsgState "Idle Stop and Go";
 CM_ SG_ 1056 SCCInfoDisplay "Goes to 1 for a second while transitioning from Cruise Control to No Message";
 CM_ SG_ 1348 SpeedLim_Nav_Clu "Speed limit displayed on Nav, Cluster and HUD";
+CM_ SG_ 882 EV_MOTOR_TORQUE "EV Drive motor torque, negative when regen braking, falls to zero or pos when friction only is braking. Raw units. Hybrids use these bits for SLC_SET_SPEED";
+CM_ SG_ 1426 EV_MOTOR_POWER "EV Drive motor power, negative when regen braking. Raw units";
+CM_ SG_ 1429 EV_BATTERY_POWER "EV Battery power, negative when regen is charging it. Raw units";
 
 VAL_ 274 CUR_GR 1 "D" 2 "D" 3 "D" 4 "D" 5 "D" 6 "D" 7 "D" 8 "D" 14 "R" 0 "P";
 VAL_ 512 HYDROGEN_GEAR_SHIFTER 5 "D" 8 "S" 6 "N" 7 "R" 0 "P";
