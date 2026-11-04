@@ -1,7 +1,4 @@
-from opendbc.car import structs
 from opendbc.car.common.conversions import Conversions as CV
-
-VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
 
 def create_ccnc_mdps(packer, CAN, mdps):
@@ -44,7 +41,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, msg_1
     # single chime
     if msg_161["SOUNDS_3"] == 5:
       msg_161["SOUNDS_3"] = 0
-    
+
     state = 0 if not main_cruise_enabled else 2 if enabled else 1               # 0 cruise main off, 1 main on, 2 engaged
     lead = 2 if enabled else 1                                                  # white engaged, gray otherwise
 
