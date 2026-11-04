@@ -114,7 +114,7 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.CarSafetyTest, common.Drive
     for mode, param, features, allowed in ((5, 1, 0, True), (5, 1, 1, True), (5, 1, 2, False), (5, 1, 0x81, False), (5, 0, 0, False),
                                            (5, 2, 0, False), (5, 48, 0, False), (0, 1, 0, False), (0x105, 1, 0, False)):
       dat = bytes(3) + mode.to_bytes(2, 'big') + param.to_bytes(2, 'big') + bytes([features])
-      self.assertEqual(allowed, self._tx(libsafety_py.make_CANPacket(0x256, 0, dat)), (mode, param, features))
+      self.assertEqual(allowed, self._tx(libsafety_py.make_CANPacket(0x1256, 0, dat)), (mode, param, features))
 
 
 class TestHyundaiCanfdTorqueSteering(TestHyundaiCanfdBase, common.DriverTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):
@@ -560,7 +560,8 @@ class TestHyundaiCanfdLKASteeringAltAngle(TestHyundaiCanfdAngleSteering):
 
 class TestHyundaiCanfdLKASteeringAltAngleInterceptor(TestHyundaiCanfdLKASteeringAltAngle):
 
-  TX_MSGS = [[0xCB, 1], [0x1CF, 1], [0x256, 0], [0x110, 0]]
+  TX_MSGS = [[0xCB, 1], [0x1CF, 1], [0x1256, 0], [0x110, 0]]
+  SCANNED_ADDRS = [*common.SafetyTest.SCANNED_ADDRS, 0x1256]
   RELAY_MALFUNCTION_ADDRS = {0: (0x110,)}
   FWD_BLACKLISTED_ADDRS = {2: [0x110]}
 
