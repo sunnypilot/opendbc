@@ -43,7 +43,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, msg_1
       msg_161["SOUNDS_3"] = 0
 
     state = 0 if not main_cruise_enabled else 2 if enabled else 1               # 0 cruise main off, 1 main on, 2 engaged
-    lead = 2 if enabled else 1                                                  # white engaged, gray otherwise
+    lead = 2 if enabled and hud.leadVisible else 0                              # white engaged with a lead, hidden otherwise
 
     msg_161.update({
       "SETSPEED": (0, 1, 3)[state],                                             # white engaged, gray main on, hidden main off
@@ -54,7 +54,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, msg_1
       ),
       "DISTANCE": hud.leadDistanceBars if main_cruise_enabled else 0,           # distance bars, hidden main off
       "DISTANCE_SPACING": 1 if enabled else 0,                                  # blue gap engaged, hidden otherwise
-      "DISTANCE_LEAD": lead if main_cruise_enabled and hud.leadVisible else 0,  # lead car white engaged, gray otherwise, hidden no lead
+      "DISTANCE_LEAD": lead,                                                    # lead car in gap graphic
       "DISTANCE_CAR": state,                                                    # own car white engaged, gray main on, hidden main off
       "HDA_ICON": 0,
       "SLA_ICON": 0,
@@ -62,7 +62,7 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, hud, msg_1
       "TARGET": 0,
     })
 
-    msg_162["LEAD"] = lead if main_cruise_enabled and hud.leadVisible else 0    # lead box: white engaged, gray otherwise, hidden with no lead
+    msg_162["LEAD"] = lead                                                      # lead box
     msg_162["LEAD_DISTANCE"] = lead_distance                                    # lead distance in m
 
   return [packer.make_can_msg(msg, CAN.ECAN, data) for msg, data in [("CCNC_0x161", msg_161), ("CCNC_0x162", msg_162)]]
