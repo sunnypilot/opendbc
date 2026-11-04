@@ -8,7 +8,7 @@ import unittest
 
 from opendbc.car import gen_empty_fingerprint
 from opendbc.car.car_helpers import interfaces
-from opendbc.sunnypilot.car.interfaces import has_bsm
+from opendbc.sunnypilot.car.interfaces import has_bsm, setup_interfaces
 from opendbc.testing import parameterized
 
 
@@ -25,3 +25,30 @@ class TestHasBsm(unittest.TestCase):
       CP = CarInterface.get_params(car_name, fingerprint, [], False, False, False)
       CP_SP = CarInterface.get_params_sp(CP, car_name, fingerprint, [], False, False, False)
       self.assertEqual(has_bsm(CP, CP_SP), present or addr is None)
+
+  def test_has_bsm_enhanced_toyota(self):
+    # TSS2 cars without a stock BSM signal get it through radar debug polling
+    for car_name, enhanced in (("TOYOTA_PRIUS_TSS2", True), ("TOYOTA_RAV4_PRIME", False)):
+      fingerprint = gen_empty_fingerprint()
+      CarInterface = interfaces[car_name]
+      CP = CarInterface.get_params(car_name, fingerprint, [], False, False, False)
+      CP_SP = CarInterface.get_params_sp(CP, car_name, fingerprint, [], False, False, False)
+      self.assertFalse(has_bsm(CP, CP_SP))
+
+      setup_interfaces(CarInterface, CP, CP_SP, [{"ToyotaEnhancedBsm": "1"}])
+      self.assertEqual(has_bsm(CP, CP_SP), enhanced)
+
+  def test_has_bsm_enhanced_toyota_sdsu(self):
+    # TSS-P cars need a smartDSU and openpilot longitudinal for 0x750 to be in the TX allowlist
+    for alpha_long, smart_dsu, enhanced in ((True, True, True), (True, False, False), (False, True, False)):
+      fingerprint = gen_empty_fingerprint()
+      if smart_dsu:
+        fingerprint[0][0x2FF] = 8
+
+      CarInterface = interfaces["TOYOTA_RAV4H"]
+      CP = CarInterface.get_params("TOYOTA_RAV4H", fingerprint, [], alpha_long, False, False)
+      CP_SP = CarInterface.get_params_sp(CP, "TOYOTA_RAV4H", fingerprint, [], alpha_long, False, False)
+      self.assertFalse(has_bsm(CP, CP_SP))
+
+      setup_interfaces(CarInterface, CP, CP_SP, [{"ToyotaEnhancedBsm": "1"}])
+      self.assertEqual(has_bsm(CP, CP_SP), enhanced, f"alpha_long={alpha_long} smart_dsu={smart_dsu}")

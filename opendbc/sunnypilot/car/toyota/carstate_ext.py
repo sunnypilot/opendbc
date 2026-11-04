@@ -11,6 +11,7 @@ from opendbc.car import Bus, structs
 from opendbc.car.carlog import carlog
 from opendbc.can.parser import CANParser
 from opendbc.car.common.conversions import Conversions as CV
+from opendbc.sunnypilot.car.toyota.enhanced_bsm import EnhancedBsmCarState
 from opendbc.sunnypilot.car.toyota.values import ToyotaFlagsSP
 
 TRAFFIC_SIGNAL_MAP = {
@@ -28,6 +29,9 @@ class CarStateExt:
   def __init__(self, CP, CP_SP):
     self.CP = CP
     self.CP_SP = CP_SP
+
+    self.enhanced_bsm = EnhancedBsmCarState(CP, CP_SP)
+    self.frame = 0
 
     self.acc_type = 1
     self.zss_compute = False
@@ -164,6 +168,10 @@ class CarStateExt:
           self.zss_threshold_count += 1
         else:
           ret.steeringAngleDeg = steering_angle_deg
+
+    if self.enhanced_bsm.enabled and self.frame > 199:
+      ret.leftBlindspot, ret.rightBlindspot = self.enhanced_bsm.update(cp, self.frame)
+    self.frame += 1
 
     # Update traffic signals and speed limit
     self.update_traffic_signals(cp_cam)
