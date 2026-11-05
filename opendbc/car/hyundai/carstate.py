@@ -64,6 +64,8 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     self.buttons_counter = 0
 
     self.cruise_info = {}
+    self.msg_161, self.msg_162, self.mdps = {}, {}, {}
+    self.ccnc_buttons = []
 
     # On some cars, CLU15->CF_Clu_VehicleSpeed can oscillate faster than the dash updates. Sample at 5 Hz
     self.cluster_speed = 0
@@ -260,6 +262,13 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     left_blinker_sig, right_blinker_sig = "LEFT_LAMP", "RIGHT_LAMP"
     if self.CP_SP.flags & HyundaiFlagsSP.CCNC:
       left_blinker_sig, right_blinker_sig = "LEFT_LAMP_ALT", "RIGHT_LAMP_ALT"
+      if not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+        self.msg_161, self.msg_162 = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"]))
+        self.mdps = copy.copy(cp.vl["MDPS"]) if cp.ts_nanos["MDPS"]["COUNTER"] else {}  # never copy before the real one arrived
+        self.cruise_info = copy.copy((cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp).vl["SCC_CONTROL"])
+        if not self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
+          buttons = cp.vl_all["CRUISE_BUTTONS"]
+          self.ccnc_buttons = [dict(zip(buttons, frame, strict=True)) for frame in zip(*buttons.values(), strict=True)]
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"][left_blinker_sig],
                                                                       cp.vl["BLINKERS"][right_blinker_sig])
     if self.CP.flags & HyundaiFlags.HAS_BSM:
