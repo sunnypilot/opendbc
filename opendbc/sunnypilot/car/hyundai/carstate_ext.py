@@ -20,7 +20,9 @@ class CarStateExt:
     self.CP_SP = CP_SP
 
     self.aBasis = 0.0
-    self.msg_161, self.msg_162, self.mdps = {}, {}, {}
+    self.msg_161 = {}
+    self.msg_162 = {}
+    self.mdps = {}
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -88,6 +90,8 @@ class CarStateExt:
     self.aBasis = cp.vl["TCS"]["aBasis"]
 
     if self.CP_SP.flags & HyundaiFlagsSP.CCNC and not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
-      self.msg_161, self.msg_162, self.mdps = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"], cp.vl["MDPS"]))
+      self.msg_161 = copy.copy(cp_cam.vl["CCNC_0x161"])
+      self.msg_162 = copy.copy(cp_cam.vl["CCNC_0x162"])
+      self.mdps = copy.copy(cp.vl["MDPS"])
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
