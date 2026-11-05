@@ -188,7 +188,25 @@ class CarInterface(CarInterfaceBase):
     if stock_cp.flags & HyundaiFlags.ALT_LIMITS_2:
       stock_cp.dashcamOnly = False
 
-    if ret.flags & HyundaiFlagsSP.CCNC and not stock_cp.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+    if stock_cp.flags & HyundaiFlags.CANFD:
+      if 0x1fa in fingerprint[CAN.ECAN]:
+        ret.flags |= HyundaiFlagsSP.SPEED_LIMIT_AVAILABLE.value
+
+      if any(0x161 in fingerprint[b] and 0x162 in fingerprint[b] for b in (CAN.ECAN, CAN.CAM)):
+        ret.flags |= HyundaiFlagsSP.CCNC.value
+    else:
+      # Detect smartMDPS, which bypasses EPS low-speed lockout, allowing sunnypilot to send steering commands down to 0
+      if 0x2AA in fingerprint[0]:
+        stock_cp.minSteerSpeed = 0.0
+        stock_cp.flags &= ~HyundaiFlags.MIN_STEER_32_MPH.value
+
+      if 0x544 in fingerprint[0]:
+        ret.flags |= HyundaiFlagsSP.SPEED_LIMIT_AVAILABLE.value
+
+      if 0x53E in fingerprint[2]:
+        ret.flags |= HyundaiFlagsSP.HAS_LKAS12.value
+
+    if ret.flags & HyundaiFlagsSP.CCNC and not lka_steering:
       stock_cp.alphaLongitudinalAvailable = False
       stock_cp.openpilotLongitudinalControl = False
       stock_cp.pcmCruise = True
@@ -205,21 +223,6 @@ class CarInterface(CarInterfaceBase):
     if stock_cp.carFingerprint in (CAR.HYUNDAI_BAYON_1ST_GEN_NON_SCC, CAR.KIA_FORTE_2021_NON_SCC,
                                    CAR.KIA_SELTOS_2023_NON_SCC, CAR.GENESIS_G70_2021_NON_SCC):
       stock_cp.dashcamOnly = True
-
-    if stock_cp.flags & HyundaiFlags.CANFD:
-      if 0x1fa in fingerprint[CAN.ECAN]:
-        ret.flags |= HyundaiFlagsSP.SPEED_LIMIT_AVAILABLE.value
-    else:
-      # Detect smartMDPS, which bypasses EPS low-speed lockout, allowing sunnypilot to send steering commands down to 0
-      if 0x2AA in fingerprint[0]:
-        stock_cp.minSteerSpeed = 0.0
-        stock_cp.flags &= ~HyundaiFlags.MIN_STEER_32_MPH.value
-
-      if 0x544 in fingerprint[0]:
-        ret.flags |= HyundaiFlagsSP.SPEED_LIMIT_AVAILABLE.value
-
-      if 0x53E in fingerprint[2]:
-        ret.flags |= HyundaiFlagsSP.HAS_LKAS12.value
 
     ret.intelligentCruiseButtonManagementAvailable = not (stock_cp.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
 

@@ -130,7 +130,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     if self.CP.flags & HyundaiFlags.CANFD:
       can_sends.extend(self.create_canfd_msgs(apply_steer_req, apply_torque, set_speed_in_units, accel,
                                               stopping, hud_control, CS, CC))
-      can_sends.extend(CcncCarController.update(self, CS, CC, CC_SP))
+      can_sends.extend(CcncCarController.update(self, CS, CC))
     else:
       # Hold torque with induced temporary fault when cutting the actuation bit
       # FIXME: we don't use this with CAN FD?
@@ -213,7 +213,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
                                                         self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT))
 
     # LFA and HDA icons
-    if self.frame % 5 == 0 and (not lka_steering or lka_steering_long) and not self.ccnc_non_hda2:
+    if self.frame % 5 == 0 and (not lka_steering or lka_steering_long) and not self.ccnc_lfa_steering:
       can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
 
     # blinkers

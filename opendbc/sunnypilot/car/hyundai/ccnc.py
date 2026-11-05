@@ -32,10 +32,10 @@ def create_ccnc(packer, CAN, msg_161, msg_162, enabled, mads):
 
 class CcncCarController:
   def __init__(self, CP, CP_SP):
-    self.ccnc_non_hda2 = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and not (CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG))
+    self.ccnc_lfa_steering = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and not (CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG))
 
-  def update(self, CS, CC, CC_SP):
-    if not self.ccnc_non_hda2:
+  def update(self, CS, CC):
+    if not self.ccnc_lfa_steering:
       return []
 
     can_sends = [create_ccnc_mdps(self.packer, self.CAN, CS.mdps)]
