@@ -377,11 +377,6 @@ class CAR(Platforms):
     HYUNDAI_SONATA.specs,
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.HYBRID,
   )
-  HYUNDAI_SONATA_HEV_2024 = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-26", car_parts=CarParts.common([CarHarness.hyundai_a]))],
-    CarSpecs(wheelbase=2.84, steerRatio=13.27),
-    sp_flags=HyundaiFlagsSP.CCNC,
-  )
   HYUNDAI_IONIQ_5 = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Hyundai Ioniq 5 (Southeast Asia and Europe only) 2022-24", "All", car_parts=CarParts.common([CarHarness.hyundai_q])),
@@ -698,6 +693,11 @@ class CAR(Platforms):
     GENESIS_G70_2020.specs,
     flags=HyundaiFlags.CHECKSUM_CRC8,
     sp_flags=HyundaiFlagsSP.NON_SCC_RADAR_FCA,
+  )
+  HYUNDAI_SONATA_HEV_2024 = HyundaiCanFDPlatformConfig(
+    [HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-26", car_parts=CarParts.common([CarHarness.hyundai_a]))],
+    CarSpecs(wheelbase=2.84, steerRatio=13.27),
+    sp_flags=HyundaiFlagsSP.CCNC,
   )
 
 
