@@ -139,11 +139,6 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *msg) {
 // CCNC: the camera needs MDPS 0xEA at all times, so pass the real one until op sends its own copy
 static bool hyundai_canfd_ccnc_mdps_tx = false;
 
-// CCNC long: the camera's SCC engages on the driver's main press, so it gets a copy without main. Any button is
-// allowed in that copy because the camera's 0x1A0 never reaches the car under long.
-static bool hyundai_canfd_ccnc = false;
-static bool hyundai_canfd_ccnc_buttons_tx = false;
-
 static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   const TorqueSteeringLimits HYUNDAI_CANFD_STEERING_LIMITS = {
     .max_torque = 270,
@@ -179,13 +174,8 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
     }
   }
 
-  const bool ccnc_buttons_copy = hyundai_canfd_ccnc && hyundai_camera_scc && hyundai_longitudinal && (msg->addr == 0x1cfU);
-  if (ccnc_buttons_copy) {
-    hyundai_canfd_ccnc_buttons_tx = true;
-  }
-
   // cruise buttons check
-  if ((msg->addr == 0x1cfU) && !ccnc_buttons_copy) {
+  if (msg->addr == 0x1cfU) {
     int button = msg->data[2] & 0x7U;
     bool is_cancel = (button == HYUNDAI_BTN_CANCEL);
     bool is_resume = (button == HYUNDAI_BTN_RESUME);
@@ -238,7 +228,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
 }
 
 static bool hyundai_canfd_fwd_hook(int bus_num, int addr) {
-  return (bus_num == 0) && (((addr == 0xea) && hyundai_canfd_ccnc_mdps_tx) || ((addr == 0x1cf) && hyundai_canfd_ccnc_buttons_tx));
+  return (bus_num == 0) && (addr == 0xea) && hyundai_canfd_ccnc_mdps_tx;
 }
 
 static safety_config hyundai_canfd_init(uint16_t param) {
@@ -288,22 +278,21 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
     {0x160, 0, 16, .check_relay = (longitudinal)}, /* ADRV_0x160 */ \
 
-#define HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS(longitudinal) \
+#define HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS \
     HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(2) \
     HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0) \
-    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
+    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, false) \
     {0x161, 0, 32, .check_relay = true}, /* CCNC_0x161 */ \
     {0x162, 0, 32, .check_relay = true}, /* CCNC_0x162 */ \
     {0xEA, 2, 24, .check_relay = true, .disable_static_blocking = true}, /* MDPS */ \
 
   hyundai_common_init(param);
   hyundai_canfd_ccnc_mdps_tx = false;
-  hyundai_canfd_ccnc_buttons_tx = false;
 
   gen_crc_lookup_table_16(0x1021, hyundai_canfd_crc_lut);
   hyundai_canfd_alt_buttons = GET_FLAG(param, HYUNDAI_PARAM_CANFD_ALT_BUTTONS);
   hyundai_canfd_lka_steer_msg_alt = GET_FLAG(param, HYUNDAI_PARAM_CANFD_LKA_STEER_MSG_ALT);
-  hyundai_canfd_ccnc = GET_FLAG(current_safety_param_sp, HYUNDAI_PARAM_SP_CCNC);
+  const bool hyundai_canfd_ccnc = GET_FLAG(current_safety_param_sp, HYUNDAI_PARAM_SP_CCNC);
 
   safety_config ret;
   if (hyundai_longitudinal) {
@@ -327,10 +316,6 @@ static safety_config hyundai_canfd_init(uint16_t param) {
         HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_TX_MSGS(true)
       };
 
-      static CanMsg hyundai_canfd_lfa_steering_camera_scc_ccnc_tx_msgs[] = {
-        HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS(true)
-      };
-
       if (hyundai_canfd_alt_buttons) {
         SET_RX_CHECKS(hyundai_canfd_alt_buttons_long_rx_checks, ret);
       } else {
@@ -338,11 +323,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
       }
 
       if (hyundai_camera_scc) {
-        if (hyundai_canfd_ccnc) {
-          SET_TX_MSGS(hyundai_canfd_lfa_steering_camera_scc_ccnc_tx_msgs, ret);
-        } else {
-          SET_TX_MSGS(hyundai_canfd_lfa_steering_camera_scc_tx_msgs, ret);
-        }
+        SET_TX_MSGS(hyundai_canfd_lfa_steering_camera_scc_tx_msgs, ret);
       } else {
         SET_TX_MSGS(HYUNDAI_CANFD_LFA_STEERING_LONG_TX_MSGS, ret);
       }
@@ -401,7 +382,7 @@ static safety_config hyundai_canfd_init(uint16_t param) {
       };
 
       static CanMsg hyundai_canfd_lfa_steering_camera_scc_ccnc_tx_msgs[] = {
-        HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS(false)
+        HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS
       };
 
       if (hyundai_canfd_ccnc) {
