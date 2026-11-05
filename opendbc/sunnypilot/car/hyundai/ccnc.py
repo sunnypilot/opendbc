@@ -15,13 +15,15 @@ def create_ccnc_mdps(packer, CAN, mdps):
   return packer.make_can_msg("MDPS", CAN.CAM, {**mdps, "MDPS_LkaToiActvSta": 0, "MDPS_LkaToiUnblSta": 1})
 
 
-def create_ccnc(packer, CAN, msg_161, msg_162, lat_enabled):
+def create_ccnc(packer, CAN, msg_161, msg_162, enabled, mads):
+  lat_active = mads.lat_active if mads.enable_mads else enabled
+  paused = mads.enable_mads and mads.paused
   msg_161.update({
-    "LKA_ICON": 4 if lat_enabled else 3,        # green lateral enabled, gray otherwise
-    "LFA_ICON": 2 if lat_enabled else 1,        # green lateral enabled, gray otherwise
-    "LANELINE_LEFT": 6 if lat_enabled else 0,   # green lateral enabled, gray otherwise
-    "LANELINE_RIGHT": 6 if lat_enabled else 0,  # green lateral enabled, gray otherwise
-    "CENTERLINE": 1 if lat_enabled else 0,      # green lateral enabled, hidden otherwise (no gray)
+    "LKA_ICON": 4 if lat_active else 3,
+    "LFA_ICON": 2 if lat_active else 1 if paused else 0,
+    "LANELINE_LEFT": 6 if lat_active else 0,
+    "LANELINE_RIGHT": 6 if lat_active else 0,
+    "CENTERLINE": 1 if lat_active else 0,
     "DAW_ICON": 0,
   })
 
@@ -38,6 +40,5 @@ class CcncCarController:
 
     can_sends = [create_ccnc_mdps(self.packer, self.CAN, CS.mdps)]
     if self.frame % 5 == 0:
-      lat_enabled = CC_SP.mads.enabled if CC_SP.mads.available else CC.enabled
-      can_sends.extend(create_ccnc(self.packer, self.CAN, CS.msg_161, CS.msg_162, lat_enabled))
+      can_sends.extend(create_ccnc(self.packer, self.CAN, CS.msg_161, CS.msg_162, CC.enabled, self.mads))
     return can_sends
