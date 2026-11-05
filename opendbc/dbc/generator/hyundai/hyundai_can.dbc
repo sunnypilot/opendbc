@@ -1502,7 +1502,7 @@ BO_ 913 BCM_PO_11: 8 Vector__XXX
 BO_ 1426 LABEL11: 8 XXX
  SG_ CC_React : 34|1@1+ (1,0) [0|1] "" XXX
  SG_ CC_ACT : 35|1@1+ (1,0) [0|1] "" XXX
- SG_ EV_MOTOR_POWER : 40|8@1- (1,0) [-128|127] "" XXX
+ SG_ EV_MOTOR_POWER : 40|8@1- (1.25,0) [-160|158.75] "kW" XXX
 
 BO_ 910 WHL_SPD12_FS: 5 iBAU
  SG_ CRC : 0|8@1+ (1,0) [0|0] "" Vector__XXX
@@ -1683,7 +1683,7 @@ CM_ SG_ 871 CF_Lvr_IsgState "Idle Stop and Go";
 CM_ SG_ 1056 SCCInfoDisplay "Goes to 1 for a second while transitioning from Cruise Control to No Message";
 CM_ SG_ 1348 SpeedLim_Nav_Clu "Speed limit displayed on Nav, Cluster and HUD";
 CM_ SG_ 882 EV_MOTOR_TORQUE "EV Drive motor torque, negative when regen braking, falls to zero or pos when friction only is braking. Raw units. Hybrids use these bits for SLC_SET_SPEED";
-CM_ SG_ 1426 EV_MOTOR_POWER "EV Drive motor power, negative when regen braking. Raw units";
+CM_ SG_ 1426 EV_MOTOR_POWER "EV Drive motor power, negative when regen braking. Matches the Drivetrain kW on the infotainment's Electricity Use page, scale provisional";
 CM_ SG_ 1429 EV_BATTERY_POWER "EV Battery power, negative when regen is charging it. Raw units";
 
 VAL_ 274 CUR_GR 1 "D" 2 "D" 3 "D" 4 "D" 5 "D" 6 "D" 7 "D" 8 "D" 14 "R" 0 "P";
