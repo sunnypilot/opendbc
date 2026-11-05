@@ -88,7 +88,6 @@ class CarStateExt:
     self.aBasis = cp.vl["TCS"]["aBasis"]
 
     if self.CP_SP.flags & HyundaiFlagsSP.CCNC and not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
-      self.msg_161, self.msg_162 = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"]))
-      self.mdps = copy.copy(cp.vl["MDPS"]) if cp.ts_nanos["MDPS"]["COUNTER"] else {}  # never copy before the real one arrived
+      self.msg_161, self.msg_162, self.mdps = map(copy.copy, (cp_cam.vl["CCNC_0x161"], cp_cam.vl["CCNC_0x162"], cp.vl["MDPS"]))
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
