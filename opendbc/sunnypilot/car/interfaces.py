@@ -82,6 +82,8 @@ class NanoFFModel:
     return pred
 
 
+SMOOTH_STOP_DECEL_RATE = 0.3
+
 # upstream detects BSM per brand into each brand's HAS_BSM flag
 BSM_FLAGS = {
   "chrysler": ChryslerFlags.HAS_BSM,
@@ -119,6 +121,7 @@ def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
   _initialize_radar_tracks(CP, CP_SP, can_recv, can_send)
   _initialize_stop_and_go(CP, CP_SP, params_dict)
   _initialize_toyota(CP, CP_SP, params_dict)
+  _initialize_smooth_stop(CP, CP_SP, params_dict)
 
 
 def _initialize_custom_longitudinal_tuning(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
@@ -211,3 +214,8 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
 
     if toyota_tss2_smooth and CP.flags & ToyotaFlags.TSS2 and CP.openpilotLongitudinalControl:
       CP_SP.flags |= ToyotaFlagsSP.TSS2_SMOOTH.value
+
+
+def _initialize_smooth_stop(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params_dict: dict[str, str]) -> None:
+  if CP.openpilotLongitudinalControl and int(params_dict.get("SmoothStopSP", 0)) == 1:
+    CP_SP.smoothStopDecelRate = SMOOTH_STOP_DECEL_RATE
