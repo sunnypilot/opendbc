@@ -7,7 +7,7 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiSafetyFlagsSP
 from opendbc.car.structs import CarParams
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.libsafety import libsafety_py
-from opendbc.safety.tests.hyundai_common import HyundaiButtonBase, HyundaiLongitudinalBase
+from opendbc.safety.tests.hyundai_common import Buttons, HyundaiButtonBase, HyundaiLongitudinalBase
 
 # All combinations of radar/camera-SCC and gas/hybrid/EV cars
 ALL_GAS_EV_HYBRID_COMBOS = [
@@ -20,6 +20,8 @@ ALL_GAS_EV_HYBRID_COMBOS = [
   {"GAS_MSG": ("ACCELERATOR", "ACCELERATOR_PEDAL"), "SCC_BUS": 2, "EXTRA_SAFETY_PARAM": HyundaiSafetyFlags.EV_GAS | HyundaiSafetyFlags.CAMERA_SCC},
   {"GAS_MSG": ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL"), "SCC_BUS": 2, "EXTRA_SAFETY_PARAM": HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC},
 ]
+
+CAMERA_SCC_COMBOS = ALL_GAS_EV_HYBRID_COMBOS[3:]
 
 
 class TestHyundaiCanfdBase(HyundaiButtonBase, common.CarSafetyTest, common.DriverTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):
@@ -266,7 +268,7 @@ class HyundaiCanfdCCNCTest:
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    if cls.__name__ == "TestHyundaiCanfdLFASteeringCCNC":
+    if cls.__name__ in ("TestHyundaiCanfdLFASteeringCCNC", "TestHyundaiCanfdLFASteeringLongCCNC"):
       cls.packer = None
       raise unittest.SkipTest
 
@@ -287,15 +289,34 @@ class HyundaiCanfdCCNCTest:
       self.assertTrue(self._tx(self.packer.make_can_msg_safety(msg, bus, {})))
 
 
-CAMERA_SCC_COMBOS = [c for c in ALL_GAS_EV_HYBRID_COMBOS if c["EXTRA_SAFETY_PARAM"] & HyundaiSafetyFlags.CAMERA_SCC]
-
-
 @parameterized_class(CAMERA_SCC_COMBOS)
 class TestHyundaiCanfdLFASteeringCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFASteeringBase):
 
-  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x161, 0], [0x162, 0], [0xEA, 2]]
+  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162), 2: (0xEA,)}
   FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162]}
+
+  def test_ccnc_buttons_always_forwarded(self):
+    self.safety.set_controls_allowed(True)
+    self.assertFalse(self._tx(self._button_msg(Buttons.NONE, bus=2)))
+    self.assertTrue(self._tx(self._button_msg(Buttons.RESUME, bus=2)))
+    self.assertEqual(2, self.safety.safety_fwd_hook(0, 0x1CF))
+
+
+@parameterized_class(CAMERA_SCC_COMBOS)
+class TestHyundaiCanfdLFASteeringLongCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFASteeringLongBase):
+
+  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x1A0, 0]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162, 0x1A0), 2: (0xEA,)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162, 0x1A0]}
+
+  def test_ccnc_buttons_forwarded_until_op_sends(self):
+    self.assertEqual(2, self.safety.safety_fwd_hook(0, 0x1CF))
+    for btn in range(8):
+      for main_button in (0, 1):
+        self.assertTrue(self._tx(self._button_msg(btn, main_button, bus=2)))
+    self.assertEqual(-1, self.safety.safety_fwd_hook(0, 0x1CF))
+    self.assertEqual(0, self.safety.safety_fwd_hook(2, 0x1CF))
 
 
 if __name__ == "__main__":
