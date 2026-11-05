@@ -68,6 +68,7 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
       "REQUESTED_SAFETY_MODE": SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR,
       "REQUESTED_SAFETY_PARAM": ADAS_DRV_INTERCEPTOR_PROTOCOL_VERSION,
       "FEATURE_1": 1,
+      "FEATURE_2": 1,
     }
     return [packer.make_can_msg("ADAS_DRV_INTERCEPT_OPT", CAN.ACAN, values)]
 
