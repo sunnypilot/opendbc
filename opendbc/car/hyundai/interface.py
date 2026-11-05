@@ -189,6 +189,10 @@ class CarInterface(CarInterfaceBase):
       stock_cp.dashcamOnly = False
 
     if ret.flags & HyundaiFlagsSP.CCNC and not stock_cp.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+      stock_cp.alphaLongitudinalAvailable = False
+      stock_cp.openpilotLongitudinalControl = False
+      stock_cp.pcmCruise = True
+      stock_cp.safetyConfigs[-1].safetyParam &= ~HyundaiSafetyFlags.LONG.value
       ret.safetyParam |= HyundaiSafetyFlagsSP.CCNC
 
     if ret.flags & HyundaiFlagsSP.NON_SCC:
