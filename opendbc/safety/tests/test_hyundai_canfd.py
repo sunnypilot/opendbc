@@ -292,7 +292,7 @@ class HyundaiCanfdCCNCTest:
 @parameterized_class(CAMERA_SCC_COMBOS)
 class TestHyundaiCanfdLFASteeringCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFASteeringBase):
 
-  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2]]
+  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x161, 0], [0x162, 0], [0xEA, 2]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162), 2: (0xEA,)}
   FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162]}
 
@@ -306,7 +306,7 @@ class TestHyundaiCanfdLFASteeringCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFAS
 @parameterized_class(CAMERA_SCC_COMBOS)
 class TestHyundaiCanfdLFASteeringLongCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFASteeringLongBase):
 
-  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x1A0, 0]]
+  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x1A0, 0], [0x161, 0], [0x162, 0], [0xEA, 2]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162, 0x1A0), 2: (0xEA,)}
   FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162, 0x1A0]}
 
