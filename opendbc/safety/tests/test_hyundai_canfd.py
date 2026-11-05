@@ -21,6 +21,8 @@ ALL_GAS_EV_HYBRID_COMBOS = [
   {"GAS_MSG": ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL"), "SCC_BUS": 2, "EXTRA_SAFETY_PARAM": HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC},
 ]
 
+CAMERA_SCC_COMBOS = ALL_GAS_EV_HYBRID_COMBOS[3:]
+
 
 class TestHyundaiCanfdBase(HyundaiButtonBase, common.CarSafetyTest, common.DriverTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):
 
@@ -285,9 +287,6 @@ class HyundaiCanfdCCNCTest:
   def test_ccnc_tx_msgs(self):
     for msg, bus in (("CCNC_0x161", 0), ("CCNC_0x162", 0), ("MDPS", 2)):
       self.assertTrue(self._tx(self.packer.make_can_msg_safety(msg, bus, {})))
-
-
-CAMERA_SCC_COMBOS = [c for c in ALL_GAS_EV_HYBRID_COMBOS if c["EXTRA_SAFETY_PARAM"] & HyundaiSafetyFlags.CAMERA_SCC]
 
 
 @parameterized_class(CAMERA_SCC_COMBOS)
