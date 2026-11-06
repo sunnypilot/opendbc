@@ -52,18 +52,14 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
   })
 
   if long_enabled:
-    state = 0 if not main_cruise_enabled else 5 if enabled else 1
-    distance_car_state = 0 if not main_cruise_enabled else 3 if enabled else 1
-    lead = 2 if enabled and hud_control.leadVisible else 0
-
     values.update({
-      "SETSPEED": (0, 1, 5)[state],
-      "SETSPEED_HUD": state,
+      "SETSPEED": 6 if enabled else 1 if main_cruise_enabled else 0,
+      "SETSPEED_HUD": 5 if enabled else 1 if main_cruise_enabled else 0,
       "SETSPEED_SPEED": set_speed if main_cruise_enabled else 255,
       "DISTANCE": hud_control.leadDistanceBars if main_cruise_enabled else 0,
       "DISTANCE_SPACING": 5 if enabled else 0,
-      "DISTANCE_LEAD": lead,
-      "DISTANCE_CAR": distance_car_state,
+      "DISTANCE_LEAD": 2 if enabled and hud_control.leadVisible else 0,
+      "DISTANCE_CAR": 3 if enabled else 1 if main_cruise_enabled else 0,
       "HDA_ICON": 5 if enabled else 0,
       "SLA_ICON": 0,
       "NAV_ICON": 0,
