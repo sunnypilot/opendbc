@@ -48,7 +48,7 @@ void tick_mads_state(bool vm, bool acc_main, bool op_allowed, bool braking, bool
 
 void set_unseen_rx_checks_valid(void){
   for (int i = 0; i < current_safety_config.rx_checks_len; i++) {
-    RxStatus *status = &current_safety_config.rx_checks[i].status;
+    RxStatus *status = &rx_status[i];
     if (!status->msg_seen) {
       status->msg_seen = true;
       status->index = 0;
