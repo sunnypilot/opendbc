@@ -94,7 +94,7 @@ class CarStateExt:
       self.msg_161 = copy.copy(cp_cam.vl["CCNC_0x161"])
       self.msg_162 = copy.copy(cp_cam.vl["CCNC_0x162"])
       self.mdps = copy.copy(cp.vl["MDPS"])
-      self.cruise_info = copy.copy((cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp).vl["SCC_CONTROL"])
+      self.cruise_info = copy.copy(cp_cam.vl["SCC_CONTROL"])
       self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
