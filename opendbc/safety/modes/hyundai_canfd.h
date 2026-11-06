@@ -244,7 +244,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   }
 
   // cruise buttons check
-  if (msg->addr == 0x1cfU) {
+  if ((msg->addr == 0x1cfU) && !(hyundai_ccnc && hyundai_camera_scc && hyundai_longitudinal)) {
     int button = msg->data[2] & 0x7U;
     bool is_cancel = (button == HYUNDAI_BTN_CANCEL);
     bool is_resume = (button == HYUNDAI_BTN_RESUME);
@@ -391,13 +391,6 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
     {0x160, 0, 16, .check_relay = (longitudinal)}, /* ADRV_0x160 */ \
 
-#define HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS(longitudinal) \
-    HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(2) \
-    HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0) \
-    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
-    {0x161, 0, 32, .check_relay = true}, /* CCNC_0x161 */ \
-    {0x162, 0, 32, .check_relay = true}, /* CCNC_0x162 */ \
-
   hyundai_common_init(param);
 
   gen_crc_lookup_table_16(0x1021, hyundai_canfd_crc_lut);
@@ -440,7 +433,12 @@ static safety_config hyundai_canfd_init(uint16_t param) {
       };
 
       static CanMsg hyundai_canfd_lfa_steering_camera_scc_ccnc_tx_msgs[] = {
-        HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS(true)
+        HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0)
+        HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, true)
+        {0x1CF, 2,  8, .check_relay = true},  // CRUISE_BUTTONS
+        {0x161, 0, 32, .check_relay = true},  // CCNC_0x161
+        {0x162, 0, 32, .check_relay = true},  // CCNC_0x162
+        {0xEA,  2, 24, .check_relay = true},  // MDPS
       };
 
       if (hyundai_canfd_alt_buttons) {
@@ -517,7 +515,10 @@ static safety_config hyundai_canfd_init(uint16_t param) {
       };
 
       static CanMsg hyundai_canfd_lfa_steering_camera_scc_ccnc_tx_msgs[] = {
-        HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS(false)
+        HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_TX_MSGS(false)
+        {0x161, 0, 32, .check_relay = true},  // CCNC_0x161
+        {0x162, 0, 32, .check_relay = true},  // CCNC_0x162
+        {0xEA,  2, 24, .check_relay = true},  // MDPS
       };
 
       if (hyundai_ccnc) {

@@ -214,23 +214,12 @@ class CarInterface(CarInterfaceBase):
     if stock_cp.flags & HyundaiFlags.ALT_LIMITS_2:
       stock_cp.dashcamOnly = False
 
-    if ret.flags & HyundaiFlagsSP.NON_SCC:
-      stock_cp.alphaLongitudinalAvailable = False
-      stock_cp.openpilotLongitudinalControl = False
-      stock_cp.pcmCruise = True
-      ret.safetyParam |= HyundaiSafetyFlagsSP.NON_SCC
-
-    if ccnc_hud_enabled(stock_cp, ret):
-      ret.safetyParam |= HyundaiSafetyFlagsSP.CCNC
-
-    # untested non-SCC platforms, need user validations
-    if stock_cp.carFingerprint in (CAR.HYUNDAI_BAYON_1ST_GEN_NON_SCC, CAR.KIA_FORTE_2021_NON_SCC,
-                                   CAR.KIA_SELTOS_2023_NON_SCC, CAR.GENESIS_G70_2021_NON_SCC):
-      stock_cp.dashcamOnly = True
-
     if stock_cp.flags & HyundaiFlags.CANFD:
       if 0x1fa in fingerprint[CAN.ECAN]:
         ret.flags |= HyundaiFlagsSP.SPEED_LIMIT_AVAILABLE.value
+
+      if any(0x161 in fingerprint[b] and 0x162 in fingerprint[b] for b in (CAN.ECAN, CAN.CAM)):
+        ret.flags |= HyundaiFlagsSP.CCNC.value
 
       if Bus.radar in DBC[candidate]:
         stock_cp.radarUnavailable = not has_radar_tracks(fingerprint, CAN.ACAN)
@@ -245,6 +234,20 @@ class CarInterface(CarInterfaceBase):
 
       if 0x53E in fingerprint[2]:
         ret.flags |= HyundaiFlagsSP.HAS_LKAS12.value
+
+    if ccnc_hud_enabled(stock_cp, ret):
+      ret.safetyParam |= HyundaiSafetyFlagsSP.CCNC
+
+    if ret.flags & HyundaiFlagsSP.NON_SCC:
+      stock_cp.alphaLongitudinalAvailable = False
+      stock_cp.openpilotLongitudinalControl = False
+      stock_cp.pcmCruise = True
+      ret.safetyParam |= HyundaiSafetyFlagsSP.NON_SCC
+
+    # untested non-SCC platforms, need user validations
+    if stock_cp.carFingerprint in (CAR.HYUNDAI_BAYON_1ST_GEN_NON_SCC, CAR.KIA_FORTE_2021_NON_SCC,
+                                   CAR.KIA_SELTOS_2023_NON_SCC, CAR.GENESIS_G70_2021_NON_SCC):
+      stock_cp.dashcamOnly = True
 
     ret.intelligentCruiseButtonManagementAvailable = not (stock_cp.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
 

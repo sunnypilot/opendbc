@@ -22,7 +22,10 @@ class CarStateExt:
     self.CP_SP = CP_SP
 
     self.aBasis = 0.0
-    self.msg_161, self.msg_162, self.msg_1b5 = {}, {}, {}
+    self.msg_161 = {}
+    self.msg_162 = {}
+    self.mdps = {}
+    self.cruise_buttons_msg = {}
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -92,10 +95,14 @@ class CarStateExt:
     if ccnc_hud_enabled(self.CP, self.CP_SP):
       if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
         # the interceptor redirects the ADAS DRV ECU's copies to A-CAN once ours are seen on E-CAN
-        cp_hud, cp_1b5 = can_parsers[Bus.adas], cp
+        cp_hud = can_parsers[Bus.adas]
       else:
-        cp_hud = cp_1b5 = cp_cam
-      self.msg_161, self.msg_162, self.msg_1b5 = map(copy.copy, (cp_hud.vl["CCNC_0x161"], cp_hud.vl["CCNC_0x162"], cp_1b5.vl["FR_CMR_03_50ms"]))
+        cp_hud = cp_cam
+        self.mdps = copy.copy(cp.vl["MDPS"])
+        self.cruise_info = copy.copy(cp_cam.vl["SCC_CONTROL"])
+        self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
+      self.msg_161 = copy.copy(cp_hud.vl["CCNC_0x161"])
+      self.msg_162 = copy.copy(cp_hud.vl["CCNC_0x162"])
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
 
