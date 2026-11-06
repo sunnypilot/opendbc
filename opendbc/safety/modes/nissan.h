@@ -133,7 +133,7 @@ static safety_config nissan_init(uint16_t param) {
   };
 
   // Signals duplicated below due to the fact that these messages can come in on either CAN bus, depending on car model.
-  static RxCheck nissan_rx_checks[] = {
+  static const RxCheck nissan_rx_checks[] = {
     NISSAN_COMMON_RX_CHECKS
     NISSAN_PRO_PILOT_RX_CHECKS(1)
   };

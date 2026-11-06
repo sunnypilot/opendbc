@@ -404,7 +404,7 @@ static safety_config tesla_init(uint16_t param) {
   tesla_autopark = true;
   tesla_autopark_prev = false;
 
-  static RxCheck tesla_model3_y_rx_checks[] = {
+  static const RxCheck tesla_model3_y_rx_checks[] = {
     TESLA_COMMON_RX_CHECKS
   };
 
