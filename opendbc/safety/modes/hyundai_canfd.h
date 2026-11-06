@@ -47,7 +47,6 @@
 
 static bool hyundai_canfd_alt_buttons = false;
 static bool hyundai_canfd_lka_steer_msg_alt = false;
-static bool hyundai_canfd_ccnc_buttons_tx = false;
 
 static unsigned int hyundai_canfd_get_lka_addr(void) {
   return hyundai_canfd_lka_steer_msg_alt ? 0x110U : 0x50U;
@@ -168,13 +167,8 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
     }
   }
 
-  const bool ccnc_buttons_copy = hyundai_ccnc && hyundai_camera_scc && hyundai_longitudinal && (msg->addr == 0x1cfU);
-  if (ccnc_buttons_copy) {
-    hyundai_canfd_ccnc_buttons_tx = true;
-  }
-
   // cruise buttons check
-  if ((msg->addr == 0x1cfU) && !ccnc_buttons_copy) {
+  if ((msg->addr == 0x1cfU) && !(hyundai_ccnc && hyundai_camera_scc && hyundai_longitudinal)) {
     int button = msg->data[2] & 0x7U;
     bool is_cancel = (button == HYUNDAI_BTN_CANCEL);
     bool is_resume = (button == HYUNDAI_BTN_RESUME);
@@ -226,10 +220,6 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   return tx;
 }
 
-static bool hyundai_canfd_fwd_hook(int bus_num, int addr) {
-  return (bus_num == 0) && (addr == 0x1cf) && hyundai_canfd_ccnc_buttons_tx;
-}
-
 static safety_config hyundai_canfd_init(uint16_t param) {
   const uint16_t HYUNDAI_PARAM_CANFD_LKA_STEER_MSG_ALT = 128;
   const uint16_t HYUNDAI_PARAM_CANFD_ALT_BUTTONS = 32;
@@ -277,20 +267,11 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
     {0x160, 0, 16, .check_relay = (longitudinal)}, /* ADRV_0x160 */ \
 
-#define HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS(longitudinal) \
-    HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(2) \
-    HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0) \
-    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, (longitudinal)) \
-    {0x161, 0, 32, .check_relay = true},  /* CCNC_0x161 */ \
-    {0x162, 0, 32, .check_relay = true},  /* CCNC_0x162 */ \
-    {0xEA,  2, 24, .check_relay = true},  /* MDPS */ \
-
   hyundai_common_init(param);
 
   gen_crc_lookup_table_16(0x1021, hyundai_canfd_crc_lut);
   hyundai_canfd_alt_buttons = GET_FLAG(param, HYUNDAI_PARAM_CANFD_ALT_BUTTONS);
   hyundai_canfd_lka_steer_msg_alt = GET_FLAG(param, HYUNDAI_PARAM_CANFD_LKA_STEER_MSG_ALT);
-  hyundai_canfd_ccnc_buttons_tx = false;
 
   safety_config ret;
   if (hyundai_longitudinal) {
@@ -315,7 +296,12 @@ static safety_config hyundai_canfd_init(uint16_t param) {
       };
 
       static CanMsg hyundai_canfd_lfa_steering_camera_scc_ccnc_tx_msgs[] = {
-        HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS(true)
+        HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0)
+        HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0, true)
+        {0x1CF, 2,  8, .check_relay = true},  // CRUISE_BUTTONS
+        {0x161, 0, 32, .check_relay = true},  // CCNC_0x161
+        {0x162, 0, 32, .check_relay = true},  // CCNC_0x162
+        {0xEA,  2, 24, .check_relay = true},  // MDPS
       };
 
       if (hyundai_canfd_alt_buttons) {
@@ -388,7 +374,10 @@ static safety_config hyundai_canfd_init(uint16_t param) {
       };
 
       static CanMsg hyundai_canfd_lfa_steering_camera_scc_ccnc_tx_msgs[] = {
-        HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_CCNC_TX_MSGS(false)
+        HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_TX_MSGS(false)
+        {0x161, 0, 32, .check_relay = true},  // CCNC_0x161
+        {0x162, 0, 32, .check_relay = true},  // CCNC_0x162
+        {0xEA,  2, 24, .check_relay = true},  // MDPS
       };
 
       if (hyundai_ccnc) {
@@ -412,7 +401,6 @@ const safety_hooks hyundai_canfd_hooks = {
   .init = hyundai_canfd_init,
   .rx = hyundai_canfd_rx_hook,
   .tx = hyundai_canfd_tx_hook,
-  .fwd = hyundai_canfd_fwd_hook,
   .get_counter = hyundai_canfd_get_counter,
   .get_checksum = hyundai_canfd_get_checksum,
   .compute_checksum = hyundai_common_canfd_compute_checksum,

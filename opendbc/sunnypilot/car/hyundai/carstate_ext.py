@@ -23,7 +23,7 @@ class CarStateExt:
     self.msg_161 = {}
     self.msg_162 = {}
     self.mdps = {}
-    self.ccnc_buttons = []
+    self.cruise_buttons_msg = {}
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -95,8 +95,6 @@ class CarStateExt:
       self.msg_162 = copy.copy(cp_cam.vl["CCNC_0x162"])
       self.mdps = copy.copy(cp.vl["MDPS"])
       self.cruise_info = copy.copy((cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp).vl["SCC_CONTROL"])
-      if not self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
-        buttons = cp.vl_all["CRUISE_BUTTONS"]
-        self.ccnc_buttons = [dict(zip(buttons, frame, strict=True)) for frame in zip(*buttons.values(), strict=True)]
+      self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor

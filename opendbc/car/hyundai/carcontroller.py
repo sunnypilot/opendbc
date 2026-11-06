@@ -228,7 +228,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
       if self.frame % 2 == 0:
         can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
                                                          set_speed_in_units, hud_control, self.lead_data, CS.main_cruise_enabled, self.tuning,
-                                                         CS.cruise_info if self.ccnc_lfa_steering else None))
+                                                         CS.cruise_info))
         self.accel_last = accel
     else:
       # button presses

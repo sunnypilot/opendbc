@@ -74,13 +74,18 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, mads, hud,
   ]
 
 
-def create_ccnc_buttons(packer, CAN, frame, buttons, camera_main_on):
-  main_press = bool(camera_main_on) and frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES
-  msgs = []
-  for b in buttons:
-    addr, dat, bus = packer.make_can_msg("CRUISE_BUTTONS", CAN.CAM, {**b, "ADAPTIVE_CRUISE_MAIN_BTN": int(main_press), "NORMAL_CRUISE_MAIN_BTN": 0})
-    msgs.append((addr, bytes([cruise_buttons_checksum(dat[1:])]) + dat[1:], bus))
-  return msgs
+def create_ccnc_buttons(packer, CAN, frame, cruise_buttons_msg, camera_main_on):
+  values = cruise_buttons_msg.copy()
+
+  values.update({
+    "ADAPTIVE_CRUISE_MAIN_BTN": 1 if camera_main_on and frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES else 0,
+    "NORMAL_CRUISE_MAIN_BTN": 0,
+  })
+
+  dat = packer.make_can_msg("CRUISE_BUTTONS", CAN.CAM, values)[1]
+  values["_CHECKSUM"] = cruise_buttons_checksum(dat[1:])
+
+  return packer.make_can_msg("CRUISE_BUTTONS", CAN.CAM, values)
 
 
 class CcncCarController:
@@ -94,8 +99,8 @@ class CcncCarController:
       return can_sends
 
     can_sends.append(create_ccnc_mdps(self.packer, self.CAN, CS.mdps))
-    if self.CP.openpilotLongitudinalControl and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
-      can_sends.extend(create_ccnc_buttons(self.packer, self.CAN, self.frame, CS.ccnc_buttons, CS.cruise_info["MainMode_ACC"]))
+    if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
+      can_sends.append(create_ccnc_buttons(self.packer, self.CAN, self.frame, CS.cruise_buttons_msg, CS.cruise_info["MainMode_ACC"]))
     if self.frame % 5 == 0:
       can_sends.extend(create_ccnc(self.packer, self.CAN, self.CP.openpilotLongitudinalControl, CC.enabled, self.mads, CC.hudControl,
                                    CS.msg_161, CS.msg_162, self.lead_distance, CS.is_metric, CS.out.vCruiseCluster, CS.main_cruise_enabled))
