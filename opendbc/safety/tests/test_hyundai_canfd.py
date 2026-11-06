@@ -21,8 +21,6 @@ ALL_GAS_EV_HYBRID_COMBOS = [
   {"GAS_MSG": ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL"), "SCC_BUS": 2, "EXTRA_SAFETY_PARAM": HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CAMERA_SCC},
 ]
 
-CAMERA_SCC_COMBOS = ALL_GAS_EV_HYBRID_COMBOS[3:]
-
 
 class TestHyundaiCanfdBase(HyundaiButtonBase, common.CarSafetyTest, common.DriverTorqueSteeringSafetyTest, common.SteerRequestCutSafetyTest):
 
@@ -263,15 +261,10 @@ class TestHyundaiCanfdLFASteeringLongAltButtons(TestHyundaiCanfdLFASteeringLongB
     pass
 
 
-class HyundaiCanfdCCNCTest:
+CAMERA_SCC_COMBOS = [c for c in ALL_GAS_EV_HYBRID_COMBOS if c["EXTRA_SAFETY_PARAM"] & HyundaiSafetyFlags.CAMERA_SCC]
 
-  @classmethod
-  def setUpClass(cls):
-    super().setUpClass()
-    if cls.__name__ in ("TestHyundaiCanfdLFASteeringCCNC", "TestHyundaiCanfdLFASteeringLongCCNC"):
-      cls.packer = None
-      raise unittest.SkipTest
 
+class HyundaiCanfdCCNCBase(TestHyundaiCanfdBase):
   def setUp(self):
     libsafety_py.libsafety.set_current_safety_param_sp(HyundaiSafetyFlagsSP.CCNC)
     super().setUp()
@@ -279,44 +272,52 @@ class HyundaiCanfdCCNCTest:
   def tearDown(self):
     self.safety.set_current_safety_param_sp(0)
 
-  def test_ccnc_mdps_forwarded_until_op_sends(self):
-    self.assertEqual(2, self.safety.safety_fwd_hook(0, 0xEA))
-    self.assertTrue(self._tx(self.packer.make_can_msg_safety("MDPS", 2, {})))
-    self.assertEqual(-1, self.safety.safety_fwd_hook(0, 0xEA))
-
   def test_ccnc_tx_msgs(self):
     for msg, bus in (("CCNC_0x161", 0), ("CCNC_0x162", 0), ("MDPS", 2)):
       self.assertTrue(self._tx(self.packer.make_can_msg_safety(msg, bus, {})))
 
 
 @parameterized_class(CAMERA_SCC_COMBOS)
-class TestHyundaiCanfdLFASteeringCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFASteeringBase):
+class TestHyundaiCanfdLFASteeringCCNC(HyundaiCanfdCCNCBase, TestHyundaiCanfdLFASteeringBase):
 
-  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2]]
+  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x161, 0], [0x162, 0], [0xEA, 2]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162), 2: (0xEA,)}
-  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162]}
+  FWD_BLACKLISTED_ADDRS = {0: [0xEA], 2: [0x12A, 0x1E0, 0x161, 0x162]}
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    if cls.__name__ == "TestHyundaiCanfdLFASteeringCCNC":
+      cls.packer = None
+      raise unittest.SkipTest
 
   def test_ccnc_buttons_always_forwarded(self):
     self.safety.set_controls_allowed(True)
-    self.assertFalse(self._tx(self._button_msg(Buttons.NONE, bus=2)))
-    self.assertTrue(self._tx(self._button_msg(Buttons.RESUME, bus=2)))
-    self.assertEqual(2, self.safety.safety_fwd_hook(0, 0x1CF))
+    self.assertFalse(self._tx(self._button_msg(Buttons.NONE, bus=self.BUTTONS_TX_BUS)))
+    self.assertTrue(self._tx(self._button_msg(Buttons.RESUME, bus=self.BUTTONS_TX_BUS)))
+    self.assertEqual(self.safety.safety_fwd_hook(0, 0x1CF), 2)
 
 
 @parameterized_class(CAMERA_SCC_COMBOS)
-class TestHyundaiCanfdLFASteeringLongCCNC(HyundaiCanfdCCNCTest, TestHyundaiCanfdLFASteeringLongBase):
+class TestHyundaiCanfdLFASteeringLongCCNC(HyundaiCanfdCCNCBase, TestHyundaiCanfdLFASteeringLongBase):
 
-  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x1A0, 0]]
-  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x161, 0x162, 0x1A0), 2: (0xEA,)}
-  FWD_BLACKLISTED_ADDRS = {2: [0x12A, 0x1E0, 0x161, 0x162, 0x1A0]}
+  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x1A0, 0], [0x161, 0], [0x162, 0], [0xEA, 2]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x1A0, 0x161, 0x162), 2: (0xEA,)}
+  FWD_BLACKLISTED_ADDRS = {0: [0xEA], 2: [0x12A, 0x1E0, 0x1A0, 0x161, 0x162]}
 
-  def test_ccnc_buttons_forwarded_until_op_sends(self):
-    self.assertEqual(2, self.safety.safety_fwd_hook(0, 0x1CF))
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    if cls.__name__ == "TestHyundaiCanfdLFASteeringLongCCNC":
+      cls.packer = None
+      raise unittest.SkipTest
+
+  def test_ccnc_buttons_forwarded_until_sent(self):
+    self.assertEqual(self.safety.safety_fwd_hook(0, 0x1CF), 2)
     for btn in range(8):
-      for main_button in (0, 1):
-        self.assertTrue(self._tx(self._button_msg(btn, main_button, bus=2)))
-    self.assertEqual(-1, self.safety.safety_fwd_hook(0, 0x1CF))
-    self.assertEqual(0, self.safety.safety_fwd_hook(2, 0x1CF))
+      for main_btn in (0, 1):
+        self.assertTrue(self._tx(self._button_msg(btn, main_button=main_btn, bus=self.BUTTONS_TX_BUS)))
+    self.assertEqual(self.safety.safety_fwd_hook(0, 0x1CF), -1)
 
 
 if __name__ == "__main__":

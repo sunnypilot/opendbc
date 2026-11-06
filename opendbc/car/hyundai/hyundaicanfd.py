@@ -154,8 +154,8 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "SET_ME_TMP_64": 0x64,
     "DISTANCE_SETTING": hud_control.leadDistanceBars,
   }
-  if cruise_info:
-    values.update({s: cruise_info[s] for s in ["ACC_ObjDist", "ACC_ObjRelSpd"]})
+  if cruise_info is not None:
+    values.update({s: cruise_info[s] for s in ("ACC_ObjDist", "ACC_ObjRelSpd")})
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
