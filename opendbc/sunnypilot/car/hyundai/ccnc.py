@@ -27,13 +27,11 @@ def create_ccnc_mdps(packer, CAN, mdps):
   return packer.make_can_msg("MDPS", CAN.CAM, values)
 
 
-def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, mads, hud, msg_161, msg_162, lead_distance,
-                is_metric, v_cruise_cluster, main_cruise_enabled):
-  lat_active = mads.lat_active if mads.enable_mads else enabled
-  paused = mads.enable_mads and mads.paused
+def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_enabled,
+                      main_cruise_enabled, hud_control, set_speed):
+  values = msg_161.copy()
 
-  values_161 = msg_161.copy()
-  values_161.update({
+  values.update({
     "LKA_ICON": 4 if lat_active else 3,
     "LFA_ICON": 2 if lat_active else 1 if paused else 0,
     "LANELINE_LEFT": 6 if lat_active else 0,
@@ -42,20 +40,15 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, mads, hud,
     "DAW_ICON": 0,
   })
 
-  values_162 = msg_162.copy()
-
-  if openpilot_longitudinal_control:
+  if long_enabled:
     state = 0 if not main_cruise_enabled else 2 if enabled else 1
-    lead = 2 if enabled and hud.leadVisible else 0
+    lead = 2 if enabled and hud_control.leadVisible else 0
 
-    values_161.update({
+    values.update({
       "SETSPEED": (0, 1, 3)[state],
       "SETSPEED_HUD": state,
-      "SETSPEED_SPEED": (
-        255 if not main_cruise_enabled else
-        (40 if is_metric else 25) if (s := round(v_cruise_cluster * (1 if is_metric else CV.KPH_TO_MPH))) > (145 if is_metric else 90) else s
-      ),
-      "DISTANCE": hud.leadDistanceBars if main_cruise_enabled else 0,
+      "SETSPEED_SPEED": set_speed if main_cruise_enabled else 255,
+      "DISTANCE": hud_control.leadDistanceBars if main_cruise_enabled else 0,
       "DISTANCE_SPACING": 1 if enabled else 0,
       "DISTANCE_LEAD": lead,
       "DISTANCE_CAR": state,
@@ -65,20 +58,26 @@ def create_ccnc(packer, CAN, openpilot_longitudinal_control, enabled, mads, hud,
       "TARGET": 0,
     })
 
-    values_162["LEAD"] = lead
-    values_162["LEAD_DISTANCE"] = lead_distance
-
-  return [
-    packer.make_can_msg("CCNC_0x161", CAN.ECAN, values_161),
-    packer.make_can_msg("CCNC_0x162", CAN.ECAN, values_162),
-  ]
+  return packer.make_can_msg("CCNC_0x161", CAN.ECAN, values)
 
 
-def create_ccnc_buttons(packer, CAN, frame, cruise_buttons_msg, camera_main_on):
+def create_ccnc_0x162(packer, CAN, msg_162, enabled, long_enabled, lead_visible, lead_distance):
+  values = msg_162.copy()
+
+  if long_enabled:
+    values.update({
+      "LEAD": 2 if enabled and lead_visible else 0,
+      "LEAD_DISTANCE": lead_distance,
+    })
+
+  return packer.make_can_msg("CCNC_0x162", CAN.ECAN, values)
+
+
+def create_ccnc_buttons(packer, CAN, cruise_buttons_msg, main_btn):
   values = cruise_buttons_msg.copy()
 
   values.update({
-    "ADAPTIVE_CRUISE_MAIN_BTN": 1 if camera_main_on and frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES else 0,
+    "ADAPTIVE_CRUISE_MAIN_BTN": 1 if main_btn else 0,
     "NORMAL_CRUISE_MAIN_BTN": 0,
   })
 
@@ -92,6 +91,14 @@ class CcncCarController:
   def __init__(self, CP, CP_SP):
     self.ccnc_lfa_steering = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and not (CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG))
 
+  @staticmethod
+  def _get_set_speed(v_cruise_cluster, is_metric):
+    unit_conv = 1 if is_metric else CV.KPH_TO_MPH
+    max_speed = 145 if is_metric else 90
+    min_speed = 40 if is_metric else 25
+    set_speed = round(v_cruise_cluster * unit_conv)
+    return min_speed if set_speed > max_speed else set_speed
+
   def update(self, CS, CC):
     can_sends = []
 
@@ -99,9 +106,20 @@ class CcncCarController:
       return can_sends
 
     can_sends.append(create_ccnc_mdps(self.packer, self.CAN, CS.mdps))
+
     if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
-      can_sends.append(create_ccnc_buttons(self.packer, self.CAN, self.frame, CS.cruise_buttons_msg, CS.cruise_info["MainMode_ACC"]))
+      press_main = CS.cruise_info["MainMode_ACC"] and self.frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES
+      can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main))
+
     if self.frame % 5 == 0:
-      can_sends.extend(create_ccnc(self.packer, self.CAN, self.CP.openpilotLongitudinalControl, CC.enabled, self.mads, CC.hudControl,
-                                   CS.msg_161, CS.msg_162, self.lead_distance, CS.is_metric, CS.out.vCruiseCluster, CS.main_cruise_enabled))
+      lat_active = self.mads.lat_active if self.mads.enable_mads else CC.enabled
+      paused = self.mads.enable_mads and self.mads.paused
+      set_speed = self._get_set_speed(CS.out.vCruiseCluster, CS.is_metric)
+      can_sends.append(create_ccnc_0x161(self.packer, self.CAN, CS.msg_161, CC.enabled, lat_active, paused,
+                                         self.CP.openpilotLongitudinalControl, CS.main_cruise_enabled,
+                                         CC.hudControl, set_speed))
+      can_sends.append(create_ccnc_0x162(self.packer, self.CAN, CS.msg_162, CC.enabled,
+                                         self.CP.openpilotLongitudinalControl, CC.hudControl.leadVisible,
+                                         self.lead_distance))
+
     return can_sends
