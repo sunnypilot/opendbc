@@ -61,12 +61,12 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
   return packer.make_can_msg("CCNC_0x161", CAN.ECAN, values)
 
 
-def create_ccnc_0x162(packer, CAN, msg_162, enabled, long_enabled, lead_visible, lead_distance):
+def create_ccnc_0x162(packer, CAN, msg_162, enabled, long_enabled, hud_control, lead_distance):
   values = msg_162.copy()
 
   if long_enabled:
     values.update({
-      "LEAD": 2 if enabled and lead_visible else 0,
+      "LEAD": 2 if enabled and hud_control.leadVisible else 0,
       "LEAD_DISTANCE": lead_distance,
     })
 
@@ -119,7 +119,6 @@ class CcncCarController:
                                          self.CP.openpilotLongitudinalControl, CS.main_cruise_enabled,
                                          CC.hudControl, set_speed))
       can_sends.append(create_ccnc_0x162(self.packer, self.CAN, CS.msg_162, CC.enabled,
-                                         self.CP.openpilotLongitudinalControl, CC.hudControl.leadVisible,
-                                         self.lead_distance))
+                                         self.CP.openpilotLongitudinalControl, CC.hudControl, self.lead_distance))
 
     return can_sends
