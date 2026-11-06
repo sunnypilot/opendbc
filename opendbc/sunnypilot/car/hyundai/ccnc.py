@@ -33,7 +33,7 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
 
   values.update({
     "LKA_ICON": 4 if lat_active else 3,
-    "LFA_ICON": 2 if lat_active else 1 if paused else 0,
+    "LFA_ICON": 5 if lat_active else 1 if paused else 0,
     "LANELINE_LEFT": 6 if lat_active else 0,
     "LANELINE_RIGHT": 6 if lat_active else 0,
     "CENTERLINE": 1 if lat_active else 0,
@@ -41,18 +41,19 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
   })
 
   if long_enabled:
-    state = 0 if not main_cruise_enabled else 2 if enabled else 1
+    state = 0 if not main_cruise_enabled else 5 if enabled else 1
+    distance_car_state = 0 if not main_cruise_enabled else 3 if enabled else 1
     lead = 2 if enabled and hud_control.leadVisible else 0
 
     values.update({
-      "SETSPEED": (0, 1, 3)[state],
+      "SETSPEED": (0, 1, 5)[state],
       "SETSPEED_HUD": state,
       "SETSPEED_SPEED": set_speed if main_cruise_enabled else 255,
       "DISTANCE": hud_control.leadDistanceBars if main_cruise_enabled else 0,
-      "DISTANCE_SPACING": 1 if enabled else 0,
+      "DISTANCE_SPACING": 5 if enabled else 0,
       "DISTANCE_LEAD": lead,
-      "DISTANCE_CAR": state,
-      "HDA_ICON": 0,
+      "DISTANCE_CAR": distance_car_state,
+      "HDA_ICON": 5 if enabled else 0,
       "SLA_ICON": 0,
       "NAV_ICON": 0,
       "TARGET": 0,
