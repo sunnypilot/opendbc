@@ -207,10 +207,6 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HyundaiFlagsSP.HAS_LKAS12.value
 
     if ret.flags & HyundaiFlagsSP.CCNC and not lka_steering:
-      stock_cp.alphaLongitudinalAvailable = False
-      stock_cp.openpilotLongitudinalControl = False
-      stock_cp.pcmCruise = True
-      stock_cp.safetyConfigs[-1].safetyParam &= ~HyundaiSafetyFlags.LONG.value
       ret.safetyParam |= HyundaiSafetyFlagsSP.CCNC
 
     if ret.flags & HyundaiFlagsSP.NON_SCC:
