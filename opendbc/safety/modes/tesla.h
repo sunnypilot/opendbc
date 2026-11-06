@@ -408,7 +408,7 @@ static safety_config tesla_init(uint16_t param) {
     TESLA_COMMON_RX_CHECKS
   };
 
-  static RxCheck tesla_model3_y_vehicle_bus_rx_checks[] = {
+  static const RxCheck tesla_model3_y_vehicle_bus_rx_checks[] = {
     TESLA_COMMON_RX_CHECKS
     TESLA_VEHICLE_BUS_ADDR_CHECK
   };

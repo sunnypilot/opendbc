@@ -359,7 +359,7 @@ static safety_config honda_nidec_init(uint16_t param) {
   // 0x1FA is brake control, 0x30C is acc hud, 0x33D is lkas hud
   static const CanMsg HONDA_N_TX_MSGS[] = {HONDA_N_COMMON_TX_MSGS};
 
-  static CanMsg HONDA_N_INTERCEPTOR_TX_MSGS[] = {
+  static const CanMsg HONDA_N_INTERCEPTOR_TX_MSGS[] = {
     HONDA_N_COMMON_TX_MSGS
     {0x200, 0, 6, .check_relay = false},
   };
@@ -407,7 +407,7 @@ static safety_config honda_nidec_init(uint16_t param) {
 
   if (enable_gas_interceptor) {
     if (enable_nidec_alt) {
-      static RxCheck honda_nidec_alt_interceptor_rx_checks[] = {
+      static const RxCheck honda_nidec_alt_interceptor_rx_checks[] = {
         HONDA_COMMON_NO_SCM_FEEDBACK_RX_CHECKS(0)
         {.msg = {{0x1FA, 2, 8, 50U, .max_counter = 3U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // BRAKE_COMMAND
         HONDA_GAS_INTERCEPTOR_ADDR_CHECK
@@ -415,7 +415,7 @@ static safety_config honda_nidec_init(uint16_t param) {
 
       SET_RX_CHECKS(honda_nidec_alt_interceptor_rx_checks, ret);
     } else {
-      static RxCheck honda_nidec_common_interceptor_rx_checks[] = {
+      static const RxCheck honda_nidec_common_interceptor_rx_checks[] = {
         HONDA_COMMON_RX_CHECKS(0)
         {.msg = {{0x1FA, 2, 8, 50U, .max_counter = 3U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // BRAKE_COMMAND
         HONDA_GAS_INTERCEPTOR_ADDR_CHECK

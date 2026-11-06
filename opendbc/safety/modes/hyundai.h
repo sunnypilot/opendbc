@@ -328,7 +328,7 @@ static safety_config hyundai_init(uint16_t param) {
       HYUNDAI_COMMON_RX_CHECKS(false)
     };
 
-    static RxCheck hyundai_lda_button_long_rx_checks[] = {
+    static const RxCheck hyundai_lda_button_long_rx_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
       HYUNDAI_LDA_BUTTON_ADDR_CHECK
     };
@@ -338,7 +338,7 @@ static safety_config hyundai_init(uint16_t param) {
       HYUNDAI_FCEV_GAS_ADDR_CHECK
     };
 
-    static RxCheck hyundai_fcev_lda_button_long_rx_checks[] = {
+    static const RxCheck hyundai_fcev_lda_button_long_rx_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
       HYUNDAI_FCEV_GAS_ADDR_CHECK
       HYUNDAI_LDA_BUTTON_ADDR_CHECK
@@ -380,7 +380,7 @@ static safety_config hyundai_init(uint16_t param) {
        HYUNDAI_SCC11_ADDR_CHECK(0)
     };
 
-    static RxCheck hyundai_lda_button_rx_checks[] = {
+    static const RxCheck hyundai_lda_button_rx_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
       HYUNDAI_SCC12_ADDR_CHECK(0)
       HYUNDAI_SCC11_ADDR_CHECK(0)
@@ -394,7 +394,7 @@ static safety_config hyundai_init(uint16_t param) {
       HYUNDAI_FCEV_GAS_ADDR_CHECK
     };
 
-    static RxCheck hyundai_fcev_lda_button_rx_checks[] = {
+    static const RxCheck hyundai_fcev_lda_button_rx_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
       HYUNDAI_SCC12_ADDR_CHECK(0)
       HYUNDAI_SCC11_ADDR_CHECK(0)
@@ -402,32 +402,32 @@ static safety_config hyundai_init(uint16_t param) {
       HYUNDAI_LDA_BUTTON_ADDR_CHECK
     };
 
-    static RxCheck hyundai_non_scc_addr_checks[] = {
+    static const RxCheck hyundai_non_scc_addr_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
     };
 
-    static RxCheck hyundai_non_scc_lda_button_addr_checks[] = {
+    static const RxCheck hyundai_non_scc_lda_button_addr_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
       HYUNDAI_LDA_BUTTON_ADDR_CHECK
     };
 
-    static RxCheck hyundai_hev_non_scc_addr_checks[] = {
+    static const RxCheck hyundai_hev_non_scc_addr_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
       HYUNDAI_NON_SCC_HEV_ADDR_CHECK
     };
 
-    static RxCheck hyundai_hev_non_scc_lda_button_addr_checks[] = {
+    static const RxCheck hyundai_hev_non_scc_lda_button_addr_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
       HYUNDAI_NON_SCC_HEV_ADDR_CHECK
       HYUNDAI_LDA_BUTTON_ADDR_CHECK
     };
 
-    static RxCheck hyundai_ev_non_scc_addr_checks[] = {
+    static const RxCheck hyundai_ev_non_scc_addr_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
       HYUNDAI_NON_SCC_EV_ADDR_CHECK
     };
 
-    static RxCheck hyundai_ev_non_scc_lda_button_addr_checks[] = {
+    static const RxCheck hyundai_ev_non_scc_lda_button_addr_checks[] = {
       HYUNDAI_COMMON_RX_CHECKS(false)
       HYUNDAI_NON_SCC_EV_ADDR_CHECK
       HYUNDAI_LDA_BUTTON_ADDR_CHECK
