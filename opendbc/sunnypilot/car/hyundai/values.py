@@ -8,6 +8,12 @@ See the LICENSE.md file in the root directory for more details.
 from enum import IntFlag
 
 
+class RadarType:
+  OFF = 0
+  LEAD_ONLY = 1
+  FULL_RADAR = 2
+
+
 class HyundaiSafetyFlagsSP:
   DEFAULT = 0
   ESCC = 1
@@ -81,3 +87,5 @@ class HyundaiFlagsSP(IntFlag):
   CANFD_LFA_ALT_STEER = 2 ** 13  # angle steering straight to the MDPS on LFA_ALT, no ADAS ECU in between
   CANFD_ANGLE_STEERING = 2 ** 14
   ADAS_ECU_INTERCEPTOR = 2 ** 15  # whether we have the ADAS ECU interceptor available/present
+  RADAR_LEAD_ONLY = 2 ** 16
+  RADAR_FULL_RADAR = 2 ** 17

@@ -5,7 +5,7 @@ from opendbc.car.structs import CarParams
 from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.hyundai.interface import CarInterface
 from opendbc.car.hyundai.hyundaicanfd import CanBus
-from opendbc.car.hyundai.radar_interface import RADAR_START_ADDR
+from opendbc.car.hyundai.radar_interface import RADAR_500_53F
 from opendbc.car.hyundai.values import CAR, DATE_FW_ECUS, \
                                          FW_QUERY_CONFIG, CANFD_FUZZY_WHITELIST, \
                                          PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
@@ -72,7 +72,8 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for radar in (True, False):
       fingerprint = gen_empty_fingerprint()
       if radar:
-        fingerprint[1][RADAR_START_ADDR] = 8
+        for addr in RADAR_500_53F.required_address_range:
+          fingerprint[1][addr] = RADAR_500_53F.message_size
       CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
       assert CP.radarUnavailable != radar
 

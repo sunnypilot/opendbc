@@ -25,8 +25,8 @@ def has_radar_tracks(fingerprint: dict[int, dict[int, int]], bus: int) -> bool:
 class RadarInterfaceExt(EsccRadarInterfaceBase):
   msg_src: str
   trigger_msg: int
-  rcp: CANParser
-  pts: dict[int, structs.RadarData.RadarPoint]
+  rcp: CANParser | None
+  pts: dict[int | tuple[str, int], structs.RadarData.RadarPoint]
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     EsccRadarInterfaceBase.__init__(self, CP, CP_SP)
