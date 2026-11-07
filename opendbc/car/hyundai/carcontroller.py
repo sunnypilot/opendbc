@@ -1,3 +1,5 @@
+from collections import deque
+
 import numpy as np
 from opendbc.car.vehicle_model import VehicleModel
 from opendbc.car.common.filter_simple import FirstOrderFilter
@@ -61,6 +63,20 @@ def compute_torque_reduction_gain(steering_torque, v_ego, lat_active, last_gain)
   return round(gain / 0.004) * 0.004
 
 
+def compute_lfa_alt_gain(steering_torque, v_ego, lat_active, last_gain):
+  # matches the stock ADAS DRV's LFA_ALT gain: lower at standstill, rises with speed, highway holds to 200 then hands back
+  if lat_active:
+    ceiling = np.interp(v_ego, [0., 0.6, 12.5, 21., 29.], [0.58, 0.85, 0.85, 0.92, 0.96])
+    hwy = np.interp(v_ego, [20., 22.], [0., 1.])
+    bp = (1 - hwy) * np.array([100., 175., 250., 400.]) + hwy * np.array([200., 250., 300., 400.])
+    reduced = (1 - hwy) * np.array([0.6, 0.45, 0.26]) + hwy * np.array([0.15, 0.1, 0.1])
+    target = np.interp(abs(steering_torque), bp, [ceiling, *reduced])
+  else:
+    target = 0.0
+  gain = rate_limit(target, last_gain, -0.1, 0.014)
+  return round(gain / 0.004) * 0.004
+
+
 def process_hud_alert(enabled, fingerprint, hud_control):
   sys_warning = (hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw))
 
@@ -116,6 +132,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.angle_limit_counter = 0
     self.angle_filter = FirstOrderFilter(0.0, 0.2, DT_CTRL)
+    self.angle_avg = (deque([0.] * 5, maxlen=5), deque([0.] * 5, maxlen=5))
 
     # Vehicle model used for lateral limiting
     self.VM = VehicleModel(CP)
@@ -152,22 +169,45 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     # angle control
     else:
       v_ego_raw = CS.out.vEgoRaw
-      angle_max = MAX_ANGLE_LFA_ALT if self.CP.openpilotLongitudinalControl or self.interceptor.lfa_alt_steering else \
-                  self.params.ANGLE_LIMITS.STEER_ANGLE_MAX
-      apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last)
-      apply_steer_req = CC.latActive and apply_torque != 0
+      lfa_alt = self.CP.openpilotLongitudinalControl or self.interceptor.lfa_alt_steering
+      angle_max = MAX_ANGLE_LFA_ALT if lfa_alt else self.params.ANGLE_LIMITS.STEER_ANGLE_MAX
+      if lfa_alt:
+        apply_torque = compute_lfa_alt_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last)
+        apply_steer_req = CC.latActive and apply_torque != 0
 
-      desired_angle = actuators.steeringAngleDeg
-      if CS.out.steeringPressed:
-        desired_angle = apply_torque * desired_angle + (1 - apply_torque) * CS.out.steeringAngleDeg
-      desired_angle = float(np.clip(desired_angle, -angle_max, angle_max))
+        # LFA_ALT goes straight to the MDPS position loop, no filter after it. Two 5-frame averages turn the
+        # 20 Hz model steps into continuous ramps (zeros at 20/40 Hz, 40 ms delay, full amplitude below 2 Hz).
+        # Driver override is left to the gain, as stock does: blending toward the wheel steps the command on release.
+        desired_angle = float(np.clip(actuators.steeringAngleDeg, -angle_max, angle_max))
+        for avg in self.angle_avg:
+          avg.append(desired_angle)
+          desired_angle = sum(avg) / len(avg)
 
-      self.angle_filter.update_alpha(float(np.interp(abs(desired_angle - self.apply_angle_last), [0.2, 1.5], [0.25, 0.0])))
-      desired_angle = self.angle_filter.update(desired_angle)
+        apply_angle = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params, self.VM)
+        # 0.1 deg LSB is ~0.7 Nm at the column through the MDPS P gain: don't toggle it on sub-LSB model noise
+        if CC.latActive and abs(apply_angle - self.apply_angle_last) < 0.08:
+          apply_angle = self.apply_angle_last
+        self.apply_angle_last = float(np.clip(apply_angle, -angle_max, angle_max))
 
-      apply_angle = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params, self.VM)
-      self.apply_angle_last = float(np.clip(apply_angle, -angle_max, angle_max))
-      self.angle_filter.x = self.apply_angle_last
+        if not CC.latActive:
+          for avg in self.angle_avg:
+            avg.extend([CS.out.steeringAngleDeg] * avg.maxlen)
+      else:
+        apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last)
+        apply_steer_req = CC.latActive and apply_torque != 0
+
+        desired_angle = actuators.steeringAngleDeg
+        if CS.out.steeringPressed:
+          desired_angle = apply_torque * desired_angle + (1 - apply_torque) * CS.out.steeringAngleDeg
+        desired_angle = float(np.clip(desired_angle, -angle_max, angle_max))
+
+        self.angle_filter.update_alpha(float(np.interp(abs(desired_angle - self.apply_angle_last), [0.2, 1.5], [0.25, 0.0])))
+        desired_angle = self.angle_filter.update(desired_angle)
+
+        apply_angle = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params,
+                                                  self.VM)
+        self.apply_angle_last = float(np.clip(apply_angle, -angle_max, angle_max))
+        self.angle_filter.x = self.apply_angle_last
 
     if not CC.latActive:
       apply_torque = 0
