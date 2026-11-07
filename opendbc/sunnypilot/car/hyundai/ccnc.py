@@ -33,7 +33,7 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
 
   values.update({
     "LKA_ICON": 4 if lat_active else 3,
-    "LFA_ICON": 5 if lat_active else 1 if paused else 0,
+    "LFA_ICON": 2 if lat_active else 1 if paused else 0,
     "LANELINE_LEFT": 6 if lat_active else 0,
     "LANELINE_RIGHT": 6 if lat_active else 0,
     "CENTERLINE": 1 if lat_active else 0,
@@ -42,14 +42,14 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
 
   if long_enabled:
     values.update({
-      "SETSPEED": 6 if enabled else 1 if main_cruise_enabled else 0,
-      "SETSPEED_HUD": 5 if enabled else 1 if main_cruise_enabled else 0,
+      "SETSPEED": 3 if enabled else 1 if main_cruise_enabled else 0,
+      "SETSPEED_HUD": 2 if enabled else 1 if main_cruise_enabled else 0,
       "SETSPEED_SPEED": set_speed if main_cruise_enabled else 255,
-      "DISTANCE": hud_control.leadDistanceBars if main_cruise_enabled else 0,
-      "DISTANCE_SPACING": 5 if enabled else 0,
-      "DISTANCE_LEAD": 2 if enabled and hud_control.leadVisible else 0,
-      "DISTANCE_CAR": 3 if enabled else 1 if main_cruise_enabled else 0,
-      "HDA_ICON": 5 if enabled else 0,
+      "DISTANCE": hud_control.leadDistanceBars if enabled else 4 if main_cruise_enabled else 0,
+      "DISTANCE_SPACING": 1 if enabled else 0,
+      "DISTANCE_LEAD": (2 if enabled else 1 if main_cruise_enabled else 0) if hud_control.leadVisible else 0,
+      "DISTANCE_CAR": 2 if enabled else 1 if main_cruise_enabled else 0,
+      "HDA_ICON": 2 if enabled else 1 if main_cruise_enabled else 0,
       "SLA_ICON": 0,
       "NAV_ICON": 0,
       "TARGET": 0,
@@ -63,7 +63,7 @@ def create_ccnc_0x162(packer, CAN, msg_162, enabled, long_enabled, hud_control, 
 
   if long_enabled:
     values.update({
-      "LEAD": 2 if enabled and hud_control.leadVisible else 0,
+      "LEAD": (2 if enabled else 1) if hud_control.leadVisible else 0,
       "LEAD_DISTANCE": lead_distance,
     })
 
