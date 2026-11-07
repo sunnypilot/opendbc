@@ -154,33 +154,20 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
       v_ego_raw = CS.out.vEgoRaw
       angle_max = MAX_ANGLE_LFA_ALT if self.CP.openpilotLongitudinalControl or self.interceptor.lfa_alt_steering else \
                   self.params.ANGLE_LIMITS.STEER_ANGLE_MAX
-      desired_angle = float(np.clip(actuators.steeringAngleDeg, -angle_max, angle_max))
-
-      self.angle_filter.update_alpha(float(np.interp(CS.out.vEgo, [5, 10, 20], [0.2, 0.1, 0.0])))
-      desired_angle = self.angle_filter.update(desired_angle)
-
-      apply_angle = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params, self.VM)
-
-      # if we are not the baseline model, we use the baseline model for further limits to prevent a panda block since it is hardcoded for baseline model.
-      # if self.CP.carFingerprint != ANGLE_SAFETY_BASELINE_MODEL:
-      #   apply_angle = apply_steer_angle_limits_vm(apply_angle or desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive,
-      #                                             self.params, self.BASELINE_VM)
-
       apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last)
       apply_steer_req = CC.latActive and apply_torque != 0
 
-      # Failsafe if we detected we'd violate safety
-      if apply_angle is None:
-        apply_torque = 0
-        apply_angle = CS.out.steeringAngleDeg
-        apply_steer_req = False
+      desired_angle = actuators.steeringAngleDeg
+      if CS.out.steeringPressed:
+        desired_angle = apply_torque * desired_angle + (1 - apply_torque) * CS.out.steeringAngleDeg
+      desired_angle = float(np.clip(desired_angle, -angle_max, angle_max))
 
-      # After we've used the last angle wherever we needed it, we now update it.
-      self.apply_angle_last = apply_angle
+      self.angle_filter.update_alpha(float(np.interp(abs(desired_angle - self.apply_angle_last), [0.2, 1.5], [0.25, 0.0])))
+      desired_angle = self.angle_filter.update(desired_angle)
 
-      if not CC.latActive:
-        self.apply_angle_last = float(np.clip(CS.out.steeringAngleDeg, -angle_max, angle_max))
-        self.angle_filter.x = self.apply_angle_last
+      apply_angle = apply_steer_angle_limits_vm(desired_angle, self.apply_angle_last, v_ego_raw, CS.out.steeringAngleDeg, CC.latActive, self.params, self.VM)
+      self.apply_angle_last = float(np.clip(apply_angle, -angle_max, angle_max))
+      self.angle_filter.x = self.apply_angle_last
 
     if not CC.latActive:
       apply_torque = 0
