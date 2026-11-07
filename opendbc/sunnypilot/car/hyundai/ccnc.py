@@ -28,6 +28,18 @@ LEAD_LATERAL_MAX = 6.3  # m
 LEAD_LATERAL_SPAN = 12.8  # m
 
 
+# the interceptor firmware toggles the DCU's main with injected presses; the DCU's cruise popups would show
+DCU_ALERTS_2_KEEP = (7, 8, 9, 10, 14, 21)
+
+
+def drop_dcu_cruise_alerts(values: dict) -> None:
+  if values["ALERTS_2"] not in DCU_ALERTS_2_KEEP and values["ALERTS_2"]:
+    values["ALERTS_2"] = 0
+    values["SOUNDS_2"] = 0
+  if values["ALERTS_3"] or values["ALERTS_4"] or values["ALERTS_5"]:
+    values.update({"ALERTS_3": 0, "ALERTS_4": 0, "ALERTS_5": 0, "SOUNDS_3": 0, "SOUNDS_4": 0})
+
+
 def encode_lead_lateral(lat_m: float) -> float:
   lat_m = round(float(np.clip(lat_m, LEAD_LATERAL_MIN, LEAD_LATERAL_MAX)), 1)
   return lat_m + LEAD_LATERAL_SPAN if lat_m < 0 else lat_m
@@ -56,7 +68,8 @@ def create_ccnc_mdps(packer, CAN, mdps):
 
 
 def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_enabled,
-                      main_cruise_enabled, gas_override, override_blink, hud_control, set_speed, target_distance, lead_visible):
+                      main_cruise_enabled, gas_override, override_blink, hud_control, set_speed, target_distance, lead_visible,
+                      interceptor=False):
   values = msg_161.copy()
 
   values.update({
@@ -71,6 +84,8 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
   })
 
   if long_enabled:
+    if interceptor:
+      drop_dcu_cruise_alerts(values)
     long_active = enabled and not gas_override
     hud_state = 2 if long_active else (3 if override_blink else 0) if enabled else 1 if main_cruise_enabled else 0
     spacing_state = 1 if long_active or (enabled and override_blink) else 0
@@ -124,6 +139,7 @@ class CcncCarController:
   def __init__(self, CP, CP_SP):
     self.ccnc_lfa_steering = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and not (CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG))
     self.ccnc_hud = ccnc_hud_enabled(CP, CP_SP)
+    self.ccnc_interceptor = bool(CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR)
     self.lead_distance_filter = FirstOrderFilter(0.0, LEAD_FILTER_RC, 5 * DT_CTRL)
     self.lead_lateral_filter = FirstOrderFilter(0.0, LEAD_FILTER_RC, 5 * DT_CTRL)
     self.lead_visible_last = False
@@ -170,7 +186,8 @@ class CcncCarController:
       lead_distance = min(TARGET_DISTANCE_MAX, max(0.0, self.lead_distance_filter.x))
       can_sends.append(create_ccnc_0x161(self.packer, self.CAN, CS.msg_161, CC.enabled, lat_active, paused,
                                          self.CP.openpilotLongitudinalControl, CS.main_cruise_enabled,
-                                         gas_override, override_blink, CC.hudControl, set_speed, target_distance, lead_visible))
+                                         gas_override, override_blink, CC.hudControl, set_speed, target_distance, lead_visible,
+                                         self.ccnc_interceptor))
       can_sends.append(create_ccnc_0x162(self.packer, self.CAN, CS.msg_162, CC.enabled, gas_override,
                                          self.CP.openpilotLongitudinalControl, lead_visible, lead_distance, self.lead_lateral_filter.x))
 
