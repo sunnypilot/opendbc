@@ -35,4 +35,7 @@ CAR_SPECIFIC_CONFIGS = {
   CAR.KIA_NIRO_PHEV_2022: CarTuningConfig(
     jerk_limits=5.0,
   ),
+  CAR.KIA_NIRO_PLUS_EV: CarTuningConfig(
+    jerk_limits=3.3,
+  ),
 }

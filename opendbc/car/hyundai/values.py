@@ -682,6 +682,13 @@ class CAR(Platforms):
     [HyundaiNonSccCarDocs("Kia Forte Non-SCC 2021", car_parts=CarParts.common([CarHarness.hyundai_g]))],
     KIA_FORTE.specs,
   )
+  KIA_NIRO_PLUS_EV = HyundaiPlatformConfig(
+    [
+      HyundaiCarDocs("Kia Niro Plus EV 2023-24", "Advanced Smart Cruise Control", car_parts=CarParts.common([CarHarness.hyundai_h])),
+    ],
+    CarSpecs(wheelbase=2.7, steerRatio=13.6, tireStiffnessFactor=0.385),
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.EV,
+  )
   KIA_SELTOS_2023_NON_SCC = HyundaiNonSccPlatformConfig(
     [HyundaiNonSccCarDocs("Kia Seltos Non-SCC 2023-24", car_parts=CarParts.common([CarHarness.hyundai_l]))],
     KIA_SELTOS.specs,
