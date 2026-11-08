@@ -73,7 +73,7 @@ def compute_lfa_alt_gain(steering_torque, v_ego, lat_active, last_gain):
     target = np.interp(abs(steering_torque), bp, [ceiling, *reduced])
   else:
     target = 0.0
-  gain = rate_limit(target, last_gain, -0.1, 0.014)
+  gain = rate_limit(target, last_gain, -0.03, 0.014)
   return round(gain / 0.004) * 0.004
 
 
@@ -133,6 +133,8 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     self.angle_limit_counter = 0
     self.angle_filter = FirstOrderFilter(0.0, 0.2, DT_CTRL)
     self.angle_avg = (deque([0.] * 5, maxlen=5), deque([0.] * 5, maxlen=5))
+    self.lfa_alt_torque = FirstOrderFilter(0.0, 0.1, DT_CTRL)
+    self.override_blend = 0.
 
     # Vehicle model used for lateral limiting
     self.VM = VehicleModel(CP)
@@ -172,13 +174,18 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
       lfa_alt = self.CP.openpilotLongitudinalControl or self.interceptor.lfa_alt_steering
       angle_max = MAX_ANGLE_LFA_ALT if lfa_alt else self.params.ANGLE_LIMITS.STEER_ANGLE_MAX
       if lfa_alt:
-        apply_torque = compute_lfa_alt_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last)
+        # filtered so wheel inertia and torsion spikes don't cut the gain
+        steering_torque = self.lfa_alt_torque.update(CS.out.steeringTorque)
+        apply_torque = compute_lfa_alt_gain(steering_torque, v_ego_raw, CC.latActive, self.apply_torque_last)
         apply_steer_req = CC.latActive and apply_torque != 0
+
+        # follow the wheel while overridden so the MDPS doesn't fight the driver, hand back over 0.4 s
+        self.override_blend = rate_limit(float(CS.out.steeringPressed), self.override_blend, -0.025, 0.1)
+        desired_angle = actuators.steeringAngleDeg + self.override_blend * (CS.out.steeringAngleDeg - actuators.steeringAngleDeg)
+        desired_angle = float(np.clip(desired_angle, -angle_max, angle_max))
 
         # LFA_ALT goes straight to the MDPS position loop, no filter after it. Two 5-frame averages turn the
         # 20 Hz model steps into continuous ramps (zeros at 20/40 Hz, 40 ms delay, full amplitude below 2 Hz).
-        # Driver override is left to the gain, as stock does: blending toward the wheel steps the command on release.
-        desired_angle = float(np.clip(actuators.steeringAngleDeg, -angle_max, angle_max))
         for avg in self.angle_avg:
           avg.append(desired_angle)
           desired_angle = sum(avg) / len(avg)
@@ -192,6 +199,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
         if not CC.latActive:
           for avg in self.angle_avg:
             avg.extend([CS.out.steeringAngleDeg] * avg.maxlen)
+          self.override_blend = 0.
       else:
         apply_torque = compute_torque_reduction_gain(CS.out.steeringTorque, v_ego_raw, CC.latActive, self.apply_torque_last)
         apply_steer_req = CC.latActive and apply_torque != 0
