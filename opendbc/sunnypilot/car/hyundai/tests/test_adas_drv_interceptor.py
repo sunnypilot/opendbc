@@ -23,8 +23,9 @@ def interceptor():
   return AdasDrvEcuInterceptor(CP, SimpleNamespace(flags=HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR))
 
 
-def lkas_alt(camera, enabled=True, angle=5.0):
-  (addr, dat, bus), = interceptor().create_lkas_alt(CANPacker(DBC_NAME), SimpleNamespace(ACAN=0), camera, enabled, angle)
+def lkas_alt(camera, enabled=True, angle=5.0, icon=0, ic=None):
+  ic = ic or interceptor()
+  (addr, dat, bus), = ic.create_lkas_alt(CANPacker(DBC_NAME), SimpleNamespace(ACAN=0), camera, icon, enabled, angle)
   parser = CANParser(DBC_NAME, [("LKAS_ALT", 0)], 0)
   parser.update([(0, [(addr, dat, bus)])])
   return parser.vl["LKAS_ALT"], dat
@@ -47,6 +48,16 @@ class TestLkasAlt(unittest.TestCase):
   def test_counter_not_copied(self):
     _, dat = lkas_alt(CAMERA)
     assert dat[2] != CAMERA["COUNTER"]
+
+  def test_lfa_button_dropped_once_dcu_lfa_shows(self):
+    ic = interceptor()
+    press = {**CAMERA, "LFA_BUTTON": 1}
+    self.assertEqual(lkas_alt(press, icon=0, ic=ic)[0]["LFA_BUTTON"], 1, "passes while hidden")
+    self.assertEqual(lkas_alt(press, icon=1, ic=ic)[0]["LFA_BUTTON"], 0, "dropped once shown")
+    for icon in (0, 2, 3):
+      out, _ = lkas_alt(press, icon=icon, ic=ic)
+      self.assertEqual(out["LFA_BUTTON"], 0, f"still dropped, icon {icon}")
+      self.assertEqual(out["FCA_ESA_CtrlSta"], 1, "other camera fields still pass")
 
   def test_without_camera(self):
     out, _ = lkas_alt({})
