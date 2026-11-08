@@ -23,14 +23,6 @@ STOP_DISTANCE_V = [3.5, 6.0]  # m
 T_FOLLOW = {1: 1.25, 2: 1.45, 3: 1.75}  # s
 TARGET_DISTANCE_MAX = 204.6  # m
 LEAD_FILTER_RC = 0.5  # s
-LEAD_LATERAL_MIN = -6.4  # m, 7-bit signed two's complement (-6.4..6.3 m)
-LEAD_LATERAL_MAX = 6.3  # m
-LEAD_LATERAL_SPAN = 12.8  # m
-
-
-def encode_lead_lateral(lat_m: float) -> float:
-  lat_m = round(float(np.clip(lat_m, LEAD_LATERAL_MIN, LEAD_LATERAL_MAX)), 1)
-  return lat_m + LEAD_LATERAL_SPAN if lat_m < 0 else lat_m
 
 
 def create_ccnc_mdps(packer, CAN, mdps):
@@ -82,14 +74,14 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
   return packer.make_can_msg("CCNC_0x161", CAN.ECAN, values)
 
 
-def create_ccnc_0x162(packer, CAN, msg_162, enabled, gas_override, long_enabled, lead_visible, lead_distance, lead_lateral):
+def create_ccnc_0x162(packer, CAN, msg_162, enabled, gas_override, long_enabled, lead_visible, lead_distance):
   values = msg_162.copy()
 
   if long_enabled:
     values.update({
       "LEAD": (2 if enabled and not gas_override else 1) if lead_visible else 0,
       "LEAD_DISTANCE": lead_distance if lead_visible else TARGET_DISTANCE_MAX,
-      "LEAD_LATERAL": encode_lead_lateral(lead_lateral) if lead_visible else 0,
+      "LEAD_LATERAL": 0,
     })
 
   return packer.make_can_msg("CCNC_0x162", CAN.ECAN, values)
@@ -113,7 +105,6 @@ class CcncCarController:
   def __init__(self, CP, CP_SP):
     self.ccnc_lfa_steering = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and not (CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG))
     self.lead_distance_filter = FirstOrderFilter(0.0, LEAD_FILTER_RC, 5 * DT_CTRL)
-    self.lead_lateral_filter = FirstOrderFilter(0.0, LEAD_FILTER_RC, 5 * DT_CTRL)
     self.lead_visible_last = False
 
   @staticmethod
@@ -149,16 +140,14 @@ class CcncCarController:
       if lead_visible:
         if not self.lead_visible_last:
           self.lead_distance_filter.x = self.lead_distance
-          self.lead_lateral_filter.x = -self.lead_one.yRel
         else:
           self.lead_distance_filter.update(self.lead_distance)
-          self.lead_lateral_filter.update(-self.lead_one.yRel)
       self.lead_visible_last = lead_visible
       lead_distance = min(TARGET_DISTANCE_MAX, max(0.0, self.lead_distance_filter.x))
       can_sends.append(create_ccnc_0x161(self.packer, self.CAN, CS.msg_161, CC.enabled, lat_active, paused,
                                          self.CP.openpilotLongitudinalControl, CS.main_cruise_enabled,
                                          gas_override, override_blink, CC.hudControl, set_speed, target_distance, lead_visible))
       can_sends.append(create_ccnc_0x162(self.packer, self.CAN, CS.msg_162, CC.enabled, gas_override,
-                                         self.CP.openpilotLongitudinalControl, lead_visible, lead_distance, self.lead_lateral_filter.x))
+                                         self.CP.openpilotLongitudinalControl, lead_visible, lead_distance))
 
     return can_sends
