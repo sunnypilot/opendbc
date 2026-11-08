@@ -133,7 +133,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     self.angle_limit_counter = 0
     self.angle_filter = FirstOrderFilter(0.0, 0.2, DT_CTRL)
     self.angle_avg = (deque([0.] * 5, maxlen=5), deque([0.] * 5, maxlen=5))
-    self.lfa_alt_torque = 0.
+    self.lfa_alt_torque = FirstOrderFilter(0.0, 0.1, DT_CTRL)
     self.override_blend = 0.
     self.angle_backlash = 0.
 
@@ -175,18 +175,13 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
       lfa_alt = self.CP.openpilotLongitudinalControl or self.interceptor.lfa_alt_steering
       angle_max = MAX_ANGLE_LFA_ALT if lfa_alt else self.params.ANGLE_LIMITS.STEER_ANGLE_MAX
       if lfa_alt:
-        # rises over 0.1 s so wheel inertia and torsion spikes don't cut the gain, falls at once so release is immediate
-        steering_torque = abs(CS.out.steeringTorque)
-        if steering_torque < self.lfa_alt_torque:
-          self.lfa_alt_torque = steering_torque
-        else:
-          self.lfa_alt_torque += DT_CTRL / (0.1 + DT_CTRL) * (steering_torque - self.lfa_alt_torque)
-        apply_torque = compute_lfa_alt_gain(self.lfa_alt_torque, v_ego_raw, CC.latActive, self.apply_torque_last)
+        # signed and filtered: torsion oscillation and inertia spikes average out instead of cutting the gain
+        steering_torque = self.lfa_alt_torque.update(CS.out.steeringTorque)
+        apply_torque = compute_lfa_alt_gain(steering_torque, v_ego_raw, CC.latActive, self.apply_torque_last)
         apply_steer_req = CC.latActive and apply_torque != 0
 
-        # follow the wheel as hard as the driver holds it, so the MDPS doesn't fight them and lets go as they do
-        blend = float(np.interp(steering_torque, [100., self.params.STEER_THRESHOLD], [0., 1.]))
-        self.override_blend = rate_limit(blend, self.override_blend, -0.05, 0.1)
+        # follow the wheel while overridden so the MDPS doesn't fight the driver, hand back over 0.2 s
+        self.override_blend = rate_limit(float(CS.out.steeringPressed), self.override_blend, -0.05, 0.1)
         desired_angle = actuators.steeringAngleDeg + self.override_blend * (CS.out.steeringAngleDeg - actuators.steeringAngleDeg)
         desired_angle = float(np.clip(desired_angle, -angle_max, angle_max))
 
