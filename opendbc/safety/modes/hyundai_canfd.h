@@ -33,7 +33,6 @@
   HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(1)                                     \
   HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)                                 \
   {0xCB, 1, 24, .check_relay = false},  /* LFA_ALT */                        \
-  {0x110, 0, 32, .check_relay = true},  /* LKAS_ALT */                       \
 
 // *** Addresses checked in rx hook ***
 // EV, ICE, HYBRID: ACCELERATOR (0x35), ACCELERATOR_BRAKE_ALT (0x100), ACCELERATOR_ALT (0x105)
@@ -232,14 +231,6 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
       if (steer_torque_cmd_checks(desired_torque, steer_req, HYUNDAI_CANFD_TORQUE_STEERING_LIMITS)) {
         tx = false;
       }
-    }
-  }
-
-  // LKAS_ALT replaces the camera's copy to keep the ADAS DRV's own LKA off, never to steer through it
-  if (lfa_alt_steering && (msg->addr == 0x110U)) {
-    const int lkas_angle_active = (msg->data[9] >> 4U) & 0x3U;
-    if ((lkas_angle_active != 1) || (msg->data[12] != 0U)) {
-      tx = false;
     }
   }
 
