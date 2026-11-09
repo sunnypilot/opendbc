@@ -41,7 +41,7 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
   values = msg_161.copy()
 
   values.update({
-    "LKA_ICON": 4 if lat_active else 3,
+    # "LKA_ICON": 4 if lat_active else 3,
     "LFA_ICON": 2 if lat_active else 1 if paused else 0,
     "LANELINE_LEFT": 6 if lat_active else 0,
     "LANELINE_RIGHT": 6 if lat_active else 0,
