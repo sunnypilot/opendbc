@@ -9,7 +9,7 @@ class CarInterface(CarInterfaceBase):
   CarState = CarState
   CarController = CarController
 
-  DRIVABLE_GEARS = (structs.CarState.GearShifter.brake,)
+  DRIVABLE_GEARS = (structs.CarState.GearShifter.brake, structs.CarState.GearShifter.low)
 
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
@@ -36,5 +36,7 @@ class CarInterface(CarInterfaceBase):
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
     if candidate in (CAR.NISSAN_LEAF, CAR.NISSAN_LEAF_IC):
       ret.safetyParam |= NissanSafetyFlagsSP.LEAF
+
+    ret.intelligentCruiseButtonManagementAvailable = candidate != CAR.NISSAN_ALTIMA
 
     return ret

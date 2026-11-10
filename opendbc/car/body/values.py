@@ -22,12 +22,13 @@ class CarControllerParams:
 class CAR(Platforms):
   COMMA_BODY = PlatformConfig(
     [CarDocs("comma body", package="All", video="https://youtu.be/VT-i3yRsX2s?t=2736")],
-    CarSpecs(mass=9, wheelbase=0.406, steerRatio=0.5, centerToFrontRatio=0.44),
+    CarSpecs(wheelbase=0.406, steerRatio=0.5, centerToFrontRatio=0.44),
     {Bus.main: 'comma_body'},
   )
 
 
 FW_QUERY_CONFIG = FwQueryConfig(
+  fw_version_regex=br"(?:\d+\.\d+\.\d+[a-z]?|\d{2}/\d{2}/\d{4}|[0-9a-f]{8})",
   requests=[
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],

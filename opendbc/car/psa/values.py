@@ -36,12 +36,13 @@ class PSAPlatformConfig(PlatformConfig):
 class CAR(Platforms):
   PSA_PEUGEOT_208 = PSAPlatformConfig(
     [PSACarDocs("Peugeot 208 2019-25")],
-    CarSpecs(mass=1530, wheelbase=2.54, steerRatio=17.6),
+    CarSpecs(wheelbase=2.54, steerRatio=17.6),
   )
 
 
 # Placeholder, FW Query will be added in separate PR
 FW_QUERY_CONFIG = FwQueryConfig(
+  fw_version_regex=br"\d{9}",
   requests=[
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
