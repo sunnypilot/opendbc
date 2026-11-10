@@ -404,9 +404,12 @@ class CAR(Platforms):
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8,
   )
   HYUNDAI_PALISADE_HEV = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Hyundai Palisade Hybrid 2026", "All", car_parts=CarParts.common([CarHarness.hyundai_n]))],
+    [
+      HyundaiCarDocs("Hyundai Palisade Hybrid 2026", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_t])),
+    ],
     CarSpecs(mass=2165, wheelbase=2.97, steerRatio=15.0 * 1.15, tireStiffnessFactor=0.63),
-    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+    flags=HyundaiFlags.CANFD_ANGLE_STEERING | HyundaiFlags.CANFD_ALT_BUTTONS,
   )
   HYUNDAI_VELOSTER = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_e]))],

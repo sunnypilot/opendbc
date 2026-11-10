@@ -1839,7 +1839,7 @@
     "year": [
       "2026"
     ],
-    "package": "All"
+    "package": "Highway Driving Assist II & Lane Follow Assist 2"
   },
   "Hyundai Santa Cruz 2022-24": {
     "platform": "HYUNDAI_SANTA_CRUZ_1ST_GEN",
@@ -2463,14 +2463,12 @@
     ],
     "package": "All"
   },
-  "Kia Sorento Hybrid 2026": {
+  "Kia Sorento Hybrid 2026 with LFA2": {
     "platform": "KIA_SORENTO_HEV_4TH_GEN_LFA2",
     "make": "Kia",
     "brand": "hyundai",
-    "model": "Sorento Hybrid",
-    "year": [
-      "2026"
-    ],
+    "model": "Sorento Hybrid 2026 with LFA2",
+    "year": [],
     "package": "All"
   },
   "Kia Sorento Plug-in Hybrid 2022-23": {
