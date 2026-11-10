@@ -132,11 +132,13 @@ class CcncCarController:
       paused = self.mads.enable_mads and self.mads.paused
       gas_override = CC.cruiseControl.override
       override_blink = gas_override and self.frame % OVERRIDE_BLINK_FRAMES < OVERRIDE_BLINK_ON_FRAMES
+
       set_speed = self._get_set_speed(CS.out.vCruiseCluster, CS.is_metric)
       t_follow = T_FOLLOW.get(CC.hudControl.leadDistanceBars, 1.45)
       stop_distance = float(np.interp(CS.out.vEgo, STOP_DISTANCE_BP, STOP_DISTANCE_V))
       target_distance = min(TARGET_DISTANCE_MAX, max(0.0, t_follow * CS.out.vEgo + stop_distance))
       lead_visible = CC.hudControl.leadVisible and bool(self.lead_one.status)
+
       if lead_visible:
         if not self.lead_visible_last:
           self.lead_distance_filter.x = self.lead_distance
@@ -144,6 +146,7 @@ class CcncCarController:
           self.lead_distance_filter.update(self.lead_distance)
       self.lead_visible_last = lead_visible
       lead_distance = min(TARGET_DISTANCE_MAX, max(0.0, self.lead_distance_filter.x))
+
       can_sends.append(create_ccnc_0x161(self.packer, self.CAN, CS.msg_161, CC.enabled, lat_active, paused,
                                          self.CP.openpilotLongitudinalControl, CS.main_cruise_enabled,
                                          gas_override, override_blink, CC.hudControl, set_speed, target_distance, lead_visible))
