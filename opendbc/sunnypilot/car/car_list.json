@@ -1914,6 +1914,16 @@
     ],
     "package": "All"
   },
+  "Hyundai Palisade Hybrid 2026": {
+    "platform": "HYUNDAI_PALISADE_HEV",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Palisade Hybrid",
+    "year": [
+      "2026"
+    ],
+    "package": "Highway Driving Assist II & Lane Follow Assist 2"
+  },
   "Hyundai Santa Cruz 2022-24": {
     "platform": "HYUNDAI_SANTA_CRUZ_1ST_GEN",
     "make": "Hyundai",

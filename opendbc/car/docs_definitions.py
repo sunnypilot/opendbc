@@ -132,6 +132,7 @@ class CarHarness(EnumBase):
   hyundai_q = BaseCarHarness("Hyundai Q connector")
   hyundai_r = BaseCarHarness("Hyundai R connector")
   hyundai_s = BaseCarHarness("Hyundai S connector")
+  hyundai_t = BaseCarHarness("Hyundai T connector")
   custom = BaseCarHarness("Developer connector")
   obd_ii = BaseCarHarness("OBD-II connector", parts=[Cable.long_obdc_cable], has_connector=False)
   gm = BaseCarHarness("GM connector", parts=[Accessory.harness_box])
