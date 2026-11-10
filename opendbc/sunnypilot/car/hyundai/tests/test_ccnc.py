@@ -19,8 +19,8 @@ class Packer:
 
 def build(msg_161, long_enabled=True, interceptor=True):
   hud = SimpleNamespace(leadDistanceBars=2)
-  return create_ccnc_0x161(Packer, SimpleNamespace(ECAN=0), msg_161, True, True, False, long_enabled, True, False, False, hud,
-                           60, 30.0, True, interceptor)
+  return create_ccnc_0x161(Packer, SimpleNamespace(ECAN=0), 0, msg_161, True, True, False, long_enabled, True, False, hud,
+                           60, 20.0, True, False, interceptor)
 
 
 def dcu_161(**kw):
