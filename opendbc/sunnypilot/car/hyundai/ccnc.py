@@ -37,7 +37,8 @@ def create_ccnc_mdps(packer, CAN, mdps):
 
 
 def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_enabled,
-                      main_cruise_enabled, gas_override, override_blink, hud_control, set_speed, target_distance, lead_visible):
+                      main_cruise_enabled, gas_override, override_blink, hud_control, set_speed, target_distance, lead_visible,
+                      show_distance_bars):
   values = msg_161.copy()
 
   values.update({
@@ -55,6 +56,9 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
     long_active = enabled and not gas_override
     hud_state = 2 if long_active else (3 if override_blink else 0) if enabled else 1 if main_cruise_enabled else 0
     spacing_state = 1 if long_active or (enabled and override_blink) else 0
+
+    if enabled and show_distance_bars and not values["ALERTS_3"]:
+      values["ALERTS_3"] = 6 + hud_control.leadDistanceBars
 
     values.update({
       "SETSPEED": hud_state,
@@ -106,6 +110,9 @@ class CcncCarController:
     self.ccnc_lfa_steering = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and not (CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG))
     self.lead_distance_filter = FirstOrderFilter(0.0, LEAD_FILTER_RC, 5 * DT_CTRL)
     self.lead_visible_last = False
+    self.lead_distance_bars_last = None
+    self.distance_bar_frame = 0
+    self.enabled_last = False
 
   @staticmethod
   def _get_set_speed(v_cruise_cluster, is_metric):
@@ -123,6 +130,11 @@ class CcncCarController:
 
     can_sends.append(create_ccnc_mdps(self.packer, self.CAN, CS.mdps))
 
+    if CC.hudControl.leadDistanceBars != self.lead_distance_bars_last or (CC.enabled and not self.enabled_last):
+      self.distance_bar_frame = self.frame
+    self.lead_distance_bars_last = CC.hudControl.leadDistanceBars
+    self.enabled_last = CC.enabled
+
     if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
       press_main = CS.cruise_info["MainMode_ACC"] and self.frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES
       can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main))
@@ -138,6 +150,7 @@ class CcncCarController:
       stop_distance = float(np.interp(CS.out.vEgo, STOP_DISTANCE_BP, STOP_DISTANCE_V))
       target_distance = min(TARGET_DISTANCE_MAX, max(0.0, t_follow * CS.out.vEgo + stop_distance))
       lead_visible = CC.hudControl.leadVisible and bool(self.lead_one.status)
+      show_distance_bars = self.frame - self.distance_bar_frame < 400
 
       if lead_visible:
         if not self.lead_visible_last:
@@ -149,7 +162,8 @@ class CcncCarController:
 
       can_sends.append(create_ccnc_0x161(self.packer, self.CAN, CS.msg_161, CC.enabled, lat_active, paused,
                                          self.CP.openpilotLongitudinalControl, CS.main_cruise_enabled,
-                                         gas_override, override_blink, CC.hudControl, set_speed, target_distance, lead_visible))
+                                         gas_override, override_blink, CC.hudControl, set_speed, target_distance, lead_visible,
+                                         show_distance_bars))
       can_sends.append(create_ccnc_0x162(self.packer, self.CAN, CS.msg_162, CC.enabled, gas_override,
                                          self.CP.openpilotLongitudinalControl, lead_visible, lead_distance))
 
