@@ -75,6 +75,13 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
     "DAW_ICON": 0,
   })
 
+  # suppress consider taking a break and its chime
+  if values["ALERTS_2"] == 5:
+    values.update({
+      "ALERTS_2": 0,
+      "SOUNDS_2": 0,
+    })
+
   if long_enabled:
     if interceptor:
       drop_dcu_cruise_alerts(values)
