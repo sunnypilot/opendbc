@@ -31,13 +31,6 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
                       main_cruise_enabled, hud_control, set_speed):
   values = msg_161.copy()
 
-  # suppress consider taking a break and its chime
-  if values["ALERTS_2"] == 5:
-    values.update({
-      "ALERTS_2": 0,
-      "SOUNDS_2": 0,
-    })
-
   values.update({
     "LKA_ICON": 4 if lat_active else 3,
     "LFA_ICON": 2 if lat_active else 1 if paused else 0,
@@ -46,6 +39,13 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
     "CENTERLINE": 1 if lat_active else 0,
     "DAW_ICON": 0,
   })
+
+  # suppress consider taking a break and its chime
+  if values["ALERTS_2"] == 5:
+    values.update({
+      "ALERTS_2": 0,
+      "SOUNDS_2": 0,
+    })
 
   if long_enabled:
     state = 0 if not main_cruise_enabled else 2 if enabled else 1
