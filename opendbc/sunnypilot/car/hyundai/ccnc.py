@@ -46,8 +46,8 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
     "LANELINE_LEFT": 6 if lat_active else 0,
     "LANELINE_RIGHT": 6 if lat_active else 0,
     "CENTERLINE": 1 if lat_active else 0,
-    "LCA_LEFT_ICON": 2 if lat_active else 1,
-    "LCA_RIGHT_ICON": 2 if lat_active else 1,
+    "LCA_LEFT_ICON": 2 if lat_active else 0,
+    "LCA_RIGHT_ICON": 2 if lat_active else 0,
     "DAW_ICON": 0,
   })
 
