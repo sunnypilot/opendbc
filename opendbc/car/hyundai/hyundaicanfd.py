@@ -3,6 +3,7 @@ from opendbc.car import CanBusBase
 from opendbc.car.crc import CRC16_XMODEM
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.lead_data_ext import CanFdLeadData
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 
 class CanBus(CanBusBase):
@@ -36,7 +37,7 @@ class CanBus(CanBusBase):
     return self._cam
 
 
-def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon):
+def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon):
   values = {
     "LKA_OptUsmSta": 2,
     "LKA_SysIndReq": 2 if enabled else 1,
@@ -49,7 +50,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_torque,
   }
 
   # Angle control doesn't support using LFA yet
-  if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+  if CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING:
     # LKAS messages take priority over LFA messages on HDA2.
     values |= {
       "LKA_OptUsmSta": 0,  # TODO: not used by the stock system

@@ -16,6 +16,7 @@ class HyundaiSafetyFlagsSP:
   NON_SCC = 8
   CCNC = 16
   CANFD_LFA_ALT_STEER = 64
+  CANFD_ANGLE_STEERING = 128
 
 
 # Angle steering vehicle model IDs — encoded in safety_param_sp bits [11:14]. Bit 15 stays unused: CarParamsSP.safetyParam is Int16.
@@ -77,3 +78,4 @@ class HyundaiFlagsSP(IntFlag):
   HAS_LKAS12 = 2 ** 10
   CCNC = 2 ** 11
   CANFD_LFA_ALT_STEER = 2 ** 13  # angle steering straight to the MDPS on LFA_ALT, no ADAS ECU in between
+  CANFD_ANGLE_STEERING = 2 ** 14

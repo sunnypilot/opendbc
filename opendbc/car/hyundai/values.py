@@ -51,7 +51,7 @@ class CarControllerParams:
       self.STEER_DELTA_UP = 2
       self.STEER_DELTA_DOWN = 3
 
-    if CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+    if CP.steerControlType == CarParams.SteerControlType.angle:
        self.STEER_THRESHOLD = 175
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
@@ -88,7 +88,6 @@ class HyundaiSafetyFlags(IntFlag):
   CANFD_LKA_STEER_MSG_ALT = 128
   FCEV_GAS = 256
   ALT_LIMITS_2 = 512
-  CANFD_ANGLE_STEERING = 1024
 
 
 # Hyundai/Kia/Genesis SCC (Smart Cruise Control) and steering architecture:
@@ -172,8 +171,6 @@ class HyundaiFlags(IntFlag):
 
   HAS_BSM = 2 ** 27  # blind spot monitoring
 
-  CANFD_ANGLE_STEERING = 2 ** 28
-
 
 @dataclass
 class HyundaiCarDocs(CarDocs):
@@ -238,7 +235,7 @@ class CAR(Platforms):
                      car_parts=CarParts.common([CarHarness.hyundai_s])),
     ],
     CarSpecs(wheelbase=2.895, steerRatio=13.5),
-    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   HYUNDAI_ELANTRA = HyundaiPlatformConfig(
     [
@@ -374,7 +371,7 @@ class CAR(Platforms):
                      car_parts=CarParts.common([CarHarness.hyundai_l])),
     ],
     CarSpecs(wheelbase=2.81, steerRatio=13.72),
-    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   HYUNDAI_SONATA = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Sonata 2020-23", "All", video="https://www.youtube.com/watch?v=ix63r9kE3Fw",
@@ -432,7 +429,8 @@ class CAR(Platforms):
                      car_parts=CarParts.common([CarHarness.hyundai_q]))
     ],
     HYUNDAI_IONIQ_5.specs,
-    flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
+    flags=HyundaiFlags.EV,
+    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   HYUNDAI_IONIQ_6 = HyundaiCanFDPlatformConfig(
     [
@@ -448,7 +446,8 @@ class CAR(Platforms):
                      car_parts=CarParts.common([CarHarness.hyundai_m]))
     ],
     CarSpecs(wheelbase=3.13, steerRatio=16.02),
-    flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
+    flags=HyundaiFlags.EV,
+    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   HYUNDAI_TUCSON_4TH_GEN = HyundaiCanFDPlatformConfig(
     [
@@ -585,14 +584,14 @@ class CAR(Platforms):
       HyundaiCarDocs("Kia Sportage (without HDA II) 2026", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
     CarSpecs(wheelbase=2.756, steerRatio=13.7),
-    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   KIA_SPORTAGE_HEV_2026 = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Kia Sportage Hybrid 2026", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
     CarSpecs(wheelbase=2.756, steerRatio=13.7),
-    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   KIA_SORENTO = HyundaiPlatformConfig(
     [
@@ -621,7 +620,7 @@ class CAR(Platforms):
       HyundaiCarDocs("Kia Sorento Hybrid 2026", "All", car_parts=CarParts.common([CarHarness.hyundai_q])),
     ],
     CarSpecs(wheelbase=2.814, steerRatio=13.27, tireStiffnessFactor=0.65),
-    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   KIA_STINGER = HyundaiPlatformConfig(
     [HyundaiCarDocs("Kia Stinger 2018-20", video="https://www.youtube.com/watch?v=MJ94qoofYw0",
@@ -657,14 +656,16 @@ class CAR(Platforms):
       HyundaiCarDocs("Kia EV6 (with HDA II) 2025-26", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))
     ],
     CarSpecs(wheelbase=2.9, steerRatio=16, tireStiffnessFactor=0.65),
-    flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
+    flags=HyundaiFlags.EV,
+    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   KIA_EV9 = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Kia EV9 2025-26", car_parts=CarParts.common([CarHarness.hyundai_r]))
     ],
     CarSpecs(wheelbase=3.1, steerRatio=16),
-    flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
+    flags=HyundaiFlags.EV,
+    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   KIA_CARNIVAL_4TH_GEN = HyundaiCanFDPlatformConfig(
     [
@@ -721,7 +722,8 @@ class CAR(Platforms):
       HyundaiCarDocs("Genesis GV70 Electrified 2026", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
     ],
     GENESIS_GV70_ELECTRIFIED_1ST_GEN.specs,
-    flags=HyundaiFlags.EV | HyundaiFlags.CANFD_ANGLE_STEERING,
+    flags=HyundaiFlags.EV,
+    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   GENESIS_G80 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Genesis G80 2018-19", "All", car_parts=CarParts.common([CarHarness.hyundai_h]))],
@@ -749,7 +751,7 @@ class CAR(Platforms):
                      car_parts=CarParts.common([CarHarness.hyundai_q])),
     ],
     GENESIS_GV80.specs,
-    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
+    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
 
   # port extensions

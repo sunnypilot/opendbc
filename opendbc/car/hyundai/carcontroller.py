@@ -18,6 +18,7 @@ from opendbc.sunnypilot.car.hyundai.lfa_alt import LFA_ALT_ANGLE_LIMITS, create_
 from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController
 from opendbc.sunnypilot.car.hyundai.lead_data_ext import LeadDataCarController
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarController
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -141,7 +142,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     hud_control = CC.hudControl
 
     # steering torque
-    if not self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING:
+    if not self.CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING:
       self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_ANGLE, CC.latActive,
                                                                          self.angle_limit_counter, MAX_ANGLE_FRAMES,
                                                                          MAX_ANGLE_CONSECUTIVE_FRAMES)
@@ -293,7 +294,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     if self.lfa_alt_steering:
       can_sends.append(create_lfa_alt(self.packer, self.CAN, apply_steer_req, self.apply_angle_last, apply_torque))
     else:
-      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque,
+      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CP_SP, self.CAN, CC.enabled, apply_steer_req, apply_torque,
                                                              self.apply_angle_last, self.lkas_icon))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU

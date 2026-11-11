@@ -22,7 +22,7 @@ ACI_FLT_TEMP_UNAVAILABLE = 4
 
 
 def lfa_alt_steering(CP: structs.CarParams, CP_SP: structs.CarParamsSP, fingerprint, cam_bus: int) -> bool:
-  return bool(CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING and CP.flags & HyundaiFlags.CANFD_CAMERA_SCC and
+  return bool(CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING and CP.flags & HyundaiFlags.CANFD_CAMERA_SCC and
               not CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and CP_SP.flags & HyundaiFlagsSP.CCNC and
               LFA_ALT_MSG in fingerprint[cam_bus])
 
