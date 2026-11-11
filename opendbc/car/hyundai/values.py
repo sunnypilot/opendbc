@@ -697,6 +697,10 @@ class CAR(Platforms):
     [HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-26", car_parts=CarParts.common([CarHarness.hyundai_a]))],
     CarSpecs(wheelbase=2.84, steerRatio=13.27),
   )
+  KIA_CARNIVAL_HEV_4TH_GEN = HyundaiCanFDPlatformConfig(
+    [HyundaiCarDocs("Kia Carnival Hybrid (with HDA II) 2025-26", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_q]))],
+    KIA_CARNIVAL_4TH_GEN.specs,
+  )
 
 
 class Buttons:

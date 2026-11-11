@@ -10,11 +10,12 @@ from opendbc.car import DT_CTRL
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.crc import CRC8J1850, mk_crc8_fun
-from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.car.hyundai.values import HyundaiFlags, Buttons
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 cruise_buttons_checksum = mk_crc8_fun(CRC8J1850, init_crc=0x97, xor_out=0x97)  # mk_crc8_fun xors init with xor_out: register starts at 0
 
+CANCEL_BUTTON_DELAY_FRAMES = 10  # 100 ms
 MAIN_PRESS_FRAMES = 12  # 120 ms
 OVERRIDE_BLINK_FRAMES = 100
 OVERRIDE_BLINK_ON_FRAMES = 60
@@ -116,12 +117,43 @@ def create_ccnc_buttons(packer, CAN, cruise_buttons_msg, main_btn):
   return packer.make_can_msg("CRUISE_BUTTONS", CAN.CAM, values)
 
 
+def create_ccnc_alt_buttons(packer, CAN, cruise_buttons_msg, cnt, btn):
+  values = cruise_buttons_msg.copy()
+
+  values.update({
+    "COUNTER": cnt,
+    "CRUISE_BUTTONS": btn,
+  })
+
+  return packer.make_can_msg("CRUISE_BUTTONS_ALT", CAN.ECAN, values)
+
+
 class CcncCarController:
   def __init__(self, CP, CP_SP):
     self.ccnc_lfa_steering = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and not (CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG))
+    self.ccnc_lka_alt_buttons = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and
+                                     CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
     self.lead_distance_filter = FirstOrderFilter(TARGET_DISTANCE_MAX, LEAD_FILTER_RC, 5 * DT_CTRL, initialized=False)
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
+
+  def create_alt_button_msgs(self, CS, CC):
+    can_sends = []
+
+    if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
+      btn = None
+      if CC.cruiseControl.cancel:
+        if self.cancel_counter > CANCEL_BUTTON_DELAY_FRAMES:
+          btn = Buttons.CANCEL
+      elif CC.cruiseControl.resume:
+        btn = Buttons.RES_ACCEL
+
+      if btn is not None:
+        for _ in range(10):
+          can_sends.append(create_ccnc_alt_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, CS.buttons_counter + 1, btn))
+        self.last_button_frame = self.frame
+
+    return can_sends
 
   @staticmethod
   def _get_set_speed(v_cruise_cluster, is_metric):
@@ -133,6 +165,9 @@ class CcncCarController:
 
   def update(self, CS, CC):
     can_sends = []
+
+    if self.ccnc_lka_alt_buttons:
+      return self.create_alt_button_msgs(CS, CC)
 
     if not self.ccnc_lfa_steering:
       return can_sends

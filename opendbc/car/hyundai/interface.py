@@ -209,6 +209,17 @@ class CarInterface(CarInterfaceBase):
     if ret.flags & HyundaiFlagsSP.CCNC and not lka_steering:
       ret.safetyParam |= HyundaiSafetyFlagsSP.CCNC
 
+    if ret.flags & HyundaiFlagsSP.CCNC and lka_steering:
+      # ADAS ECU knockout is unreliable on ccNC LKA steering cars
+      stock_cp.alphaLongitudinalAvailable = False
+      stock_cp.openpilotLongitudinalControl = False
+      stock_cp.pcmCruise = True
+      stock_cp.safetyConfigs[-1].safetyParam &= ~HyundaiSafetyFlags.LONG.value
+
+      if 0x1cf not in fingerprint[CAN.ECAN]:
+        stock_cp.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
+        stock_cp.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CANFD_ALT_BUTTONS.value
+
     if ret.flags & HyundaiFlagsSP.NON_SCC:
       stock_cp.alphaLongitudinalAvailable = False
       stock_cp.openpilotLongitudinalControl = False
