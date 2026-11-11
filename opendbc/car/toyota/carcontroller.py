@@ -85,7 +85,7 @@ class CarController(CarControllerBase, GasInterceptorCarController):
     self.secoc_acc_message_counter = 0
     self.secoc_prev_reset_counter = 0
 
-    self.enhanced_bsm = EnhancedBsmCarController(CP, CP_SP)
+    self.enhanced_bsm = EnhancedBsmCarController(CP_SP)
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
