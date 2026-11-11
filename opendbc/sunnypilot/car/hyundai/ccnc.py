@@ -40,6 +40,13 @@ def create_ccnc_0x161(packer, CAN, msg_161, enabled, lat_active, paused, long_en
     "DAW_ICON": 0,
   })
 
+  # suppress consider taking a break and its chime
+  if values["ALERTS_2"] == 5:
+    values.update({
+      "ALERTS_2": 0,
+      "SOUNDS_2": 0,
+    })
+
   if long_enabled:
     state = 0 if not main_cruise_enabled else 2 if enabled else 1
     lead = 2 if enabled and hud_control.leadVisible else 0
