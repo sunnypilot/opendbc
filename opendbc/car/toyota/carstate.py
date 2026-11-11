@@ -220,8 +220,8 @@ class CarState(CarStateBase, CarStateExt):
   def get_can_parsers(CP, CP_SP):
     pt_messages = [
       ("BLINKERS_STATE", float('nan')),
-      ("DEBUG", float('nan')),
     ]
+    CarStateExt.get_parser(CP, CP_SP, pt_messages)
 
     cam_messages = [
       ("RSA1", 0),

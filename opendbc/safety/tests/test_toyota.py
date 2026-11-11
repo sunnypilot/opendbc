@@ -110,8 +110,7 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
       self.assertEqual(should_tx and ecu_disabled and not stock_longitudinal, self._tx(tester_present))
 
   def test_enhanced_bsm(self):
-    # enable/disable/poll left and right blind spot debug, only with the safety param bit set
-    # and 0x750 in the TX allowlist
+    # enable/disable/poll blind spot debug, only with the safety param and 0x750 allowed
     addr_allowed = any(addr == 0x750 for addr, _ in self.TX_MSGS)
     base_param_sp = self.SAFETY_PARAM_SP
 

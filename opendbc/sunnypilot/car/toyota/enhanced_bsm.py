@@ -14,12 +14,13 @@ RIGHT_BLINDSPOT = b"\x42"
 LEFT_SIDE = LEFT_BLINDSPOT[0]
 RIGHT_SIDE = RIGHT_BLINDSPOT[0]
 
-# BLINDSPOTD1/D2 are zone codes, not distances: 0 when idle, ~46-53 for a real detection.
-# Lower values are transitional noise.
+# BLINDSPOTD1/D2 are zone codes: 0 when idle, ~46-53 for a detection; lower values are noise.
 BLINDSPOT_NOISE_FLOOR = 35
 
-# the eagle-eye camera stops working if the radar stays in its debug session below this speed
+# Drop the session below 6 m/s (it breaks the eagle-eye camera); re-enable above 7 m/s to avoid toggling.
 MIN_BSM_DEBUG_SPEED = 6  # m/s
+BSM_DEBUG_ENABLE_SPEED = 7  # m/s
+E_BSM_RATE = 20  # frames between polls
 
 
 def create_set_bsm_debug_mode(addr_byte: bytes, enabled: bool) -> CanData:
@@ -32,13 +33,12 @@ def create_bsm_polling_status(addr_byte: bytes) -> CanData:
 
 
 class EnhancedBsm:
-  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
-    self.CP = CP
+  def __init__(self, CP_SP: structs.CarParamsSP):
     self.CP_SP = CP_SP
 
   @property
   def enabled(self):
-    return bool(self.CP_SP.flags & ToyotaFlagsSP.SP_ENHANCED_BSM)
+    return bool(self.CP_SP.flags & ToyotaFlagsSP.ENHANCED_BSM)
 
 
 class _BsmSideState:
@@ -57,13 +57,13 @@ class _BsmSideState:
 
 
 class EnhancedBsmCarState(EnhancedBsm):
-  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
-    super().__init__(CP, CP_SP)
+  def __init__(self, CP_SP: structs.CarParamsSP):
+    super().__init__(CP_SP)
 
     self._sides = {LEFT_SIDE: _BsmSideState(), RIGHT_SIDE: _BsmSideState()}
     self._last_timestamp = 0
 
-  def update(self, cp, frame: int) -> tuple[bool, bool]:
+  def update(self, cp) -> tuple[bool, bool]:
     timestamp = cp.ts_nanos["DEBUG"]["BLINDSPOTSIDE"]
     if timestamp != self._last_timestamp:
       self._last_timestamp = timestamp
@@ -83,15 +83,17 @@ class _BsmSideController:
     self.debug_enabled = False
     self.last_poll_frame = 0
 
-  def update(self, frame: int, poll_phase: int, e_bsm_rate: int, vego_ok: bool) -> list[CanData]:
+  def update(self, frame: int, poll_phase: int, vego: float) -> list[CanData]:
     can_sends = []
+
+    vego_ok = vego > (MIN_BSM_DEBUG_SPEED if self.debug_enabled else BSM_DEBUG_ENABLE_SPEED)
 
     if vego_ok:
       if not self.debug_enabled:
         can_sends.append(create_set_bsm_debug_mode(self.addr_byte, True))
         self.debug_enabled = True
         self.last_poll_frame = frame
-      if frame % e_bsm_rate == poll_phase:
+      if frame % E_BSM_RATE == poll_phase:
         can_sends.append(create_bsm_polling_status(self.addr_byte))
         self.last_poll_frame = frame
       return can_sends
@@ -104,17 +106,16 @@ class _BsmSideController:
 
 
 class EnhancedBsmCarController(EnhancedBsm):
-  def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
-    super().__init__(CP, CP_SP)
+  def __init__(self, CP_SP: structs.CarParamsSP):
+    super().__init__(CP_SP)
 
     self._left = _BsmSideController(LEFT_BLINDSPOT)
     self._right = _BsmSideController(RIGHT_BLINDSPOT)
 
-  def update(self, CS: structs.CarState, frame: int, e_bsm_rate: int = 20) -> list[CanData]:
+  def update(self, CS: structs.CarState, frame: int) -> list[CanData]:
     if frame <= 200:
       return []
 
-    vego_ok = CS.out.vEgo > MIN_BSM_DEBUG_SPEED
-    can_sends = self._left.update(frame, 0, e_bsm_rate, vego_ok)
-    can_sends += self._right.update(frame, e_bsm_rate // 2, e_bsm_rate, vego_ok)
+    can_sends = self._left.update(frame, E_BSM_RATE // 4, CS.out.vEgo)
+    can_sends += self._right.update(frame, 3 * E_BSM_RATE // 4, CS.out.vEgo)
     return can_sends

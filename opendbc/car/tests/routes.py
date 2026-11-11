@@ -390,5 +390,7 @@ routes = [
   # port extensions
   CarTestRoute("be7ad2b087973544/0000002b--ec261cc821", HYUNDAI.HYUNDAI_VENUE_2021_NON_SCC),
   CarTestRoute("dc7bf18c8af12e37/00000006--ea06255cd0", HYUNDAI.KIA_CEED_PHEV_2022_NON_SCC),
+  CarTestRoute("d59ca223dca8da93/0000017a--5e6e4107f1", HYUNDAI.HYUNDAI_SONATA_HEV_2024),
+  CarTestRoute("d59ca223dca8da93/00000186--dd8cf07e6c", HYUNDAI.HYUNDAI_SONATA_HEV_2024, segment=0),  # openpilot longitudinal
   CarTestRoute("8bae07514ce06ad4/00000008--9f43d90441", CHRYSLER.RAM_HD_5TH_GEN),  # 2024 Ram HD with alt cruise buttons
 ]

@@ -30,8 +30,7 @@ class CarStateExt:
     self.CP = CP
     self.CP_SP = CP_SP
 
-    self.enhanced_bsm = EnhancedBsmCarState(CP, CP_SP)
-    self.frame = 0
+    self.enhanced_bsm = EnhancedBsmCarState(CP_SP)
 
     self.acc_type = 1
     self.zss_compute = False
@@ -49,6 +48,11 @@ class CarStateExt:
     self._splsgn3 = None
     self._tsgn4 = None
     self._splsgn4 = None
+
+  @staticmethod
+  def get_parser(CP, CP_SP, pt_messages) -> None:
+    if CP_SP.flags & ToyotaFlagsSP.ENHANCED_BSM:
+      pt_messages.append(("DEBUG", float('nan')))
 
   @staticmethod
   def traffic_signal_description(tsgn):
@@ -169,9 +173,10 @@ class CarStateExt:
         else:
           ret.steeringAngleDeg = steering_angle_deg
 
-    if self.enhanced_bsm.enabled and self.frame > 199:
-      ret.leftBlindspot, ret.rightBlindspot = self.enhanced_bsm.update(cp, self.frame)
-    self.frame += 1
+    if self.enhanced_bsm.enabled:
+      left_blindspot, right_blindspot = self.enhanced_bsm.update(cp)
+      ret.leftBlindspot |= left_blindspot
+      ret.rightBlindspot |= right_blindspot
 
     # Update traffic signals and speed limit
     self.update_traffic_signals(cp_cam)

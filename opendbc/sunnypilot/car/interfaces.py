@@ -18,7 +18,7 @@ from opendbc.car.gm.values import GMFlags
 from opendbc.car.honda.values import HondaFlags
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.car.subaru.values import SubaruFlags
-from opendbc.car.toyota.values import CAR as TOYOTA_CAR, SECOC_CAR, TSS2_CAR, ToyotaFlags, ToyotaSafetyFlags
+from opendbc.car.toyota.values import SECOC_CAR, TSS2_CAR, ToyotaFlags, ToyotaSafetyFlags
 from opendbc.car.volkswagen.values import VolkswagenFlags
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks as hyundai_enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
@@ -102,7 +102,7 @@ def has_bsm(CP: structs.CarParams, CP_SP: structs.CarParamsSP | None) -> bool:
     return True
   if CP.brand == "rivian":
     return CP_SP is not None and bool(CP_SP.flags & RivianFlagsSP.LONGITUDINAL_HARNESS_UPGRADE)
-  if CP.brand == "toyota" and CP_SP is not None and bool(CP_SP.flags & ToyotaFlagsSP.SP_ENHANCED_BSM):
+  if CP.brand == "toyota" and CP_SP is not None and bool(CP_SP.flags & ToyotaFlagsSP.ENHANCED_BSM):
     return True
   return CP.brand in BSM_FLAGS and bool(CP.flags & BSM_FLAGS[CP.brand])
 
@@ -201,16 +201,14 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
     if toyota_stop_and_go_hack and CP.openpilotLongitudinalControl:
       CP_SP.flags |= ToyotaFlagsSP.STOP_AND_GO_HACK.value
 
-    enhanced_bsm_car = (CP.carFingerprint in (TSS2_CAR - SECOC_CAR) or
-                        (not CP.flags & ToyotaFlags.SECOC and bool(CP_SP.flags & ToyotaFlagsSP.SMART_DSU) and
-                         CP.openpilotLongitudinalControl))
+    # 0x750 is only in the long TX allowlist; TSS2 non-SecOC reaches it directly, TSS-P needs a smartDSU.
+    enhanced_bsm_car = (CP.openpilotLongitudinalControl and
+                        (CP.carFingerprint in (TSS2_CAR - SECOC_CAR) or
+                         (not CP.flags & ToyotaFlags.SECOC and bool(CP_SP.flags & ToyotaFlagsSP.SMART_DSU))))
 
-    if toyota_enhanced_bsm and not toyota_stock_long and enhanced_bsm_car:
-      CP_SP.flags |= ToyotaFlagsSP.SP_ENHANCED_BSM.value
+    if toyota_enhanced_bsm and enhanced_bsm_car:
+      CP_SP.flags |= ToyotaFlagsSP.ENHANCED_BSM.value
       CP_SP.safetyParam |= ToyotaSafetyFlagsSP.ENHANCED_BSM
-
-    if CP.carFingerprint == TOYOTA_CAR.TOYOTA_PRIUS_TSS2:
-      CP_SP.flags |= ToyotaFlagsSP.SP_NEED_DEBUG_BSM.value
 
     if toyota_tss2_smooth and CP.flags & ToyotaFlags.TSS2 and CP.openpilotLongitudinalControl:
       CP_SP.flags |= ToyotaFlagsSP.TSS2_SMOOTH.value
