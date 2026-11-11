@@ -6,7 +6,7 @@ import numpy as np
 from opendbc.car.hyundai.carcontroller import ANGLE_SAFETY_BASELINE_MODEL
 from opendbc.car.hyundai.values import HyundaiSafetyFlags, CAR, HyundaiFlags, CarControllerParams
 from opendbc.sunnypilot.car.hyundai.values import HyundaiSafetyFlagsSP
-from opendbc.sunnypilot.car.hyundai.values import ANGLE_STEERING_MODEL_BY_CAR, encode_angle_model_id
+from opendbc.sunnypilot.car.hyundai.values import ANGLE_MODEL_MASK, ANGLE_STEERING_MODEL_BY_CAR, encode_angle_model_id
 from opendbc.car.structs import CarParams
 from opendbc.car.vehicle_model import VehicleModel, calc_slip_factor
 import opendbc.safety.tests.common as common
@@ -122,6 +122,8 @@ class TestHyundaiCanfdTorqueSteering(TestHyundaiCanfdBase, common.DriverTorqueSt
 class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSafetyTest):
 
   SAFETY_PARAM = HyundaiSafetyFlags.CANFD_ANGLE_STEERING
+  SAFETY_PARAM_SP = 0
+  ANGLE_ACTIVE_SIG = "LKAS_ANGLE_ACTIVE"
 
   PLATFORMS = {str(platform): platform for platform in CAR if
                platform.config.flags & HyundaiFlags.CANFD_ANGLE_STEERING and not CarInterface.get_non_essential_params(str(platform)).dashcamOnly}
@@ -159,7 +161,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     if increment_timer:
       self.safety.set_timer(self.cnt_angle_cmd * int(1e6 / self.LATERAL_FREQUENCY))
       self.__class__.cnt_angle_cmd += 1
-    values = {"ADAS_StrAnglReqVal": angle, "LKAS_ANGLE_ACTIVE": 2 if enabled else 1,
+    values = {"ADAS_StrAnglReqVal": angle, self.ANGLE_ACTIVE_SIG: 2 if enabled else 1,
               "ADAS_ACIAnglTqRedcGainVal": gain}
     return self.packer.make_can_msg_safety(self.STEER_MSG, self.STEER_BUS, values)
 
@@ -177,6 +179,13 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     if cls.__name__ == "TestHyundaiCanfdAngleSteering":
       cls.packer = None
       raise unittest.SkipTest
+
+  def setUp(self):
+    libsafety_py.libsafety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
+    super().setUp()
+
+  def tearDown(self):
+    self.safety.set_current_safety_param_sp(0)
 
   def get_vm(self, car_name):
     return VehicleModel(CarInterface.get_non_essential_params(car_name))
@@ -215,7 +224,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
   def test_lateral_jerk_limit(self, car_name):
     # car_name = ANGLE_SAFETY_BASELINE_MODEL
     angle_model_id = ANGLE_STEERING_MODEL_BY_CAR.get(car_name, 0)
-    self.safety.set_current_safety_param_sp(encode_angle_model_id(angle_model_id))
+    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP | encode_angle_model_id(angle_model_id))
     self._reset_safety_hooks()
 
     for speed in np.linspace(0, 40, 100):
@@ -376,7 +385,7 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     angle steering model ID from the safety_param_sp bitmask for every supported platform.
     """
     angle_model_id = ANGLE_STEERING_MODEL_BY_CAR.get(car_name, 0)
-    self.safety.set_current_safety_param_sp(encode_angle_model_id(angle_model_id))
+    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP | encode_angle_model_id(angle_model_id))
     self._reset_safety_hooks()
     self.assertEqual(self.safety.get_hyundai_angle_model_id(), angle_model_id)
 
@@ -386,25 +395,33 @@ class TestHyundaiCanfdAngleSteering(TestHyundaiCanfdBase, common.AngleSteeringSa
     via safety_param_sp safely defaults to the baseline fallback model (ID 0).
     """
     model_count = len(ANGLE_STEERING_MODEL_BY_CAR)
-    self.safety.set_current_safety_param_sp(encode_angle_model_id(model_count + 1))
+    self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP | encode_angle_model_id(model_count + 1))
     self._reset_safety_hooks()
     self.assertEqual(self.safety.get_hyundai_angle_model_id(), 0)
 
   def test_angle_model_bitmask_isolation(self):
     """
-    Tests that bits [0:3] and [8:15] in safety_param_sp are properly ignored.
+    Tests that bits [0:10] and bit 15 in safety_param_sp are properly ignored.
     Verifies the shift and mask logic works regardless of other flags being set.
     """
     test_id = 2  # HYUNDAI_IONIQ_5_PE
 
-    # 0xFF0F sets every bit to 1 EXCEPT bits 4-7.
-    noise_mask = 0xFF0F
+    # 0x87FF sets every bit to 1 EXCEPT bits 11-14.
+    noise_mask = 0x87FF
     param_with_noise = encode_angle_model_id(test_id) | noise_mask
 
     self.safety.set_current_safety_param_sp(param_with_noise)
     self._reset_safety_hooks()
 
     self.assertEqual(self.safety.get_hyundai_angle_model_id(), test_id)
+
+  def test_angle_model_does_not_overlap_flags(self):
+    flags = [v for k, v in vars(HyundaiSafetyFlagsSP).items() if k.isupper()]
+    for model_id in range(ANGLE_MODEL_MASK + 1):
+      param = encode_angle_model_id(model_id)
+      self.assertLess(param | sum(flags), 2 ** 15)
+      for flag in flags:
+        self.assertFalse(param & flag)
 
 
 class TestHyundaiCanfdLFASteeringBase(TestHyundaiCanfdTorqueSteering):
@@ -544,6 +561,103 @@ class TestHyundaiCanfdLKASteeringAltAngle(TestHyundaiCanfdAngleSteering):
     pass
 
 
+CAMERA_SCC_COMBOS = [c for c in ALL_GAS_EV_HYBRID_COMBOS if c["EXTRA_SAFETY_PARAM"] & HyundaiSafetyFlags.CAMERA_SCC]
+
+
+class HyundaiCanfdLFAAltAngleBase(TestHyundaiCanfdLKASteeringAltAngle):
+
+  TX_MSGS = [[0xCB, 0], [0x1A0, 0], [0x1CF, 2], [0x161, 0], [0x162, 0], [0xEA, 2]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0xCB, 0x161, 0x162), 2: (0xEA,)}
+  FWD_BLACKLISTED_ADDRS = {0: [0xEA], 2: [0xCB, 0x161, 0x162]}
+
+  PT_BUS = 0
+  SCC_BUS = 2
+  STEER_MSG = "LFA_ALT"
+  BUTTONS_TX_BUS = 2
+  ANGLE_ACTIVE_SIG = "ADAS_ActvACILvl2Sta"
+  SAFETY_PARAM_SP = HyundaiSafetyFlagsSP.CCNC | HyundaiSafetyFlagsSP.CANFD_LFA_ALT_STEER
+  EXTRA_SAFETY_PARAM: int
+
+  STEER_ANGLE_MAX = 175  # deg
+  BASELINE_PANDA_ANGLE_LIMITS = AngleSteeringLimitsVM(175, MAX_ANGLE_RATE=5)
+
+  @property
+  def SAFETY_PARAM(self):
+    return HyundaiSafetyFlags.CANFD_ANGLE_STEERING | self.EXTRA_SAFETY_PARAM
+
+  def test_lfa_alt_unused_signals(self):
+    self.safety.set_controls_allowed(True)
+    for sig in ("ADAS_ActvACISta", "FCA_ESA_ActvSta", "FCA_ESA_TqBstGainVal"):
+      for active in (1, 2):
+        ok = self.packer.make_can_msg_safety("LFA_ALT", 0, {"ADAS_ActvACILvl2Sta": active})
+        bad = self.packer.make_can_msg_safety("LFA_ALT", 0, {"ADAS_ActvACILvl2Sta": active, sig: 0.004 if "Gain" in sig else 1})
+        self.assertTrue(self._tx(ok))
+        self.assertFalse(self._tx(bad), sig)
+
+  def test_lfa_not_sendable(self):
+    self.assertFalse(self._tx(self.packer.make_can_msg_safety("LFA", 0, {})))
+    self.assertFalse(self._tx(self.packer.make_can_msg_safety("LFAHDA_CLUSTER", 0, {})))
+
+  def test_lfa_alt_requires_angle_ccnc(self):
+    lfa_alt = self.packer.make_can_msg_safety("LFA_ALT", 0, {"ADAS_ActvACILvl2Sta": 1})
+    for param, param_sp in ((self.SAFETY_PARAM, HyundaiSafetyFlagsSP.CANFD_LFA_ALT_STEER),
+                            (self.SAFETY_PARAM & ~HyundaiSafetyFlags.CANFD_ANGLE_STEERING, self.SAFETY_PARAM_SP),
+                            (self.SAFETY_PARAM & ~HyundaiSafetyFlags.CAMERA_SCC, self.SAFETY_PARAM_SP),
+                            (self.SAFETY_PARAM | HyundaiSafetyFlags.CANFD_LKA_STEER_MSG, self.SAFETY_PARAM_SP)):
+      self.safety.set_current_safety_param_sp(param_sp)
+      self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, param)
+      self.safety.init_tests()
+      self.assertFalse(self._tx(lfa_alt), (param, param_sp))
+
+
+@parameterized_class(CAMERA_SCC_COMBOS)
+class TestHyundaiCanfdLFAAltAngle(HyundaiCanfdLFAAltAngleBase):
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    if cls.__name__ == "TestHyundaiCanfdLFAAltAngle":
+      cls.packer = None
+      raise unittest.SkipTest
+
+
+@parameterized_class(CAMERA_SCC_COMBOS)
+class TestHyundaiCanfdLFAAltAngleLong(HyundaiLongitudinalBase, HyundaiCanfdLFAAltAngleBase):
+
+  RELAY_MALFUNCTION_ADDRS = {0: (0xCB, 0x1A0, 0x161, 0x162), 2: (0x1CF, 0xEA)}
+  FWD_BLACKLISTED_ADDRS = {0: [0x1CF, 0xEA], 2: [0xCB, 0x1A0, 0x161, 0x162]}
+
+  DISABLED_ECU_UDS_MSG = (0x7D0, 0)
+  DISABLED_ECU_ACTUATION_MSG = (0x1a0, 0)
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    if cls.__name__ == "TestHyundaiCanfdLFAAltAngleLong":
+      cls.packer = None
+      raise unittest.SkipTest
+
+  @property
+  def SAFETY_PARAM(self):
+    return HyundaiSafetyFlags.CANFD_ANGLE_STEERING | HyundaiSafetyFlags.LONG | self.EXTRA_SAFETY_PARAM
+
+  def _accel_msg(self, accel, aeb_req=False, aeb_decel=0):
+    values = {"aReqRaw": accel, "aReqValue": accel}
+    return self.packer.make_can_msg_safety("SCC_CONTROL", self.PT_BUS, values)
+
+  def _tx_acc_state_msg(self, enable):
+    values = {"MainMode_ACC": enable}
+    return self.packer.make_can_msg_safety("SCC_CONTROL", self.PT_BUS, values)
+
+  def test_tester_present_allowed(self, ecu_disable: bool = True):
+    super().test_tester_present_allowed(ecu_disable=False)
+
+  def test_button_sends(self):
+    for btn in range(8):
+      for main_btn in (0, 1):
+        self.assertTrue(self._tx(self._button_msg(btn, main_button=main_btn, bus=self.BUTTONS_TX_BUS)))
+
+
 class TestHyundaiCanfdLKASteeringLongEV(HyundaiLongitudinalBase, TestHyundaiCanfdLKASteeringEV):
 
   SAFETY_PARAM = HyundaiSafetyFlags.CANFD_LKA_STEER_MSG | HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.EV_GAS
@@ -619,9 +733,6 @@ class TestHyundaiCanfdLFASteeringLongAltButtons(TestHyundaiCanfdLFASteeringLongB
   def test_acc_cancel(self):
     # Alt buttons does not use SCC_CONTROL to cancel if longitudinal
     pass
-
-
-CAMERA_SCC_COMBOS = [c for c in ALL_GAS_EV_HYBRID_COMBOS if c["EXTRA_SAFETY_PARAM"] & HyundaiSafetyFlags.CAMERA_SCC]
 
 
 @parameterized_class(CAMERA_SCC_COMBOS)

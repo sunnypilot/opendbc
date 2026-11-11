@@ -14,6 +14,7 @@ from opendbc.car.interfaces import CarControllerBase
 from opendbc.sunnypilot.car.hyundai.ccnc import CcncCarController
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
 from opendbc.sunnypilot.car.hyundai.icbm import IntelligentCruiseButtonManagementInterface
+from opendbc.sunnypilot.car.hyundai.lfa_alt import LFA_ALT_ANGLE_LIMITS, create_lfa_alt
 from opendbc.sunnypilot.car.hyundai.longitudinal.controller import LongitudinalController
 from opendbc.sunnypilot.car.hyundai.lead_data_ext import LeadDataCarController
 from opendbc.sunnypilot.car.hyundai.mads import MadsCarController
@@ -110,6 +111,8 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     IntelligentCruiseButtonManagementInterface.__init__(self, CP, CP_SP)
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
+    if self.lfa_alt_steering:
+      self.params.ANGLE_LIMITS = LFA_ALT_ANGLE_LIMITS
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.angle_limit_counter = 0
     self.angle_filter = FirstOrderFilter(0.0, 0.2, DT_CTRL)
@@ -287,8 +290,11 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     lka_steering_long = lka_steering and self.CP.openpilotLongitudinalControl
 
     # steering control
-    can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque, self.apply_angle_last
-                                                           , self.lkas_icon))
+    if self.lfa_alt_steering:
+      can_sends.append(create_lfa_alt(self.packer, self.CAN, apply_steer_req, self.apply_angle_last, apply_torque))
+    else:
+      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_torque,
+                                                             self.apply_angle_last, self.lkas_icon))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU
     if self.frame % 5 == 0 and lka_steering:

@@ -364,8 +364,10 @@ FW_VERSIONS = {
   },
   CAR.HYUNDAI_SANTA_FE_HEV_5TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00MX5HMFC  AT CAN LHD 1.00 1.07 99211-P6000 231218',
       b'\xf1\x00MX5HMFC  AT KOR LHD 1.00 1.07 99211-P6000 231218',
       b'\xf1\x00MX5HMFC  AT USA LHD 1.00 1.06 99211-R6000 231218',
+      b'\xf1\x00MX5HMFC  AT USA LHD 1.00 1.09 99211-R6200 250519',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00MX5_ RDR -----      1.00 1.01 99110-P6000         ',
@@ -1227,6 +1229,14 @@ FW_VERSIONS = {
       b'\xf1\x00NQ5__               1.00 1.03 99110-P1000         ',
       b'\xf1\x00NQ5__               1.01 1.03 99110-CH000         ',
       b'\xf1\x00NQ5__               1.01 1.03 99110-P1000         ',
+    ],
+  },
+  CAR.KIA_SPORTAGE_2026: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NQ51.011.021.012551000HKP_NQ524_50509099211P1110',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00NQ5__               1.00 1.04 99110P1100          ',
     ],
   },
   CAR.KIA_SPORTAGE_HEV_2026: {

@@ -9,6 +9,7 @@ from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.radar_interface import RadarInterface
 
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
+from opendbc.sunnypilot.car.hyundai.lfa_alt import lfa_alt_steering
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP, ANGLE_STEERING_MODEL_BY_CAR, encode_angle_model_id
 
@@ -217,6 +218,10 @@ class CarInterface(CarInterfaceBase):
 
     if ret.flags & HyundaiFlagsSP.CCNC and not lka_steering:
       ret.safetyParam |= HyundaiSafetyFlagsSP.CCNC
+
+    if lfa_alt_steering(stock_cp, ret, fingerprint, CAN.CAM):
+      ret.flags |= HyundaiFlagsSP.CANFD_LFA_ALT_STEER.value
+      ret.safetyParam |= HyundaiSafetyFlagsSP.CANFD_LFA_ALT_STEER
 
     if ret.flags & HyundaiFlagsSP.NON_SCC:
       stock_cp.alphaLongitudinalAvailable = False

@@ -370,6 +370,8 @@ class CAR(Platforms):
     [
       HyundaiCarDocs("Hyundai Santa Fe Hybrid (with HDA II & LFA2) 2024-25", "Highway Driving Assist II & Lane Follow Assist 2",
                      car_parts=CarParts.common([CarHarness.hyundai_p])),
+      HyundaiCarDocs("Hyundai Santa Fe Hybrid (without HDA II, LFA2) 2025-26", "Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_l])),
     ],
     CarSpecs(wheelbase=2.81, steerRatio=13.72),
     flags=HyundaiFlags.CANFD_ANGLE_STEERING,
@@ -577,6 +579,13 @@ class CAR(Platforms):
     ],
     # weight from SX and above trims, average of FWD and AWD version, steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sportage/2023/specifications
     CarSpecs(wheelbase=2.756, steerRatio=13.6),
+  )
+  KIA_SPORTAGE_2026 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia Sportage (without HDA II) 2026", car_parts=CarParts.common([CarHarness.hyundai_n])),
+    ],
+    CarSpecs(wheelbase=2.756, steerRatio=13.7),
+    flags=HyundaiFlags.CANFD_ANGLE_STEERING,
   )
   KIA_SPORTAGE_HEV_2026 = HyundaiCanFDPlatformConfig(
     [

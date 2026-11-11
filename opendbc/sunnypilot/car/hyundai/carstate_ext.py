@@ -24,6 +24,7 @@ class CarStateExt:
     self.msg_162 = {}
     self.mdps = {}
     self.cruise_buttons_msg = {}
+    self.lfa_alt = {}
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -96,5 +97,7 @@ class CarStateExt:
       self.mdps = copy.copy(cp.vl["MDPS"])
       self.cruise_info = copy.copy(cp_cam.vl["SCC_CONTROL"])
       self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
+      if self.CP_SP.flags & HyundaiFlagsSP.CANFD_LFA_ALT_STEER:
+        self.lfa_alt = copy.copy(cp_cam.vl["LFA_ALT"])
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
