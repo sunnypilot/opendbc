@@ -462,7 +462,7 @@ static safety_config toyota_init(uint16_t param) {
   }
 
   if (toyota_secoc) {
-    static RxCheck toyota_secoc_rx_checks[] = {
+    static const RxCheck toyota_secoc_rx_checks[] = {
       TOYOTA_SECOC_RX_CHECKS
       TOYOTA_PCM_CRUISE_2_ADDR_CHECK
     };
@@ -470,26 +470,26 @@ static safety_config toyota_init(uint16_t param) {
     SET_RX_CHECKS(toyota_secoc_rx_checks, ret);
   } else if (toyota_lta) {
     // Check the quality flag for angle measurement when using LTA, since it's not set on TSS-P cars
-    static RxCheck toyota_lta_rx_checks[] = {
+    static const RxCheck toyota_lta_rx_checks[] = {
       TOYOTA_RX_CHECKS(true)
       TOYOTA_PCM_CRUISE_2_ADDR_CHECK
     };
 
     SET_RX_CHECKS(toyota_lta_rx_checks, ret);
   } else {
-    static RxCheck toyota_lka_rx_checks[] = {
+    static const RxCheck toyota_lka_rx_checks[] = {
       TOYOTA_RX_CHECKS(false)
       TOYOTA_PCM_CRUISE_2_ADDR_CHECK
     };
-    static RxCheck toyota_lka_alt_brake_rx_checks[] = {
+    static const RxCheck toyota_lka_alt_brake_rx_checks[] = {
       TOYOTA_ALT_BRAKE_RX_CHECKS(false)
       TOYOTA_PCM_CRUISE_2_ADDR_CHECK
     };
-    static RxCheck toyota_lka_unsupported_dsu_rx_checks[] = {
+    static const RxCheck toyota_lka_unsupported_dsu_rx_checks[] = {
       TOYOTA_RX_CHECKS(false)
       TOYOTA_DSU_CRUISE_ADDR_CHECK
     };
-    static RxCheck toyota_lka_alt_brake_unsupported_dsu_rx_checks[] = {
+    static const RxCheck toyota_lka_alt_brake_unsupported_dsu_rx_checks[] = {
       TOYOTA_ALT_BRAKE_RX_CHECKS(false)
       TOYOTA_DSU_CRUISE_ADDR_CHECK
     };
@@ -513,7 +513,7 @@ static safety_config toyota_init(uint16_t param) {
     SET_TX_MSGS(TOYOTA_INTERCEPTOR_TX_MSGS, ret);
 
     if (toyota_lta) {
-      static RxCheck toyota_lta_interceptor_rx_checks[] = {
+      static const RxCheck toyota_lta_interceptor_rx_checks[] = {
         TOYOTA_RX_CHECKS(true)
         TOYOTA_PCM_CRUISE_2_ADDR_CHECK
         TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
@@ -521,22 +521,22 @@ static safety_config toyota_init(uint16_t param) {
 
       SET_RX_CHECKS(toyota_lta_interceptor_rx_checks, ret);
     } else {
-      static RxCheck toyota_lka_interceptor_rx_checks[] = {
+      static const RxCheck toyota_lka_interceptor_rx_checks[] = {
         TOYOTA_RX_CHECKS(false)
         TOYOTA_PCM_CRUISE_2_ADDR_CHECK
         TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
       };
-      static RxCheck toyota_lka_alt_brake_interceptor_rx_checks[] = {
+      static const RxCheck toyota_lka_alt_brake_interceptor_rx_checks[] = {
         TOYOTA_ALT_BRAKE_RX_CHECKS(false)
         TOYOTA_PCM_CRUISE_2_ADDR_CHECK
         TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
       };
-      static RxCheck toyota_lka_unsupported_dsu_interceptor_rx_checks[] = {
+      static const RxCheck toyota_lka_unsupported_dsu_interceptor_rx_checks[] = {
         TOYOTA_RX_CHECKS(false)
         TOYOTA_DSU_CRUISE_ADDR_CHECK
         TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK
       };
-      static RxCheck toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks[] = {
+      static const RxCheck toyota_lka_alt_brake_unsupported_dsu_interceptor_rx_checks[] = {
         TOYOTA_ALT_BRAKE_RX_CHECKS(false)
         TOYOTA_DSU_CRUISE_ADDR_CHECK
         TOYOTA_GAS_INTERCEPTOR_ADDR_CHECK

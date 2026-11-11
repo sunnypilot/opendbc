@@ -214,21 +214,21 @@ static safety_config gm_init(uint16_t param) {
   };
 #endif
 
-  static RxCheck gm_rx_checks[] = {
+  static const RxCheck gm_rx_checks[] = {
     GM_COMMON_RX_CHECKS
   };
 
-  static RxCheck gm_ev_rx_checks[] = {
+  static const RxCheck gm_ev_rx_checks[] = {
     GM_COMMON_RX_CHECKS
     GM_EV_COMMON_ADDR_CHECK
   };
 
-  static RxCheck gm_non_acc_rx_checks[] = {
+  static const RxCheck gm_non_acc_rx_checks[] = {
     GM_COMMON_RX_CHECKS
     GM_NON_ACC_ADDR_CHECK
   };
 
-  static RxCheck gm_non_acc_ev_rx_checks[] = {
+  static const RxCheck gm_non_acc_ev_rx_checks[] = {
     GM_COMMON_RX_CHECKS
     GM_EV_COMMON_ADDR_CHECK
     GM_NON_ACC_ADDR_CHECK
