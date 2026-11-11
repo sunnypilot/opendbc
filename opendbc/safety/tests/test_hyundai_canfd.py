@@ -310,5 +310,34 @@ class TestHyundaiCanfdLFASteeringCCNCLong(TestHyundaiCanfdLFASteeringLongBase, T
         self.assertTrue(self._tx(self._button_msg(btn, main_button=main_btn, bus=self.BUTTONS_TX_BUS)))
 
 
+@parameterized_class(CAMERA_SCC_COMBOS)
+class TestHyundaiCanfdLFASteeringCCNCLongAltButtons(TestHyundaiCanfdLFASteeringCCNCLong, TestHyundaiCanfdLFASteeringAltButtonsBase):
+
+  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1AA, 2], [0x1A0, 0], [0x161, 0], [0x162, 0], [0xEA, 2]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x1A0, 0x161, 0x162), 2: (0x1AA, 0xEA)}
+  FWD_BLACKLISTED_ADDRS = {0: [0x1AA, 0xEA], 2: [0x12A, 0x1E0, 0x1A0, 0x161, 0x162]}
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    if cls.__name__ == "TestHyundaiCanfdLFASteeringCCNCLongAltButtons":
+      cls.packer = None
+      raise unittest.SkipTest
+
+  @property
+  def SAFETY_PARAM(self):
+    return HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CANFD_ALT_BUTTONS | self.EXTRA_SAFETY_PARAM
+
+  def _button_msg(self, buttons, main_button=0, bus=None):
+    values = {
+      "CRUISE_BUTTONS": buttons,
+      "ADAPTIVE_CRUISE_MAIN_BTN": main_button,
+    }
+    return self.packer.make_can_msg_safety("CRUISE_BUTTONS_ALT", self.PT_BUS if bus is None else bus, values)
+
+  def test_acc_cancel(self):
+    pass
+
+
 if __name__ == "__main__":
   unittest.main()

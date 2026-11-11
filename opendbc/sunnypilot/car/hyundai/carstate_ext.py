@@ -95,6 +95,6 @@ class CarStateExt:
       self.msg_162 = copy.copy(cp_cam.vl["CCNC_0x162"])
       self.mdps = copy.copy(cp.vl["MDPS"])
       self.cruise_info = copy.copy(cp_cam.vl["SCC_CONTROL"])
-      self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
+      self.cruise_buttons_msg = copy.copy(cp.vl[self.cruise_btns_msg_canfd])
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor

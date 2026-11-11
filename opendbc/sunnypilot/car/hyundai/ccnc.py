@@ -102,13 +102,16 @@ def create_ccnc_0x162(packer, CAN, msg_162, enabled, long_enabled, main_cruise_e
   return packer.make_can_msg("CCNC_0x162", CAN.ECAN, values)
 
 
-def create_ccnc_buttons(packer, CAN, cruise_buttons_msg, main_btn):
+def create_ccnc_buttons(packer, CAN, cruise_buttons_msg, main_btn, alt_buttons):
   values = cruise_buttons_msg.copy()
 
   values.update({
     "ADAPTIVE_CRUISE_MAIN_BTN": 1 if main_btn else 0,
     "NORMAL_CRUISE_MAIN_BTN": 0,
   })
+
+  if alt_buttons:
+    return packer.make_can_msg("CRUISE_BUTTONS_ALT", CAN.CAM, values)
 
   dat = packer.make_can_msg("CRUISE_BUTTONS", CAN.CAM, values)[1]
   values["_CHECKSUM"] = cruise_buttons_checksum(dat[1:])
@@ -146,7 +149,8 @@ class CcncCarController:
 
       if self.frame % 2 == 0 and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
         press_main = CS.cruise_info["MainMode_ACC"] and self.frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES
-        can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main))
+        can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main,
+                                             self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS))
 
       if self.frame % 5 == 0:
         if not self.lead_visible:
