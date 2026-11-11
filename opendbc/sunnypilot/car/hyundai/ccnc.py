@@ -51,6 +51,13 @@ def create_ccnc_0x161(packer, CAN, frame, msg_161, enabled, lat_active, paused, 
     "DAW_ICON": 0,
   })
 
+  # suppress consider taking a break and its chime
+  if values["ALERTS_2"] == 5:
+    values.update({
+      "ALERTS_2": 0,
+      "SOUNDS_2": 0,
+    })
+
   if long_enabled:
     override_blink = gas_override and frame % OVERRIDE_BLINK_FRAMES < OVERRIDE_BLINK_ON_FRAMES
     long_active = enabled and not gas_override
