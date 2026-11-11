@@ -167,14 +167,14 @@ class CcncCarController:
     if self.ccnc_lfa_steering:
       can_sends.append(create_ccnc_mdps(self.packer, self.CAN, CS.mdps))
 
-      if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
-        press_main = CS.cruise_info["MainMode_ACC"] and self.frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES
-        can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main))
-
     if self.CP.openpilotLongitudinalControl:
       if not CC.enabled or CC.hudControl.leadDistanceBars != self.lead_distance_bars_last:
         self.distance_bar_frame = self.frame
       self.lead_distance_bars_last = CC.hudControl.leadDistanceBars
+
+      if self.ccnc_lfa_steering and self.frame % 2 == 0 and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
+        press_main = CS.cruise_info["MainMode_ACC"] and self.frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES
+        can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main))
 
       if self.frame % 5 == 0:
         if not self.lead_visible:
