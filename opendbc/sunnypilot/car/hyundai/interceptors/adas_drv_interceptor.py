@@ -96,7 +96,9 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
       "FEATURE_NAV_SEGMENT": 1,
       "FEATURE_NAV_SEGMENT_UPDATE": 1,
       "FEATURE_NAV_SEGMENT_LIMIT": 1,
-      "FEATURE_NAV_SUMMARY": 1,
+      "FEATURE_NAV_SUMMARY": 0,
+      # its curve slowdown follows the head unit's predicted path, often a turn not taken off a freeway
+      "FEATURE_NAV_PROFILE": 1,
     }
     return [packer.make_can_msg("ADAS_DRV_INTERCEPT_OPT", CAN.ACAN, values)]
 

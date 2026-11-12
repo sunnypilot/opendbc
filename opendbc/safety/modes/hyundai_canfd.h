@@ -267,7 +267,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   if (msg->addr == 0x1256U) {
     const int interceptor_mode = (msg->data[3] << 8) | msg->data[4];
     const int interceptor_param = (msg->data[5] << 8) | msg->data[6];
-    if ((interceptor_mode != 5) || (interceptor_param != 1) || ((msg->data[7] & ~0x3FU) != 0U)) {
+    if ((interceptor_mode != 5) || (interceptor_param != 1) || ((msg->data[7] & ~0x7FU) != 0U)) {
       tx = false;
     }
   }
