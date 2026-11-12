@@ -2021,6 +2021,17 @@
     ],
     "package": "All"
   },
+  "Hyundai Tucson Hybrid (without HDA II) 2025-26": {
+    "platform": "HYUNDAI_TUCSON_4TH_GEN",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Tucson Hybrid (without HDA II)",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Hyundai Tucson Plug-in Hybrid 2024": {
     "platform": "HYUNDAI_TUCSON_4TH_GEN",
     "make": "Hyundai",
