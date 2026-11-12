@@ -210,7 +210,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyParam |= HyundaiSafetyFlagsSP.CCNC
 
     if ret.flags & HyundaiFlagsSP.CCNC and lka_steering:
-      # this needs to be figured out for ccNC cars with an ADAS ECU
+      # this needs to be figured out for ccNC cars with an ADAS Driving ECU
       stock_cp.alphaLongitudinalAvailable = False
       stock_cp.openpilotLongitudinalControl = False
       stock_cp.pcmCruise = True
