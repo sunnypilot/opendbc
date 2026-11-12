@@ -63,7 +63,6 @@ non_tested_cars = [
 # HKG Angle Steering (LFA2) (Still WIP, hence why ignored)
 non_tested_cars += [
   HYUNDAI.GENESIS_GV80_2025,
-  HYUNDAI.HYUNDAI_IONIQ_5_PE,
   HYUNDAI.HYUNDAI_IONIQ_9,
   HYUNDAI.KIA_EV6_2025,
   HYUNDAI.KIA_EV9,
@@ -416,5 +415,7 @@ routes = [
   #CarTestRoute("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", HYUNDAI.KIA_EV9),  # 2025 HDA1 Angle Control
   #CarTestRoute("1635e7fee82dec3b/00000000--aa7efe7199", HYUNDAI.KIA_SPORTAGE_HEV_2026),  # 2025 Angle Control
   #CarTestRoute("bf5d5a62cc79a28e/00000002--4d370e2bc2", HYUNDAI.GENESIS_GV80_2025),
+  CarTestRoute("355c475957beb901/00000005--afeab070c7", HYUNDAI.HYUNDAI_IONIQ_5_PE),  # 2025
+  CarTestRoute("355c475957beb901/00000003--043d8a2e45", HYUNDAI.HYUNDAI_IONIQ_5_PE),  # 2025, openpilot longitudinal
   CarTestRoute("8bae07514ce06ad4/00000008--9f43d90441", CHRYSLER.RAM_HD_5TH_GEN),  # 2024 Ram HD with alt cruise buttons
 ]

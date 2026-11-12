@@ -723,7 +723,6 @@ class CAR(Platforms):
                      car_parts=CarParts.common([CarHarness.hyundai_s])),
     ],
     CarSpecs(wheelbase=2.895, steerRatio=13.5),
-    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   HYUNDAI_SANTA_FE_HEV_5TH_GEN = HyundaiCanFDPlatformConfig(
     [
@@ -733,16 +732,16 @@ class CAR(Platforms):
                      car_parts=CarParts.common([CarHarness.hyundai_l])),
     ],
     CarSpecs(wheelbase=2.81, steerRatio=13.72),
-    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   HYUNDAI_IONIQ_5_PE = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025-26", "Highway Driving Assist II & Lane Follow Assist 2",
-                     car_parts=CarParts.common([CarHarness.hyundai_q]))
+                     car_parts=CarParts.common([CarHarness.hyundai_q])),
+      HyundaiCarDocs("Hyundai Ioniq 5 PE (without HDA II, LFA2) 2025", "Highway Driving Assist & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_k])),
     ],
     HYUNDAI_IONIQ_5.specs,
     flags=HyundaiFlags.EV,
-    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   HYUNDAI_IONIQ_9 = HyundaiCanFDPlatformConfig(
     [
@@ -751,28 +750,24 @@ class CAR(Platforms):
     ],
     CarSpecs(wheelbase=3.13, steerRatio=16.02),
     flags=HyundaiFlags.EV,
-    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   KIA_SPORTAGE_2026 = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Kia Sportage (without HDA II) 2026", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
     CarSpecs(wheelbase=2.756, steerRatio=13.7),
-    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   KIA_SPORTAGE_HEV_2026 = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Kia Sportage Hybrid 2026", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
     CarSpecs(wheelbase=2.756, steerRatio=13.7),
-    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   KIA_SORENTO_HEV_4TH_GEN_LFA2 = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Kia Sorento Hybrid 2026", "All", car_parts=CarParts.common([CarHarness.hyundai_q])),
     ],
     CarSpecs(wheelbase=2.814, steerRatio=13.27, tireStiffnessFactor=0.65),
-    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   KIA_EV6_2025 = HyundaiCanFDPlatformConfig(
     [
@@ -781,7 +776,6 @@ class CAR(Platforms):
     ],
     CarSpecs(wheelbase=2.9, steerRatio=16, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.EV,
-    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   KIA_EV9 = HyundaiCanFDPlatformConfig(
     [
@@ -789,7 +783,6 @@ class CAR(Platforms):
     ],
     CarSpecs(wheelbase=3.1, steerRatio=16),
     flags=HyundaiFlags.EV,
-    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   GENESIS_GV70_ELECTRIFIED_2ND_GEN = HyundaiCanFDPlatformConfig(
     [
@@ -797,7 +790,6 @@ class CAR(Platforms):
     ],
     GENESIS_GV70_ELECTRIFIED_1ST_GEN.specs,
     flags=HyundaiFlags.EV,
-    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
   GENESIS_GV80_2025 = HyundaiCanFDPlatformConfig(
     [
@@ -807,7 +799,6 @@ class CAR(Platforms):
                      car_parts=CarParts.common([CarHarness.hyundai_q])),
     ],
     GENESIS_GV80.specs,
-    sp_flags=HyundaiFlagsSP.CANFD_ANGLE_STEERING,
   )
 
 

@@ -9,7 +9,7 @@ from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.radar_interface import RadarInterface
 
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
-from opendbc.sunnypilot.car.hyundai.lfa_alt import lfa_alt_steering
+from opendbc.sunnypilot.car.hyundai.lfa_alt import LFA_ALT_MSG, lfa_alt_steering
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP, ANGLE_STEERING_MODEL_BY_CAR, encode_angle_model_id
 
@@ -170,6 +170,10 @@ class CarInterface(CarInterfaceBase):
     cam_can = CanBus(None, fingerprint).CAM
     lka_steering = 0x50 in fingerprint[cam_can] or 0x110 in fingerprint[cam_can]
     CAN = CanBus(None, fingerprint, lka_steering)
+
+    if candidate in ANGLE_STEERING_MODEL_BY_CAR or \
+       (stock_cp.flags & HyundaiFlags.CANFD and any(LFA_ALT_MSG in fingerprint[b] for b in (CAN.ECAN, CAN.ACAN, CAN.CAM))):
+      ret.flags |= HyundaiFlagsSP.CANFD_ANGLE_STEERING.value
 
     if ret.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING:
       stock_cp.steerControlType = structs.CarParams.SteerControlType.angle
