@@ -163,4 +163,15 @@ FW_VERSIONS_EXT = {
       b'\xf1\x00NX4__               1.00 1.03 99110N7100          ',
     ],
   },
+  CAR.KIA_SELTOS: {
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00SP2 MDPS C 1.00 1.04 56310Q5840  4SPSC104',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00SP2 MFC  AT AUS RHD 1.00 1.03 99210-Q5500 230208',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00SP2_ SCC F-CUP      1.00 1.01 99110-Q5500         ',
+    ],
+  },
 }
