@@ -1957,6 +1957,18 @@
     ],
     "package": "All"
   },
+  "Hyundai Sonata Hybrid (without HDA II) 2024-26": {
+    "platform": "HYUNDAI_SONATA_HEV_2024",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Sonata Hybrid (without HDA II)",
+    "year": [
+      "2024",
+      "2025",
+      "2026"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Hyundai Staria 2023": {
     "platform": "HYUNDAI_STARIA_4TH_GEN",
     "make": "Hyundai",
@@ -2019,6 +2031,17 @@
       "2024"
     ],
     "package": "All"
+  },
+  "Hyundai Tucson Hybrid (without HDA II) 2025-26": {
+    "platform": "HYUNDAI_TUCSON_4TH_GEN",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Tucson Hybrid (without HDA II)",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Smart Cruise Control (SCC)"
   },
   "Hyundai Tucson Plug-in Hybrid 2024": {
     "platform": "HYUNDAI_TUCSON_4TH_GEN",
@@ -2096,6 +2119,17 @@
       "2023"
     ],
     "package": "Smart Cruise Control (SCC)"
+  },
+  "Kia Carnival Hybrid (with HDA II) 2025-26": {
+    "platform": "KIA_CARNIVAL_4TH_GEN",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Carnival Hybrid (with HDA II)",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Highway Driving Assist II"
   },
   "Kia Ceed 2019-21": {
     "platform": "KIA_CEED",

@@ -398,6 +398,7 @@ class CAR(Platforms):
       HyundaiCarDocs("Hyundai Tucson 2022", car_parts=CarParts.common([CarHarness.hyundai_n])),
       HyundaiCarDocs("Hyundai Tucson 2023-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
       HyundaiCarDocs("Hyundai Tucson Hybrid 2022-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
+      HyundaiCarDocs("Hyundai Tucson Hybrid (without HDA II) 2025-26", car_parts=CarParts.common([CarHarness.hyundai_n])),
       HyundaiCarDocs("Hyundai Tucson Plug-in Hybrid 2024", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
     CarSpecs(wheelbase=2.756, steerRatio=13.7, tireStiffnessFactor=0.385),
@@ -576,7 +577,8 @@ class CAR(Platforms):
   KIA_CARNIVAL_4TH_GEN = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Kia Carnival 2022-24", car_parts=CarParts.common([CarHarness.hyundai_a])),
-      HyundaiCarDocs("Kia Carnival (China only) 2023", car_parts=CarParts.common([CarHarness.hyundai_k]))
+      HyundaiCarDocs("Kia Carnival (China only) 2023", car_parts=CarParts.common([CarHarness.hyundai_k])),
+      HyundaiCarDocs("Kia Carnival Hybrid (with HDA II) 2025-26", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_q])),
     ],
     CarSpecs(wheelbase=3.09, steerRatio=14.23),
     flags=HyundaiFlags.CANFD_RADAR_SCC,
@@ -696,6 +698,10 @@ class CAR(Platforms):
     GENESIS_G70_2020.specs,
     flags=HyundaiFlags.CHECKSUM_CRC8,
     sp_flags=HyundaiFlagsSP.NON_SCC_RADAR_FCA,
+  )
+  HYUNDAI_SONATA_HEV_2024 = HyundaiCanFDPlatformConfig(
+    [HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-26", car_parts=CarParts.common([CarHarness.hyundai_a]))],
+    CarSpecs(wheelbase=2.84, steerRatio=13.27),
   )
 
 
