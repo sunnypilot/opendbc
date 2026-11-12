@@ -92,6 +92,11 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
       "REQUESTED_SAFETY_PARAM": ADAS_DRV_INTERCEPTOR_PROTOCOL_VERSION,
       "FEATURE_1": 1,
       "FEATURE_2": 1,
+      # the ADAS DRV shows HDA and fills the side cars only on a freeway: every road is sent to it as one
+      "FEATURE_NAV_SEGMENT": 1,
+      "FEATURE_NAV_SEGMENT_UPDATE": 1,
+      "FEATURE_NAV_SEGMENT_LIMIT": 1,
+      "FEATURE_NAV_SUMMARY": 1,
     }
     return [packer.make_can_msg("ADAS_DRV_INTERCEPT_OPT", CAN.ACAN, values)]
 
