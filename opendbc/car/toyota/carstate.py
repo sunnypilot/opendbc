@@ -221,6 +221,7 @@ class CarState(CarStateBase, CarStateExt):
     pt_messages = [
       ("BLINKERS_STATE", float('nan')),
     ]
+    CarStateExt.get_parser(CP, CP_SP, pt_messages)
 
     cam_messages = [
       ("RSA1", 0),

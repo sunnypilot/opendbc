@@ -39,3 +39,10 @@ CM_ "BO_ SDSU: The sDSU is a modified DSU for use in TSS-P Toyotas. Learn more: 
 CM_ SG_ 767 FD_BUTTON "The follow distance button signal as forwarded by the sdsu";
 
 VAL_ 767 STATE 7 "STATE_AEB_CTRL" 6 "FAULT_INVALID" 5 "FAULT_TIMEOUT" 4 "FAULT_STARTUP" 3 "FAULT_SCE" 2 "FAULT_SEND" 1 "FAULT_BAD_CHECKSUM" 0 "NO_FAULT" ;
+
+BO_ 1880 DEBUG: 8 XXX
+ SG_ BLINDSPOTSIDE : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ BLINDSPOTD1 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ BLINDSPOTD2 : 55|8@0+ (1,0) [0|255] "" XXX
+
+CM_ "BO_ DEBUG: Response to enhanced BSM polling (0x750 sub-addresses 0x41/0x42). BLINDSPOTD1/D2 are zone codes: 0 idle, ~46-53 for a detection";
