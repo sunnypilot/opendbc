@@ -141,4 +141,17 @@ FW_VERSIONS_EXT = {
       b'\xf1\x00DN8_ RDR -----      1.00 1.00 99110-L1800         ',
     ],
   },
+  CAR.HYUNDAI_TUCSON_4TH_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 1.00 99211-N7030 C55',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7030 C55',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7035 C5C',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7060 C5B',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00NX4__               1.00 1.02 99110N7000          ',
+      b'\xf1\x00NX4__               1.00 1.02 99110N7100          ',
+      b'\xf1\x00NX4__               1.00 1.03 99110N7100          ',
+    ],
+  },
 }
