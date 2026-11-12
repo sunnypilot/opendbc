@@ -186,6 +186,7 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
     toyota_stock_long = int(params_dict.get("ToyotaEnforceStockLongitudinal", 0)) == 1
     toyota_stop_and_go_hack = int(params_dict.get("ToyotaStopAndGoHack", 0)) == 1
     toyota_tss2_smooth = int(params_dict.get("ToyotaTSS2Smooth", 0)) == 1
+    toyota_reverse_cruise = int(params_dict.get("ToyotaReverseCruiseIncrease", 0)) == 1
 
     if toyota_stock_long:
       CP_SP.flags |= ToyotaFlagsSP.STOCK_LONGITUDINAL.value
@@ -198,3 +199,6 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
 
     if toyota_tss2_smooth and CP.flags & ToyotaFlags.TSS2 and CP.openpilotLongitudinalControl:
       CP_SP.flags |= ToyotaFlagsSP.TSS2_SMOOTH.value
+
+    if toyota_reverse_cruise:
+      CP_SP.flags |= ToyotaFlagsSP.REVERSE_CRUISE.value
