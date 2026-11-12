@@ -131,7 +131,7 @@ FW_VERSIONS_EXT = {
       b'\xf1\x00QX  MFC  AT USA LHD 1.00 1.01 99211-K2000 191014',
     ],
   },
-  CAR.HYUNDAI_SONATA_HEV_2024: {
+  CAR.HYUNDAI_SONATA_2024: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00DN8HMFC  AT KOR LHD 1.00 1.01 99211-L1800 230512',
       b'\xf1\x00DN8HMFC  AT USA LHD 1.00 1.01 99211-L1800 230512',
@@ -139,6 +139,16 @@ FW_VERSIONS_EXT = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DN8_ RDR -----      1.00 1.00 99110-L1800         ',
+    ],
+  },
+  CAR.HYUNDAI_KONA_2ND_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00SX2 MFC  AT AUS RHD 1.00 1.03 99211-BE000 230517',
+      b'\xf1\x00SX2 MFC  AT USA LHD 1.00 1.07 99211-BE000 240611',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00SX2_ RDR -----      1.00 1.02 99110-BE000         ',
+      b'\xf1\x00SX2_ RDR -----      1.00 1.02 99110-BE500         ',
     ],
   },
   CAR.KIA_CARNIVAL_4TH_GEN: {
