@@ -210,7 +210,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyParam |= HyundaiSafetyFlagsSP.CCNC
 
     if ret.flags & HyundaiFlagsSP.CCNC and lka_steering:
-      # ADAS ECU knockout is unreliable on ccNC LKA steering cars
+      # this needs to be figured out for ccNC cars with an ADAS ECU
       stock_cp.alphaLongitudinalAvailable = False
       stock_cp.openpilotLongitudinalControl = False
       stock_cp.pcmCruise = True
