@@ -655,6 +655,10 @@ class CAR(Platforms):
     HYUNDAI_ELANTRA_2021.specs,
     flags=HyundaiFlags.CHECKSUM_CRC8,
   )
+  HYUNDAI_KONA_2ND_GEN = HyundaiCanFDPlatformConfig(
+    [HyundaiCarDocs("Hyundai Kona (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_l]))],
+    HYUNDAI_KONA_EV_2ND_GEN.specs,
+  )
   HYUNDAI_KONA_NON_SCC = HyundaiNonSccPlatformConfig(
     [HyundaiNonSccCarDocs("Hyundai Kona Non-SCC 2019", car_parts=CarParts.common([CarHarness.hyundai_b]))],
     HYUNDAI_KONA.specs,
