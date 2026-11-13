@@ -66,7 +66,7 @@ def create_ccnc_mdps(packer, CAN, mdps, lfa_alt=None):
 
 def create_ccnc_0x161(packer, CAN, frame, msg_161, enabled, lat_active, paused, long_enabled, main_cruise_enabled, gas_override,
                       hud_control, set_speed, v_ego, lead_visible, show_distance_bars, interceptor=False):
-  values = msg_161.copy()
+  values = {k: v for k, v in msg_161.items() if k != "COUNTER"}
 
   values.update({
     "LKA_ICON": 4 if lat_active else 3,
@@ -120,7 +120,7 @@ def create_ccnc_0x161(packer, CAN, frame, msg_161, enabled, lat_active, paused, 
 
 
 def create_ccnc_0x162(packer, CAN, msg_162, enabled, long_enabled, main_cruise_enabled, gas_override, lead_visible, lead_distance):
-  values = msg_162.copy()
+  values = {k: v for k, v in msg_162.items() if k != "COUNTER"}
 
   if long_enabled:
     values.update({
@@ -132,10 +132,11 @@ def create_ccnc_0x162(packer, CAN, msg_162, enabled, long_enabled, main_cruise_e
   return packer.make_can_msg("CCNC_0x162", CAN.ECAN, values)
 
 
-def create_ccnc_buttons(packer, CAN, cruise_buttons_msg, main_btn):
+def create_ccnc_buttons(packer, CAN, cruise_buttons_msg, main_btn, counter):
   values = cruise_buttons_msg.copy()
 
   values.update({
+    "COUNTER": counter,
     "ADAPTIVE_CRUISE_MAIN_BTN": 1 if main_btn else 0,
     "NORMAL_CRUISE_MAIN_BTN": 0,
   })
@@ -168,6 +169,7 @@ class CcncCarController:
     self.lead_distance_filter = FirstOrderFilter(TARGET_DISTANCE_MAX, LEAD_FILTER_RC, 5 * DT_CTRL, initialized=False)
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
+    self.buttons_counter = 0
 
   def create_alt_button_msgs(self, CS, CC):
     can_sends = []
@@ -214,7 +216,8 @@ class CcncCarController:
 
       if self.ccnc_lfa_steering and self.frame % 2 == 0 and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
         press_main = CS.cruise_info["MainMode_ACC"] and self.frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES
-        can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main))
+        can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main, self.buttons_counter))
+        self.buttons_counter = (self.buttons_counter + 1) % 15  # stock counts 0-14
 
       if self.frame % 5 == 0:
         if not self.lead_visible:
