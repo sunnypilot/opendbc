@@ -398,5 +398,4 @@ routes = [
   CarTestRoute("c36828a00b81bdab/000000e1--0186c21051", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=8),  # 2025, ccNC, LFA steering
   CarTestRoute("c36828a00b81bdab/000000e2--04a43142f7", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=8),  # 2025, ccNC, LFA steering, openpilot longitudinal
   CarTestRoute("8bae07514ce06ad4/00000008--9f43d90441", CHRYSLER.RAM_HD_5TH_GEN),  # 2024 Ram HD with alt cruise buttons
-  CarTestRoute("804a03cbd21df697/00000009--45f9e8e8c5", HYUNDAI.KIA_NIRO_PLUS_EV),
 ]

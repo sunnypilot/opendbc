@@ -447,6 +447,7 @@ class CAR(Platforms):
       HyundaiCarDocs("Kia Niro EV 2020", "All", video="https://www.youtube.com/watch?v=lT7zcG6ZpGo", car_parts=CarParts.common([CarHarness.hyundai_f])),
       HyundaiCarDocs("Kia Niro EV 2021", "All", video="https://www.youtube.com/watch?v=lT7zcG6ZpGo", car_parts=CarParts.common([CarHarness.hyundai_c])),
       HyundaiCarDocs("Kia Niro EV 2022", "All", video="https://www.youtube.com/watch?v=lT7zcG6ZpGo", car_parts=CarParts.common([CarHarness.hyundai_h])),
+      HyundaiCarDocs("Kia Niro Plus EV 2023-24", car_parts=CarParts.common([CarHarness.hyundai_h])),
     ],
     CarSpecs(wheelbase=2.7, steerRatio=13.6, tireStiffnessFactor=0.385),  # average of all the cars
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.EV,
@@ -687,13 +688,6 @@ class CAR(Platforms):
   KIA_FORTE_2021_NON_SCC = HyundaiNonSccPlatformConfig(
     [HyundaiNonSccCarDocs("Kia Forte Non-SCC 2021", car_parts=CarParts.common([CarHarness.hyundai_g]))],
     KIA_FORTE.specs,
-  )
-  KIA_NIRO_PLUS_EV = HyundaiPlatformConfig(
-    [
-      HyundaiCarDocs("Kia Niro Plus EV 2023-24", "Advanced Smart Cruise Control", car_parts=CarParts.common([CarHarness.hyundai_h])),
-    ],
-    CarSpecs(wheelbase=2.7, steerRatio=13.6, tireStiffnessFactor=0.385),
-    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.EV,
   )
   KIA_SELTOS_2023_NON_SCC = HyundaiNonSccPlatformConfig(
     [HyundaiNonSccCarDocs("Kia Seltos Non-SCC 2023-24", car_parts=CarParts.common([CarHarness.hyundai_l]))],
