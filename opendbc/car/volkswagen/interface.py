@@ -150,6 +150,6 @@ class CarInterface(CarInterfaceBase):
   def _get_params_sp(stock_cp: structs.CarParams, ret: structs.CarParamsSP, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_sp: bool, docs: bool) -> structs.CarParamsSP:
 
-    ret.intelligentCruiseButtonManagementAvailable = True
+    ret.intelligentCruiseButtonManagementAvailable = not (stock_cp.flags & VolkswagenFlags.MEB)
 
     return ret
