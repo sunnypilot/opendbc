@@ -447,7 +447,7 @@ class CAR(Platforms):
       HyundaiCarDocs("Kia Niro EV 2020", "All", video="https://www.youtube.com/watch?v=lT7zcG6ZpGo", car_parts=CarParts.common([CarHarness.hyundai_f])),
       HyundaiCarDocs("Kia Niro EV 2021", "All", video="https://www.youtube.com/watch?v=lT7zcG6ZpGo", car_parts=CarParts.common([CarHarness.hyundai_c])),
       HyundaiCarDocs("Kia Niro EV 2022", "All", video="https://www.youtube.com/watch?v=lT7zcG6ZpGo", car_parts=CarParts.common([CarHarness.hyundai_h])),
-      HyundaiCarDocs("Kia Niro Plus EV 2023-24", car_parts=CarParts.common([CarHarness.hyundai_h])),
+      HyundaiCarDocs("Kia Niro Plus EV 2024", car_parts=CarParts.common([CarHarness.hyundai_h])),
     ],
     CarSpecs(wheelbase=2.7, steerRatio=13.6, tireStiffnessFactor=0.385),  # average of all the cars
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.EV,

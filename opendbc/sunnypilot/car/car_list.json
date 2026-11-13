@@ -2422,13 +2422,12 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Kia Niro Plus EV 2023-24": {
+  "Kia Niro Plus EV 2024": {
     "platform": "KIA_NIRO_EV",
     "make": "Kia",
     "brand": "hyundai",
     "model": "Niro Plus EV",
     "year": [
-      "2023",
       "2024"
     ],
     "package": "Smart Cruise Control (SCC)"
