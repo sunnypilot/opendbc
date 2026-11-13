@@ -144,6 +144,7 @@ FW_VERSIONS_EXT = {
   CAR.HYUNDAI_KONA_2ND_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00SX2 MFC  AT AUS RHD 1.00 1.03 99211-BE000 230517',
+      b'\xf1\x00SX2 MFC  AT USA LHD 1.00 1.03 99211-BE000 230517',
       b'\xf1\x00SX2 MFC  AT USA LHD 1.00 1.07 99211-BE000 240611',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
