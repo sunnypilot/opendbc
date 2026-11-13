@@ -230,6 +230,17 @@ class CarInterface(CarInterfaceBase):
       ret.flags |= HyundaiFlagsSP.CANFD_LFA_ALT_STEER.value
       ret.safetyParam |= HyundaiSafetyFlagsSP.CANFD_LFA_ALT_STEER
 
+    if ret.flags & HyundaiFlagsSP.CCNC and lka_steering:
+      # this needs to be figured out for ccNC cars with an ADAS Driving ECU
+      stock_cp.alphaLongitudinalAvailable = False
+      stock_cp.openpilotLongitudinalControl = False
+      stock_cp.pcmCruise = True
+      stock_cp.safetyConfigs[-1].safetyParam &= ~HyundaiSafetyFlags.LONG.value
+
+      if 0x1cf not in fingerprint[CAN.ECAN]:
+        stock_cp.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
+        stock_cp.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.CANFD_ALT_BUTTONS.value
+
     if ret.flags & HyundaiFlagsSP.NON_SCC:
       stock_cp.alphaLongitudinalAvailable = False
       stock_cp.openpilotLongitudinalControl = False

@@ -404,8 +404,13 @@ routes = [
   # port extensions
   CarTestRoute("be7ad2b087973544/0000002b--ec261cc821", HYUNDAI.HYUNDAI_VENUE_2021_NON_SCC),
   CarTestRoute("dc7bf18c8af12e37/00000006--ea06255cd0", HYUNDAI.KIA_CEED_PHEV_2022_NON_SCC),
-  CarTestRoute("d59ca223dca8da93/0000017a--5e6e4107f1", HYUNDAI.HYUNDAI_SONATA_HEV_2024),
-  CarTestRoute("d59ca223dca8da93/00000186--dd8cf07e6c", HYUNDAI.HYUNDAI_SONATA_HEV_2024, segment=0),  # openpilot longitudinal
+  CarTestRoute("d59ca223dca8da93/0000017a--5e6e4107f1", HYUNDAI.HYUNDAI_SONATA_2024),  # 2024 hybrid, ccNC, LFA steering
+  CarTestRoute("d59ca223dca8da93/00000186--dd8cf07e6c", HYUNDAI.HYUNDAI_SONATA_2024, segment=0),  # 2024 hybrid, ccNC, LFA steering, openpilot longitudinal
+  CarTestRoute("20f0af20ed379890/00000005--d3298862a0", HYUNDAI.KIA_CARNIVAL_4TH_GEN, segment=3),  # 2026 hybrid, ccNC, LKA steering, stock SCC 0x1AA resume
+  CarTestRoute("bb89d880ca0a4249/000000f8--ac95d3364a", HYUNDAI.HYUNDAI_TUCSON_4TH_GEN),  # 2025 hybrid, ccNC, LFA steering
+  CarTestRoute("bb89d880ca0a4249/000000fb--275ef6d0d5", HYUNDAI.HYUNDAI_TUCSON_4TH_GEN, segment=5),  # 2025 hybrid, ccNC, LFA steering, openpilot longitudinal
+  CarTestRoute("c36828a00b81bdab/000000e1--0186c21051", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=8),  # 2025, ccNC, LFA steering
+  CarTestRoute("c36828a00b81bdab/000000e2--04a43142f7", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=8),  # 2025, ccNC, LFA steering, openpilot longitudinal
   #CarTestRoute("afe09b9f5d3f3548/0000000b--0ac07f9835", HYUNDAI.GENESIS_GV70_ELECTRIFIED_2ND_GEN),  # openpilot longitudinal enabled
   #CarTestRoute("51489459ad31cccc/00000001--642891d0af", HYUNDAI.HYUNDAI_SANTA_FE_HEV_5TH_GEN), # 2025 HDA2 Angle Control
   #CarTestRoute("e1107f9d04dfb1e2/00000455--9b2328ec73", HYUNDAI.HYUNDAI_IONIQ_5_PE),  # LKA steering HDA2 LFA2

@@ -100,4 +100,7 @@ class CarStateExt:
       if self.CP_SP.flags & HyundaiFlagsSP.CANFD_LFA_ALT_STEER:
         self.lfa_alt = copy.copy(cp_cam.vl["LFA_ALT"])
 
+    if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+      self.cruise_buttons_msg = copy.copy(cp.vl[self.cruise_btns_msg_canfd])
+
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
