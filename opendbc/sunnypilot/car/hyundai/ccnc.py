@@ -15,6 +15,7 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 cruise_buttons_checksum = mk_crc8_fun(CRC8J1850, init_crc=0x97, xor_out=0x97)  # mk_crc8_fun xors init with xor_out: register starts at 0
 
+BUTTONS_COUNTER_WRAP = 15  # stock CRUISE_BUTTONS counts 0-14, never 15
 CANCEL_BUTTON_DELAY_FRAMES = 10  # 100 ms
 MAIN_PRESS_FRAMES = 12  # 120 ms
 OVERRIDE_BLINK_FRAMES = 100
@@ -39,7 +40,7 @@ def create_ccnc_mdps(packer, CAN, mdps):
 
 def create_ccnc_0x161(packer, CAN, frame, msg_161, enabled, lat_active, paused, long_enabled, main_cruise_enabled, gas_override,
                       hud_control, set_speed, v_ego, lead_visible, show_distance_bars):
-  values = msg_161.copy()
+  values = {k: v for k, v in msg_161.items() if k != "COUNTER"}
 
   values.update({
     "LKA_ICON": 4 if lat_active else 3,
@@ -91,7 +92,7 @@ def create_ccnc_0x161(packer, CAN, frame, msg_161, enabled, lat_active, paused, 
 
 
 def create_ccnc_0x162(packer, CAN, msg_162, enabled, long_enabled, main_cruise_enabled, gas_override, lead_visible, lead_distance):
-  values = msg_162.copy()
+  values = {k: v for k, v in msg_162.items() if k != "COUNTER"}
 
   if long_enabled:
     values.update({
@@ -103,10 +104,11 @@ def create_ccnc_0x162(packer, CAN, msg_162, enabled, long_enabled, main_cruise_e
   return packer.make_can_msg("CCNC_0x162", CAN.ECAN, values)
 
 
-def create_ccnc_buttons(packer, CAN, cruise_buttons_msg, main_btn):
+def create_ccnc_buttons(packer, CAN, cruise_buttons_msg, main_btn, counter):
   values = cruise_buttons_msg.copy()
 
   values.update({
+    "COUNTER": counter,
     "ADAPTIVE_CRUISE_MAIN_BTN": 1 if main_btn else 0,
     "NORMAL_CRUISE_MAIN_BTN": 0,
   })
@@ -136,6 +138,7 @@ class CcncCarController:
     self.lead_distance_filter = FirstOrderFilter(TARGET_DISTANCE_MAX, LEAD_FILTER_RC, 5 * DT_CTRL, initialized=False)
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
+    self.buttons_counter = 0
 
   def create_alt_button_msgs(self, CS, CC):
     can_sends = []
@@ -181,7 +184,8 @@ class CcncCarController:
 
       if self.frame % 2 == 0 and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
         press_main = CS.cruise_info["MainMode_ACC"] and self.frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES
-        can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main))
+        can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main, self.buttons_counter))
+        self.buttons_counter = (self.buttons_counter + 1) % BUTTONS_COUNTER_WRAP
 
       if self.frame % 5 == 0:
         if not self.lead_visible:
