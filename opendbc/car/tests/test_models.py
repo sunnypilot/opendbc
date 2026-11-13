@@ -44,6 +44,7 @@ RELAY_TRANSITION_TIMEOUT_US = 10_000_000
 DOWNLOAD_CACHE_ROOT = Path(os.environ.get("COMMA_CACHE", "/tmp/comma_download_cache"))
 OPENPILOT_CI_URL = "https://commadataci.blob.core.windows.net/openpilotci"
 COMMA_API_URL = "https://api.commadotai.com"
+SUNNYPILOT_CAR_SEGMENTS_URL = "https://huggingface.co/datasets/sunnypilot/sunnypilotCarSegments/resolve/main/segments"
 
 
 def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
@@ -67,17 +68,19 @@ def get_cached_segment(route: str, segment: int) -> Path:
       pass
 
   canonical_route = route.replace("/", "|")
-  with urlopen(f"{COMMA_API_URL}/v1/route/{quote(canonical_route, safe='')}/files") as response:
-    route_files = json.load(response)
-  for url in route_files["logs"]:
-    path = Path(urlparse(url).path)
-    if path.parent.name == str(segment) and path.name.startswith("rlog."):
-      return get_cached_url(url)
+  try:
+    with urlopen(f"{COMMA_API_URL}/v1/route/{quote(canonical_route, safe='')}/files") as response:
+      route_files = json.load(response)
+    for url in route_files["logs"]:
+      path = Path(urlparse(url).path)
+      if path.parent.name == str(segment) and path.name.startswith("rlog."):
+        return get_cached_url(url)
+  except (OSError, ValueError):
+    pass
 
   try:
-    from openpilot.sunnypilot.tools.lib.sunnypilot_car_segments import get_url
-    return get_cached_url(get_url(route, segment))
-  except (ImportError, OSError):
+    return get_cached_url(f"{SUNNYPILOT_CAR_SEGMENTS_URL}/{route.replace('|', '/')}/{segment}/rlog.zst")
+  except OSError:
     pass
 
   raise FileNotFoundError(f"no log found for {route}/{segment}")
