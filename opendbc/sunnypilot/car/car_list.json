@@ -1708,6 +1708,16 @@
     ],
     "package": "Highway Driving Assist II & Lane Follow Assist 2"
   },
+  "Hyundai Ioniq 5 PE (without HDA II, LFA2) 2025": {
+    "platform": "HYUNDAI_IONIQ_5_PE",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Ioniq 5 PE (without HDA II, LFA2)",
+    "year": [
+      "2025"
+    ],
+    "package": "Highway Driving Assist & Lane Follow Assist 2"
+  },
   "Hyundai Ioniq 6 (with HDA II) 2023-24": {
     "platform": "HYUNDAI_IONIQ_6",
     "make": "Hyundai",
@@ -1971,6 +1981,17 @@
     ],
     "package": "Highway Driving Assist II & Lane Follow Assist 2"
   },
+  "Hyundai Santa Fe Hybrid (without HDA II, LFA2) 2025-26": {
+    "platform": "HYUNDAI_SANTA_FE_HEV_5TH_GEN",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Santa Fe Hybrid (without HDA II, LFA2)",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Lane Follow Assist 2"
+  },
   "Hyundai Santa Fe Plug-in Hybrid 2022-23": {
     "platform": "HYUNDAI_SANTA_FE_PHEV_2022",
     "make": "Hyundai",
@@ -2018,6 +2039,18 @@
       "2023"
     ],
     "package": "All"
+  },
+  "Hyundai Sonata Hybrid (without HDA II) 2024-26": {
+    "platform": "HYUNDAI_SONATA_HEV_2024",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Sonata Hybrid (without HDA II)",
+    "year": [
+      "2024",
+      "2025",
+      "2026"
+    ],
+    "package": "Smart Cruise Control (SCC)"
   },
   "Hyundai Staria 2023": {
     "platform": "HYUNDAI_STARIA_4TH_GEN",
@@ -2102,6 +2135,16 @@
       "2020"
     ],
     "package": "Smart Cruise Control (SCC)"
+  },
+  "Hyundai Venue Non-SCC 2021": {
+    "platform": "HYUNDAI_VENUE_2021_NON_SCC",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Venue Non-SCC",
+    "year": [
+      "2021"
+    ],
+    "package": "No Smart Cruise Control (Non-SCC)"
   },
   "Jeep Grand Cherokee 2016-18": {
     "platform": "JEEP_GRAND_CHEROKEE",
@@ -2586,6 +2629,16 @@
     "year": [
       "2023",
       "2024"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
+  "Kia Sportage (without HDA II) 2026": {
+    "platform": "KIA_SPORTAGE_2026",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Sportage (without HDA II)",
+    "year": [
+      "2026"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
@@ -3120,7 +3173,7 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
-  "Ram 3500 2019-22": {
+  "Ram 3500 2019-24": {
     "platform": "RAM_HD_5TH_GEN",
     "make": "Ram",
     "brand": "chrysler",
@@ -3129,7 +3182,9 @@
       "2019",
       "2020",
       "2021",
-      "2022"
+      "2022",
+      "2023",
+      "2024"
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },

@@ -2,7 +2,9 @@
 import unittest
 
 from opendbc.car.chrysler.values import ChryslerSafetyFlags
+from opendbc.sunnypilot.car.chrysler.values_ext import ChryslerSafetyFlagsSP
 from opendbc.car.structs import CarParams
+from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
 class TestChryslerSafety(common.CarSafetyTest, common.MotorTorqueSteeringSafetyTest):
   DBC = "chrysler_pacifica_2017_hybrid_generated"
@@ -143,5 +145,19 @@ class TestChryslerRamHDSafety(TestChryslerSafety):
   def _lkas_button_msg(self, enabled):
     values = {"LKAS_Button": enabled}
     return self.packer.make_can_msg_safety("Center_Stack_2", 0, values)
+
+
+class TestChryslerRamHDAltButtonSafety(TestChryslerRamHDSafety):
+  TX_MSGS = [[0x275, 0], [0x276, 0], [0x23B, 2]]
+
+  def setUp(self):
+    libsafety_py.libsafety.set_current_safety_param_sp(ChryslerSafetyFlagsSP.RAM_HD_ALT_BUTTONS)
+    super().setUp()
+
+  def _button_msg(self, cancel=False, resume=False, accel=False, decel=False):
+    values = {"ACC_Cancel": cancel, "ACC_Resume": resume, "ACC_Accel": accel, "ACC_Decel": decel}
+    return self.packer.make_can_msg_safety("CRUISE_BUTTONS_ALT", self.DAS_BUS, values)
+
+
 if __name__ == "__main__":
   unittest.main()

@@ -46,7 +46,7 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
   if not any(m.which() == "sentinel" and m.sentinel.type == "startOfRoute" for m in msgs):
     print("WARNING: Replay starts mid-route; missing prior safety state may cause safety violations that did not appear in the route.")
 
-  init_segment(safety, msgs, safety_mode, param)
+  init_segment(safety, msgs, safety_mode, param, param_sp)
 
   rx_tot, rx_invalid, tx_tot, tx_blocked, tx_controls, tx_controls_lateral, tx_controls_blocked, tx_controls_lateral_blocked = 0, 0, 0, 0, 0, 0, 0, 0
   mads_mismatch = 0

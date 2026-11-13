@@ -1,6 +1,7 @@
 from opendbc.car.ford.values import FordSafetyFlags
 from opendbc.car.hyundai.values import HyundaiSafetyFlags
 from opendbc.car.toyota.values import ToyotaSafetyFlags
+from opendbc.sunnypilot.car.hyundai.values import HyundaiSafetyFlagsSP
 from opendbc.car.structs import CarParams
 from opendbc.safety.tests.libsafety import libsafety_py
 
@@ -41,7 +42,7 @@ def is_steering_msg(mode, param, addr):
   return ret
 
 
-def get_steer_value(mode, param, msg):
+def get_steer_value(mode, param, param_sp, msg):
   # TODO: use CANParser
   torque, angle = 0, 0
   if mode in (CarParams.SafetyModel.hondaNidec, CarParams.SafetyModel.hondaBosch):
@@ -60,7 +61,7 @@ def get_steer_value(mode, param, msg):
   elif mode in (CarParams.SafetyModel.hyundai, CarParams.SafetyModel.hyundaiLegacy):
     torque = (((msg.data[3] & 0x7) << 8) | msg.data[2]) - 1024
   elif mode == CarParams.SafetyModel.hyundaiCanfd:
-    if param & HyundaiSafetyFlags.CANFD_ANGLE_STEERING:
+    if param_sp & HyundaiSafetyFlagsSP.CANFD_ANGLE_STEERING:
       angle = (msg.data[11] << 6) | (msg.data[10] >> 2)
       angle = to_signed(angle, 14)
     else:
@@ -89,7 +90,7 @@ def package_can_msg(msg):
   return libsafety_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
 
 
-def init_segment(safety, msgs, mode, param):
+def init_segment(safety, msgs, mode, param, param_sp):
   sendcan = (msg for msg in msgs if msg.which() == 'sendcan')
   steering_msgs = (can for msg in sendcan for can in msg.sendcan if is_steering_msg(mode, param, can.address))
 
@@ -99,7 +100,7 @@ def init_segment(safety, msgs, mode, param):
     return
 
   msg = package_can_msg(msg)
-  torque, angle = get_steer_value(mode, param, msg)
+  torque, angle = get_steer_value(mode, param, param_sp, msg)
   if torque != 0:
     safety.set_controls_allowed(1)
     safety.set_controls_allowed_lateral(1)

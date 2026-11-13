@@ -14,11 +14,14 @@ class HyundaiSafetyFlagsSP:
   LONG_MAIN_CRUISE_TOGGLEABLE = 2
   HAS_LDA_BUTTON = 4
   NON_SCC = 8
+  CCNC = 16
+  CANFD_LFA_ALT_STEER = 64
+  CANFD_ANGLE_STEERING = 128
 
 
-# Angle steering vehicle model IDs — encoded in safety_param_sp bits [4:7].
+# Angle steering vehicle model IDs — encoded in safety_param_sp bits [11:14]. Bit 15 stays unused: CarParamsSP.safetyParam is Int16.
 # Must stay in sync with the C enum in hyundai_canfd_angle_models.h.
-ANGLE_MODEL_SHIFT = 4
+ANGLE_MODEL_SHIFT = 11
 ANGLE_MODEL_MASK = 0xF
 
 
@@ -39,6 +42,7 @@ class HyundaiAngleSteeringModel:
 # Mapping from CAR platform name → angle steering model ID.
 # Platforms not in this map will use BASELINE (0) on the panda.
 ANGLE_STEERING_MODEL_BY_CAR: dict[str, int] = {
+  "KIA_SPORTAGE_2026":                  HyundaiAngleSteeringModel.KIA_SPORTAGE_HEV_2026,
   "KIA_SPORTAGE_HEV_2026":              HyundaiAngleSteeringModel.KIA_SPORTAGE_HEV_2026,
   "HYUNDAI_IONIQ_5_PE":                 HyundaiAngleSteeringModel.HYUNDAI_IONIQ_5_PE,
   "KIA_EV6_2025":                       HyundaiAngleSteeringModel.KIA_EV6_2025,
@@ -72,3 +76,6 @@ class HyundaiFlagsSP(IntFlag):
   NON_SCC_NO_FCA = 2 ** 8  # not all have FCA
   SPEED_LIMIT_AVAILABLE = 2 ** 9  # platforms with speed limit data available
   HAS_LKAS12 = 2 ** 10
+  CCNC = 2 ** 11
+  CANFD_LFA_ALT_STEER = 2 ** 13  # angle steering straight to the MDPS on LFA_ALT, no ADAS ECU in between
+  CANFD_ANGLE_STEERING = 2 ** 14
