@@ -27,7 +27,7 @@ LEAD_FILTER_RC = 0.5  # s
 
 
 def create_ccnc_mdps(packer, CAN, mdps):
-  values = mdps.copy()
+  values = {k: v for k, v in mdps.items() if k != "COUNTER"}
 
   values.update({
     "MDPS_LkaToiActvSta": 0,
