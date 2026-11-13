@@ -203,7 +203,6 @@ class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterfac
                                                            cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
       gra_send_ready = False
 
-    # **** Intelligent Cruise Button Management ***************************** #
     can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer_pt, self.CAN.ext, self.frame, gra_send_ready))
 
     new_actuators = actuators.as_builder()

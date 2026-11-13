@@ -4,29 +4,39 @@ Copyright (c) 2021-, sunnypilot, and a number of other contributors.
 This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
-from enum import Enum, auto
+import math
 
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.can_definitions import CanData
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.volkswagen.values import CAR, VolkswagenFlags
+from opendbc.car.volkswagen.values import CAR, CarControllerParams, VolkswagenFlags
 from opendbc.sunnypilot.car.intelligent_cruise_button_management_interface_base import IntelligentCruiseButtonManagementInterfaceBase
 from opendbc.sunnypilot.car.volkswagen import mlbcan_ext, mqbcan_ext, pqcan_ext
 
+ButtonType = structs.CarState.ButtonEvent.Type
 SendButtonState = structs.IntelligentCruiseButtonManagement.SendButtonState
 
-SEND_REPETITIONS = 2
+BURST_FRAMES = 3
 COOLDOWN_TIME = 0.2
+
+ACCEL_DECEL = {
+  SendButtonState.increase: ButtonType.accelCruise,
+  SendButtonState.decrease: ButtonType.decelCruise,
+}
+RESUME_SET = {
+  SendButtonState.increase: ButtonType.resumeCruise,
+  SendButtonState.decrease: ButtonType.setCruise,
+}
 
 # on these cars accel/decel jump the set speed to the next coarse step; resume/set move it by one unit
 COARSE_STEP_CARS = (CAR.SEAT_ATECA_MK1, CAR.VOLKSWAGEN_GOLF_MK7)
 COARSE_STEP = 10  # km/h; the imperial step is unproven, so imperial clusters press fine only
 
 
-class State(Enum):
-  IDLE = auto()
-  SPAM = auto()
-  COOLDOWN = auto()
+def coarse_step_fits(v_cruise: int, v_target: float, increase: bool) -> bool:
+  if increase:
+    return (math.floor(v_cruise / COARSE_STEP) + 1) * COARSE_STEP <= v_target
+  return (math.ceil(v_cruise / COARSE_STEP) - 1) * COARSE_STEP >= v_target
 
 
 class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManagementInterfaceBase):
@@ -40,31 +50,22 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     else:
       self.can_ext = mqbcan_ext
 
+    self.button_signals = {b.event_type: b.can_msg for b in CarControllerParams(CP).BUTTONS}
     self.coarse_step_car = CP.carFingerprint in COARSE_STEP_CARS
-    self.state = State.IDLE
-    self.send_button = SendButtonState.none
-    self.button = ""
-    self.base_counter = 0
-    self.repetition = 0
+    self.request = SendButtonState.none
+    self.button = ButtonType.unknown
+    self.counter = 0
+    self.frames_left = 0
 
-  def get_button(self, CS) -> str:
-    increase = self.send_button == SendButtonState.increase
+  def choose_button(self, CS) -> ButtonType:
     if not self.coarse_step_car:
-      return "increase" if increase else "decrease"
+      return ACCEL_DECEL[self.request]
 
     if CS.is_metric:
       v_cruise = round(CS.out.cruiseState.speedCluster * CV.MS_TO_KPH)
-      if increase and (v_cruise // COARSE_STEP + 1) * COARSE_STEP <= self.ICBM.vTarget:
-        return "increase"
-      if not increase and ((v_cruise - 1) // COARSE_STEP) * COARSE_STEP >= self.ICBM.vTarget:
-        return "decrease"
-    return "resume" if increase else "_set"
-
-  def create_button_msg(self, packer, CAN, CS) -> CanData:
-    gra_stock_values = CS.gra_stock_values.copy()
-    gra_stock_values["COUNTER"] = self.base_counter + self.repetition
-    self.last_button_frame = self.frame
-    return self.can_ext.create_acc_buttons_control(packer, CAN, gra_stock_values, **{self.button: True})
+      if coarse_step_fits(v_cruise, self.ICBM.vTarget, self.request == SendButtonState.increase):
+        return ACCEL_DECEL[self.request]
+    return RESUME_SET[self.request]
 
   def update(self, CS, CC_SP, packer, CAN, frame, gra_send_ready) -> list[CanData]:
     can_sends = []
@@ -72,23 +73,22 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     self.ICBM = CC_SP.intelligentCruiseButtonManagement
     self.frame = frame
 
-    if self.state == State.IDLE:
-      if self.ICBM.sendButton != SendButtonState.none and gra_send_ready:
-        self.send_button = self.ICBM.sendButton
-        self.button = self.get_button(CS)
-        self.base_counter = CS.gra_stock_values["COUNTER"]
-        self.repetition = 0
-        self.state = State.SPAM
-        can_sends.append(self.create_button_msg(packer, CAN, CS))
+    if gra_send_ready or self.ICBM.sendButton != self.request:
+      self.frames_left = 0
 
-    elif self.state == State.SPAM:
-      self.repetition += 1
-      if gra_send_ready or self.repetition > SEND_REPETITIONS or self.ICBM.sendButton != self.send_button:
-        self.state = State.COOLDOWN
-      else:
-        can_sends.append(self.create_button_msg(packer, CAN, CS))
+    cooldown_done = (self.frame - self.last_button_frame) * DT_CTRL > COOLDOWN_TIME
+    if self.frames_left == 0 and gra_send_ready and self.ICBM.sendButton != SendButtonState.none and cooldown_done:
+      self.request = self.ICBM.sendButton
+      self.button = self.choose_button(CS)
+      self.counter = CS.gra_stock_values["COUNTER"]
+      self.frames_left = BURST_FRAMES
 
-    elif (self.frame - self.last_button_frame) * DT_CTRL > COOLDOWN_TIME:
-      self.state = State.IDLE
+    if self.frames_left > 0:
+      gra_stock_values = CS.gra_stock_values.copy()
+      gra_stock_values["COUNTER"] = self.counter
+      can_sends.append(self.can_ext.create_acc_button_press(packer, CAN, gra_stock_values, self.button_signals[self.button]))
+      self.counter += 1
+      self.frames_left -= 1
+      self.last_button_frame = self.frame
 
     return can_sends
