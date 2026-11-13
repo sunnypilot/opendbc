@@ -131,4 +131,57 @@ FW_VERSIONS_EXT = {
       b'\xf1\x00QX  MFC  AT USA LHD 1.00 1.01 99211-K2000 191014',
     ],
   },
+  CAR.HYUNDAI_SONATA_2024: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DN8HMFC  AT KOR LHD 1.00 1.01 99211-L1800 230512',
+      b'\xf1\x00DN8HMFC  AT USA LHD 1.00 1.01 99211-L1800 230512',
+      b'\xf1\x00DN8HMFC  AT USA LHD 1.00 1.02 99211-L1800 250613',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00DN8_ RDR -----      1.00 1.00 99110-L1800         ',
+    ],
+  },
+  CAR.HYUNDAI_KONA_2ND_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00SX2 MFC  AT AUS RHD 1.00 1.03 99211-BE000 230517',
+      b'\xf1\x00SX2 MFC  AT USA LHD 1.00 1.07 99211-BE000 240611',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00SX2_ RDR -----      1.00 1.02 99110-BE000         ',
+      b'\xf1\x00SX2_ RDR -----      1.00 1.02 99110-BE500         ',
+    ],
+  },
+  CAR.KIA_CARNIVAL_4TH_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00KA4HMFC  AT USA LHD 1.00 1.00 99210-R0700 250324',
+      b'\xf1\x00KA4HMFC  AT USA LHD 1.00 1.05 99210-R0500 240305',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00KAhe RDR -----      1.00 1.01 99110-ES500         ',
+    ],
+  },
+  CAR.HYUNDAI_TUCSON_4TH_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 1.00 99211-N7030 C55',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7030 C55',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7035 C5C',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7060 C5B',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00NX4__               1.00 1.02 99110N7000          ',
+      b'\xf1\x00NX4__               1.00 1.02 99110N7100          ',
+      b'\xf1\x00NX4__               1.00 1.03 99110N7100          ',
+    ],
+  },
+  CAR.KIA_SELTOS: {
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00SP2 MDPS C 1.00 1.04 56310Q5840  4SPSC104',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00SP2 MFC  AT AUS RHD 1.00 1.03 99210-Q5500 230208',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00SP2_ SCC F-CUP      1.00 1.01 99110-Q5500         ',
+    ],
+  },
 }
