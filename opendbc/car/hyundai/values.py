@@ -702,8 +702,8 @@ class CAR(Platforms):
   )
   HYUNDAI_SONATA_2024 = HyundaiCanFDPlatformConfig(
     [
-      HyundaiCarDocs("Hyundai Sonata (without HDA II) 2024-26", car_parts=CarParts.common([CarHarness.hyundai_a])),
-      HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-26", car_parts=CarParts.common([CarHarness.hyundai_a])),
+      HyundaiCarDocs("Hyundai Sonata (without HDA II) 2024-26", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
+      HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-26", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
     ],
     CarSpecs(wheelbase=2.84, steerRatio=13.27),
   )
