@@ -19,8 +19,8 @@ CAMERA = {"LFA_BUTTON": 1, "FCA_ESA_CtrlSta": 1, "LKA_StrSnd": 2, "LKA_HndsoffSn
 
 
 def interceptor():
-  CP = SimpleNamespace(flags=HyundaiFlags.CANFD_LKA_STEER_MSG_ALT | HyundaiFlags.CANFD_ANGLE_STEERING | HyundaiFlags.CANFD_LKA_STEER_MSG)
-  return AdasDrvEcuInterceptor(CP, SimpleNamespace(flags=HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR))
+  CP = SimpleNamespace(flags=HyundaiFlags.CANFD_LKA_STEER_MSG_ALT | HyundaiFlags.CANFD_LKA_STEER_MSG)
+  return AdasDrvEcuInterceptor(CP, SimpleNamespace(flags=HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR | HyundaiFlagsSP.CANFD_ANGLE_STEERING))
 
 
 def lkas_alt(camera, enabled=True, angle=5.0, msg_161=None, ic=None):

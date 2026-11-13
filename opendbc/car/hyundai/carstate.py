@@ -70,7 +70,7 @@ class CarState(CarStateBase, EsccCarStateBase, MadsCarState, CarStateExt):
     self.cluster_speed_counter = CLUSTER_SAMPLE_RATE
 
     self.params = CarControllerParams(CP)
-    self.is_canfd_angle_steering = CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING
+    self.is_canfd_angle_steering = CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING
     self.imu_lateral_acceleration = 0.0  # used for CAN FD cars with angle steering
     self.hands_on_steering_grip = 0
 

@@ -40,7 +40,7 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
   @property
   def lfa_alt_steering(self):
     # the MDPS on angle steering cars only listens to LFA_ALT, so with the ADAS DRV intercepted we steer it directly
-    return bool(self.available and self.CP.flags & HyundaiFlags.CANFD_ANGLE_STEERING and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG)
+    return bool(self.available and self.CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG)
 
   @staticmethod
   def create_lfa_alt(packer, CAN, lat_active, apply_angle, apply_torque):
