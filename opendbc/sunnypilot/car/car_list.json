@@ -2422,6 +2422,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Kia Niro Plus EV 2024": {
+    "platform": "KIA_NIRO_EV",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Niro Plus EV",
+    "year": [
+      "2024"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Kia Optima 2017": {
     "platform": "KIA_OPTIMA_G4",
     "make": "Kia",
