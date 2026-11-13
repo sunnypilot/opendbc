@@ -15,7 +15,6 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 cruise_buttons_checksum = mk_crc8_fun(CRC8J1850, init_crc=0x97, xor_out=0x97)  # mk_crc8_fun xors init with xor_out: register starts at 0
 
-BUTTONS_COUNTER_WRAP = 15  # stock CRUISE_BUTTONS counts 0-14, never 15
 CANCEL_BUTTON_DELAY_FRAMES = 10  # 100 ms
 MAIN_PRESS_FRAMES = 12  # 120 ms
 OVERRIDE_BLINK_FRAMES = 100
@@ -185,7 +184,7 @@ class CcncCarController:
       if self.frame % 2 == 0 and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
         press_main = CS.cruise_info["MainMode_ACC"] and self.frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES
         can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main, self.buttons_counter))
-        self.buttons_counter = (self.buttons_counter + 1) % BUTTONS_COUNTER_WRAP
+        self.buttons_counter = (self.buttons_counter + 1) % 15  # stock counts 0-14
 
       if self.frame % 5 == 0:
         if not self.lead_visible:
