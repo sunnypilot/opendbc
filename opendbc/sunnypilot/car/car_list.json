@@ -1,4 +1,15 @@
 {
+  "Acura ADX 2025-26": {
+    "platform": "ACURA_ADX",
+    "make": "Acura",
+    "brand": "honda",
+    "model": "ADX",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "All"
+  },
   "Acura ILX 2016-18": {
     "platform": "ACURA_ILX",
     "make": "Acura",
@@ -1119,7 +1130,7 @@
     ],
     "package": "All"
   },
-  "Honda Civic Hatchback 2022-24": {
+  "Honda Civic Hatchback 2022-26": {
     "platform": "HONDA_CIVIC_2022",
     "make": "Honda",
     "brand": "honda",
@@ -1127,7 +1138,9 @@
     "year": [
       "2022",
       "2023",
-      "2024"
+      "2024",
+      "2025",
+      "2026"
     ],
     "package": "All"
   },
@@ -1230,7 +1243,7 @@
     ],
     "package": "Honda Sensing"
   },
-  "Honda CR-V Hybrid 2023-26": {
+  "Honda CR-V Hybrid 2023-27": {
     "platform": "HONDA_CRV_6G",
     "make": "Honda",
     "brand": "honda",
@@ -1239,7 +1252,8 @@
       "2023",
       "2024",
       "2025",
-      "2026"
+      "2026",
+      "2027"
     ],
     "package": "All"
   },
@@ -1288,7 +1302,7 @@
     ],
     "package": "Honda Sensing"
   },
-  "Honda HR-V 2023-25": {
+  "Honda HR-V 2023-27": {
     "platform": "HONDA_HRV_3G",
     "make": "Honda",
     "brand": "honda",
@@ -1296,7 +1310,9 @@
     "year": [
       "2023",
       "2024",
-      "2025"
+      "2025",
+      "2026",
+      "2027"
     ],
     "package": "All"
   },
@@ -1435,7 +1451,27 @@
     ],
     "package": "All"
   },
-  "Honda Ridgeline 2017-25": {
+  "Honda Pilot 2026": {
+    "platform": "HONDA_PILOT_4G_MMR",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Pilot",
+    "year": [
+      "2026"
+    ],
+    "package": "All"
+  },
+  "Honda Prelude 2026": {
+    "platform": "HONDA_PRELUDE_6G",
+    "make": "Honda",
+    "brand": "honda",
+    "model": "Prelude",
+    "year": [
+      "2026"
+    ],
+    "package": "All"
+  },
+  "Honda Ridgeline 2017-26": {
     "platform": "HONDA_RIDGELINE",
     "make": "Honda",
     "brand": "honda",
@@ -1449,7 +1485,8 @@
       "2022",
       "2023",
       "2024",
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "Honda Sensing"
   },
@@ -1620,16 +1657,6 @@
     ],
     "package": "Highway Driving Assist"
   },
-  "Hyundai Ioniq 5 N (with HDA II) 2024": {
-    "platform": "HYUNDAI_IONIQ_5_N",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Ioniq 5 N (with HDA II)",
-    "year": [
-      "2024"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
   "Hyundai Ioniq 6 (with HDA II) 2023-24": {
     "platform": "HYUNDAI_IONIQ_6",
     "make": "Hyundai",
@@ -1784,16 +1811,6 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Hyundai Kona Electric (without HDA II) 2024": {
-    "platform": "HYUNDAI_KONA_EV_2ND_GEN",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Kona Electric (without HDA II)",
-    "year": [
-      "2024"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
   "Hyundai Kona Electric Non-SCC 2019": {
     "platform": "HYUNDAI_KONA_EV_NON_SCC",
     "make": "Hyundai",
@@ -1811,18 +1828,6 @@
     "model": "Kona Hybrid",
     "year": [
       "2020"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
-  "Hyundai Kona Hybrid (without HDA II) 2024-26": {
-    "platform": "HYUNDAI_KONA_HEV_2ND_GEN",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Kona Hybrid (without HDA II)",
-    "year": [
-      "2024",
-      "2025",
-      "2026"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
@@ -1867,16 +1872,6 @@
       "2022",
       "2023",
       "2024"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
-  "Hyundai Santa Cruz (without HDA II) 2025": {
-    "platform": "HYUNDAI_SANTA_CRUZ_2025",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Santa Cruz (without HDA II)",
-    "year": [
-      "2025"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
@@ -1949,18 +1944,6 @@
     ],
     "package": "All"
   },
-  "Hyundai Sonata (without HDA II) 2024-26": {
-    "platform": "HYUNDAI_SONATA_2024",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Sonata (without HDA II)",
-    "year": [
-      "2024",
-      "2025",
-      "2026"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
   "Hyundai Sonata Hybrid 2020-23": {
     "platform": "HYUNDAI_SONATA_HYBRID",
     "make": "Hyundai",
@@ -1974,14 +1957,15 @@
     ],
     "package": "All"
   },
-  "Hyundai Sonata Hybrid (without HDA II) 2024-25": {
-    "platform": "HYUNDAI_SONATA_HEV_2024",
+  "Hyundai Sonata Hybrid (without HDA II) 2024-26": {
+    "platform": "HYUNDAI_SONATA_2024",
     "make": "Hyundai",
     "brand": "hyundai",
     "model": "Sonata Hybrid (without HDA II)",
     "year": [
       "2024",
-      "2025"
+      "2025",
+      "2026"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
@@ -2026,17 +2010,6 @@
     ],
     "package": "All"
   },
-  "Hyundai Tucson (without HDA II) 2025-26": {
-    "platform": "HYUNDAI_TUCSON_2025",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Tucson (without HDA II)",
-    "year": [
-      "2025",
-      "2026"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
   "Hyundai Tucson Diesel 2019": {
     "platform": "HYUNDAI_TUCSON",
     "make": "Hyundai",
@@ -2060,7 +2033,7 @@
     "package": "All"
   },
   "Hyundai Tucson Hybrid (without HDA II) 2025-26": {
-    "platform": "HYUNDAI_TUCSON_HEV_2025",
+    "platform": "HYUNDAI_TUCSON_4TH_GEN",
     "make": "Hyundai",
     "brand": "hyundai",
     "model": "Tucson Hybrid (without HDA II)",
@@ -2080,16 +2053,6 @@
     ],
     "package": "All"
   },
-  "Hyundai Tucson Plug-in Hybrid (without HDA II) 2025": {
-    "platform": "HYUNDAI_TUCSON_PHEV_2025",
-    "make": "Hyundai",
-    "brand": "hyundai",
-    "model": "Tucson Plug-in Hybrid (without HDA II)",
-    "year": [
-      "2025"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
   "Hyundai Veloster 2019-20": {
     "platform": "HYUNDAI_VELOSTER",
     "make": "Hyundai",
@@ -2100,6 +2063,16 @@
       "2020"
     ],
     "package": "Smart Cruise Control (SCC)"
+  },
+  "Hyundai Venue Non-SCC 2021": {
+    "platform": "HYUNDAI_VENUE_2021_NON_SCC",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Venue Non-SCC",
+    "year": [
+      "2021"
+    ],
+    "package": "No Smart Cruise Control (Non-SCC)"
   },
   "Jeep Grand Cherokee 2016-18": {
     "platform": "JEEP_GRAND_CHEROKEE",
@@ -2147,6 +2120,17 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Kia Carnival Hybrid (with HDA II) 2025-26": {
+    "platform": "KIA_CARNIVAL_4TH_GEN",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Carnival Hybrid (with HDA II)",
+    "year": [
+      "2025",
+      "2026"
+    ],
+    "package": "Highway Driving Assist II"
+  },
   "Kia Ceed 2019-21": {
     "platform": "KIA_CEED",
     "make": "Kia",
@@ -2155,6 +2139,16 @@
     "year": [
       "2019",
       "2020",
+      "2021"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
+  "Kia Ceed Plug-in Hybrid 2021": {
+    "platform": "KIA_CEED_PHEV",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Ceed Plug-in Hybrid",
+    "year": [
       "2021"
     ],
     "package": "Smart Cruise Control (SCC)"
@@ -2238,27 +2232,6 @@
     ],
     "package": "No Smart Cruise Control (Non-SCC)"
   },
-  "Kia K4 (with HDA II) 2025": {
-    "platform": "KIA_K4_2025",
-    "make": "Kia",
-    "brand": "hyundai",
-    "model": "K4 (with HDA II)",
-    "year": [
-      "2025"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
-  "Kia K4 (without HDA II) 2025-26": {
-    "platform": "KIA_K4_2025",
-    "make": "Kia",
-    "brand": "hyundai",
-    "model": "K4 (without HDA II)",
-    "year": [
-      "2025",
-      "2026"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
   "Kia K5 2021-24": {
     "platform": "KIA_K5_2021",
     "make": "Kia",
@@ -2269,16 +2242,6 @@
       "2022",
       "2023",
       "2024"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
-  "Kia K5 (without HDA II) 2025": {
-    "platform": "KIA_K5_2025",
-    "make": "Kia",
-    "brand": "hyundai",
-    "model": "K5 (without HDA II)",
-    "year": [
-      "2025"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
@@ -2532,17 +2495,6 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Kia Sorento (without HDA II) 2024-25": {
-    "platform": "KIA_SORENTO_2024",
-    "make": "Kia",
-    "brand": "hyundai",
-    "model": "Sorento (without HDA II)",
-    "year": [
-      "2024",
-      "2025"
-    ],
-    "package": "Smart Cruise Control (SCC)"
-  },
   "Kia Sorento Hybrid 2021-23": {
     "platform": "KIA_SORENTO_HEV_4TH_GEN",
     "make": "Kia",
@@ -2582,6 +2534,16 @@
     "make": "Kia",
     "brand": "hyundai",
     "model": "Sportage Hybrid",
+    "year": [
+      "2023"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
+  "Kia Sportage Plug-in Hybrid 2023": {
+    "platform": "KIA_SPORTAGE_5TH_GEN",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Sportage Plug-in Hybrid",
     "year": [
       "2023"
     ],
@@ -3088,7 +3050,7 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
-  "Ram 3500 2019-22": {
+  "Ram 3500 2019-24": {
     "platform": "RAM_HD_5TH_GEN",
     "make": "Ram",
     "brand": "chrysler",
@@ -3097,7 +3059,9 @@
       "2019",
       "2020",
       "2021",
-      "2022"
+      "2022",
+      "2023",
+      "2024"
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
@@ -3474,6 +3438,16 @@
     ],
     "package": "Adaptive Cruise Control (ACC) & Lane Assist"
   },
+  "Tesla Model 3 (with HW2.5) 2019": {
+    "platform": "TESLA_MODEL_3",
+    "make": "Tesla",
+    "brand": "tesla",
+    "model": "Model 3 (with HW2.5)",
+    "year": [
+      "2019"
+    ],
+    "package": "All"
+  },
   "Tesla Model 3 (with HW3) 2019-23": {
     "platform": "TESLA_MODEL_3",
     "make": "Tesla",
@@ -3509,7 +3483,7 @@
     ],
     "package": "All"
   },
-  "Tesla Model Y (with HW3) 2020-23": {
+  "Tesla Model Y (with HW3) 2020-24": {
     "platform": "TESLA_MODEL_Y",
     "make": "Tesla",
     "brand": "tesla",
@@ -3518,16 +3492,18 @@
       "2020",
       "2021",
       "2022",
-      "2023"
+      "2023",
+      "2024"
     ],
     "package": "All"
   },
-  "Tesla Model Y (with HW4) 2024-25": {
+  "Tesla Model Y (with HW4) 2023-25": {
     "platform": "TESLA_MODEL_Y",
     "make": "Tesla",
     "brand": "tesla",
     "model": "Model Y (with HW4)",
     "year": [
+      "2023",
       "2024",
       "2025"
     ],
