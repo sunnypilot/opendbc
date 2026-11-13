@@ -6,6 +6,9 @@
 #define HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(bus) \
   {0x1CF, bus, 8, .check_relay = false},  /* CRUISE_BUTTON */   \
 
+#define HYUNDAI_CANFD_CRUISE_BUTTON_ALT_TX_MSGS(bus) \
+  {0x1AA, bus, 16, .check_relay = false},  /* CRUISE_BUTTONS_ALT */ \
+
 #define HYUNDAI_CANFD_LKA_STEER_MSG_COMMON_TX_MSGS(a_can, e_can) \
   HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(e_can)                        \
   {0x50,  a_can, 16, .check_relay = (a_can) == 0},  /* LKAS */      \
@@ -168,8 +171,8 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   }
 
   // cruise buttons check
-  if ((msg->addr == 0x1cfU) && !(hyundai_ccnc && hyundai_camera_scc && hyundai_longitudinal)) {
-    int button = msg->data[2] & 0x7U;
+  if (((msg->addr == 0x1cfU) || (msg->addr == 0x1aaU)) && !(hyundai_ccnc && hyundai_camera_scc && hyundai_longitudinal)) {
+    int button = (msg->addr == 0x1cfU) ? (msg->data[2] & 0x7U) : ((msg->data[4] >> 4) & 0x7U);
     bool is_cancel = (button == HYUNDAI_BTN_CANCEL);
     bool is_resume = (button == HYUNDAI_BTN_RESUME);
     bool is_set = (button == HYUNDAI_BTN_SET);
@@ -230,6 +233,16 @@ static safety_config hyundai_canfd_init(uint16_t param) {
 
   static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_ALT_TX_MSGS[] = {
     HYUNDAI_CANFD_LKA_STEER_MSG_ALT_COMMON_TX_MSGS(0, 1)
+  };
+
+  static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_ALT_BUTTONS_TX_MSGS[] = {
+    HYUNDAI_CANFD_LKA_STEER_MSG_COMMON_TX_MSGS(0, 1)
+    HYUNDAI_CANFD_CRUISE_BUTTON_ALT_TX_MSGS(1)
+  };
+
+  static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_ALT_ALT_BUTTONS_TX_MSGS[] = {
+    HYUNDAI_CANFD_LKA_STEER_MSG_ALT_COMMON_TX_MSGS(0, 1)
+    HYUNDAI_CANFD_CRUISE_BUTTON_ALT_TX_MSGS(1)
   };
 
   static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_LONG_TX_MSGS[] = {
@@ -324,17 +337,30 @@ static safety_config hyundai_canfd_init(uint16_t param) {
     if (hyundai_canfd_lka_steer_msg) {
       // *** LKA steering checks ***
       // E-CAN is on bus 1, SCC messages are sent on cars with ADRV ECU.
-      // Does not use the alt buttons message
       static RxCheck hyundai_canfd_lka_steer_msg_rx_checks[] = {
         HYUNDAI_CANFD_STD_BUTTONS_RX_CHECKS(1)
         HYUNDAI_CANFD_SCC_ADDR_CHECK(1)
       };
 
-      SET_RX_CHECKS(hyundai_canfd_lka_steer_msg_rx_checks, ret);
-      if (hyundai_canfd_lka_steer_msg_alt) {
-        SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_ALT_TX_MSGS, ret);
+      static RxCheck hyundai_canfd_lka_steer_msg_alt_buttons_rx_checks[] = {
+        HYUNDAI_CANFD_ALT_BUTTONS_RX_CHECKS(1)
+        HYUNDAI_CANFD_SCC_ADDR_CHECK(1)
+      };
+
+      if (hyundai_canfd_alt_buttons) {
+        SET_RX_CHECKS(hyundai_canfd_lka_steer_msg_alt_buttons_rx_checks, ret);
+        if (hyundai_canfd_lka_steer_msg_alt) {
+          SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_ALT_ALT_BUTTONS_TX_MSGS, ret);
+        } else {
+          SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_ALT_BUTTONS_TX_MSGS, ret);
+        }
       } else {
-        SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_TX_MSGS, ret);
+        SET_RX_CHECKS(hyundai_canfd_lka_steer_msg_rx_checks, ret);
+        if (hyundai_canfd_lka_steer_msg_alt) {
+          SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_ALT_TX_MSGS, ret);
+        } else {
+          SET_TX_MSGS(HYUNDAI_CANFD_LKA_STEER_MSG_TX_MSGS, ret);
+        }
       }
     } else if (!hyundai_camera_scc) {
       // Radar sends SCC messages on these cars instead of camera
