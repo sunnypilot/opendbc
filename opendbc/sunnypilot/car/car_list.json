@@ -1944,6 +1944,18 @@
     ],
     "package": "All"
   },
+  "Hyundai Sonata (without HDA II) 2024-26": {
+    "platform": "HYUNDAI_SONATA_2024",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Sonata (without HDA II)",
+    "year": [
+      "2024",
+      "2025",
+      "2026"
+    ],
+    "package": "All"
+  },
   "Hyundai Sonata Hybrid 2020-23": {
     "platform": "HYUNDAI_SONATA_HYBRID",
     "make": "Hyundai",
@@ -1967,7 +1979,7 @@
       "2025",
       "2026"
     ],
-    "package": "Smart Cruise Control (SCC)"
+    "package": "All"
   },
   "Hyundai Staria 2023": {
     "platform": "HYUNDAI_STARIA_4TH_GEN",
