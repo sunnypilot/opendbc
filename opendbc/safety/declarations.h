@@ -363,7 +363,7 @@ typedef struct {
   // sunnypilot
   int gas_interceptor_prev;
 
-  // MADS, see sunnypilot/mads.h. kept across safety mode changes
+  // MADS, see sunnypilot/mads.h. a safety mode change keeps the MADS flags and heartbeat_engaged_mads
   ButtonState mads_button_press;
   MADSState m_mads_state;
   bool controls_allowed_lateral;

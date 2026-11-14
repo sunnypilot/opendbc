@@ -378,17 +378,21 @@ static int set_hooks_copy(uint16_t mode, uint16_t param) {
 #endif
   };
 
+  // sunnypilot: the MADS flags are set before the safety mode, like the alternative experience
+  const bool mads_enabled = safety.m_mads_state.system_enabled;
+  const bool mads_disengage_lateral_on_brake = safety.m_mads_state.disengage_lateral_on_brake;
+  const bool mads_pause_lateral_on_brake = safety.m_mads_state.pause_lateral_on_brake;
+
   // reset state set by safety mode
   safety = (SafetyState){
     .heartbeat_engaged = safety.heartbeat_engaged,
     .heartbeat_engaged_mismatches = safety.heartbeat_engaged_mismatches,
-    // sunnypilot: MADS state is not reset by a safety mode change
-    .mads_button_press = safety.mads_button_press,
-    .m_mads_state = safety.m_mads_state,
-    .controls_allowed_lateral = safety.controls_allowed_lateral,
     .heartbeat_engaged_mads = safety.heartbeat_engaged_mads,
-    .heartbeat_engaged_mads_mismatches = safety.heartbeat_engaged_mads_mismatches,
+    .mads_button_press = MADS_BUTTON_UNAVAILABLE,
   };
+
+  // sunnypilot: the MADS state resets like controls_allowed
+  mads_set_system_state(mads_enabled, mads_disengage_lateral_on_brake, mads_pause_lateral_on_brake);
 
   // sunnypilot: the gas interceptor is enabled by the safety mode's init
   safety_setup.enable_gas_interceptor = false;

@@ -160,16 +160,45 @@ class TestSafetyRedundancySP(common.SafetyTestBase):
 class TestMadsModeChange(common.SafetyTestBase):
   SAFETY_MODEL = CarParams.SafetyModel.noOutput
 
-  def test_mads_kept_across_mode_change(self):
+  def test_mads_flags_kept_across_mode_change(self):
     # the MADS flags are set before the car safety mode, like the alternative experience
-    self.safety.set_mads_params(True, True, False)
-    self.safety.set_heartbeat_engaged_mads(True)
-    self.safety.set_controls_allowed_lateral(True)
-    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, 0)
-    self.assertTrue(self.safety.get_enable_mads())
-    self.assertTrue(self.safety.get_disengage_lateral_on_brake())
-    self.assertTrue(self.safety.get_controls_allowed_lateral())
-    self.assertFalse(self.safety.get_controls_allowed())
+    for disengage_lateral_on_brake, pause_lateral_on_brake in ((True, False), (False, True)):
+      with self.subTest(disengage_lateral_on_brake=disengage_lateral_on_brake):
+        self.safety.set_mads_params(True, disengage_lateral_on_brake, pause_lateral_on_brake)
+        self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, 0)
+        self.assertTrue(self.safety.get_enable_mads())
+        self.assertEqual(disengage_lateral_on_brake, self.safety.get_disengage_lateral_on_brake())
+        self.assertEqual(pause_lateral_on_brake, self.safety.get_pause_lateral_on_brake())
+
+        # and lateral engages on the next rising edge
+        self.safety.tick_mads_state(False, False, False, False, False)
+        self.safety.tick_mads_state(False, True, False, False, False)
+        self.assertTrue(self.safety.get_controls_allowed_lateral())
+
+  def test_mads_state_reset_on_mode_change(self):
+    # like controls_allowed, including into SILENT when the heartbeat is lost
+    for mode in (CarParams.SafetyModel.hyundai, CarParams.SafetyModel.silent):
+      with self.subTest(mode=mode):
+        self.safety.set_mads_params(True, False, False)
+        self.safety.set_heartbeat_engaged_mads(True)
+        self.safety.set_controls_allowed(True)
+        self.safety.tick_mads_state(True, True, True, False, False)
+        self.assertTrue(self.safety.get_controls_allowed_lateral())
+        self.safety.set_controls_requested_lateral(True)
+        self.safety.set_mads_button_press(1)
+        self.safety.mads_set_current_disengage_reason(1)
+        for copy in (self.safety.safety_a, self.safety.safety_b):
+          copy.state.heartbeat_engaged_mads_mismatches = 2
+        self.safety.set_safety_hooks(mode, 0)
+        self.assertFalse(self.safety.get_controls_allowed())
+        self.assertFalse(self.safety.get_controls_allowed_lateral())
+        self.assertFalse(self.safety.get_controls_requested_lateral())
+        self.assertEqual(-1, self.safety.get_mads_button_press())
+        self.assertFalse(self.safety.get_mads_acc_main())
+        self.assertEqual(0, self.safety.mads_get_current_disengage_reason())
+        self.assertEqual(0, self.safety.safety_a.state.heartbeat_engaged_mads_mismatches)
+        # the heartbeat's input, like heartbeat_engaged
+        self.assertTrue(self.safety.safety_a.state.heartbeat_engaged_mads)
 
 
 class TestHeartbeat(common.SafetyTestBase):
