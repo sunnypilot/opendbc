@@ -130,6 +130,48 @@ class TestSafetyRedundancy(common.SafetyTestBase):
         self.assertEqual(ts_last(self.safety.safety_a.state), 1000002)
 
 
+class TestSafetyRedundancySP(common.SafetyTestBase):
+  # sunnypilot: the MADS state is in the copies too
+  SAFETY_MODEL = CarParams.SafetyModel.allOutput
+  _flip_b = TestSafetyRedundancy._flip_b
+  _assert_fault = TestSafetyRedundancy._assert_fault
+
+  def test_mads_lateral_decision_mismatch(self):
+    # a small steering torque is allowed only with lateral controls allowed
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, 0)
+    self.safety.set_mads_params(True, False, False)
+    self.safety.set_controls_allowed_lateral(True)
+    lkas = common.CANPackerSafety("hyundai_can_generated").make_can_msg_safety("LKAS11", 0, {"CR_Lkas_StrToqReq": 3, "CF_Lkas_ActToi": 1})
+    self._flip_b(ffi.offsetof("SafetyState", "controls_allowed_lateral") * 8)
+    self.assertTrue(self.safety.safety_tx_hook(lkas))
+    self._assert_fault()
+
+  def test_mads_heartbeat_both_copies(self):
+    self.safety.set_mads_params(True, False, False)
+    self.safety.set_controls_allowed_lateral(True)
+    self.safety.set_heartbeat_engaged_mads(False)
+    for _ in range(3):
+      self.assertTrue(self.safety.get_controls_allowed_lateral())
+      self.safety.safety_heartbeat_check()
+    self.assertFalse(self.safety.get_controls_allowed_lateral())
+    self.assertFalse(self.safety.safety_redundancy_fault)
+
+
+class TestMadsModeChange(common.SafetyTestBase):
+  SAFETY_MODEL = CarParams.SafetyModel.noOutput
+
+  def test_mads_kept_across_mode_change(self):
+    # the MADS flags are set before the car safety mode, like the alternative experience
+    self.safety.set_mads_params(True, True, False)
+    self.safety.set_heartbeat_engaged_mads(True)
+    self.safety.set_controls_allowed_lateral(True)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, 0)
+    self.assertTrue(self.safety.get_enable_mads())
+    self.assertTrue(self.safety.get_disengage_lateral_on_brake())
+    self.assertTrue(self.safety.get_controls_allowed_lateral())
+    self.assertFalse(self.safety.get_controls_allowed())
+
+
 class TestHeartbeat(common.SafetyTestBase):
   SAFETY_MODEL = CarParams.SafetyModel.allOutput
 
