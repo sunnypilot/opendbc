@@ -51,6 +51,10 @@ int get_rx_checks_len(void) {
   return safety_setup.current_safety_config.rx_checks_len;
 }
 
+int get_rx_check_frequency(int i) {
+  return safety_setup.current_safety_config.rx_checks[i].msg[safety.rx_status[i].index].frequency;
+}
+
 // all RX checks valid, check stale last received age us ago
 void set_rx_checks_received(int stale, uint32_t age) {
   for (int i = 0; i < safety_setup.current_safety_config.rx_checks_len; i++) {
