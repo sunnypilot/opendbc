@@ -350,9 +350,8 @@ static bool steer_curvature_cmd_checks(int desired_curvature, int steer_power, b
     violation = violation || inactive_curvature_violation || controls_violation;
   }
 
-  // reset to zero or measured curvature depending on EPS expectation
-  if (violation || !(safety.controls_allowed || safety.controls_allowed_lateral)) {
-    safety.curvature_state.desired_last = limits.inactive_curvature_is_zero ? 0 : safety.curvature_state.meas.values[0];
+  if (violation) {
+    safety.curvature_state.desired_last = 0;
   }
 
   return violation;
