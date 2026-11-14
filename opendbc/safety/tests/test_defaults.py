@@ -196,6 +196,12 @@ class TestSafetyRedundancySP(common.SafetyTestBase):
     self.safety.safety_tick()
     self.assertFalse(self.safety.safety_redundancy_fault)
 
+  def test_init_tests_clears_fault(self):
+    # a fault one test leaves behind doesn't carry into the next
+    self.safety.safety_redundancy_fault = True
+    self.safety.init_tests()
+    self.assertFalse(self.safety.safety_redundancy_fault)
+
 
 class TestMadsModeChange(common.SafetyTestBase):
   SAFETY_MODEL = CarParams.SafetyModel.noOutput

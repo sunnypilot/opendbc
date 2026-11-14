@@ -407,6 +407,9 @@ void init_tests(void){
   ignition_can = false;
   ignition_can_cnt = 0U;
 
+  // a fault is checked by the test that raised it, don't leak it into the next
+  safety_redundancy_fault = false;
+
   // reset MADS state to prevent leaking between tests
   SAFETY_RUN(mads_set_system_state(false, false, false));
   SAFETY_SET(mads_button_press, MADS_BUTTON_UNAVAILABLE);
