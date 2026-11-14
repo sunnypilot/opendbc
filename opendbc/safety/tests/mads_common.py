@@ -42,7 +42,7 @@ class MadsSafetyTestBase(unittest.TestCase):
         # Call the heartbeat check function multiple times
         # We know from the implementation that it takes 3 mismatches to disengage
         for _ in range(4):  # More than 3 times to ensure we pass the threshold
-          self.safety.mads_heartbeat_engaged_check()
+          self.safety.safety_heartbeat_check()
 
         # Verify engagement state matches expectation
         self.assertEqual(self.safety.get_controls_allowed_lateral(), boolean,
@@ -376,12 +376,12 @@ class MadsSafetyTestBase(unittest.TestCase):
 
     # After 2 mismatches: still engaged
     for _ in range(2):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.safety_heartbeat_check()
     self.assertTrue(self.safety.get_controls_allowed_lateral(),
                     "Should still be engaged after 2 mismatches")
 
     # 3rd mismatch: disengaged
-    self.safety.mads_heartbeat_engaged_check()
+    self.safety.safety_heartbeat_check()
     self.assertFalse(self.safety.get_controls_allowed_lateral(),
                      "Should disengage after exactly 3 mismatches")
 
@@ -393,18 +393,18 @@ class MadsSafetyTestBase(unittest.TestCase):
 
     # 2 mismatches
     for _ in range(2):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.safety_heartbeat_check()
     self.assertTrue(self.safety.get_controls_allowed_lateral())
 
     # Match resets counter
     self.safety.set_heartbeat_engaged_mads(True)
-    self.safety.mads_heartbeat_engaged_check()
+    self.safety.safety_heartbeat_check()
     self.assertTrue(self.safety.get_controls_allowed_lateral())
 
     # Need 3 more mismatches from scratch to disengage
     self.safety.set_heartbeat_engaged_mads(False)
     for _ in range(2):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.safety_heartbeat_check()
     self.assertTrue(self.safety.get_controls_allowed_lateral(),
                     "Counter should have reset; 2 mismatches after reset should not disengage")
 
@@ -589,7 +589,7 @@ class MadsSafetyTestBase(unittest.TestCase):
 
     # Heartbeat matches — both active
     self.safety.set_heartbeat_engaged_mads(True)
-    self.safety.mads_heartbeat_engaged_check()
+    self.safety.safety_heartbeat_check()
     self.assertTrue(self.safety.get_controls_allowed_lateral())
 
     # Brake: safety clears controls_allowed_lateral
@@ -599,7 +599,7 @@ class MadsSafetyTestBase(unittest.TestCase):
     # Python side: disengage mode → state=disabled → enabled=False → heartbeat sends False
     self.safety.set_heartbeat_engaged_mads(False)
     for _ in range(4):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.safety_heartbeat_check()
     # No mismatch: controls_allowed_lateral=False, so check doesn't trigger
     self.assertFalse(self.safety.get_controls_allowed_lateral())
 
@@ -620,7 +620,7 @@ class MadsSafetyTestBase(unittest.TestCase):
     # Python side: pause mode → state=paused → enabled=True → heartbeat sends True
     self.safety.set_heartbeat_engaged_mads(True)
     for _ in range(4):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.safety_heartbeat_check()
     # No mismatch: controls_allowed_lateral=False, check condition (lat && !hb) = False
     self.assertFalse(self.safety.get_controls_allowed_lateral())
 
@@ -630,7 +630,7 @@ class MadsSafetyTestBase(unittest.TestCase):
     # Heartbeat still True (Python side: paused→enabled, enabled=True)
     self.safety.set_heartbeat_engaged_mads(True)
     for _ in range(4):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.safety_heartbeat_check()
     # No mismatch: both agree lateral is active
     self.assertTrue(self.safety.get_controls_allowed_lateral())
 
