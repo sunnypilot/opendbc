@@ -378,6 +378,19 @@ int get_gas_interceptor_prev(void){
   return safety.gas_interceptor_prev;
 }
 
+// a deeper frame of junk on the stack the next call at this depth reuses
+void dirty_stack(void){
+  volatile uint8_t junk[4096];
+  for (int i = 0; i < 4096; i++) {
+    junk[i] = 0xA5U;
+  }
+}
+
+int set_safety_hooks_dirty_stack(uint16_t mode, uint16_t param){
+  dirty_stack();
+  return set_safety_hooks(mode, param);
+}
+
 void init_tests(void){
   SAFETY_SET(safety_mode_cnt, 2U);  // avoid ignoring relay_malfunction logic
   safety_alternative_experience(0);

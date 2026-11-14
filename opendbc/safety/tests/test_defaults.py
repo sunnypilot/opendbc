@@ -156,6 +156,46 @@ class TestSafetyRedundancySP(common.SafetyTestBase):
     self.assertFalse(self.safety.get_controls_allowed_lateral())
     self.assertFalse(self.safety.safety_redundancy_fault)
 
+  @staticmethod
+  def _padding_masks(ctype):
+    # byte offset: the bits of it no field covers, including MADSState's unused bitfield bits
+    used = bytearray(ffi.sizeof(ctype))
+
+    def mark(t, base):
+      if t.kind == "struct":
+        for _, f in t.fields:
+          if f.bitsize >= 0:
+            for bit in range(f.bitshift, f.bitshift + f.bitsize):
+              used[base + f.offset + bit // 8] |= 1 << (bit % 8)
+          else:
+            mark(f.type, base + f.offset)
+      elif t.kind == "array":
+        for i in range(t.length):
+          mark(t.item, base + i * ffi.sizeof(t.item))
+      else:
+        used[base:base + ffi.sizeof(t)] = b"\xff" * ffi.sizeof(t)
+
+    mark(ffi.typeof(ctype), 0)
+    return {i: ~u & 0xFF for i, u in enumerate(used) if u != 0xFF}
+
+  def test_mode_change_clears_padding(self):
+    # the copies are compared by byte, so a mode change must leave the same padding in both,
+    # whatever the stack and the padding held before
+    padding = self._padding_masks("SafetyState")
+    self.assertGreater(len(padding), 0)
+    state = ffi.offsetof("SafetyCopy", "state")
+    for copy, junk in (("safety_a", 0x5A), ("safety_b", 0xA5)):
+      buf = common.state_buffer(copy)
+      for i, mask in padding.items():
+        buf[state + i] = bytes([(buf[state + i][0] & ~mask) | (junk & mask)])
+
+    self.assertEqual(0, self.safety.set_safety_hooks_dirty_stack(CarParams.SafetyModel.hyundai, 0))
+    for copy in ("safety_a", "safety_b"):
+      buf = common.state_buffer(copy)
+      self.assertEqual({}, {i: buf[state + i][0] & mask for i, mask in padding.items() if buf[state + i][0] & mask})
+    self.safety.safety_tick()
+    self.assertFalse(self.safety.safety_redundancy_fault)
+
 
 class TestMadsModeChange(common.SafetyTestBase):
   SAFETY_MODEL = CarParams.SafetyModel.noOutput
