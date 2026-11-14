@@ -146,6 +146,8 @@ class TestSafetyRedundancySP(SafetyRedundancyBase):
     self._assert_fault()
 
   def test_mads_heartbeat_both_copies(self):
+    # the panda's entry: allOutput allows controls, keep the controls_allowed check beside MADS out of it
+    self.safety.set_controls_allowed(False)
     self.safety.set_mads_params(True, False, False)
     self.safety.set_controls_allowed_lateral(True)
     self.safety.set_heartbeat_engaged_mads(False)

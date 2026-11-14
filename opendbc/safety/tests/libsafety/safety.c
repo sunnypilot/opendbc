@@ -370,6 +370,11 @@ void set_heartbeat_engaged_mads(bool c){
   safety_heartbeat_mads(c);
 }
 
+// the MADS heartbeat check alone, without the controls_allowed check safety_heartbeat_check runs beside it
+void mads_heartbeat_check(void){
+  SAFETY_RUN(mads_heartbeat_engaged_check());
+}
+
 void set_steering_disengage(bool c){
   SAFETY_SET(steering_disengage, c);
 }
