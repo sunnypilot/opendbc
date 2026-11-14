@@ -392,6 +392,8 @@ routes = [
   CarTestRoute("dc7bf18c8af12e37/00000006--ea06255cd0", HYUNDAI.KIA_CEED_PHEV_2022_NON_SCC),
   CarTestRoute("d59ca223dca8da93/0000017a--5e6e4107f1", HYUNDAI.HYUNDAI_SONATA_2024),  # 2024 hybrid, ccNC, LFA steering
   CarTestRoute("d59ca223dca8da93/00000186--dd8cf07e6c", HYUNDAI.HYUNDAI_SONATA_2024, segment=0),  # 2024 hybrid, ccNC, LFA steering, openpilot longitudinal
+  CarTestRoute("832a633bd4e730a0/00000114--ced749ff8b", HYUNDAI.HYUNDAI_SONATA_2024, segment=16),  # 2025, ccNC, LFA steering
+  CarTestRoute("832a633bd4e730a0/00000117--b6875236d6", HYUNDAI.HYUNDAI_SONATA_2024, segment=10),  # 2025, ccNC, LFA steering, openpilot longitudinal
   CarTestRoute("20f0af20ed379890/00000005--d3298862a0", HYUNDAI.KIA_CARNIVAL_4TH_GEN, segment=3),  # 2026 hybrid, ccNC, LKA steering, stock SCC 0x1AA resume
   CarTestRoute("bb89d880ca0a4249/000000f8--ac95d3364a", HYUNDAI.HYUNDAI_TUCSON_4TH_GEN),  # 2025 hybrid, ccNC, LFA steering
   CarTestRoute("bb89d880ca0a4249/000000fb--275ef6d0d5", HYUNDAI.HYUNDAI_TUCSON_4TH_GEN, segment=5),  # 2025 hybrid, ccNC, LFA steering, openpilot longitudinal
