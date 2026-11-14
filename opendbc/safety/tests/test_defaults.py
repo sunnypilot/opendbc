@@ -67,7 +67,7 @@ class TestSafetyFramework(common.SafetyTestBase):
     self.assertFalse(self.safety.safety_tx_hook(common.make_msg(0, 0x123)))
 
 
-class TestSafetyRedundancy(common.SafetyTestBase):
+class SafetyRedundancyBase(common.SafetyTestBase):
   SAFETY_MODEL = CarParams.SafetyModel.allOutput
 
   def _flip_b(self, bit):
@@ -79,6 +79,8 @@ class TestSafetyRedundancy(common.SafetyTestBase):
     self.assertEqual(common.state_buffer("safety_a")[:], common.state_buffer("safety_b")[:])
     self.safety.safety_redundancy_fault = False
 
+
+class TestSafetyRedundancy(SafetyRedundancyBase):
   def test_rx_decision_mismatch(self):
     # wrong counters in B fail its rx check, CLU11 is a hyundai rx check with a counter and no checksum
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, 0)
@@ -130,11 +132,8 @@ class TestSafetyRedundancy(common.SafetyTestBase):
         self.assertEqual(ts_last(self.safety.safety_a.state), 1000002)
 
 
-class TestSafetyRedundancySP(common.SafetyTestBase):
+class TestSafetyRedundancySP(SafetyRedundancyBase):
   # sunnypilot: the MADS state is in the copies too
-  SAFETY_MODEL = CarParams.SafetyModel.allOutput
-  _flip_b = TestSafetyRedundancy._flip_b
-  _assert_fault = TestSafetyRedundancy._assert_fault
 
   def test_mads_lateral_decision_mismatch(self):
     # a small steering torque is allowed only with lateral controls allowed
