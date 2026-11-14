@@ -11,7 +11,7 @@ CRUISE_BUTTONS = 0x1CF
 
 class TestCcncCarState(unittest.TestCase):
   def _interface(self, alt_buttons):
-    # ccNC with LFA steering: the cluster messages and no LKA steering messages
+    # ccNC with LFA steering
     fingerprint = gen_empty_fingerprint()
     can = CanBus(None, fingerprint)
     fingerprint[can.CAM] = {0x161: 32, 0x162: 32}
@@ -23,7 +23,7 @@ class TestCcncCarState(unittest.TestCase):
     return CarInterface(CP, CP_SP)
 
   def test_lfa_steering_no_cruise_buttons_on_alt_buttons(self):
-    # a message the car doesn't send never becomes valid, and canValid with it
+    # an unsent message in the parser keeps canValid false
     for alt_buttons in (False, True):
       with self.subTest(alt_buttons=alt_buttons):
         CI = self._interface(alt_buttons)
