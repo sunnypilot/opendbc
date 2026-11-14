@@ -133,10 +133,8 @@ class TestSafetyRedundancy(SafetyRedundancyBase):
 
 
 class TestSafetyRedundancySP(SafetyRedundancyBase):
-  # sunnypilot: the MADS state is in the copies too
-
   def test_mads_lateral_decision_mismatch(self):
-    # a small steering torque is allowed only with lateral controls allowed
+    # steering is allowed only with controls_allowed_lateral
     self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, 0)
     self.safety.set_mads_params(True, False, False)
     self.safety.set_controls_allowed_lateral(True)
@@ -146,7 +144,7 @@ class TestSafetyRedundancySP(SafetyRedundancyBase):
     self._assert_fault()
 
   def test_mads_heartbeat_both_copies(self):
-    # the panda's entry: allOutput allows controls, keep the controls_allowed check beside MADS out of it
+    # the panda's entry point, with controls_allowed off so only the MADS check acts
     self.safety.set_controls_allowed(False)
     self.safety.set_mads_params(True, False, False)
     self.safety.set_controls_allowed_lateral(True)
@@ -159,7 +157,7 @@ class TestSafetyRedundancySP(SafetyRedundancyBase):
 
   @staticmethod
   def _padding_masks(ctype):
-    # byte offset: the bits of it no field covers, including MADSState's unused bitfield bits
+    # {byte offset: padding bits}, including unused bitfield bits
     used = bytearray(ffi.sizeof(ctype))
 
     def mark(t, base):
@@ -180,8 +178,7 @@ class TestSafetyRedundancySP(SafetyRedundancyBase):
     return {i: ~u & 0xFF for i, u in enumerate(used) if u != 0xFF}
 
   def test_mode_change_clears_padding(self):
-    # the copies are compared by byte, so a mode change must leave the same padding in both,
-    # whatever the stack and the padding held before
+    # the copies are compared by byte, so padding must match after a mode change
     padding = self._padding_masks("SafetyState")
     self.assertGreater(len(padding), 0)
     state = ffi.offsetof("SafetyCopy", "state")
@@ -198,7 +195,6 @@ class TestSafetyRedundancySP(SafetyRedundancyBase):
     self.assertFalse(self.safety.safety_redundancy_fault)
 
   def test_init_tests_clears_fault(self):
-    # a fault one test leaves behind doesn't carry into the next
     self.safety.safety_redundancy_fault = True
     self.safety.init_tests()
     self.assertFalse(self.safety.safety_redundancy_fault)
@@ -208,7 +204,6 @@ class TestMadsModeChange(common.SafetyTestBase):
   SAFETY_MODEL = CarParams.SafetyModel.noOutput
 
   def test_mads_flags_kept_across_mode_change(self):
-    # the MADS flags are set before the car safety mode, like the alternative experience
     for disengage_lateral_on_brake, pause_lateral_on_brake in ((True, False), (False, True)):
       with self.subTest(disengage_lateral_on_brake=disengage_lateral_on_brake):
         self.safety.set_mads_params(True, disengage_lateral_on_brake, pause_lateral_on_brake)
@@ -217,13 +212,12 @@ class TestMadsModeChange(common.SafetyTestBase):
         self.assertEqual(disengage_lateral_on_brake, self.safety.get_disengage_lateral_on_brake())
         self.assertEqual(pause_lateral_on_brake, self.safety.get_pause_lateral_on_brake())
 
-        # and lateral engages on the next rising edge
         self.safety.tick_mads_state(False, False, False, False, False)
         self.safety.tick_mads_state(False, True, False, False, False)
         self.assertTrue(self.safety.get_controls_allowed_lateral())
 
   def test_mads_state_reset_on_mode_change(self):
-    # like controls_allowed, including into SILENT when the heartbeat is lost
+    # including into SILENT, which the panda enters when the heartbeat is lost
     for mode in (CarParams.SafetyModel.hyundai, CarParams.SafetyModel.silent):
       with self.subTest(mode=mode):
         self.safety.set_mads_params(True, False, False)
@@ -244,7 +238,7 @@ class TestMadsModeChange(common.SafetyTestBase):
         self.assertFalse(self.safety.get_mads_acc_main())
         self.assertEqual(0, self.safety.mads_get_current_disengage_reason())
         self.assertEqual(0, self.safety.safety_a.state.heartbeat_engaged_mads_mismatches)
-        # the heartbeat's input, like heartbeat_engaged
+        # kept, like heartbeat_engaged
         self.assertTrue(self.safety.safety_a.state.heartbeat_engaged_mads)
 
 

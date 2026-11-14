@@ -304,7 +304,6 @@ static void heartbeat_check_copy(void) {
     safety.heartbeat_engaged_mismatches = 0U;
   }
 
-  // sunnypilot: exit lateral controls allowed if unused by sunnypilot for a few seconds
   mads_heartbeat_engaged_check();
 }
 
@@ -378,7 +377,7 @@ static int set_hooks_copy(uint16_t mode, uint16_t param) {
 #endif
   };
 
-  // sunnypilot: the MADS flags are set before the safety mode, like the alternative experience
+  // MADS flags are set before the safety mode, like alternative_experience
   const bool mads_enabled = safety.m_mads_state.system_enabled;
   const bool mads_disengage_lateral_on_brake = safety.m_mads_state.disengage_lateral_on_brake;
   const bool mads_pause_lateral_on_brake = safety.m_mads_state.pause_lateral_on_brake;
@@ -391,10 +390,9 @@ static int set_hooks_copy(uint16_t mode, uint16_t param) {
     .mads_button_press = MADS_BUTTON_UNAVAILABLE,
   };
 
-  // sunnypilot: the MADS state resets like controls_allowed
   mads_set_system_state(mads_enabled, mads_disengage_lateral_on_brake, mads_pause_lateral_on_brake);
 
-  // sunnypilot: the gas interceptor is enabled by the safety mode's init
+  // gas interceptor
   safety_setup.enable_gas_interceptor = false;
 
   safety_config cfg = {0};
@@ -479,13 +477,12 @@ void safety_heartbeat_check(void) {
   heartbeat_check_copy();
 }
 
-// sunnypilot: the sunnypilot safety param, set before the safety mode like the alternative experience
+// set before set_safety_hooks, the safety mode's init reads it
 void safety_param_sp(uint16_t param_sp) {
   safety_a.setup.current_safety_param_sp = param_sp;
   safety_b.setup.current_safety_param_sp = param_sp;
 }
 
-// sunnypilot: reset MADS and apply the MADS flags of the alternative experience
 void safety_mads_alternative_experience(void) {
   current_copy = &safety_b;
   mads_set_alternative_experience(&safety_setup.alternative_experience);
@@ -493,7 +490,6 @@ void safety_mads_alternative_experience(void) {
   mads_set_alternative_experience(&safety_setup.alternative_experience);
 }
 
-// sunnypilot: MADS engaged, passed in the heartbeat USB command
 void safety_heartbeat_mads(bool engaged_mads) {
   safety_a.state.heartbeat_engaged_mads = engaged_mads;
   safety_b.state.heartbeat_engaged_mads = engaged_mads;

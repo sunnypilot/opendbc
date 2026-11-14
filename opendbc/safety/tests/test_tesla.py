@@ -481,7 +481,7 @@ class TestTeslaVehicleBusSafety(TestTeslaSafetyBase):
     self.safety.set_current_safety_param_sp(TeslaSafetyFlagsSP.HAS_VEHICLE_BUS | TeslaSafetyFlagsSP.MADS_SCREEN_BUTTON_3_FINGER)
     self.safety.set_safety_hooks(CarParams.SafetyModel.tesla, 0)
     self.safety.init_tests()
-    # init_tests clears the param, keep it so _reset_safety_hooks rebuilds this config
+    # init_tests clears the param
     self.safety.set_current_safety_param_sp(TeslaSafetyFlagsSP.HAS_VEHICLE_BUS | TeslaSafetyFlagsSP.MADS_SCREEN_BUTTON_3_FINGER)
 
   def _lkas_button_msg(self, enabled):

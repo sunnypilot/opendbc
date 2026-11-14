@@ -170,7 +170,7 @@ class TestToyotaSafetyGasInterceptorBase(GasInterceptorSafetyTest, TestToyotaSaf
     self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP | ToyotaSafetyFlagsSP.GAS_INTERCEPTOR)
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.safety.get_current_safety_param())
     self.safety.init_tests()
-    # init_tests clears the param, keep it so _reset_safety_hooks rebuilds this config
+    # init_tests clears the param
     self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP | ToyotaSafetyFlagsSP.GAS_INTERCEPTOR)
 
   def test_stock_longitudinal(self):

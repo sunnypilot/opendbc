@@ -83,13 +83,6 @@ typedef struct {
 } MADSState;
 
 // ===============================
-// State
-// ===============================
-
-// The MADS state is in SafetyState (declarations.h): mads_button_press, m_mads_state,
-// controls_allowed_lateral, heartbeat_engaged_mads and heartbeat_engaged_mads_mismatches
-
-// ===============================
 // External Function Declarations (kept as needed)
 // ===============================
 

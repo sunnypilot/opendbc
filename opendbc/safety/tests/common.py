@@ -1247,7 +1247,7 @@ class CarSafetyTest(SafetyTest, MadsSafetyTestBase, RxChecksSafetyTestBase):
 
   def test_rx_lagging(self):
     # a check lags after 10 missed messages or 1 s, whichever is longer. checks are at least 10 Hz, so it is always 1 s
-    # sunnypilot: except checks with ignore_frequency_check, which can be slower
+    # except ignore_frequency_check checks, which can be slower
     self.assertGreater(self.safety.get_rx_checks_len(), 0)
     for stale in range(self.safety.get_rx_checks_len()):
       lag_us = max(10 * (1000000 // self.safety.get_rx_check_frequency(stale)), 1000000)

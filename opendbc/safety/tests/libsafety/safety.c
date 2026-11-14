@@ -8,7 +8,7 @@
     (safety_b.state.field) = (safety_a.state.field); \
   } while (0)
 
-// sunnypilot: run a safety function on both copies, B first like the hooks
+// B first, like the safety hooks
 #define SAFETY_RUN(call) \
   do { \
     current_copy = &safety_b; \
@@ -370,7 +370,7 @@ void set_heartbeat_engaged_mads(bool c){
   safety_heartbeat_mads(c);
 }
 
-// the MADS heartbeat check alone, without the controls_allowed check safety_heartbeat_check runs beside it
+// without the controls_allowed check of safety_heartbeat_check
 void mads_heartbeat_check(void){
   SAFETY_RUN(mads_heartbeat_engaged_check());
 }
@@ -383,7 +383,7 @@ int get_gas_interceptor_prev(void){
   return safety.gas_interceptor_prev;
 }
 
-// a deeper frame of junk on the stack the next call at this depth reuses
+// leaves junk on the stack for the next call
 void dirty_stack(void){
   volatile uint8_t junk[4096];
   for (int i = 0; i < 4096; i++) {
@@ -413,7 +413,6 @@ void init_tests(void){
   ignition_can = false;
   ignition_can_cnt = 0U;
 
-  // a fault is checked by the test that raised it, don't leak it into the next
   safety_redundancy_fault = false;
 
   // reset MADS state to prevent leaking between tests

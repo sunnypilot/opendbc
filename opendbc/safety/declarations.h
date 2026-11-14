@@ -363,7 +363,7 @@ typedef struct {
   // sunnypilot
   int gas_interceptor_prev;
 
-  // MADS, see sunnypilot/mads.h. a safety mode change keeps the MADS flags and heartbeat_engaged_mads
+  // MADS
   ButtonState mads_button_press;
   MADSState m_mads_state;
   bool controls_allowed_lateral;
@@ -441,7 +441,7 @@ typedef struct {
 
   bool tesla_fsd_14;
   bool tesla_has_vehicle_bus;
-  uint8_t tesla_mads_screen_button_fingers;  // MADS screen button finger count (0 = disabled, 3-5 = expected touch-point count)
+  uint8_t tesla_mads_screen_button_fingers;  // touch points for a MADS button press, 0 = disabled
 } SafetySetup;
 
 typedef struct {

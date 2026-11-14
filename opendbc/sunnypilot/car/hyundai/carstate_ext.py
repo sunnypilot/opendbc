@@ -95,7 +95,7 @@ class CarStateExt:
       self.msg_162 = copy.copy(cp_cam.vl["CCNC_0x162"])
       self.mdps = copy.copy(cp.vl["MDPS"])
       self.cruise_info = copy.copy(cp_cam.vl["SCC_CONTROL"])
-      # reading a message adds it to the parser, and one the car doesn't send is never valid
+      # alt buttons cars don't send it, and reading it adds it to the parser
       if not self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
 
