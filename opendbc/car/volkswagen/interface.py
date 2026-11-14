@@ -22,7 +22,8 @@ class CarInterface(CarInterfaceBase):
     if ret.flags & VolkswagenFlags.PQ:
       # Set global PQ35/PQ46/NMS parameters
       safety_configs = [get_safety_config(structs.CarParams.SafetyModel.volkswagenPq)]
-      ret.enableBsm = 0x3BA in fingerprint[CAN.pt]  # SWA_1
+      if 0x3BA in fingerprint[CAN.pt]:  # SWA_1
+        ret.flags |= VolkswagenFlags.HAS_BSM.value
 
       if 0x440 in fingerprint[CAN.pt] or docs:  # Getriebe_1
         ret.transmissionType = TransmissionType.automatic
@@ -39,7 +40,8 @@ class CarInterface(CarInterfaceBase):
     elif ret.flags & VolkswagenFlags.MLB:
       # Set global MLB parameters
       safety_configs = [get_safety_config(structs.CarParams.SafetyModel.volkswagenMlb)]
-      ret.enableBsm = 0x30F in fingerprint[CAN.pt]  # SWA_01
+      if 0x30F in fingerprint[CAN.pt]:  # SWA_01
+        ret.flags |= VolkswagenFlags.HAS_BSM.value
       ret.networkLocation = NetworkLocation.gateway
       ret.dashcamOnly = is_release  # Release support needs HCA timeout fix, safety validation, revised J533 harness
 
@@ -66,7 +68,8 @@ class CarInterface(CarInterfaceBase):
         ret.networkLocation = NetworkLocation.fwdCamera
         ret.radarUnavailable = True
 
-      ret.enableBsm = 0x24C in fingerprint[0]  # MEB_Side_Assist_01
+      if 0x24C in fingerprint[0]:  # MEB_Side_Assist_01
+        ret.flags |= VolkswagenFlags.HAS_BSM.value
 
       if 0x25D in fingerprint[0]:  # KLR_01
         ret.flags |= VolkswagenFlags.STOCK_KLR_PRESENT.value
@@ -79,7 +82,8 @@ class CarInterface(CarInterfaceBase):
     else:
       # Set global MQB parameters
       safety_configs = [get_safety_config(structs.CarParams.SafetyModel.volkswagen)]
-      ret.enableBsm = 0x30F in fingerprint[CAN.pt]  # SWA_01
+      if 0x30F in fingerprint[CAN.pt]:  # SWA_01
+        ret.flags |= VolkswagenFlags.HAS_BSM.value
 
       if 0xAD in fingerprint[CAN.pt] or docs:  # Getriebe_11
         ret.transmissionType = TransmissionType.automatic
