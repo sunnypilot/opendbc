@@ -184,6 +184,30 @@ class TestHyundaiCanfdLKASteeringAltEV(TestHyundaiCanfdBase):
   SCC_BUS = 1
   STEER_MSG = "LKAS_ALT"
   GAS_MSG = ("ACCELERATOR", "ACCELERATOR_PEDAL")
+class HyundaiCanfdLKASteeringAltButtonsMixin:
+  def _button_msg(self, buttons, main_button=0, bus=None):
+    values = {
+      "CRUISE_BUTTONS": buttons,
+      "ADAPTIVE_CRUISE_MAIN_BTN": main_button,
+    }
+    return self.packer.make_can_msg_safety("CRUISE_BUTTONS_ALT", self.PT_BUS if bus is None else bus, values)
+
+  def _lkas_button_msg(self, enabled):
+    values = {"LDA_BTN": enabled}
+    return self.packer.make_can_msg_safety("CRUISE_BUTTONS_ALT", self.PT_BUS, values)
+class TestHyundaiCanfdLKASteeringAltButtonsHybrid(HyundaiCanfdLKASteeringAltButtonsMixin, TestHyundaiCanfdLKASteeringEV):
+
+  SAFETY_PARAM = HyundaiSafetyFlags.CANFD_LKA_STEER_MSG | HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CANFD_ALT_BUTTONS
+
+  TX_MSGS = [[0x50, 0], [0x1CF, 1], [0x2A4, 0], [0x1AA, 1]]
+  GAS_MSG = ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL")
+class TestHyundaiCanfdLKASteeringAltAltButtonsHybrid(HyundaiCanfdLKASteeringAltButtonsMixin, TestHyundaiCanfdLKASteeringAltEV):
+
+  SAFETY_PARAM = HyundaiSafetyFlags.CANFD_LKA_STEER_MSG | HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CANFD_LKA_STEER_MSG_ALT | \
+                 HyundaiSafetyFlags.CANFD_ALT_BUTTONS
+
+  TX_MSGS = [[0x110, 0], [0x1CF, 1], [0x362, 0], [0x1AA, 1]]
+  GAS_MSG = ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL")
 class TestHyundaiCanfdLKASteeringLongEV(HyundaiLongitudinalBase, TestHyundaiCanfdLKASteeringEV):
 
   SAFETY_PARAM = HyundaiSafetyFlags.CANFD_LKA_STEER_MSG | HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.EV_GAS
@@ -288,6 +312,26 @@ class TestHyundaiCanfdLFASteeringCCNC(TestHyundaiCanfdLFASteeringBase):
   def test_ccnc_tx_msgs(self):
     for msg, bus in (("CCNC_0x161", 0), ("CCNC_0x162", 0), ("MDPS", 2)):
       self.assertTrue(self._tx(self.packer.make_can_msg_safety(msg, bus, {})))
+
+
+@parameterized_class(CAMERA_SCC_COMBOS)
+class TestHyundaiCanfdLFASteeringCCNCLong(TestHyundaiCanfdLFASteeringLongBase, TestHyundaiCanfdLFASteeringCCNC):
+
+  TX_MSGS = [[0x12A, 0], [0x1E0, 0], [0x1CF, 2], [0x1A0, 0], [0x161, 0], [0x162, 0], [0xEA, 2]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x12A, 0x1E0, 0x1A0, 0x161, 0x162), 2: (0x1CF, 0xEA)}
+  FWD_BLACKLISTED_ADDRS = {0: [0x1CF, 0xEA], 2: [0x12A, 0x1E0, 0x1A0, 0x161, 0x162]}
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    if cls.__name__ == "TestHyundaiCanfdLFASteeringCCNCLong":
+      cls.packer = None
+      raise unittest.SkipTest
+
+  def test_button_sends(self):
+    for btn in range(8):
+      for main_btn in (0, 1):
+        self.assertTrue(self._tx(self._button_msg(btn, main_button=main_btn, bus=self.BUTTONS_TX_BUS)))
 
 
 if __name__ == "__main__":
