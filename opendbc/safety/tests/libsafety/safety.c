@@ -389,6 +389,7 @@ void dirty_stack(void){
   for (int i = 0; i < 4096; i++) {
     junk[i] = 0xA5U;
   }
+  (void)junk[0];
 }
 
 int set_safety_hooks_dirty_stack(uint16_t mode, uint16_t param){
