@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 
 from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
+from opendbc.car.lateral import AngleSteeringLimitsVM
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarHarness, CarDocs, CarParts, SupportType
@@ -16,6 +17,22 @@ Ecu = CarParams.Ecu
 class CarControllerParams:
   ACCEL_MIN = -3.5 # m/s^2
   ACCEL_MAX = 2.0 # m/s^2
+
+  ANGLE_LIMITS: AngleSteeringLimitsVM = AngleSteeringLimitsVM(
+    # Steering angle limits based on observed stock ADAS behavior:
+    # - LKAS max requested angle is 176.7°, but no fault occurs if higher values are requested.
+    # - LFA max stock value is 119.9°.
+    # The ADAS ECU clamps LKAS commands above 176.7° down to 176.7°,
+    # and clamps LFA commands above 119.9° down to 119.9°.
+    360,  # degrees (safe upper bound for command, allowing some margin)
+    MAX_ANGLE_RATE=5  # comfort rate limit for angle commands, in degrees per frame.
+  )
+
+  # More torque optimization
+  # The torque is calculated based on the curvature of the road and the speed of the car and it's a percentage of the maximum torque.
+  SMOOTHING_ANGLE_VEGO_MATRIX = [0, 8.5, 11, 13.8, 18]
+  SMOOTHING_ANGLE_ALPHA_MATRIX = [0.05, 0.1, 0.3, 0.6, 1]
+  SMOOTHING_ANGLE_MAX_VEGO = SMOOTHING_ANGLE_VEGO_MATRIX[-1]
 
   def __init__(self, CP):
     self.STEER_DELTA_UP = 3
@@ -33,6 +50,9 @@ class CarControllerParams:
       self.STEER_THRESHOLD = 250
       self.STEER_DELTA_UP = 2
       self.STEER_DELTA_DOWN = 3
+
+    if CP.steerControlType == CarParams.SteerControlType.angle:
+       self.STEER_THRESHOLD = 175
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.
@@ -707,6 +727,89 @@ class CAR(Platforms):
     ],
     CarSpecs(wheelbase=2.84, steerRatio=13.27),
   )
+  HYUNDAI_AZERA_HEV_7TH_GEN = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Hyundai AZERA Hybrid (with HDA II & LFA2) 2025", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_s])),
+    ],
+    CarSpecs(wheelbase=2.895, steerRatio=13.5),
+  )
+  HYUNDAI_SANTA_FE_HEV_5TH_GEN = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Hyundai Santa Fe Hybrid (with HDA II & LFA2) 2024-25", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_p])),
+      HyundaiCarDocs("Hyundai Santa Fe Hybrid (without HDA II, LFA2) 2025-26", "Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_l])),
+    ],
+    CarSpecs(wheelbase=2.81, steerRatio=13.72),
+  )
+  HYUNDAI_IONIQ_5_PE = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Hyundai Ioniq 5 PE (with HDA II & LFA2) 2025-26", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_q])),
+      HyundaiCarDocs("Hyundai Ioniq 5 PE (without HDA II, LFA2) 2025", "Highway Driving Assist & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_k])),
+    ],
+    HYUNDAI_IONIQ_5.specs,
+    flags=HyundaiFlags.EV,
+  )
+  HYUNDAI_IONIQ_9 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Hyundai Ioniq 9 (with HDA II & LFA2) 2025-26", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_m]))
+    ],
+    CarSpecs(wheelbase=3.13, steerRatio=16.02),
+    flags=HyundaiFlags.EV,
+  )
+  KIA_SPORTAGE_2026 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia Sportage (without HDA II) 2026", car_parts=CarParts.common([CarHarness.hyundai_n])),
+    ],
+    CarSpecs(wheelbase=2.756, steerRatio=13.7),
+  )
+  KIA_SPORTAGE_HEV_2026 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia Sportage Hybrid 2026", car_parts=CarParts.common([CarHarness.hyundai_n])),
+    ],
+    CarSpecs(wheelbase=2.756, steerRatio=13.7),
+  )
+  KIA_SORENTO_HEV_4TH_GEN_LFA2 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia Sorento Hybrid 2026", "All", car_parts=CarParts.common([CarHarness.hyundai_q])),
+    ],
+    CarSpecs(wheelbase=2.814, steerRatio=13.27, tireStiffnessFactor=0.65),
+  )
+  KIA_EV6_2025 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia EV6 (with HDA I) 2025", "Highway Driving Assist I", car_parts=CarParts.common([CarHarness.hyundai_p])),
+      HyundaiCarDocs("Kia EV6 (with HDA II) 2025-26", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))
+    ],
+    CarSpecs(wheelbase=2.9, steerRatio=16, tireStiffnessFactor=0.65),
+    flags=HyundaiFlags.EV,
+  )
+  KIA_EV9 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia EV9 2025-26", car_parts=CarParts.common([CarHarness.hyundai_r]))
+    ],
+    CarSpecs(wheelbase=3.1, steerRatio=16),
+    flags=HyundaiFlags.EV,
+  )
+  GENESIS_GV70_ELECTRIFIED_2ND_GEN = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Genesis GV70 Electrified 2026", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
+    ],
+    GENESIS_GV70_ELECTRIFIED_1ST_GEN.specs,
+    flags=HyundaiFlags.EV,
+  )
+  GENESIS_GV80_2025 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Genesis GV80 (3.5T Prestige Trim, with HDA II & LFA2) 2025", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_q])),
+      HyundaiCarDocs("Genesis GV80 Coupe (with HDA II & LFA2) 2025", "Highway Driving Assist II & Lane Follow Assist 2",
+                     car_parts=CarParts.common([CarHarness.hyundai_q])),
+    ],
+    GENESIS_GV80.specs,
+  )
 
 
 class Buttons:
@@ -809,7 +912,7 @@ PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z]
 CANFD_FUZZY_WHITELIST = {CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN, CAR.KIA_K8_HEV_1ST_GEN,
                          CAR.KIA_SPORTAGE_5TH_GEN,
                          # TODO: the hybrid variant is not out yet
-                         CAR.KIA_CARNIVAL_4TH_GEN}
+                         CAR.KIA_CARNIVAL_4TH_GEN, CAR.KIA_SORENTO_HEV_4TH_GEN_LFA2}
 
 # List of ECUs expected to have platform codes, camera and radar should exist on all cars
 # TODO: use abs, it has the platform code and part number on many platforms

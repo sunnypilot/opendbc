@@ -11,6 +11,7 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.crc import CRC8J1850, mk_crc8_fun
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons
+from opendbc.sunnypilot.car.hyundai.lfa_alt import mdps_aci_lv2_for_camera
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 cruise_buttons_checksum = mk_crc8_fun(CRC8J1850, init_crc=0x97, xor_out=0x97)  # mk_crc8_fun xors init with xor_out: register starts at 0
@@ -26,13 +27,16 @@ TARGET_DISTANCE_MAX = 204.6  # m
 LEAD_FILTER_RC = 0.5  # s
 
 
-def create_ccnc_mdps(packer, CAN, mdps):
+def create_ccnc_mdps(packer, CAN, mdps, lfa_alt=None):
   values = {k: v for k, v in mdps.items() if k != "COUNTER"}
 
   values.update({
     "MDPS_LkaToiActvSta": 0,
     "MDPS_LkaToiUnblSta": 1,
   })
+
+  if lfa_alt is not None:
+    values.update(mdps_aci_lv2_for_camera(mdps, lfa_alt))
 
   return packer.make_can_msg("MDPS", CAN.CAM, values)
 
@@ -131,6 +135,7 @@ def create_ccnc_alt_buttons(packer, CAN, cruise_buttons_msg, cnt, btn):
 class CcncCarController:
   def __init__(self, CP, CP_SP):
     self.ccnc_lfa_steering = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and not (CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG))
+    self.lfa_alt_steering = bool(CP_SP.flags & HyundaiFlagsSP.CANFD_LFA_ALT_STEER)
     self.ccnc_lka_alt_buttons = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and
                                      CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
     self.lead_distance_filter = FirstOrderFilter(TARGET_DISTANCE_MAX, LEAD_FILTER_RC, 5 * DT_CTRL, initialized=False)
@@ -172,7 +177,7 @@ class CcncCarController:
     if not self.ccnc_lfa_steering:
       return can_sends
 
-    can_sends.append(create_ccnc_mdps(self.packer, self.CAN, CS.mdps))
+    can_sends.append(create_ccnc_mdps(self.packer, self.CAN, CS.mdps, CS.lfa_alt if self.lfa_alt_steering else None))
 
     if self.CP.openpilotLongitudinalControl:
       if not CC.enabled or CC.hudControl.leadDistanceBars != self.lead_distance_bars_last:
