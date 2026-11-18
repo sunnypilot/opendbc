@@ -29,7 +29,7 @@ RESUME_SET = {
 }
 
 # on these cars accel/decel jump the set speed to the next coarse step; resume/set move it by one unit
-COARSE_STEP_CARS = (CAR.SEAT_ATECA_MK1, CAR.VOLKSWAGEN_GOLF_MK7)
+COARSE_STEP_CARS = (CAR.SEAT_ATECA_MK1, CAR.VOLKSWAGEN_GOLF_MK7, CAR.VOLKSWAGEN_ATLAS_MK1)
 COARSE_STEP = 10  # km/h; the imperial step is unproven, so imperial clusters press fine only
 
 
