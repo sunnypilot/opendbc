@@ -141,6 +141,8 @@ void hyundai_common_cruise_buttons_check(const int cruise_button, const bool mai
     bool res = (cruise_button != HYUNDAI_BTN_RESUME) && (cruise_button_prev == HYUNDAI_BTN_RESUME);
     if (set || res) {
       controls_allowed = true;
+      // not always a rising edge: a disengage the panda does not see leaves controls_allowed set
+      heartbeat_engaged_mismatches = 0U;
     }
 
     // exit controls on cancel press
