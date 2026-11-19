@@ -16,6 +16,7 @@ RIGHT_SIDE = RIGHT_BLINDSPOT[0]
 
 # BLINDSPOTD1/D2 are zone codes: 0 when idle, ~46-53 for a detection; lower values are noise.
 BLINDSPOT_NOISE_FLOOR = 35
+POLL_RESPONSE_SID = 0x61
 
 # Drop the session below 6 m/s (it breaks the eagle-eye camera); re-enable above 7 m/s to avoid toggling.
 MIN_BSM_DEBUG_SPEED = 6  # m/s
@@ -68,7 +69,7 @@ class EnhancedBsmCarState(EnhancedBsm):
     if timestamp != self._last_timestamp:
       self._last_timestamp = timestamp
       side = cp.vl["DEBUG"]["BLINDSPOTSIDE"]
-      if side in self._sides:
+      if side in self._sides and cp.vl["DEBUG"]["SERVICE_ID"] == POLL_RESPONSE_SID:
         self._sides[side].update(cp.vl["DEBUG"]["BLINDSPOTD1"], cp.vl["DEBUG"]["BLINDSPOTD2"])
 
     for side_state in self._sides.values():

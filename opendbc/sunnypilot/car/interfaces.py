@@ -18,7 +18,7 @@ from opendbc.car.gm.values import GMFlags
 from opendbc.car.honda.values import HondaFlags
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.car.subaru.values import SubaruFlags
-from opendbc.car.toyota.values import SECOC_CAR, TSS2_CAR, ToyotaFlags, ToyotaSafetyFlags
+from opendbc.car.toyota.values import ToyotaFlags, ToyotaSafetyFlags
 from opendbc.car.volkswagen.values import VolkswagenFlags
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks as hyundai_enable_radar_tracks
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
@@ -199,9 +199,8 @@ def _initialize_toyota(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params
       CP_SP.flags |= ToyotaFlagsSP.STOP_AND_GO_HACK.value
 
     # 0x750 is only in the long TX allowlist; TSS2 non-SecOC reaches it directly, TSS-P needs a smartDSU.
-    enhanced_bsm_car = (CP.openpilotLongitudinalControl and
-                        (CP.carFingerprint in (TSS2_CAR - SECOC_CAR) or
-                         (not CP.flags & ToyotaFlags.SECOC and bool(CP_SP.flags & ToyotaFlagsSP.SMART_DSU))))
+    enhanced_bsm_car = (CP.openpilotLongitudinalControl and not CP.flags & ToyotaFlags.SECOC and
+                        bool(CP.flags & ToyotaFlags.TSS2 or CP_SP.flags & ToyotaFlagsSP.SMART_DSU))
 
     if toyota_enhanced_bsm and enhanced_bsm_car:
       CP_SP.flags |= ToyotaFlagsSP.ENHANCED_BSM.value
