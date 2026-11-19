@@ -409,7 +409,6 @@ class MadsSafetyTestBase(unittest.TestCase):
                     "Counter should have reset; 2 mismatches after reset should not disengage")
 
   def test_heartbeat_engaged_mads_reset_on_request(self):
-    """Test that a new lateral request restarts the mismatch count"""
     self.safety.set_mads_params(True, False, False)
     self.safety.set_controls_allowed(False)
     self._rx(self._speed_msg(0))
