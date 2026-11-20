@@ -1,7 +1,9 @@
 import unittest
 
-from opendbc.car import Bus
-from opendbc.car.structs import CarParams
+from opendbc.can import CANPacker
+from opendbc.car import Bus, gen_empty_fingerprint
+from opendbc.car.structs import CarParams, CarParamsSP
+from opendbc.car.toyota.interface import CarInterface
 from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.toyota.fingerprints import FW_VERSIONS
 from opendbc.car.toyota.values import CAR, DBC, ToyotaFlags, FW_QUERY_CONFIG, PLATFORM_CODE_ECUS, \
@@ -9,6 +11,10 @@ from opendbc.car.toyota.values import CAR, DBC, ToyotaFlags, FW_QUERY_CONFIG, PL
 from opendbc.testing import fuzzy_test
 
 Ecu = CarParams.Ecu
+
+
+def get_params(car, alpha_long=False):
+  return CarInterface.get_params(car, gen_empty_fingerprint(), [], alpha_long, False, False)
 
 
 def check_fw_version(fw_version: bytes) -> bool:
@@ -35,6 +41,32 @@ class TestToyotaInterfaces(unittest.TestCase):
     for car_model, dbc in DBC.items():
       if car_model.config.flags & ToyotaFlags.TSS2 and not (car_model.config.flags & ToyotaFlags.SECOC):
         assert dbc[Bus.pt] == "toyota_nodsu_pt_generated"
+
+  def test_radar_acc_ars510(self):
+    # Radar-ACC cars have a Continental ARS510, whose ACC target is their radar point. Alpha long's radar
+    # disable only stops the radar's car-bus output; the radar bus keeps sending the ACC target.
+    for car_model in cars_with(ToyotaFlags.RADAR_ACC):
+      assert DBC[car_model][Bus.radar] == "toyota_tss2_ars510"
+      for alpha_long in (False, True):
+        assert not get_params(car_model, alpha_long).radarUnavailable
+
+  def test_ars510_once_per_radar_cycle(self):
+    # The ACC target frames repeat at 50 Hz; one report per 60 ms radar cycle (0x239 clock) keeps liveTracks
+    # inside radard's frequency window
+    RI = CarInterface.RadarInterface(get_params(CAR.TOYOTA_RAV4_TSS2_2023), CarParamsSP())
+    packer = CANPacker("toyota_tss2_ars510")
+    reports = []
+    for i in range(30):
+      msgs = [packer.make_can_msg("ACC_TARGET_1", 1, {"STATE": 5, "REL_SPEED": -3.25, "TARGET_ID": 37, "COUNTER": i % 16}),
+              packer.make_can_msg("ACC_TARGET_2", 1, {"LONG_DIST": 61.5, "LAT_DIST": 0.42, "PRESENT": 1, "COUNTER": i % 16}),
+              packer.make_can_msg("ACC_TARGET_3", 1, {"TIMESTAMP": 60000 * (1 + i // 3), "COUNTER": i % 16})]
+      rr = RI.update([(int(i * 2e7), msgs)])
+      if rr is not None:
+        reports.append(rr)
+    assert len(reports) == 10
+    assert all(not rr.errors.canError for rr in reports)
+    pt, = reports[-1].points
+    assert pt.trackId == 37 and abs(pt.dRel - 61.5) < 1e-6 and abs(pt.yRel - 0.42) < 1e-6 and abs(pt.vRel + 3.25) < 1e-6
 
   def test_essential_ecus(self):
     # Asserts standard ECUs exist for each platform
