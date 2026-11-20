@@ -41,7 +41,7 @@ class CarInterface(CarInterfaceBase):
       lka_steering = 0x50 in fingerprint[cam_can] or 0x110 in fingerprint[cam_can]
       CAN = CanBus(None, fingerprint, lka_steering)
 
-      ret.alphaLongitudinalAvailable = not (ret.flags & HyundaiFlags.CANFD_NO_RADAR_DISABLE)
+      ret.alphaLongitudinalAvailable = not (lka_steering and ret.flags & HyundaiFlags.CANFD_NO_RADAR_DISABLE)
       if lka_steering and Ecu.adas not in [fw.ecu for fw in car_fw]:
         # this needs to be figured out for cars without an ADAS ECU
         ret.alphaLongitudinalAvailable = False
