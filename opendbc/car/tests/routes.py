@@ -64,6 +64,7 @@ non_tested_cars = [
 non_tested_cars += [
   HYUNDAI.GENESIS_GV80_2025,
   HYUNDAI.HYUNDAI_IONIQ_9,
+  HYUNDAI.KIA_EV6_2025,
   HYUNDAI.KIA_EV9,
   HYUNDAI.GENESIS_GV70_ELECTRIFIED_2ND_GEN,
   HYUNDAI.HYUNDAI_SANTA_FE_HEV_5TH_GEN,
@@ -421,7 +422,5 @@ routes = [
   #CarTestRoute("bf5d5a62cc79a28e/00000002--4d370e2bc2", HYUNDAI.GENESIS_GV80_2025),
   CarTestRoute("355c475957beb901/00000005--afeab070c7", HYUNDAI.HYUNDAI_IONIQ_5_PE),  # LFA steering
   CarTestRoute("355c475957beb901/00000003--043d8a2e45", HYUNDAI.HYUNDAI_IONIQ_5_PE),  # LFA steering, openpilot longitudinal
-  CarTestRoute("5b9e290e3742036d/00000006--b19037ad2c", HYUNDAI.KIA_EV6_2025, segment=7),  # 2026, ccNC, LFA steering
-  CarTestRoute("5b9e290e3742036d/00000016--e8459b5f6e", HYUNDAI.KIA_EV6_2025, segment=2),  # 2026, ccNC, LFA steering, openpilot longitudinal
   CarTestRoute("8bae07514ce06ad4/00000008--9f43d90441", CHRYSLER.RAM_HD_5TH_GEN),  # 2024 Ram HD with alt cruise buttons
 ]
