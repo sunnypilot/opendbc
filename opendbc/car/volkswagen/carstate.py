@@ -23,6 +23,7 @@ class CarState(CarStateBase):
     self.acc_type = 0
     self.travel_assist_available = False
     self.curvature_meas = 0.
+    self.is_metric = False
 
   def update_button_enable(self, buttonEvents: list[structs.CarState.ButtonEvent]):
     if not self.CP.pcmCruise:
@@ -122,6 +123,7 @@ class CarState(CarStateBase):
 
     # Shared logic
     ret.vEgoCluster = pt_cp.vl["Kombi_01"]["KBI_angez_Geschw"] * CV.KPH_TO_MS
+    self.is_metric = not pt_cp.vl["Kombi_01"]["KBI_MFA_v_Einheit_01"]
 
     self.parse_mlb_mqb_steering_state(ret, pt_cp)
 
