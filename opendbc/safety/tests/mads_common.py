@@ -408,6 +408,24 @@ class MadsSafetyTestBase(unittest.TestCase):
     self.assertTrue(self.safety.get_controls_allowed_lateral(),
                     "Counter should have reset; 2 mismatches after reset should not disengage")
 
+  def test_heartbeat_engaged_mads_reset_on_request(self):
+    self.safety.set_mads_params(True, False, False)
+    self.safety.set_controls_allowed(False)
+    self._rx(self._speed_msg(0))
+    self.safety.set_controls_allowed_lateral(True)
+    self.safety.set_heartbeat_engaged_mads(False)
+
+    for _ in range(2):
+      self.safety.mads_heartbeat_engaged_check()
+
+    self.safety.set_controls_allowed(True)
+    self._rx(self._speed_msg(0))
+
+    for _ in range(2):
+      self.safety.mads_heartbeat_engaged_check()
+    self.assertTrue(self.safety.get_controls_allowed_lateral(),
+                    "Counter should have reset; 2 mismatches after a request should not disengage")
+
   def test_mads_button_not_engaged_without_press(self):
     """Test that MADS button in idle state does not engage lateral control"""
     try:
