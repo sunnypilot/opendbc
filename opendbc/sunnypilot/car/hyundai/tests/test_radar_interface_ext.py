@@ -112,7 +112,7 @@ class TestRadarInterfaceExt(unittest.TestCase):
       # Setup for _update test if needed
       if hasattr(RD, 'updated_messages'):
         RD.updated_messages = {RD.trigger_msg}
-      RD._update(RD.updated_messages)
+      RD._update(RD.rcp, RD.updated_messages)
 
     # Test radar fault
     if not CP.radarUnavailable and RD.rcp is not None:

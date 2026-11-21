@@ -9,7 +9,7 @@ from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
 class RadarInterfaceExt(EsccRadarInterfaceBase):
   msg_src: str
   trigger_msg: int
-  rcp: CANParser
+  rcp: CANParser | None
   pts: dict[int, structs.RadarData.RadarPoint]
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
