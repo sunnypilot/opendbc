@@ -261,6 +261,10 @@ class TestHyundaiSafetyCameraSCC(TestHyundaiSafety):
   BUTTONS_TX_BUS = 2  # tx on 2, rx on 0
   SCC_BUS = 2  # rx on 2
 
+  TX_MSGS = [[0x340, 0], [0x4F1, 2], [0x485, 0], [0x251, 2]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x340, 0x485), 2: (0x251,)}
+  FWD_BLACKLISTED_ADDRS = {0: [0x251], 2: [0x340, 0x485]}
+
   @classmethod
   def setUpClass(cls):
     if cls.__name__ == "TestHyundaiSafetyCameraSCC":
@@ -375,10 +379,10 @@ class TestHyundaiLongitudinalSafety(HyundaiLongitudinalBase, TestHyundaiSafety):
 class TestHyundaiLongitudinalSafetyCameraSCC(HyundaiLongitudinalBase, TestHyundaiSafety):
   SAFETY_PARAM = HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CAMERA_SCC
 
-  TX_MSGS = [[0x340, 0], [0x4F1, 2], [0x485, 0], [0x420, 0], [0x421, 0], [0x50A, 0], [0x389, 0], [0x4A2, 0]]
+  TX_MSGS = [[0x340, 0], [0x4F1, 2], [0x485, 0], [0x420, 0], [0x421, 0], [0x50A, 0], [0x389, 0], [0x4A2, 0], [0x251, 2]]
 
-  FWD_BLACKLISTED_ADDRS = {2: [0x340, 0x485, 0x420, 0x421, 0x50A, 0x389]}
-  RELAY_MALFUNCTION_ADDRS = {0: (0x340, 0x485, 0x421, 0x420, 0x50A, 0x389)}  # LKAS11, LFAHDA_MFC, SCC12, SCC11, SCC13, SCC14
+  FWD_BLACKLISTED_ADDRS = {0: [0x251], 2: [0x340, 0x485, 0x420, 0x421, 0x50A, 0x389]}
+  RELAY_MALFUNCTION_ADDRS = {0: (0x340, 0x485, 0x421, 0x420, 0x50A, 0x389), 2: (0x251,)}
 
   def setUp(self):
     super().setUp()

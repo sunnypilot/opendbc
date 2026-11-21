@@ -864,6 +864,16 @@
     ],
     "package": "All"
   },
+  "Genesis G70 2024": {
+    "platform": "GENESIS_G70_2024",
+    "make": "Genesis",
+    "brand": "hyundai",
+    "model": "G70",
+    "year": [
+      "2024"
+    ],
+    "package": "All"
+  },
   "Genesis G80 2017": {
     "platform": "HYUNDAI_GENESIS",
     "make": "Genesis",

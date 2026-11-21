@@ -23,6 +23,7 @@ class CarStateExt:
     self.msg_161 = {}
     self.msg_162 = {}
     self.mdps = {}
+    self.mdps12 = {}
     self.cruise_buttons_msg = {}
 
   def update_speed_limit(self, cp, cp_cam) -> float:
@@ -51,6 +52,9 @@ class CarStateExt:
     cp_cam = can_parsers[Bus.cam]
 
     self.aBasis = cp.vl["TCS13"]["aBasis"]
+
+    if self.CP.flags & HyundaiFlags.CAMERA_SCC:
+      self.mdps12 = copy.copy(cp.vl["MDPS12"])
 
     if self.CP_SP.flags & HyundaiFlagsSP.NON_SCC:
       cruise_msg = "LABEL11" if self.CP.flags & HyundaiFlags.EV else \

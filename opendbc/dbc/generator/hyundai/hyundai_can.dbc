@@ -1481,6 +1481,8 @@ BO_ 905 SCC14: 8 SCC
  SG_ ACCMode : 32|3@1+ (1,0) [0|7] "" CLU,HUD,LDWS_LKAS,ESC
  SG_ ObjGap : 56|8@1+ (1,0) [0|255] "" CLU,HUD,ESC
  SG_ ObjDistStat : 42|2@1+ (1,0) [0|3] "" XXX
+ SG_ AliveCounter : 48|4@1+ (1,0) [0|15] "" ESC
+ SG_ Checksum : 52|4@1+ (1,0) [0|15] "" ESC
 
 BO_ 1157 LFAHDA_MFC: 4 XXX
  SG_ HDA_USM : 0|2@1+ (1,0) [0|3] "" XXX

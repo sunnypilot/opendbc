@@ -8,6 +8,7 @@ from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CAR
 from opendbc.car.interfaces import CarControllerBase
 
+from opendbc.sunnypilot.car.hyundai.camera_scc import CameraSccCarController
 from opendbc.sunnypilot.car.hyundai.ccnc import CcncCarController
 from opendbc.sunnypilot.car.hyundai.escc import EsccCarController
 from opendbc.sunnypilot.car.hyundai.icbm import IntelligentCruiseButtonManagementInterface
@@ -55,10 +56,11 @@ def process_hud_alert(enabled, fingerprint, hud_control):
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-class CarController(CarControllerBase, CcncCarController, EsccCarController, LeadDataCarController, LongitudinalController, MadsCarController,
-                    IntelligentCruiseButtonManagementInterface):
+class CarController(CarControllerBase, CameraSccCarController, CcncCarController, EsccCarController, LeadDataCarController,
+                    LongitudinalController, MadsCarController, IntelligentCruiseButtonManagementInterface):
   def __init__(self, dbc_names, CP, CP_SP):
     CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
+    CameraSccCarController.__init__(self, CP)
     CcncCarController.__init__(self, CP, CP_SP)
     EsccCarController.__init__(self, CP, CP_SP)
     MadsCarController.__init__(self)
@@ -87,7 +89,8 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     hud_control = CC.hudControl
 
     # steering torque
-    new_torque = int(round(actuators.torque * self.params.STEER_MAX))
+    new_torque = int(round(actuators.torque * self.params.STEER_MAX +
+                           self.get_damping_feedforward(CC.latActive, actuators.curvature, CS.out.vEgo)))
     apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
 
     # >90 degree steering fault prevention
@@ -138,6 +141,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
 
       can_sends.extend(self.create_can_msgs(apply_steer_req, apply_torque, torque_fault, set_speed_in_units, accel,
                                             stopping, hud_control, actuators, CS, CC))
+      can_sends.extend(CameraSccCarController.update(self, CS))
 
     # Intelligent Cruise Button Management
     can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame, self.CAN))
