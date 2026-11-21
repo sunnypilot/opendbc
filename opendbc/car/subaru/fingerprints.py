@@ -183,10 +183,12 @@ FW_VERSIONS = {
       b'\xa2 !6\x00',
       b'\xa2 !`\x00',
       b'\xa2 !i\x00',
+      b'\xa2 !X\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'\n\xc0\x04\x00',
       b'\n\xc0\x04\x01',
+      b'\n\xc0\x0c\x00',
       b'\x9a\xc0\x00\x00',
       b'\x9a\xc0\x04\x00',
       b'\x9a\xc0\n\x01',
@@ -200,6 +202,7 @@ FW_VERSIONS = {
       b'\x00\x00e\x92\x00\x00\x00\x00',
       b'\x00\x00e\xa4\x00\x00\x00\x00',
       b'\x00\x00e\xa4\x1f@ (',
+      b'\x00\x00e\x92\x1f@ (',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xca!`0\x07',
@@ -213,6 +216,7 @@ FW_VERSIONS = {
       b'\xcc!`p\x07',
       b'\xcc!fp\x07',
       b'\xcc"f0\x07',
+      b'\xcc\xf1fA\x07',
       b'\xe6!`@\x07',
       b'\xe6!fp\x07',
       b'\xe6"f0\x07',
@@ -233,6 +237,7 @@ FW_VERSIONS = {
       b'\xe9\xf5B0\x00',
       b'\xe9\xf6B0\x00',
       b'\xe9\xf6F0\x00',
+      b'\xe7\xc5\x823\x00',
     ],
   },
   CAR.SUBARU_CROSSTREK_HYBRID: {
