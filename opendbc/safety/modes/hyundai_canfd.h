@@ -439,6 +439,10 @@ static safety_config hyundai_canfd_init(uint16_t param) {
         HYUNDAI_CANFD_STD_BUTTONS_RX_CHECKS(1)
       };
 
+      static RxCheck hyundai_canfd_lka_steer_msg_alt_buttons_long_rx_checks[] = {
+        HYUNDAI_CANFD_ALT_BUTTONS_RX_CHECKS(1)
+      };
+
       if (hyundai_canfd_adas_drv_interceptor && hyundai_canfd_angle_steering && hyundai_ccnc) {
         ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_ANGLE_LONG_ADAS_DRV_INTERCEPTOR_CCNC_TX_MSGS);
       } else if (hyundai_canfd_adas_drv_interceptor && hyundai_canfd_angle_steering) {
@@ -449,6 +453,10 @@ static safety_config hyundai_canfd_init(uint16_t param) {
         ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_TX_MSGS);
       } else {
         ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_TX_MSGS);
+      }
+
+      if (hyundai_canfd_alt_buttons) {
+        SET_RX_CHECKS(hyundai_canfd_lka_steer_msg_alt_buttons_long_rx_checks, ret);
       }
     } else {
       // Longitudinal checks for LFA steering
