@@ -1,6 +1,6 @@
 import unittest
 
-from opendbc.car import gen_empty_fingerprint
+from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.structs import CarParams
 from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.hyundai.interface import CarInterface
@@ -87,6 +87,31 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG
     assert CP_SP.flags & HyundaiFlagsSP.CCNC
     assert CP_SP.safetyParam & HyundaiSafetyFlagsSP.CCNC
+
+  def test_interceptor_long_ccnc_alt_buttons(self):
+    # torque HDA2 with ccNC and 0x1AA buttons: our 0x161/0x162 replace the ADAS DRV's, no cancel spam on 0x1AA
+    fingerprint = gen_empty_fingerprint()
+    fingerprint[0][ADAS_INTERCEPTOR_HEARTBEAT_MSG] = 8
+    cam_can = CanBus(None, fingerprint).CAM
+    fingerprint[cam_can] = {0x50: 16, 0x110: 32}
+    ecan = CanBus(None, fingerprint, True).ECAN
+    fingerprint[ecan].update({0x161: 32, 0x162: 32, 0x1aa: 16})
+    CP = CarInterface.get_params(CAR.KIA_CARNIVAL_4TH_GEN, fingerprint, [], True, False, False)
+    CP_SP = CarInterface.get_params_sp(CP, CAR.KIA_CARNIVAL_4TH_GEN, fingerprint, [], True, False, False)
+    assert CP.openpilotLongitudinalControl and CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS
+    assert CP_SP.flags & HyundaiFlagsSP.CCNC and CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR
+
+    CI = CarInterface(CP, CP_SP)
+    CC = structs.CarControl()
+    CC.enabled = True
+    CC.cruiseControl.cancel = True
+    CC = CC.as_reader()
+    addrs = set()
+    for i in range(100):
+      CI.update([])
+      addrs |= {addr for addr, _, _ in CI.apply(CC, structs.CarControlSP(), int(i * DT_CTRL * 1e9))[1]}
+    assert {0x161, 0x162} <= addrs
+    assert 0x1aa not in addrs
 
   def test_alternate_limits(self):
     # Alternate lateral control limits, for high torque cars, verify Panda safety mode flag is set
