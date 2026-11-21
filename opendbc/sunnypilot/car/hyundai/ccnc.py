@@ -200,8 +200,8 @@ class CcncCarController:
   def update(self, CS, CC):
     can_sends = []
 
-    if self.ccnc_lka_alt_buttons:
-      return self.create_alt_button_msgs(CS, CC)
+    if self.ccnc_lka_alt_buttons and not self.CP.openpilotLongitudinalControl:
+      can_sends.extend(self.create_alt_button_msgs(CS, CC))
 
     if not self.ccnc_hud:
       return can_sends
