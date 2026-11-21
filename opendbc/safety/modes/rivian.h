@@ -60,13 +60,13 @@ static void rivian_rx_hook(const CANPacket_t *msg) {
   // Vehicle speed
   if (msg_matches(msg, 0x208U, 0U)) {
     float speed = ((msg->data[6] << 8) | msg->data[7]) * 0.01;
-    vehicle_moving = speed > 0.0;
+    safety.vehicle_moving = speed > 0.0;
     UPDATE_VEHICLE_SPEED(speed * KPH_TO_MS);
   }
 
   // Gas pressed and second speed source for variable torque limit
   if (msg_matches(msg, 0x150U, 0U)) {
-    gas_pressed = msg->data[3] | (msg->data[4] & 0xC0U);
+    safety.gas_pressed = msg->data[3] | (msg->data[4] & 0xC0U);
 
     // Disable controls if speeds from VDM and ESP ECUs are too far apart.
     float vdm_speed = ((msg->data[5] << 8) | msg->data[6]) * 0.01 * KPH_TO_MS;
@@ -76,12 +76,12 @@ static void rivian_rx_hook(const CANPacket_t *msg) {
   // Driver torque
   if (msg_matches(msg, 0x380U, 0U)) {
     int torque_driver_new = (((msg->data[2] << 4) | (msg->data[3] >> 4))) - 2050U;
-    update_sample(&torque_driver, torque_driver_new);
+    update_sample(&safety.torque_driver, torque_driver_new);
   }
 
   // Brake pressed
   if (msg_matches(msg, 0x38fU, 0U)) {
-    brake_pressed = (msg->data[2] >> 7) & 1U;
+    safety.brake_pressed = (msg->data[2] >> 7) & 1U;
   }
 
   // Cruise state
@@ -153,7 +153,7 @@ static safety_config rivian_init(uint16_t param) {
     {0x160, 0, 5, .check_relay = true},
   };
 
-  static RxCheck rivian_rx_checks[] = {
+  static const RxCheck rivian_rx_checks[] = {
     {.msg = {{0x208, 0, 8, 50U, .max_counter = 14U}, { 0 }, { 0 }}},   // ESP_Status (speed)
     {.msg = {{0x150, 0, 7, 50U, .max_counter = 14U}, { 0 }, { 0 }}},   // VDM_PropStatus (gas pedal & 2nd speed)
     {.msg = {{0x38f, 0, 6, 50U, .max_counter = 14U}, { 0 }, { 0 }}},   // iBESP2 (brakes)

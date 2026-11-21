@@ -100,7 +100,7 @@ static void ford_rx_hook(const CANPacket_t *msg) {
   // Update in motion state from standstill signal
   if (msg_matches(msg, FORD_DesiredTorqBrk, FORD_MAIN_BUS)) {
     // Signal: VehStop_D_Stat
-    vehicle_moving = ((msg->data[3] >> 3) & 0x3U) != 1U;
+    safety.vehicle_moving = ((msg->data[3] >> 3) & 0x3U) != 1U;
   }
 
   // Update vehicle speed
@@ -123,32 +123,32 @@ static void ford_rx_hook(const CANPacket_t *msg) {
     // Signal: VehYaw_W_Actl
     // TODO: we should use the speed which results in the closest angle measurement to the desired angle
     float ford_yaw_rate = (((msg->data[2] << 8U) | msg->data[3]) * 0.0002) - 6.5;
-    float current_curvature = ford_yaw_rate / SAFETY_MAX(vehicle_speed.values[0] / VEHICLE_SPEED_FACTOR, 0.1);
+    float current_curvature = ford_yaw_rate / SAFETY_MAX(safety.vehicle_speed.values[0] / VEHICLE_SPEED_FACTOR, 0.1);
     // convert current curvature into units on CAN for comparison with desired curvature
-    update_sample(&curvature_state.meas, ROUND(current_curvature * FORD_STEERING_LIMITS.curvature_to_can));
+    update_sample(&safety.curvature_state.meas, ROUND(current_curvature * FORD_STEERING_LIMITS.curvature_to_can));
   }
 
   // Update gas pedal
   if (msg_matches(msg, FORD_EngVehicleSpThrottle, FORD_MAIN_BUS)) {
     // Pedal position: (0.1 * val) in percent
     // Signal: ApedPos_Pc_ActlArb
-    gas_pressed = (((msg->data[0] & 0x03U) << 8) | msg->data[1]) > 0U;
+    safety.gas_pressed = (((msg->data[0] & 0x03U) << 8) | msg->data[1]) > 0U;
   }
 
   // Update brake pedal and cruise state
   if (msg_matches(msg, FORD_EngBrakeData, FORD_MAIN_BUS)) {
     // Signal: BpedDrvAppl_D_Actl
-    brake_pressed = ((msg->data[0] >> 4) & 0x3U) == 2U;
+    safety.brake_pressed = ((msg->data[0] >> 4) & 0x3U) == 2U;
 
     // Signal: CcStat_D_Actl
     unsigned int cruise_state = msg->data[1] & 0x07U;
     bool cruise_engaged = (cruise_state == 4U) || (cruise_state == 5U);
     pcm_cruise_check(cruise_engaged);
-    acc_main_on = (cruise_state == 3U) || cruise_engaged;
+    safety.acc_main_on = (cruise_state == 3U) || cruise_engaged;
   }
 
   if (msg_matches(msg, FORD_Steering_Data_FD1, FORD_MAIN_BUS)) {
-    mads_button_press = GET_BIT(msg, 40U) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
+    safety.mads_button_press = GET_BIT(msg, 40U) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
   }
 }
 
@@ -205,8 +205,8 @@ static bool ford_tx_hook(const CANPacket_t *msg) {
     // Violation if resume button is pressed while controls not allowed, or
     // if cancel button is pressed when cruise isn't engaged.
     bool violation = false;
-    violation |= ((msg->data[1] >> 0) & 1U) && !cruise_engaged_prev;   // Signal: CcAslButtnCnclPress (cancel)
-    violation |= ((msg->data[3] >> 1) & 1U) && !controls_allowed;     // Signal: CcAsllButtnResPress (resume)
+    violation |= ((msg->data[1] >> 0) & 1U) && !safety.cruise_engaged_prev;   // Signal: CcAslButtnCnclPress (cancel)
+    violation |= ((msg->data[3] >> 1) & 1U) && !safety.controls_allowed;     // Signal: CcAsllButtnResPress (resume)
 
     if (violation) {
       tx = false;
@@ -273,7 +273,7 @@ static bool ford_tx_hook(const CANPacket_t *msg) {
 static safety_config ford_init(uint16_t param) {
   // warning: quality flags are not yet checked in openpilot's CAN parser,
   // this may be the cause of blocked messages
-  static RxCheck ford_rx_checks[] = {
+  static const RxCheck ford_rx_checks[] = {
     {.msg = {{FORD_BrakeSysFeatures, 0, 8, 50U, .max_counter = 15U}, { 0 }, { 0 }}},
     // FORD_EngVehicleSpThrottle2 has a counter that either randomly skips or by 2, likely ECU bug
     // Some hybrid models also experience a bug where this checksum mismatches for one or two frames under heavy acceleration with ACC

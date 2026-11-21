@@ -16,27 +16,6 @@
 #define TESLA_VEHICLE_BUS_ADDR_CHECK \
   {.msg = {{0x3DF, 1, 8, 2U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .ignore_frequency_check = true}, { 0 }, { 0 }}},    /* UI_status2 */ \
 
-static bool tesla_longitudinal = false;
-static bool tesla_fsd_14 = false;
-static bool tesla_stock_aeb = false;
-
-// Only rising edges while controls are not allowed are considered for these systems:
-// TODO: Only LKAS (non-emergency) is currently supported since we've only seen it
-static bool tesla_stock_lkas = false;
-static bool tesla_stock_lkas_prev = false;
-
-// Only Summon is currently supported due to Autopark not setting Autopark state properly
-static bool tesla_autopark = false;
-static bool tesla_autopark_prev = false;
-
-// Detected VEHICLE bus
-extern bool tesla_has_vehicle_bus;
-bool tesla_has_vehicle_bus = false;
-
-// Configured MADS screen button finger count (0 = disabled, 3-5 = expected touch-point count)
-extern uint8_t tesla_mads_screen_button_fingers;
-uint8_t tesla_mads_screen_button_fingers = 0U;
-
 static uint8_t tesla_get_counter(const CANPacket_t *msg) {
   uint8_t cnt = 0;
   if (msg->addr == 0x2b9U) {
@@ -119,7 +98,7 @@ static bool tesla_get_quality_flag_valid(const CANPacket_t *msg) {
 static int tesla_get_steer_ctrl_type(const int ctrl_type) {
   // Returns ANGLE_CONTROL-equivalent control type for FSD 14
   int steer_ctrl_type = ctrl_type;
-  if (tesla_fsd_14) {
+  if (safety_setup.tesla_fsd_14) {
     if (ctrl_type == 1) {
       steer_ctrl_type = 2;
     } else if (ctrl_type == 2) {
@@ -135,19 +114,19 @@ static void tesla_rx_hook(const CANPacket_t *msg) {
   if (msg_matches(msg, 0x370U, 0U)) {
     // Store it 1/10 deg to match steering request
     const int angle_meas_new = (((msg->data[4] & 0x3FU) << 8) | msg->data[5]) - 8192U;
-    update_sample(&angle_meas, angle_meas_new);
+    update_sample(&safety.angle_meas, angle_meas_new);
 
     const int hands_on_level = msg->data[4] >> 6;  // EPAS3S_handsOnLevel
     const int eac_status = msg->data[6] >> 5;  // EPAS3S_eacStatus
     const int eac_error_code = msg->data[2] >> 4;  // EPAS3S_eacErrorCode
 
     // Disengage on normal user override, or if high angle rate fault from user overriding extremely quickly
-    steering_disengage = (hands_on_level >= 3) || ((eac_status == 0) && (eac_error_code == 9));
+    safety.steering_disengage = (hands_on_level >= 3) || ((eac_status == 0) && (eac_error_code == 9));
   }
 
   if (msg_matches(msg, 0x3DFU, 1U)) {
-    if (tesla_mads_screen_button_fingers != 0U) {
-      mads_button_press = (msg->data[3] == tesla_mads_screen_button_fingers) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
+    if (safety_setup.tesla_mads_screen_button_fingers != 0U) {
+      safety.mads_button_press = (msg->data[3] == safety_setup.tesla_mads_screen_button_fingers) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
     }
   }
 
@@ -167,12 +146,12 @@ static void tesla_rx_hook(const CANPacket_t *msg) {
 
   // Gas pressed
   if (msg_matches(msg, 0x118U, 0U)) {
-    gas_pressed = (msg->data[4] != 0U);
+    safety.gas_pressed = (msg->data[4] != 0U);
   }
 
   // Brake pressed
   if (msg_matches(msg, 0x145U, 0U)) {
-    brake_pressed = ((msg->data[3] >> 5) & 0x03U) == 2U;
+    safety.brake_pressed = ((msg->data[3] >> 5) & 0x03U) == 2U;
   }
 
   // Cruise and Autopark/Summon state
@@ -184,13 +163,13 @@ static void tesla_rx_hook(const CANPacket_t *msg) {
                               (autopark_state == 9);    // SELFPARK_STARTED
 
     // Only consider rising edges while controls are not allowed
-    if (tesla_autopark_now && !tesla_autopark_prev && !cruise_engaged_prev) {
-      tesla_autopark = true;
+    if (tesla_autopark_now && !safety.tesla_autopark_prev && !safety.cruise_engaged_prev) {
+      safety.tesla_autopark = true;
     }
     if (!tesla_autopark_now) {
-      tesla_autopark = false;
+      safety.tesla_autopark = false;
     }
-    tesla_autopark_prev = tesla_autopark_now;
+    safety.tesla_autopark_prev = tesla_autopark_now;
 
     // Cruise state
     int cruise_state = (msg->data[1] >> 4) & 0x07U;
@@ -199,19 +178,19 @@ static void tesla_rx_hook(const CANPacket_t *msg) {
                           (cruise_state == 4) ||  // OVERRIDE
                           (cruise_state == 6) ||  // PRE_FAULT
                           (cruise_state == 7);    // PRE_CANCEL
-    cruise_engaged = cruise_engaged && !tesla_autopark;
+    cruise_engaged = cruise_engaged && !safety.tesla_autopark;
 
     pcm_cruise_check(cruise_engaged);
   }
 
   if (msg_matches(msg, 0x155U, 0U)) {
-    vehicle_moving = !GET_BIT(msg, 41U);  // ESP_vehicleStandstillSts
+    safety.vehicle_moving = !GET_BIT(msg, 41U);  // ESP_vehicleStandstillSts
   }
 
   // DAS_control
   if (msg_matches(msg, 0x2b9U, 2U)) {
     // "AEB_ACTIVE"
-    tesla_stock_aeb = (msg->data[2] & 0x03U) == 1U;
+    safety.tesla_stock_aeb = (msg->data[2] & 0x03U) == 1U;
   }
 
   // DAS_steeringControl
@@ -220,13 +199,13 @@ static void tesla_rx_hook(const CANPacket_t *msg) {
     bool tesla_stock_lkas_now = steering_control_type == tesla_get_steer_ctrl_type(2);  // "LANE_KEEP_ASSIST"
 
     // Only consider rising edges while controls are not allowed
-    if (tesla_stock_lkas_now && !tesla_stock_lkas_prev && !(controls_allowed || controls_allowed_lateral)) {
-      tesla_stock_lkas = true;
+    if (tesla_stock_lkas_now && !safety.tesla_stock_lkas_prev && !(safety.controls_allowed || safety.controls_allowed_lateral)) {
+      safety.tesla_stock_lkas = true;
     }
     if (!tesla_stock_lkas_now) {
-      tesla_stock_lkas = false;
+      safety.tesla_stock_lkas = false;
     }
-    tesla_stock_lkas_prev = tesla_stock_lkas_now;
+    safety.tesla_stock_lkas_prev = tesla_stock_lkas_now;
   }
 }
 
@@ -254,7 +233,7 @@ static bool tesla_tx_hook(const CANPacket_t *msg) {
   bool violation = false;
 
   // Don't send any messages when Autopark is active
-  if (tesla_autopark) {
+  if (safety.tesla_autopark) {
     violation = true;
   }
 
@@ -280,7 +259,7 @@ static bool tesla_tx_hook(const CANPacket_t *msg) {
       violation = true;
     }
 
-    if (tesla_stock_lkas) {
+    if (safety.tesla_stock_lkas) {
       // Don't allow any steering commands when stock LKAS is active
       violation = true;
     }
@@ -295,7 +274,7 @@ static bool tesla_tx_hook(const CANPacket_t *msg) {
     }
 
     // Don't send long/cancel messages when the stock AEB system is active
-    if (tesla_stock_aeb) {
+    if (safety.tesla_stock_aeb) {
       violation = true;
     }
 
@@ -303,7 +282,7 @@ static bool tesla_tx_hook(const CANPacket_t *msg) {
     int raw_accel_min = ((msg->data[5] & 0x0FU) << 5) | (msg->data[4] >> 3);
     int acc_state = msg->data[1] >> 4;
 
-    if (tesla_longitudinal) {
+    if (safety_setup.tesla_longitudinal) {
       // Prevent both acceleration from being negative, as this could cause the car to reverse after coming to standstill
       if ((raw_accel_max < TESLA_LONG_LIMITS.inactive_accel) && (raw_accel_min < TESLA_LONG_LIMITS.inactive_accel)) {
         violation = true;
@@ -336,19 +315,19 @@ static bool tesla_fwd_hook(int bus_num, int addr) {
   bool block_msg = false;
 
   if (bus_num == 2) {
-    if (!tesla_autopark) {
+    if (!safety.tesla_autopark) {
       // APS_eacMonitor
       if (addr == 0x27d) {
         block_msg = true;
       }
 
       // DAS_steeringControl
-      if ((addr == 0x488) && !tesla_stock_lkas) {
+      if ((addr == 0x488) && !safety.tesla_stock_lkas) {
         block_msg = true;
       }
 
       // DAS_control
-      if (tesla_longitudinal && (addr == 0x2b9) && !tesla_stock_aeb) {
+      if (safety_setup.tesla_longitudinal && (addr == 0x2b9) && !safety.tesla_stock_aeb) {
         block_msg = true;
       }
     }
@@ -371,12 +350,12 @@ static safety_config tesla_init(uint16_t param) {
   };
 
   const uint16_t TESLA_FLAG_FSD_14 = 2;
-  tesla_fsd_14 = GET_FLAG(param, TESLA_FLAG_FSD_14);
+  safety_setup.tesla_fsd_14 = GET_FLAG(param, TESLA_FLAG_FSD_14);
 
   SAFETY_UNUSED(param);
 #ifdef ALLOW_DEBUG
   const uint16_t TESLA_FLAG_LONGITUDINAL_CONTROL = 1;
-  tesla_longitudinal = GET_FLAG(param, TESLA_FLAG_LONGITUDINAL_CONTROL);
+  safety_setup.tesla_longitudinal = GET_FLAG(param, TESLA_FLAG_LONGITUDINAL_CONTROL);
 #endif
 
   const uint16_t TESLA_PARAM_SP_VEHICLE_BUS = 1;
@@ -384,43 +363,39 @@ static safety_config tesla_init(uint16_t param) {
   const uint16_t TESLA_PARAM_SP_MADS_SCREEN_BUTTON_4_FINGER = 4;
   const uint16_t TESLA_PARAM_SP_MADS_SCREEN_BUTTON_5_FINGER = 8;
 
-  tesla_has_vehicle_bus = GET_FLAG(current_safety_param_sp, TESLA_PARAM_SP_VEHICLE_BUS);
+  safety_setup.tesla_has_vehicle_bus = GET_FLAG(safety_setup.current_safety_param_sp, TESLA_PARAM_SP_VEHICLE_BUS);
 
-  if (GET_FLAG(current_safety_param_sp, TESLA_PARAM_SP_MADS_SCREEN_BUTTON_3_FINGER)) {
-    tesla_mads_screen_button_fingers = 3U;
-  } else if (GET_FLAG(current_safety_param_sp, TESLA_PARAM_SP_MADS_SCREEN_BUTTON_4_FINGER)) {
-    tesla_mads_screen_button_fingers = 4U;
-  } else if (GET_FLAG(current_safety_param_sp, TESLA_PARAM_SP_MADS_SCREEN_BUTTON_5_FINGER)) {
-    tesla_mads_screen_button_fingers = 5U;
+  if (GET_FLAG(safety_setup.current_safety_param_sp, TESLA_PARAM_SP_MADS_SCREEN_BUTTON_3_FINGER)) {
+    safety_setup.tesla_mads_screen_button_fingers = 3U;
+  } else if (GET_FLAG(safety_setup.current_safety_param_sp, TESLA_PARAM_SP_MADS_SCREEN_BUTTON_4_FINGER)) {
+    safety_setup.tesla_mads_screen_button_fingers = 4U;
+  } else if (GET_FLAG(safety_setup.current_safety_param_sp, TESLA_PARAM_SP_MADS_SCREEN_BUTTON_5_FINGER)) {
+    safety_setup.tesla_mads_screen_button_fingers = 5U;
   } else {
-    tesla_mads_screen_button_fingers = 0U;
+    safety_setup.tesla_mads_screen_button_fingers = 0U;
   }
 
-  tesla_stock_aeb = false;
-  tesla_stock_lkas = false;
-  tesla_stock_lkas_prev = false;
   // we need to assume Autopark/Summon on startup since DI_state is a low freq msg.
   // this is so that we don't fault if starting while these systems are active
-  tesla_autopark = true;
-  tesla_autopark_prev = false;
+  safety.tesla_autopark = true;
 
-  static RxCheck tesla_model3_y_rx_checks[] = {
+  static const RxCheck tesla_model3_y_rx_checks[] = {
     TESLA_COMMON_RX_CHECKS
   };
 
-  static RxCheck tesla_model3_y_vehicle_bus_rx_checks[] = {
+  static const RxCheck tesla_model3_y_vehicle_bus_rx_checks[] = {
     TESLA_COMMON_RX_CHECKS
     TESLA_VEHICLE_BUS_ADDR_CHECK
   };
 
   safety_config ret;
-  if (tesla_longitudinal) {
+  if (safety_setup.tesla_longitudinal) {
     SET_TX_MSGS(TESLA_M3_Y_LONG_TX_MSGS, ret);
   } else {
     SET_TX_MSGS(TESLA_M3_Y_TX_MSGS, ret);
   }
 
-  if (tesla_has_vehicle_bus) {
+  if (safety_setup.tesla_has_vehicle_bus) {
     SET_RX_CHECKS(tesla_model3_y_vehicle_bus_rx_checks, ret);
   } else {
     SET_RX_CHECKS(tesla_model3_y_rx_checks, ret);
