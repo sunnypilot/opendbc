@@ -89,8 +89,7 @@ class CarController(CarControllerBase, CameraSccCarController, CcncCarController
     hud_control = CC.hudControl
 
     # steering torque
-    new_torque = int(round(actuators.torque * self.params.STEER_MAX +
-                           self.get_damping_feedforward(CC.latActive, actuators.curvature, CS.out.vEgo)))
+    new_torque = int(round(actuators.torque * self.params.STEER_MAX))
     apply_torque = apply_driver_steer_torque_limits(new_torque, self.apply_torque_last, CS.out.steeringTorque, self.params)
 
     # >90 degree steering fault prevention
