@@ -37,7 +37,7 @@ class CanBus(CanBusBase):
     return self._cam
 
 
-def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon, vEgoRaw):
+def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon, vEgoRaw, lfa_button=False):
   damp_factor_v = [0., 15.6, 17.8, 22.3]
   damp_factor_lkp = [100, 100, 116, 125]
 
@@ -50,6 +50,7 @@ def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_
     "LKA_UsmMod": 0,  # hide LKAS settings
     "LKA_RcgSta": 0,
     "Damping_Gain": int(np.interp(vEgoRaw, damp_factor_v, damp_factor_lkp)),
+    "LFA_BUTTON": 1 if lfa_button else 0,
   }
 
   # Angle control doesn't support using LFA yet

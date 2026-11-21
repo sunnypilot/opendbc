@@ -113,6 +113,26 @@ class TestHyundaiFingerprint(unittest.TestCase):
     assert {0x161, 0x162} <= addrs
     assert 0x1aa not in addrs
 
+  def test_interceptor_torque_lfa_press(self):
+    # torque HDA2 presses the ADAS DRV's LFA in 0x50/0x110 like angle cars do, until its LFA icon shows
+    for cam_msgs in ({0x50: 16}, {0x50: 16, 0x110: 32}):
+      fingerprint = gen_empty_fingerprint()
+      fingerprint[0][ADAS_INTERCEPTOR_HEARTBEAT_MSG] = 8
+      fingerprint[CanBus(None, fingerprint).CAM] = dict(cam_msgs)
+      CP = CarInterface.get_params(CAR.KIA_CARNIVAL_4TH_GEN, fingerprint, [], True, False, False)
+      CP_SP = CarInterface.get_params_sp(CP, CAR.KIA_CARNIVAL_4TH_GEN, fingerprint, [], True, False, False)
+      lkas_addr = 0x110 if 0x110 in cam_msgs else 0x50
+      CI = CarInterface(CP, CP_SP)
+      CC = structs.CarControl().as_reader()
+      presses = []
+      for i in range(300):
+        CI.update([])
+        CI.CS.msg_161 = {"COUNTER": (i // 5) % 256, "LFA_ICON": 1 if i >= 150 else 0}
+        sends = CI.apply(CC, structs.CarControlSP(), int(i * DT_CTRL * 1e9))[1]
+        presses += [i for addr, dat, _ in sends if addr == lkas_addr and dat[7] & 1]
+      assert presses and max(presses) < 150, (hex(lkas_addr), presses)
+      assert all(b - a in (1, 49) for a, b in zip(presses, presses[1:], strict=False)), presses
+
   def test_alternate_limits(self):
     # Alternate lateral control limits, for high torque cars, verify Panda safety mode flag is set
     fingerprint = gen_empty_fingerprint()
