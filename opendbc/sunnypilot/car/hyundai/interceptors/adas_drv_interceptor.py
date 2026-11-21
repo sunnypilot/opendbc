@@ -54,12 +54,10 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
     }
     return packer.make_can_msg("LFA_ALT", CAN.ECAN, values)
 
-  def create_lkas_alt(self, packer, CAN, lkas_alt, msg_161, enabled, apply_angle):
-    # the camera's copy, never engaged, so the ADAS DRV is never asked to steer. The rest passes through. The ADAS DRV
-    # toggles LFA on LFA_BUTTON, not on CRUISE_BUTTONS: we press it until its LFA icon shows, then own the button for
-    # the drive so its LFA stays on for HDA and the side cars. Its 0x161 reaches us only once the interceptor diverts it
-    if not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT:
-      return []
+  def lfa_press(self, msg_161):
+    # call once per frame. The ADAS DRV toggles LFA on LFA_BUTTON in 0x50/0x110, not on CRUISE_BUTTONS: we press it until
+    # its LFA icon shows, then own the button for the drive so its LFA stays on for HDA and the side cars. Its 0x161
+    # reaches us only once the interceptor diverts it
     self.frame += 1
     counter = msg_161.get("COUNTER")
     if counter != self.dcu_161_counter:
@@ -68,7 +66,13 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
       self.dcu_161_counter = counter
     dcu_161_fresh = self.frame - self.dcu_161_frame < DCU_161_TIMEOUT_FRAMES
     self.dcu_lfa_on = self.dcu_lfa_on or (dcu_161_fresh and msg_161.get("LFA_ICON", 0) != 0)
-    press = dcu_161_fresh and not self.dcu_lfa_on and self.frame % LFA_PRESS_PERIOD < LFA_PRESS_FRAMES
+    return dcu_161_fresh and not self.dcu_lfa_on and self.frame % LFA_PRESS_PERIOD < LFA_PRESS_FRAMES
+
+  def create_lkas_alt(self, packer, CAN, lkas_alt, msg_161, enabled, apply_angle):
+    # the camera's copy, never engaged, so the ADAS DRV is never asked to steer. The rest passes through
+    if not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT:
+      return []
+    press = self.lfa_press(msg_161)
     values = {k: v for k, v in lkas_alt.items() if k not in ("CHECKSUM", "COUNTER")}
     values.update({
       "LKA_OptUsmSta": 0,

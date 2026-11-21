@@ -37,7 +37,7 @@ class CanBus(CanBusBase):
     return self._cam
 
 
-def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon):
+def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon, lfa_button=False):
   values = {
     "LKA_OptUsmSta": 2,
     "LKA_SysIndReq": 2 if enabled else 1,
@@ -47,6 +47,7 @@ def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_
     "LKA_UsmMod": 0,  # hide LKAS settings
     "LKA_RcgSta": 0,  # lane recognition status (0 for "not recognized")
     "Damping_Gain": 100,  # can potentially tuned for better perf [3, 200]
+    "LFA_BUTTON": 1 if lfa_button else 0,
   }
 
   # Angle control doesn't support using LFA yet
