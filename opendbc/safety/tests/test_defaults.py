@@ -323,8 +323,8 @@ class TestSafetyConfigs(unittest.TestCase):
         configs.add(cfg.rx_checks)
         for m in (m for i in range(cfg.rx_checks_len) for m in cfg.rx_checks[i].msg if m.addr != 0):
           # sunnypilot: slow button messages opt out, tick_copy scales their lag threshold
-          if not m.ignore_frequency_check:
-            self.assertGreaterEqual(m.frequency, 10, f"{mode=} {m.addr=:#x}: 10Hz minimum for safety signals")
+          self.assertGreaterEqual(m.frequency, 1 if m.ignore_frequency_check else 10,
+                                  f"{mode=} {m.addr=:#x}: 10Hz minimum for safety signals, tick_copy divides by it")
           self.assertTrue(m.ignore_checksum or (hooks.get_checksum != ffi.NULL and hooks.compute_checksum != ffi.NULL))
           self.assertEqual(m.ignore_counter, m.max_counter == 0)
           self.assertTrue(m.ignore_counter or hooks.get_counter != ffi.NULL)

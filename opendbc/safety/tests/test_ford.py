@@ -274,6 +274,23 @@ class TestFordSafetyBase(common.CarSafetyTest):
                                     curvature=float(curvature)):
                     self.assertEqual(should_tx, self._tx(self._lat_ctl_msg(steer_control_enabled, path_offset, path_angle, curvature, curvature_rate)))
 
+  def test_steer_allowed_mads_lateral(self):
+    speed = self.CURVATURE_ERROR_MIN_SPEED + 1
+    self.safety.set_controls_allowed(False)
+    for controls_allowed_lateral in (False, True):
+      self.safety.set_controls_allowed_lateral(controls_allowed_lateral)
+      self._set_prev_desired_angle(0)
+      self._reset_curvature_measurement(0, speed)
+      self.assertEqual(controls_allowed_lateral, self._tx(self._lat_ctl_msg(True, 0, 0, 0, 0)))
+      self.assertTrue(self._tx(self._lat_ctl_msg(False, 0, 0, 0, 0)))
+
+  def test_acc_main_on(self):
+    # CcStat_D_Actl: 3 standby, 4 and 5 engaged
+    for cruise_state in range(8):
+      msg = self.packer.make_can_msg_safety("EngBrakeData", 0, {"BpedDrvAppl_D_Actl": 1, "CcStat_D_Actl": cruise_state})
+      self.assertTrue(self._rx(msg))
+      self.assertEqual(cruise_state in (3, 4, 5), self.safety.get_acc_main_on(), f"{cruise_state=}")
+
   def test_curvature_rate_limits(self):
     """
     When the curvature error is exceeded, commanded curvature must start moving towards meas respecting rate limits.

@@ -236,6 +236,13 @@ class HondaBase(common.CarSafetyTest):
       self.assertEqual(controls_allowed, self._tx(self._send_steer_msg(0x1000)))
       self.assertEqual(controls_allowed, self._tx(self._send_steer_msg(1)))
 
+  def test_steer_safety_check_mads_lateral(self):
+    self.safety.set_controls_allowed(False)
+    for controls_allowed_lateral in (False, True):
+      self.safety.set_controls_allowed_lateral(controls_allowed_lateral)
+      self.assertTrue(self._tx(self._send_steer_msg(0x0000)))
+      self.assertEqual(controls_allowed_lateral, self._tx(self._send_steer_msg(0x1000)))
+
   def test_vehicle_moving(self):
     # XMISSION_SPEED is 0.01 kph per bit: 0.01 sets only the low byte, 2.56 only the high byte
     for speed in (0.01, 2.56):

@@ -152,10 +152,8 @@ static void hyundai_rx_hook(const CANPacket_t *msg) {
     hyundai_common_cruise_state_check(cruise_engaged);
   }
 
-  if (msg_matches(msg, 0x420U, safety_setup.hyundai_camera_scc ? 2U : 0U)) {
-    if (!safety_setup.hyundai_longitudinal) {
-      safety.acc_main_on = GET_BIT(msg, 0U);
-    }
+  if (!safety_setup.hyundai_longitudinal && msg_matches(msg, 0x420U, safety_setup.hyundai_camera_scc ? 2U : 0U)) {
+    safety.acc_main_on = GET_BIT(msg, 0U);
   }
 
   if (msg_matches(msg, 0x251U, 0U)) {

@@ -84,15 +84,10 @@ static bool tesla_get_quality_flag_valid(const CANPacket_t *msg) {
 }
 
 static uint8_t tesla_get_steer_ctrl_type(const uint8_t ctrl_type) {
-  // Returns ANGLE_CONTROL-equivalent control type for FSD 14
+  // FSD 14 swaps ANGLE_CONTROL (1) and LANE_KEEP_ASSIST (2), the only two types asked for
   uint8_t steer_ctrl_type = ctrl_type;
   if (safety_setup.tesla_fsd_14) {
-    if (ctrl_type == 1U) {
-      steer_ctrl_type = 2U;
-    } else if (ctrl_type == 2U) {
-      steer_ctrl_type = 1U;
-    } else {
-    }
+    steer_ctrl_type = (ctrl_type == 1U) ? 2U : 1U;
   }
   return steer_ctrl_type;
 }

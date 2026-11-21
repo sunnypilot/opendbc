@@ -4,12 +4,15 @@ import unittest
 
 from opendbc.car.subaru.values import SubaruSafetyFlags
 from opendbc.car.structs import CarParams
+from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
+from opendbc.sunnypilot.car.subaru.values_ext import SubaruSafetyFlagsSP
 from functools import partial
 class SubaruMsg(enum.IntEnum):
   Brake_Status      = 0x13c
   CruiseControl     = 0x240
   Throttle          = 0x40
+  Brake_Pedal       = 0x139
   Steering_Torque   = 0x119
   Wheel_Speeds      = 0x13a
   ES_LKAS           = 0x122
@@ -87,6 +90,15 @@ class TestSubaruSafetyBase(common.CarSafetyTest):
             self._rx(self._lkas_button_msg(False, mads_button_press))
             self.assertEqual(enable_mads and mads_button_press in range(1, 4),
                              self.safety.get_controls_allowed_lateral())
+
+  def test_mads_button_from_the_camera_only(self):
+    # ES_LKAS_State on the main bus is openpilot's own, not the camera's
+    self.safety.set_mads_params(True, False, False)
+    values = {"LKAS_Dash_State": 2}
+    self._rx(self.packer.make_can_msg_safety("ES_LKAS_State", SUBARU_ALT_BUS, values))
+    self.assertFalse(self.safety.get_controls_allowed_lateral())
+    self._rx(self.packer.make_can_msg_safety("ES_LKAS_State", SUBARU_CAM_BUS, values))
+    self.assertTrue(self.safety.get_controls_allowed_lateral())
 class TestSubaruStockLongitudinalSafetyBase(TestSubaruSafetyBase):
   def _cancel_msg(self, cancel, cruise_throttle=0):
     values = {"Cruise_Cancel": cancel, "Cruise_Throttle": cruise_throttle}
@@ -111,6 +123,27 @@ class TestSubaruTorqueSafetyBase(TestSubaruSafetyBase, common.DriverTorqueSteeri
     return self.packer.make_can_msg_safety("ES_LKAS", SUBARU_MAIN_BUS, values)
 class TestSubaruGen1TorqueStockLongitudinalSafety(TestSubaruStockLongitudinalSafetyBase, TestSubaruTorqueSafetyBase):
   TX_MSGS = lkas_tx_msgs(SUBARU_MAIN_BUS)
+class TestSubaruGen1StopAndGoSafety(TestSubaruGen1TorqueStockLongitudinalSafety):
+  """sunnypilot stop and go: the throttle and brake pedal the camera sees are openpilot's"""
+  STOP_AND_GO_MSGS = (SubaruMsg.Throttle, SubaruMsg.Brake_Pedal)
+
+  TX_MSGS = lkas_tx_msgs(SUBARU_MAIN_BUS) + [[addr, SUBARU_CAM_BUS] for addr in STOP_AND_GO_MSGS]
+  RELAY_MALFUNCTION_ADDRS = {**TestSubaruSafetyBase.RELAY_MALFUNCTION_ADDRS, SUBARU_CAM_BUS: STOP_AND_GO_MSGS}
+  FWD_BLACKLISTED_ADDRS = {**fwd_blacklisted_addr(), SUBARU_MAIN_BUS: list(STOP_AND_GO_MSGS)}
+
+  def setUp(self):
+    libsafety_py.libsafety.set_current_safety_param_sp(SubaruSafetyFlagsSP.STOP_AND_GO)
+    super().setUp()
+
+  def test_stop_and_go_msgs_need_the_flag(self):
+    msgs = [common.make_msg(SUBARU_CAM_BUS, addr, 8) for addr in self.STOP_AND_GO_MSGS]
+    for msg in msgs:
+      self.assertTrue(self._tx(msg))
+    self._reset_safety_hooks()  # the sunnypilot param is back to 0
+    for msg in msgs:
+      self.assertFalse(self._tx(msg))
+
+
 class TestSubaruGen2TorqueSafetyBase(TestSubaruTorqueSafetyBase):
   ALT_MAIN_BUS = SUBARU_ALT_BUS
   ALT_CAM_BUS = SUBARU_ALT_BUS

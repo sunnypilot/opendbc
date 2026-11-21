@@ -84,9 +84,9 @@ static void subaru_rx_hook(const CANPacket_t *msg) {
     update_sample(&safety.torque_driver, torque_driver_new);
   }
 
-  if ((msg->addr == MSG_SUBARU_ES_LKAS_State) && (msg->bus == SUBARU_CAM_BUS)) {
-    int lkas_hud = (msg->data[2] & 0x0CU) >> 2U;
-    if ((lkas_hud >= 1) && (lkas_hud <= 3)) {
+  if (msg_matches(msg, MSG_SUBARU_ES_LKAS_State, SUBARU_CAM_BUS)) {
+    int lkas_hud = (msg->data[2] & 0x0CU) >> 2U;  // 2 bits
+    if (lkas_hud >= 1) {
       safety.mads_button_press = MADS_BUTTON_PRESSED;
     }
   }

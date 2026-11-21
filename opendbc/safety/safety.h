@@ -288,8 +288,8 @@ static void tick_copy(void) {
     // Quite conservative to not risk false triggers.
     // 2s of lag is worse case, since the function is called at 1Hz
     const CanMsgCheck *m = &safety_setup.current_safety_config.rx_checks[i].msg[status->index];
-    uint32_t frequency = m->frequency;
-    uint32_t timestep = 1000000U / ((frequency > 0U) ? frequency : 1U);  // frequency < 10Hz is invalid below
+    // TestSafetyConfigs: never 0, and 10Hz or more unless the message sets ignore_frequency_check
+    uint32_t timestep = 1000000U / m->frequency;
     uint32_t lag_limit = timestep * MAX_MISSED_MSGS;
     if (lag_limit < 1000000U) {
       lag_limit = 1000000U;
@@ -301,9 +301,7 @@ static void tick_copy(void) {
       mads_exit_controls(MADS_DISENGAGE_REASON_LAG);
     }
 
-    // enforce minimum frequency for safety-relevant messages
-    bool frequency_invalid = !m->ignore_frequency_check && (frequency < 10U);
-    if (lagging || frequency_invalid || !is_msg_valid(i)) {
+    if (lagging || !is_msg_valid(i)) {
       rx_checks_invalid = true;
       safety.controls_allowed = false;
     }

@@ -82,11 +82,11 @@ static void nissan_rx_hook(const CANPacket_t *msg) {
     pcm_cruise_check(cruise_engaged);
   }
 
-  if ((msg->addr == 0x239U) && (msg->bus == 0U)) {
+  if (msg_matches(msg, 0x239U, 0U)) {
     safety.acc_main_on = GET_BIT(msg, 17U);
   }
 
-  if ((msg->addr == 0x1B6U) && (msg->bus == (safety_setup.nissan_alt_eps ? 2U : 1U))) {
+  if (msg_matches(msg, 0x1B6U, safety_setup.nissan_alt_eps ? 2U : 1U)) {
     safety.acc_main_on = GET_BIT(msg, 36U);
   }
 }

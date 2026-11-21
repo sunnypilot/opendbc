@@ -91,6 +91,15 @@ class TestVolkswagenMebSafetyBase(common.CarSafetyTest, common.CurvatureSteering
     self.assertFalse(self._tx(self._curvature_cmd_msg(0, steer_req=True, power=max_power)))      # steady power
     self.assertTrue(self._tx(self._curvature_cmd_msg(0, steer_req=True, power=max_power - 1)))   # decreasing power
 
+  def test_power_mads_lateral(self):
+    max_power = self.MAX_POWER_TEST
+    self.safety.set_controls_allowed(False)
+    for controls_allowed_lateral in (False, True):
+      self._set_prev_desired_power(max_power - 1)
+      self.safety.set_controls_allowed_lateral(controls_allowed_lateral)
+      # rising power is a wind-down violation only with no lateral permission at all
+      self.assertEqual(controls_allowed_lateral, self._tx(self._curvature_cmd_msg(0, steer_req=True, power=max_power)))
+
   def _speed_msg(self, speed: float):
     spd_kph = speed * 3.6
     values = {f"{s}_Radgeschw": spd_kph for s in ("VL", "VR", "HL", "HR")}

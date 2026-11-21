@@ -193,6 +193,14 @@ class TestHyundaiCanfdLKASteeringEV(TestHyundaiCanfdBase):
   STEER_MSG = "LKAS"
   GAS_MSG = ("ACCELERATOR", "ACCELERATOR_PEDAL")
 # TODO: Handle ICE and HEV configurations once we see cars that use the new messages
+class TestHyundaiCanfdLKASteeringCCNCRadarSCC(TestHyundaiCanfdLKASteeringEV):
+  """The CCNC flag frees the button message only on a camera SCC car with openpilot longitudinal"""
+
+  def setUp(self):
+    libsafety_py.libsafety.set_current_safety_param_sp(HyundaiSafetyFlagsSP.CCNC)
+    super().setUp()
+
+
 class TestHyundaiCanfdLKASteeringAltEV(TestHyundaiCanfdBase):
 
   SAFETY_PARAM = HyundaiSafetyFlags.CANFD_LKA_STEER_MSG | HyundaiSafetyFlags.EV_GAS | HyundaiSafetyFlags.CANFD_LKA_STEER_MSG_ALT

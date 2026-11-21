@@ -148,7 +148,7 @@ static void chrysler_rx_hook(const CANPacket_t *msg) {
     safety.brake_pressed = ((msg->data[0U] & 0xFU) >> 2U) == 1U;
   }
 
-  if ((safety_setup.chrysler_platform == CHRYSLER_PACIFICA) && (msg->bus == 0U) && (msg->addr == chrysler_get_addrs()->TRACTION_BUTTON)) {
+  if ((safety_setup.chrysler_platform == CHRYSLER_PACIFICA) && msg_matches(msg, chrysler_get_addrs()->TRACTION_BUTTON, 0U)) {
     safety.mads_button_press = GET_BIT(msg, 53U) ? MADS_BUTTON_PRESSED : MADS_BUTTON_NOT_PRESSED;
   }
 

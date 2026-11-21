@@ -3,7 +3,9 @@ import unittest
 
 from opendbc.car.structs import CarParams
 from opendbc.car.subaru.values import SubaruSafetyFlags
+from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
+from opendbc.sunnypilot.car.subaru.values_ext import SubaruSafetyFlagsSP
 class TestSubaruPreglobalSafety(common.CarSafetyTest, common.DriverTorqueSteeringSafetyTest):
   SAFETY_MODEL = CarParams.SafetyModel.subaruPreglobal
 
@@ -53,5 +55,24 @@ class TestSubaruPreglobalReversedDriverTorqueSafety(TestSubaruPreglobalSafety):
   SAFETY_PARAM = SubaruSafetyFlags.PREGLOBAL_REVERSED_DRIVER_TORQUE
 
   DBC = "subaru_outback_2019_generated"
+class TestSubaruPreglobalStopAndGoSafety(TestSubaruPreglobalSafety):
+  """sunnypilot stop and go: the throttle and brake pedal the camera sees are openpilot's"""
+  STOP_AND_GO_MSGS = ((0x140, 8), (0xD1, 4))
+
+  TX_MSGS = TestSubaruPreglobalSafety.TX_MSGS + [[addr, 2] for addr, _ in STOP_AND_GO_MSGS]
+
+  def setUp(self):
+    libsafety_py.libsafety.set_current_safety_param_sp(SubaruSafetyFlagsSP.STOP_AND_GO)
+    super().setUp()
+
+  def test_stop_and_go_msgs_need_the_flag(self):
+    msgs = [common.make_msg(2, addr, length) for addr, length in self.STOP_AND_GO_MSGS]
+    for msg in msgs:
+      self.assertTrue(self._tx(msg))
+    self._reset_safety_hooks()  # the sunnypilot param is back to 0
+    for msg in msgs:
+      self.assertFalse(self._tx(msg))
+
+
 if __name__ == "__main__":
   unittest.main()
