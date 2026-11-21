@@ -805,6 +805,42 @@ class TestHyundaiCanfdLKASteeringLongEV(HyundaiLongitudinalBase, TestHyundaiCanf
       self._reset_safety_hooks()
       for addr in (0x161, 0x162):
         self.assertEqual(allowed, self._tx(libsafety_py.make_CANPacket(addr, 1, bytes(32))), (safety_param_sp, hex(addr)))
+
+
+class TestHyundaiCanfdLKASteeringInterceptorLongEV(TestHyundaiCanfdLKASteeringLongEV):
+
+  SAFETY_PARAM = HyundaiSafetyFlags.CANFD_LKA_STEER_MSG | HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.EV_GAS
+  SAFETY_PARAM_SP = HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR
+
+  TX_MSGS = [[0x50, 0], [0x2A4, 0], [0x1CF, 1], [0x1256, 0], [0x12A, 1], [0x1E0, 1], [0x1A0, 1]]
+  SCANNED_ADDRS = [*common.SafetyTest.SCANNED_ADDRS, 0x1256]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x50, 0x2A4), 1: (0x1A0,)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x50, 0x2A4]}
+
+  def setUp(self):
+    libsafety_py.libsafety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
+    super().setUp()
+
+  def tearDown(self):
+    self.safety.set_current_safety_param_sp(0)
+
+  def test_tester_present_allowed(self, ecu_disable: bool = True):
+    super().test_tester_present_allowed(ecu_disable=False)
+
+
+class TestHyundaiCanfdLKASteeringAltInterceptorLongHybrid(HyundaiCanfdLKASteeringAltButtonsMixin, TestHyundaiCanfdLKASteeringInterceptorLongEV):
+
+  SAFETY_PARAM = HyundaiSafetyFlags.CANFD_LKA_STEER_MSG | HyundaiSafetyFlags.CANFD_LKA_STEER_MSG_ALT | HyundaiSafetyFlags.LONG | \
+                 HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CANFD_ALT_BUTTONS
+  SAFETY_PARAM_SP = HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR | HyundaiSafetyFlagsSP.CCNC
+
+  TX_MSGS = [[0x110, 0], [0x362, 0], [0x1CF, 1], [0x1256, 0], [0x12A, 1], [0x1E0, 1], [0x1A0, 1], [0x161, 1], [0x162, 1]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x110, 0x362), 1: (0x1A0,)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x110, 0x362]}
+
+  GAS_MSG = ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL")
+
+
 # Tests longitudinal for ICE, hybrid, EV cars with LFA steering
 class TestHyundaiCanfdLFASteeringLongBase(HyundaiLongitudinalBase, TestHyundaiCanfdLFASteeringBase):
 
