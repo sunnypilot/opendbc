@@ -8,9 +8,13 @@ from opendbc.car.hyundai.carcontroller import CarController
 from opendbc.car.hyundai.carstate import CarState
 from opendbc.car.hyundai.radar_interface import RadarInterface
 
+from opendbc.sunnypilot.car.hyundai.ccnc import ccnc_hud_enabled
 from opendbc.sunnypilot.car.hyundai.escc import ESCC_MSG
+from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import ADAS_INTERCEPTOR_HEARTBEAT_MSG
+from opendbc.sunnypilot.car.hyundai.lfa_alt import LFA_ALT_MSG, lfa_alt_steering
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_longitudinal_tune
-from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
+from opendbc.sunnypilot.car.hyundai.radar_interface_ext import has_radar_tracks
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP, ANGLE_STEERING_MODEL_BY_CAR, encode_angle_model_id
 
 ButtonType = structs.CarState.ButtonEvent.Type
 Ecu = structs.CarParams.Ecu
@@ -170,14 +174,44 @@ class CarInterface(CarInterfaceBase):
     lka_steering = 0x50 in fingerprint[cam_can] or 0x110 in fingerprint[cam_can]
     CAN = CanBus(None, fingerprint, lka_steering)
 
+    if candidate in ANGLE_STEERING_MODEL_BY_CAR or \
+       (stock_cp.flags & HyundaiFlags.CANFD and any(LFA_ALT_MSG in fingerprint[b] for b in (CAN.ECAN, CAN.ACAN, CAN.CAM))):
+      ret.flags |= HyundaiFlagsSP.CANFD_ANGLE_STEERING.value
+
+    if ret.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING:
+      stock_cp.steerControlType = structs.CarParams.SteerControlType.angle
+      stock_cp.lateralTuning.init('pid')
+      ret.safetyParam |= HyundaiSafetyFlagsSP.CANFD_ANGLE_STEERING | encode_angle_model_id(ANGLE_STEERING_MODEL_BY_CAR.get(candidate, 0))
+
+      # no longitudinal for all lka_steering angle steering
+      if lka_steering:
+        stock_cp.alphaLongitudinalAvailable = False
+        stock_cp.openpilotLongitudinalControl = False
+        stock_cp.pcmCruise = True
+        stock_cp.safetyConfigs[-1].safetyParam &= ~HyundaiSafetyFlags.LONG.value
+
     if not stock_cp.flags & HyundaiFlags.CANFD:
       # TODO-SP: add route with ESCC message for process replay
       if ESCC_MSG in fingerprint[0]:
         ret.flags |= HyundaiFlagsSP.ENHANCED_SCC.value
+    else:
+      if ADAS_INTERCEPTOR_HEARTBEAT_MSG in fingerprint[0]:
+        ret.flags |= HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR.value
+        # interceptor makes longitudinal available, the alpha long toggle decides
+        stock_cp.alphaLongitudinalAvailable = True
+        stock_cp.openpilotLongitudinalControl = alpha_long
+        stock_cp.pcmCruise = not alpha_long
+
+    # LKA steering angle cars have ccNC, its 0x161/0x162 hidden behind the ADAS DRV we intercept; set before the CCNC safety bit check below
+    if ret.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING and lka_steering and ret.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
+      ret.flags |= HyundaiFlagsSP.CCNC.value
 
     if ret.flags & HyundaiFlagsSP.ENHANCED_SCC:
       ret.safetyParam |= HyundaiSafetyFlagsSP.ESCC
       stock_cp.radarUnavailable = False
+
+    if ret.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
+      ret.safetyParam |= HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR
 
     if stock_cp.flags & HyundaiFlags.HAS_LDA_BUTTON:
       ret.safetyParam |= HyundaiSafetyFlagsSP.HAS_LDA_BUTTON
@@ -194,6 +228,9 @@ class CarInterface(CarInterfaceBase):
 
       if any(0x161 in fingerprint[b] and 0x162 in fingerprint[b] for b in (CAN.ECAN, CAN.CAM)):
         ret.flags |= HyundaiFlagsSP.CCNC.value
+
+      if Bus.radar in DBC[candidate]:
+        stock_cp.radarUnavailable = not has_radar_tracks(fingerprint, CAN.ACAN)
     else:
       # Detect smartMDPS, which bypasses EPS low-speed lockout, allowing sunnypilot to send steering commands down to 0
       if 0x2AA in fingerprint[0]:
@@ -206,10 +243,14 @@ class CarInterface(CarInterfaceBase):
       if 0x53E in fingerprint[2]:
         ret.flags |= HyundaiFlagsSP.HAS_LKAS12.value
 
-    if ret.flags & HyundaiFlagsSP.CCNC and not lka_steering:
+    if ccnc_hud_enabled(stock_cp, ret):
       ret.safetyParam |= HyundaiSafetyFlagsSP.CCNC
 
-    if ret.flags & HyundaiFlagsSP.CCNC and lka_steering:
+    if lfa_alt_steering(stock_cp, ret, fingerprint, CAN.CAM):
+      ret.flags |= HyundaiFlagsSP.CANFD_LFA_ALT_STEER.value
+      ret.safetyParam |= HyundaiSafetyFlagsSP.CANFD_LFA_ALT_STEER
+
+    if ret.flags & HyundaiFlagsSP.CCNC and lka_steering and not ret.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
       # this needs to be figured out for ccNC cars with an ADAS Driving ECU
       stock_cp.alphaLongitudinalAvailable = False
       stock_cp.openpilotLongitudinalControl = False
@@ -233,6 +274,9 @@ class CarInterface(CarInterfaceBase):
 
     ret.intelligentCruiseButtonManagementAvailable = not (stock_cp.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
 
+    if stock_cp.openpilotLongitudinalControl:
+      stock_cp.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.LONG.value
+
     return ret
 
   @staticmethod
@@ -249,7 +293,7 @@ class CarInterface(CarInterfaceBase):
       communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, 0x80 | uds.CONTROL_TYPE.DISABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
 
     if CP.openpilotLongitudinalControl and not ((CP.flags & (HyundaiFlags.CANFD_CAMERA_SCC | HyundaiFlags.CAMERA_SCC)) or
-                                                (CP_SP.flags & HyundaiFlagsSP.ENHANCED_SCC)):
+                                                (CP_SP.flags & (HyundaiFlagsSP.ENHANCED_SCC | HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR))):
       addr, bus = 0x7d0, CanBus(CP).ECAN if CP.flags & HyundaiFlags.CANFD else 0
       if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG.value:
         addr, bus = 0x730, CanBus(CP).ECAN

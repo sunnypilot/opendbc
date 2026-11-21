@@ -10,7 +10,9 @@ from enum import StrEnum
 
 from opendbc.car import Bus, structs
 from opendbc.can.parser import CANParser
-from opendbc.car.hyundai.values import HyundaiFlags, CAR
+from opendbc.car.hyundai.hyundaicanfd import CanBus
+from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC
+from opendbc.sunnypilot.car.hyundai.ccnc import ccnc_hud_enabled
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 
@@ -24,6 +26,8 @@ class CarStateExt:
     self.msg_162 = {}
     self.mdps = {}
     self.cruise_buttons_msg = {}
+    self.lkas_alt = {}
+    self.lfa_alt = {}
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -90,14 +94,36 @@ class CarStateExt:
 
     self.aBasis = cp.vl["TCS"]["aBasis"]
 
-    if self.CP_SP.flags & HyundaiFlagsSP.CCNC and not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
-      self.msg_161 = copy.copy(cp_cam.vl["CCNC_0x161"])
-      self.msg_162 = copy.copy(cp_cam.vl["CCNC_0x162"])
-      self.mdps = copy.copy(cp.vl["MDPS"])
-      self.cruise_info = copy.copy(cp_cam.vl["SCC_CONTROL"])
-      self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
+    if ccnc_hud_enabled(self.CP, self.CP_SP):
+      if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+        # the interceptor redirects the ADAS DRV ECU's copies to A-CAN once ours are seen on E-CAN
+        cp_hud = can_parsers[Bus.adas]
+      else:
+        cp_hud = cp_cam
+        self.mdps = copy.copy(cp.vl["MDPS"])
+        self.cruise_info = copy.copy(cp_cam.vl["SCC_CONTROL"])
+        self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
+        if self.CP_SP.flags & HyundaiFlagsSP.CANFD_LFA_ALT_STEER:
+          self.lfa_alt = copy.copy(cp_cam.vl["LFA_ALT"])
+      self.msg_161 = copy.copy(cp_hud.vl["CCNC_0x161"])
+      self.msg_162 = copy.copy(cp_hud.vl["CCNC_0x162"])
+
+    if self.CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT:
+      self.lkas_alt = copy.copy(cp_cam.vl["LKAS_ALT"])
 
     if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
       self.cruise_buttons_msg = copy.copy(cp.vl[self.cruise_btns_msg_canfd])
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
+
+  @staticmethod
+  def get_parser(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> dict[StrEnum, CANParser]:
+    messages = {}
+
+    if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and ccnc_hud_enabled(CP, CP_SP):
+      # stock copies reach A-CAN only after the interceptor sees ours, and we only send after canValid
+      # initializes selfdrived, so they can't gate canValid
+      messages[Bus.adas] = CANParser(DBC[CP.carFingerprint][Bus.pt], [("CCNC_0x161", float('nan')), ("CCNC_0x162", float('nan'))],
+                                     CanBus(CP).ACAN)
+
+    return messages

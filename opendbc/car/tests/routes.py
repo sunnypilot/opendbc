@@ -60,6 +60,20 @@ non_tested_cars = [
   GM.CADILLAC_XT5_NON_ACC_1ST_GEN,
 ]
 
+# HKG Angle Steering (LFA2) (Still WIP, hence why ignored)
+non_tested_cars += [
+  HYUNDAI.GENESIS_GV80_2025,
+  HYUNDAI.HYUNDAI_IONIQ_9,
+  HYUNDAI.KIA_EV6_2025,
+  HYUNDAI.KIA_EV9,
+  HYUNDAI.GENESIS_GV70_ELECTRIFIED_2ND_GEN,
+  HYUNDAI.HYUNDAI_SANTA_FE_HEV_5TH_GEN,
+  HYUNDAI.KIA_SPORTAGE_2026,
+  HYUNDAI.KIA_SPORTAGE_HEV_2026,
+  HYUNDAI.KIA_SORENTO_HEV_4TH_GEN_LFA2,
+  HYUNDAI.HYUNDAI_AZERA_HEV_7TH_GEN,
+]
+
 
 class CarTestRoute(NamedTuple):
   route: str
@@ -399,5 +413,16 @@ routes = [
   CarTestRoute("bb89d880ca0a4249/000000fb--275ef6d0d5", HYUNDAI.HYUNDAI_TUCSON_4TH_GEN, segment=5),  # 2025 hybrid, ccNC, LFA steering, openpilot longitudinal
   CarTestRoute("c36828a00b81bdab/000000e1--0186c21051", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=8),  # 2025, ccNC, LFA steering
   CarTestRoute("c36828a00b81bdab/000000e2--04a43142f7", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=8),  # 2025, ccNC, LFA steering, openpilot longitudinal
+  #CarTestRoute("afe09b9f5d3f3548/0000000b--0ac07f9835", HYUNDAI.GENESIS_GV70_ELECTRIFIED_2ND_GEN),  # openpilot longitudinal enabled
+  #CarTestRoute("51489459ad31cccc/00000001--642891d0af", HYUNDAI.HYUNDAI_SANTA_FE_HEV_5TH_GEN), # 2025 HDA2 Angle Control
+  #CarTestRoute("e1107f9d04dfb1e2/00000455--9b2328ec73", HYUNDAI.HYUNDAI_IONIQ_5_PE),  # LKA steering HDA2 LFA2
+  # CarTestRoute("71e4e67d29034771/0000001b--b7b4774ec4", HYUNDAI.HYUNDAI_IONIQ_9),  # LKA steering # Angle steering
+  #CarTestRoute("84711a8268bf3b9a|2024-11-27--00-04-53", HYUNDAI.KIA_EV6_2025),  # 2025 HDA1 Angle Control
+  #CarTestRoute("fab807792f63fea6/00000283--e3d8c65d78", HYUNDAI.KIA_EV6_2025),  # 2025 Angle Control
+  #CarTestRoute("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", HYUNDAI.KIA_EV9),  # 2025 HDA1 Angle Control
+  #CarTestRoute("1635e7fee82dec3b/00000000--aa7efe7199", HYUNDAI.KIA_SPORTAGE_HEV_2026),  # 2025 Angle Control
+  #CarTestRoute("bf5d5a62cc79a28e/00000002--4d370e2bc2", HYUNDAI.GENESIS_GV80_2025),
+  CarTestRoute("355c475957beb901/00000005--afeab070c7", HYUNDAI.HYUNDAI_IONIQ_5_PE),  # LFA steering
+  CarTestRoute("355c475957beb901/00000003--043d8a2e45", HYUNDAI.HYUNDAI_IONIQ_5_PE),  # LFA steering, openpilot longitudinal
   CarTestRoute("8bae07514ce06ad4/00000008--9f43d90441", CHRYSLER.RAM_HD_5TH_GEN),  # 2024 Ram HD with alt cruise buttons
 ]

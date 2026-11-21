@@ -3,7 +3,7 @@ import math
 from opendbc.can import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.interfaces import RadarInterfaceBase
-from opendbc.car.hyundai.values import DBC
+from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.radar_interface_ext import RadarInterfaceExt
 
@@ -14,7 +14,7 @@ RADAR_MSG_COUNT = 32
 
 
 def get_radar_can_parser(CP):
-  if Bus.radar not in DBC[CP.carFingerprint]:
+  if Bus.radar not in DBC[CP.carFingerprint] or CP.flags & HyundaiFlags.CANFD:
     return None
 
   messages = [(f"RADAR_TRACK_{addr:x}", 50) for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT)]
