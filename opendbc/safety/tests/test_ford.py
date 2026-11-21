@@ -27,6 +27,7 @@ class Buttons:
 #  * CAN with openpilot longitudinal
 #  * CAN FD with stock longitudinal
 #  * CAN FD with openpilot longitudinal
+#  * CAN FD with stock longitudinal on the 2024+ F-150 (TRON), which sends 16-byte frames
 
 class TestFordSafetyBase(common.CarSafetyTest):
   DBC = "ford_lincoln_base_pt"
@@ -444,6 +445,87 @@ class TestFordCANFDStockSafety(TestFordSafetyBase):
 
   FWD_BLACKLISTED_ADDRS = {2: [MSG_ACCDATA_3, MSG_Lane_Assist_Data1, MSG_LateralMotionControl2,
                                MSG_IPMA_Data]}
+class CANPackerTron(common.CANPackerSafety):
+  # 2024+ F-150 frames are 16 bytes, with the DBC payload in bytes 0-7. Of the messages used here, only these two are 8 bytes
+  def make_can_msg(self, name_or_addr, bus, values):
+    addr, dat, bus = super().make_can_msg(name_or_addr, bus, values)
+    return addr, dat.ljust(8 if addr in (MSG_Yaw_Data_FD1, MSG_Steering_Data_FD1) else 16, b'\x00'), bus
+class TestFordCANFDTronSafety(TestFordCANFDStockSafety):
+  SAFETY_PARAM = FordSafetyFlags.CANFD | FordSafetyFlags.TRON
+
+  # ACCDATA_3 and IPMA_Data stay the camera's
+  TX_MSGS = [
+    [MSG_Steering_Data_FD1, 0], [MSG_Steering_Data_FD1, 2], [MSG_Lane_Assist_Data1, 0], [MSG_LateralMotionControl2, 0],
+  ]
+  RELAY_MALFUNCTION_ADDRS = {0: (MSG_Lane_Assist_Data1, MSG_LateralMotionControl2)}
+
+  FWD_BLACKLISTED_ADDRS = {2: [MSG_Lane_Assist_Data1, MSG_LateralMotionControl2]}
+
+  def setUp(self):
+    super().setUp()
+    self.packer = CANPackerTron("ford_lincoln_base_pt")
+
+  @staticmethod
+  def _resized(msg, length):
+    return common.make_msg(msg[0].bus, msg[0].addr, dat=bytes(msg[0].data[0:8]).ljust(length, b'\x00'))
+
+  def test_tx_lengths(self):
+    # each message is only allowed at its own length
+    for msg, length in ((self._lat_ctl_msg(False, 0, 0, 0, 0), 16), (self._lkas_command_msg(0), 16),
+                        (self._acc_button_msg(Buttons.TJA_TOGGLE, 0), 8), (self._acc_button_msg(Buttons.TJA_TOGGLE, 2), 8)):
+      for tx_length in (8, 16):
+        self.assertEqual(tx_length == length, self._tx(self._resized(msg, tx_length)), (hex(msg[0].addr), tx_length))
+
+  def test_zero_tail(self):
+    # past the DBC payload, every bit of the 16-byte lane messages must be zero
+    for bit in range(64, 128):
+      for msg in (self._lat_ctl_msg(False, 0, 0, 0, 0), self._lkas_command_msg(0)):
+        msg[0].data[bit // 8] = 1 << (bit % 8)
+        self.assertFalse(self._tx(msg), (hex(msg[0].addr), bit))
+    self.assertTrue(self._tx(self._lat_ctl_msg(False, 0, 0, 0, 0)))
+
+  def test_stock_msgs_not_sent(self):
+    # never the camera's ACC and UI messages, at either length or with the longitudinal flag
+    accdata = self.packer.make_can_msg_safety("ACCDATA", 0, {"AccPrpl_A_Rq": -5.0, "AccPrpl_A_Pred": -5.0, "AccBrkTot_A_Rq": 0.0})
+    for param in (self.SAFETY_PARAM, self.SAFETY_PARAM | FordSafetyFlags.LONG_CONTROL):
+      self.safety.set_safety_hooks(self.SAFETY_MODEL, param)
+      for msg in (accdata, common.make_msg(0, MSG_ACCDATA_3), common.make_msg(0, MSG_IPMA_Data)):
+        for length in (8, 16):
+          self.assertFalse(self._tx(self._resized(msg, length)), (param, hex(msg[0].addr), length))
+
+  def test_rx_lengths(self):
+    # the RX checks only see a message at its own length
+    msgs = (self._speed_msg(0), self._speed_msg_2(0), self._yaw_rate_msg(0, 0), self._user_brake_msg(False),
+            self._user_gas_msg(0), self._vehicle_moving_msg(0), self._acc_button_msg(Buttons.CANCEL, 0))
+    for wrong in (None, *msgs):
+      self._reset_safety_hooks()
+      for msg in msgs:
+        self._rx(self._resized(msg, 8 if msg[0].data_len_code > 8 else 16) if msg is wrong else msg)
+      self.assertEqual(wrong is None, self.safety.safety_config_valid(), wrong and hex(wrong[0].addr))
+
+  def test_mads_lateral_without_cruise(self):
+    # MADS: the TJA button or ACC main allows the 16-byte lane messages with cruise off, and only when MADS is enabled
+    for enable_mads in (True, False):
+      for engage_msg in (self._acc_button_msg(Buttons.TJA_TOGGLE, 0),
+                         self.packer.make_can_msg_safety("EngBrakeData", 0, {"BpedDrvAppl_D_Actl": 1, "CcStat_D_Actl": 3})):
+        with self.subTest(enable_mads=enable_mads, engage_msg=hex(engage_msg[0].addr)):
+          self._reset_safety_hooks()
+          self.safety.set_mads_button_press(-1)
+          self.safety.set_acc_main_on(False)
+          self.safety.set_mads_params(enable_mads, False, False)
+          self.assertFalse(self._tx(self._lat_ctl_msg(True, 0, 0, 0, 0)))
+
+          self._rx(engage_msg)
+          self.assertFalse(self.safety.get_controls_allowed())
+          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lateral())
+          self.assertEqual(enable_mads, self._tx(self._lat_ctl_msg(True, 0, 0, 0, 0)))
+          self.assertTrue(self._tx(self._lkas_command_msg(0)))
+
+          # the lengths and the zero tail hold in MADS too
+          self.assertFalse(self._tx(self._resized(self._lat_ctl_msg(True, 0, 0, 0, 0), 8)))
+          msg = self._lat_ctl_msg(True, 0, 0, 0, 0)
+          msg[0].data[8] = 1
+          self.assertFalse(self._tx(msg))
 class TestFordLongitudinalSafetyBase(TestFordSafetyBase):
   MAX_ACCEL = 2.0  # accel is used for brakes, but openpilot can set positive values
   MIN_ACCEL = -3.5
