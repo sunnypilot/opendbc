@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define SAFETY_SET(field, val) \
   do { \
     (safety_a.state.field) = (val); \
     (safety_b.state.field) = (safety_a.state.field); \
-  } while (0)
+  } while (false)
 
 // B first, like the safety hooks
 #define SAFETY_RUN(call) \
@@ -410,8 +411,7 @@ void init_tests(void){
   // assumes autopark on safety mode init to avoid a fault. get rid of that for testing
   SAFETY_SET(tesla_autopark, false);
 
-  ignition_can = false;
-  ignition_can_cnt = 0U;
+  ignition_can_reset();
 
   safety_redundancy_fault = false;
 

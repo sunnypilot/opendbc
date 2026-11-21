@@ -94,6 +94,14 @@ class TestVolkswagenPqStockSafety(TestVolkswagenPqSafetyBase):
     # do not block resume if we are engaged already
     self.safety.set_controls_allowed(1)
     self.assertTrue(self._tx(self._button_msg(resume=True)))
+
+  def test_cruise_states(self):
+    for state in range(4):
+      self._rx(self._pcm_status_msg(False))
+      self._rx(self.packer.make_can_msg_safety("Motor_2", 0, {"MO2_Sta_GRA": state}))
+      self.assertEqual(state in (1, 2), self.safety.get_controls_allowed())
+
+
 class TestVolkswagenPqLongSafety(TestVolkswagenPqSafetyBase, common.LongitudinalAccelSafetyTest):
   SAFETY_MODEL = CarParams.SafetyModel.volkswagenPq
   SAFETY_PARAM = VolkswagenSafetyFlags.LONG_CONTROL
@@ -122,6 +130,7 @@ class TestVolkswagenPqLongSafety(TestVolkswagenPqSafetyBase, common.Longitudinal
       self._rx(self._button_msg(bus=0))
       self.assertFalse(self.safety.get_controls_allowed(), f"controls allowed on {button} with main switch off")
       self._rx(self._motor_5_msg(main_switch=True))
+      self._rx(self._button_msg(_set=(button == "set"), resume=(button == "resume"), bus=0))
       self._rx(self._button_msg(_set=(button == "set"), resume=(button == "resume"), bus=0))
       self.assertFalse(self.safety.get_controls_allowed(), f"controls allowed on {button} rising edge")
       self._rx(self._button_msg(bus=0))

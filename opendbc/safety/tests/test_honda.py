@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 import numpy as np
+from collections.abc import Callable
 
 from opendbc.car.honda.values import HondaSafetyFlags
 from opendbc.safety.tests.libsafety import libsafety_py
@@ -30,6 +31,8 @@ class Btn:
 #  * Bosch Radarless
 #    * Bosch Radarless with Longitudinal Support
 class HondaButtonEnableBase(common.CarSafetyTest):
+  _acc_state_msg: Callable[..., libsafety_py.CANPacket]
+  _button_msg: Callable[..., libsafety_py.CANPacket]
 
   # override these inherited tests since we're using button enable
   def test_disable_control_allowed_from_cruise(self):
@@ -134,6 +137,8 @@ class HondaButtonEnableBase(common.CarSafetyTest):
     self._rx(self._button_msg(Btn.SET, main_on=True))
     self.assertTrue(self.safety.get_controls_allowed())
 class HondaPcmEnableBase(common.CarSafetyTest):
+  _acc_state_msg: Callable[..., libsafety_py.CANPacket]
+  _button_msg: Callable[..., libsafety_py.CANPacket]
 
   def test_buttons(self):
     """
@@ -160,9 +165,9 @@ class HondaPcmEnableBase(common.CarSafetyTest):
             self.assertEqual(controls_allowed, self.safety.get_controls_allowed())
 class HondaBase(common.CarSafetyTest):
   MAX_BRAKE = 255
-  PT_BUS: int | None = None  # must be set when inherited
-  STEER_BUS: int | None = None  # must be set when inherited
-  BUTTONS_BUS: int | None = None  # must be set when inherited, tx on this bus, rx on PT_BUS
+  PT_BUS: int  # must be set when inherited
+  STEER_BUS: int  # must be set when inherited
+  BUTTONS_BUS: int  # must be set when inherited, tx on this bus, rx on PT_BUS
 
   RELAY_MALFUNCTION_ADDRS = {0: (0xE4, 0x194)}  # STEERING_CONTROL
 
@@ -225,9 +230,22 @@ class HondaBase(common.CarSafetyTest):
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_steer_safety_check(self):
-    self.safety.set_controls_allowed(0)
-    self.assertTrue(self._tx(self._send_steer_msg(0x0000)))
-    self.assertFalse(self._tx(self._send_steer_msg(0x1000)))
+    for controls_allowed in (False, True):
+      self.safety.set_controls_allowed(controls_allowed)
+      self.assertTrue(self._tx(self._send_steer_msg(0x0000)))
+      self.assertEqual(controls_allowed, self._tx(self._send_steer_msg(0x1000)))
+      self.assertEqual(controls_allowed, self._tx(self._send_steer_msg(1)))
+
+  def test_vehicle_moving(self):
+    # XMISSION_SPEED is 0.01 kph per bit: 0.01 sets only the low byte, 2.56 only the high byte
+    for speed in (0.01, 2.56):
+      # a brake press that was already pressed only disengages while moving
+      self._rx(self._speed_msg(0))
+      self._rx(self._user_brake_msg(1))
+      self.safety.set_controls_allowed(1)
+      self._rx(self._speed_msg(speed))
+      self._rx(self._user_brake_msg(1))
+      self.assertFalse(self.safety.get_controls_allowed())
 
   def _lkas_button_msg(self, lkas_button=False, setting_btn=0):
     values = {"CRUISE_SETTING": 1 if lkas_button else setting_btn, "COUNTER": self.cnt_button % 4}
@@ -294,6 +312,18 @@ class TestHondaNidecSafetyBase(HondaBase):
     # Used to control ACC on Nidec without pedal
     values = {"PCM_GAS": pcm_gas, "PCM_SPEED": pcm_speed}
     return self.packer.make_can_msg_safety("ACC_HUD", 0, values)
+
+  def test_alt_steer_safety_check(self):
+    # CR-V and RDX steer with 0x194
+    self.safety.set_controls_allowed(False)
+    self.assertFalse(self._tx(common.make_msg(0, 0x194, dat=b'\x10\x00\x00\x00')))
+
+  def test_brake_switch_debounce(self):
+    # brake switch alone counts as brake pressed once set for two frames
+    self._rx(self.packer.make_can_msg_safety("POWERTRAIN_DATA", self.PT_BUS, {"BRAKE_SWITCH": 1}))
+    self.assertFalse(self.safety.get_brake_pressed_prev())
+    self._rx(self.packer.make_can_msg_safety("POWERTRAIN_DATA", self.PT_BUS, {"BRAKE_SWITCH": 1}))
+    self.assertTrue(self.safety.get_brake_pressed_prev())
 
   def test_acc_hud_safety_check(self):
     for controls_allowed in [True, False]:
@@ -479,6 +509,11 @@ class TestHondaBoschSafety(HondaPcmEnableBase, TestHondaBoschSafetyBase):
   """
     Covers the Honda Bosch safety mode with stock longitudinal
   """
+
+  def test_supplemental_control(self):
+    self.assertTrue(self._tx(common.make_msg(0, 0xE5, dat=(0x10800004).to_bytes(8, "little"))))
+
+
 class TestHondaBoschAltBrakeSafety(HondaPcmEnableBase, TestHondaBoschAltBrakeSafetyBase):
   """
     Covers the Honda Bosch safety mode with stock longitudinal and an alternate brake message

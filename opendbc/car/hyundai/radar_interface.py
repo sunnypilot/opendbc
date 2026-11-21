@@ -25,43 +25,24 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
   def __init__(self, CP, CP_SP):
     RadarInterfaceBase.__init__(self, CP, CP_SP)
     RadarInterfaceExt.__init__(self, CP, CP_SP)
-    self.updated_messages = set()
     self.trigger_msg = RADAR_START_ADDR + RADAR_MSG_COUNT - 1
 
-    self.radar_off_can = CP.radarUnavailable
     self.rcp = get_radar_can_parser(CP)
-
     if self.rcp is None:
       self.initialize_radar_ext(self.trigger_msg)
+    if CP.radarUnavailable:
+      self.rcp = None
 
-  def update(self, can_strings):
-    if self.radar_off_can or (self.rcp is None):
-      return super().update(None)
-
-    vls = self.rcp.update(can_strings)
-    self.updated_messages.update(vls)
-
-    if self.trigger_msg not in self.updated_messages:
-      return None
-
-    rr = self._update(self.updated_messages)
-    self.updated_messages.clear()
-
-    return rr
-
-  def _update(self, updated_messages):
+  def _update(self, rcp, updated_messages):
     ret = structs.RadarData()
-    if self.rcp is None:
-      return ret
-
-    if not self.rcp.can_valid:
+    if not rcp.can_valid:
       ret.errors.canError = True
 
     if self.use_radar_interface_ext:
       return self.update_ext(ret)
 
     for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
-      msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
+      msg = rcp.vl[f"RADAR_TRACK_{addr:x}"]
 
       if addr not in self.pts:
         self.pts[addr] = structs.RadarData.RadarPoint()
