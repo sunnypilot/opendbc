@@ -38,6 +38,12 @@
   {0xCB, 1, 24, .check_relay = false},  /* LFA_ALT */                        \
   {0x110, 0, 32, .check_relay = true},  /* LKAS_ALT */                       \
 
+// torque steering with the ADAS DRV intercepted: our LFA steers the MDPS, the ADAS DRV's own copy is diverted
+#define HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_COMMON_TX_MSGS \
+  HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(1)                              \
+  HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(1, true)                         \
+  HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)                                \
+
 // *** Addresses checked in rx hook ***
 // EV, ICE, HYBRID: ACCELERATOR (0x35), ACCELERATOR_BRAKE_ALT (0x100), ACCELERATOR_ALT (0x105)
 #define HYUNDAI_CANFD_COMMON_RX_CHECKS(pt_bus)                                                                          \
@@ -354,9 +360,13 @@ static safety_config hyundai_canfd_init(uint16_t param) {
   };
 
   static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_TX_MSGS[] = {
+    HYUNDAI_CANFD_LKA_STEER_MSG_COMMON_TX_MSGS(0, 1)
+    HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_COMMON_TX_MSGS
+  };
+
+  static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_ALT_LONG_ADAS_DRV_INTERCEPTOR_TX_MSGS[] = {
     HYUNDAI_CANFD_LKA_STEER_MSG_ALT_COMMON_TX_MSGS(0, 1)
-    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(1, true)
-    HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)
+    HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_COMMON_TX_MSGS
   };
 
   static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_ANGLE_ADAS_DRV_INTERCEPTOR_TX_MSGS[] = {
@@ -383,9 +393,15 @@ static safety_config hyundai_canfd_init(uint16_t param) {
 
   // interceptor blocks the ADAS DRV ECU's own CCNC HUD messages, we send ours on E-CAN
   static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_CCNC_TX_MSGS[] = {
+    HYUNDAI_CANFD_LKA_STEER_MSG_COMMON_TX_MSGS(0, 1)
+    HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_COMMON_TX_MSGS
+    {0x161, 1, 32, .check_relay = false},  // CCNC_0x161
+    {0x162, 1, 32, .check_relay = false},  // CCNC_0x162
+  };
+
+  static const CanMsg HYUNDAI_CANFD_LKA_STEER_MSG_ALT_LONG_ADAS_DRV_INTERCEPTOR_CCNC_TX_MSGS[] = {
     HYUNDAI_CANFD_LKA_STEER_MSG_ALT_COMMON_TX_MSGS(0, 1)
-    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(1, true)
-    HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)
+    HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_COMMON_TX_MSGS
     {0x161, 1, 32, .check_relay = false},  // CCNC_0x161
     {0x162, 1, 32, .check_relay = false},  // CCNC_0x162
   };
@@ -448,9 +464,17 @@ static safety_config hyundai_canfd_init(uint16_t param) {
       } else if (hyundai_canfd_adas_drv_interceptor && hyundai_canfd_angle_steering) {
         ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_ANGLE_LONG_ADAS_DRV_INTERCEPTOR_TX_MSGS);
       } else if (hyundai_canfd_adas_drv_interceptor && hyundai_ccnc) {
-        ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_CCNC_TX_MSGS);
+        if (hyundai_canfd_lka_steer_msg_alt) {
+          ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_ALT_LONG_ADAS_DRV_INTERCEPTOR_CCNC_TX_MSGS);
+        } else {
+          ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_CCNC_TX_MSGS);
+        }
       } else if (hyundai_canfd_adas_drv_interceptor) {
-        ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_TX_MSGS);
+        if (hyundai_canfd_lka_steer_msg_alt) {
+          ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_ALT_LONG_ADAS_DRV_INTERCEPTOR_TX_MSGS);
+        } else {
+          ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_ADAS_DRV_INTERCEPTOR_TX_MSGS);
+        }
       } else {
         ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steer_msg_long_rx_checks, HYUNDAI_CANFD_LKA_STEER_MSG_LONG_TX_MSGS);
       }
