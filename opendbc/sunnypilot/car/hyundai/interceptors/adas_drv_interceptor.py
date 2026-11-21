@@ -96,10 +96,11 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
       "REQUESTED_SAFETY_PARAM": ADAS_DRV_INTERCEPTOR_PROTOCOL_VERSION,
       "FEATURE_1": 1,
       "FEATURE_2": 1,
-      # the ADAS DRV shows HDA and fills the side cars only on a freeway: every road is sent to it as one
+      # the ADAS DRV shows HDA and fills the side cars only on a freeway: every road is sent to it as one, with the
+      # road's own speed limit
       "FEATURE_NAV_SEGMENT": 1,
       "FEATURE_NAV_SEGMENT_UPDATE": 1,
-      "FEATURE_NAV_SEGMENT_LIMIT": 1,
+      "FEATURE_NAV_SEGMENT_LIMIT": 0,
       "FEATURE_NAV_SUMMARY": 0,
       # its curve slowdown follows the head unit's predicted path, often a turn not taken off a freeway
       "FEATURE_NAV_PROFILE": 1,
