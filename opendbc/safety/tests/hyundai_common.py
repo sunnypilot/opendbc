@@ -127,6 +127,19 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self._rx(self._button_msg(btn_cur))
         self.assertEqual(should_enable, self.safety.get_controls_allowed())
 
+  def test_set_resume_resets_heartbeat_mismatches(self):
+    for btn in (Buttons.SET, Buttons.RESUME):
+      with self.subTest(btn=btn):
+        self.safety.set_controls_allowed(1)
+        self.safety.set_heartbeat_engaged_mismatches(2)
+
+        self._rx(self._button_msg(btn))
+        self.assertEqual(2, self.safety.get_heartbeat_engaged_mismatches())
+
+        self._rx(self._button_msg(Buttons.NONE))
+        self.assertTrue(self.safety.get_controls_allowed())
+        self.assertEqual(0, self.safety.get_heartbeat_engaged_mismatches())
+
   def test_cancel_button(self):
     self.safety.set_controls_allowed(1)
     self._rx(self._button_msg(Buttons.CANCEL))
