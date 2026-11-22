@@ -91,6 +91,7 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
     return [packer.make_can_msg("LKAS_ALT", CAN.ACAN, values)]
 
   def create_adas_drv_intercept_msg(self, packer, CAN):
+    nav = int(self.CP.openpilotLongitudinalControl)
     values = {
       "REQUESTED_SAFETY_MODE": SAFETY_MODE_ADAS_SAFETY_HKG_ADAS_DRV_INTERCEPTOR,
       "REQUESTED_SAFETY_PARAM": ADAS_DRV_INTERCEPTOR_PROTOCOL_VERSION,
@@ -98,12 +99,12 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
       "FEATURE_2": 1,
       # the ADAS DRV shows HDA and fills the side cars only on a freeway: every road is sent to it as one, with the
       # road's own speed limit
-      "FEATURE_NAV_SEGMENT": 1,
-      "FEATURE_NAV_SEGMENT_UPDATE": 1,
+      "FEATURE_NAV_SEGMENT": nav,
+      "FEATURE_NAV_SEGMENT_UPDATE": nav,
       "FEATURE_NAV_SEGMENT_LIMIT": 0,
       "FEATURE_NAV_SUMMARY": 0,
       # its curve slowdown follows the head unit's predicted path, often a turn not taken off a freeway
-      "FEATURE_NAV_PROFILE": 1,
+      "FEATURE_NAV_PROFILE": nav,
     }
     return [packer.make_can_msg("ADAS_DRV_INTERCEPT_OPT", CAN.ACAN, values)]
 
