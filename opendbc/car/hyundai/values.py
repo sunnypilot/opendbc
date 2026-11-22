@@ -677,7 +677,10 @@ class CAR(Platforms):
     flags=HyundaiFlags.CHECKSUM_CRC8,
   )
   HYUNDAI_KONA_2ND_GEN = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Hyundai Kona (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_l]))],
+    [
+      HyundaiCarDocs("Hyundai Kona (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_l])),
+      HyundaiCarDocs("Hyundai Kona Hybrid (without HDA II) 2024-26", car_parts=CarParts.common([CarHarness.hyundai_l])),
+    ],
     HYUNDAI_KONA_EV_2ND_GEN.specs,
   )
   HYUNDAI_KONA_NON_SCC = HyundaiNonSccPlatformConfig(
@@ -721,7 +724,10 @@ class CAR(Platforms):
     sp_flags=HyundaiFlagsSP.NON_SCC_RADAR_FCA,
   )
   HYUNDAI_SONATA_2024 = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-26", car_parts=CarParts.common([CarHarness.hyundai_a]))],
+    [
+      HyundaiCarDocs("Hyundai Sonata (without HDA II) 2024-26", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
+      HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-26", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
+    ],
     CarSpecs(wheelbase=2.84, steerRatio=13.27),
   )
   HYUNDAI_AZERA_HEV_7TH_GEN = HyundaiCanFDPlatformConfig(
@@ -779,7 +785,7 @@ class CAR(Platforms):
   )
   KIA_EV6_2025 = HyundaiCanFDPlatformConfig(
     [
-      HyundaiCarDocs("Kia EV6 (with HDA I) 2025", "Highway Driving Assist I", car_parts=CarParts.common([CarHarness.hyundai_p])),
+      HyundaiCarDocs("Kia EV6 (without HDA II) 2025-26", "Highway Driving Assist", car_parts=CarParts.common([CarHarness.hyundai_l])),
       HyundaiCarDocs("Kia EV6 (with HDA II) 2025-26", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))
     ],
     CarSpecs(wheelbase=2.9, steerRatio=16, tireStiffnessFactor=0.65),
