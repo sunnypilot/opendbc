@@ -18,9 +18,16 @@ CAMERA = {"LFA_BUTTON": 1, "FCA_ESA_CtrlSta": 1, "LKA_StrSnd": 2, "LKA_HndsoffSn
           "ADAS_StrAnglReqVal": 30.0, "ADAS_ACIAnglTqRedcGainVal": 0.5, "CHECKSUM": 1234, "COUNTER": 77}
 
 
-def interceptor():
-  CP = SimpleNamespace(flags=HyundaiFlags.CANFD_LKA_STEER_MSG_ALT | HyundaiFlags.CANFD_LKA_STEER_MSG)
+def interceptor(long=True):
+  CP = SimpleNamespace(flags=HyundaiFlags.CANFD_LKA_STEER_MSG_ALT | HyundaiFlags.CANFD_LKA_STEER_MSG, openpilotLongitudinalControl=long)
   return AdasDrvEcuInterceptor(CP, SimpleNamespace(flags=HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR | HyundaiFlagsSP.CANFD_ANGLE_STEERING))
+
+
+class TestInterceptOpt(unittest.TestCase):
+  def test_nav_only_with_long(self):
+    for long, features in ((True, 0x4F), (False, 0x03)):
+      (_, dat, _), = interceptor(long).create_adas_drv_intercept_msg(CANPacker(DBC_NAME), SimpleNamespace(ACAN=0))
+      self.assertEqual(dat[7], features, f"long {long}")
 
 
 def lkas_alt(camera, enabled=True, angle=5.0, msg_161=None, ic=None):
