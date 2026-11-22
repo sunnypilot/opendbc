@@ -1,6 +1,6 @@
-from opendbc.car import get_safety_config, structs, uds
+from opendbc.car import Bus, get_safety_config, structs, uds
 from opendbc.car.hyundai.hyundaicanfd import CanBus
-from opendbc.car.hyundai.values import HyundaiFlags, CAR, HyundaiSafetyFlags
+from opendbc.car.hyundai.values import DBC, HyundaiFlags, CAR, HyundaiSafetyFlags
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.disable_ecu import disable_ecu
 from opendbc.car.hyundai.carcontroller import CarController

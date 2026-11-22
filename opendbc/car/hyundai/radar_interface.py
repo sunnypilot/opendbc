@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from opendbc.can import CANParser
 from opendbc.car import structs
 from opendbc.car.interfaces import RadarInterfaceBase
-from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.radar_interface_ext import RadarInterfaceExt
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, RadarType
@@ -320,7 +319,8 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
 
   def set_radar_mode(self, radar_mode: int) -> bool:
     if radar_mode not in (RadarType.OFF, RadarType.LEAD_ONLY, RadarType.FULL_RADAR):
-      raise ValueError(f"invalid Hyundai radar mode: {radar_mode}")
+      # A stale or hand-edited param must not take down card while driving.
+      return False
     if radar_mode == self._radar_mode:
       return False
 
