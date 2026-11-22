@@ -2067,12 +2067,13 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
-  "Hyundai Tucson Plug-in Hybrid 2024": {
+  "Hyundai Tucson Plug-in Hybrid 2023-24": {
     "platform": "HYUNDAI_TUCSON_4TH_GEN",
     "make": "Hyundai",
     "brand": "hyundai",
     "model": "Tucson Plug-in Hybrid",
     "year": [
+      "2023",
       "2024"
     ],
     "package": "All"
