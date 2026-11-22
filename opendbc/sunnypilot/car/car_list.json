@@ -3099,6 +3099,20 @@
     ],
     "package": "Adaptive Cruise Control (ACC)"
   },
+  "Ram ProMaster 2022-26": {
+    "platform": "RAM_PROMASTER",
+    "make": "Ram",
+    "brand": "fca_atlantis",
+    "model": "ProMaster",
+    "year": [
+      "2022",
+      "2023",
+      "2024",
+      "2025",
+      "2026"
+    ],
+    "package": "Adaptive Cruise Control (ACC) & Lane Assist"
+  },
   "Rivian R1S 2022-24": {
     "platform": "RIVIAN_R1",
     "make": "Rivian",

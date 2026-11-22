@@ -233,7 +233,7 @@ def get_checksum_state(dbc_name: str) -> ChecksumState | None:
     return ChecksumState(SignalType.XOR_CHECKSUM, xor_checksum)
   elif dbc_name.startswith("subaru_global_"):
     return ChecksumState(SignalType.SUBARU_CHECKSUM, subaru_checksum)
-  elif dbc_name.startswith("chrysler_"):
+  elif dbc_name.startswith(("chrysler_", "fca_atlantis")):
     return ChecksumState(SignalType.CHRYSLER_CHECKSUM, chrysler_checksum)
   elif dbc_name.startswith("fca_giorgio"):
     return ChecksumState(SignalType.FCA_GIORGIO_CHECKSUM, fca_giorgio_checksum)
