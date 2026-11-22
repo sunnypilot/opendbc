@@ -12,6 +12,7 @@
 #define CHRYSLER_DAS_6            0x2A6  // LKAS HUD and auto headlight control from DASM
 #define CHRYSLER_LKAS_COMMAND     0x292  // LKAS controls from DASM
 #define CHRYSLER_CRUISE_BUTTONS   0x23B  // Cruise control buttons
+#define CHRYSLER_CRUISE_BUTTONS_ALT  0x000  // Placeholder, does not exist
 #define CHRYSLER_LKAS_HEARTBIT    0x2D9  // LKAS HEARTBIT from DASM
 #define CHRYSLER_TRACTION_BUTTON  0x330  // Traction control button
 #define CHRYSLER_Center_Stack_2   0x000  // Placeholder, does not exist
@@ -25,6 +26,7 @@
 #define CHRYSLER_RAM_DT_DAS_6            0xFA
 #define CHRYSLER_RAM_DT_LKAS_COMMAND     0xA6
 #define CHRYSLER_RAM_DT_CRUISE_BUTTONS   0xB1
+#define CHRYSLER_RAM_DT_CRUISE_BUTTONS_ALT  0x00  // Placeholder, does not exist
 #define CHRYSLER_RAM_DT_LKAS_HEARTBIT    0x00  // Placeholder, does not exist
 #define CHRYSLER_RAM_DT_TRACTION_BUTTON  0x00  // Placeholder, does not exist
 #define CHRYSLER_RAM_DT_Center_Stack_2   0x28A
@@ -38,9 +40,16 @@
 #define CHRYSLER_RAM_HD_DAS_6            0x275
 #define CHRYSLER_RAM_HD_LKAS_COMMAND     0x276
 #define CHRYSLER_RAM_HD_CRUISE_BUTTONS   0x23A
+#define CHRYSLER_RAM_HD_CRUISE_BUTTONS_ALT  0x23B  // Cruise control buttons for Ram HD alt buttons
 #define CHRYSLER_RAM_HD_LKAS_HEARTBIT    0x00  // Placeholder, does not exist
 #define CHRYSLER_RAM_HD_TRACTION_BUTTON  0x00  // Placeholder, does not exist
 #define CHRYSLER_RAM_HD_Center_Stack_2   0x28A
+
+#ifdef ALLOW_DEBUG
+#define CHRYSLER_RAM_HD_COMMON_TX_MSGS                       \
+  {CHRYSLER_RAM_HD_LKAS_COMMAND, 0, 8, .check_relay = true}, \
+  {CHRYSLER_RAM_HD_DAS_6, 0, 8, .check_relay = true},
+#endif
 
 typedef enum {
   CHRYSLER_RAM_DT,
@@ -149,7 +158,7 @@ static bool chrysler_tx_hook(const CANPacket_t *msg) {
   }
 
   // FORCE CANCEL: only the cancel button press is allowed
-  if (msg->addr == CHRYSLER_ADDR(CRUISE_BUTTONS)) {
+  if ((msg->addr == CHRYSLER_ADDR(CRUISE_BUTTONS)) || (msg->addr == CHRYSLER_ADDR(CRUISE_BUTTONS_ALT))) {
     const bool is_cancel = msg->data[0] == 1U;
     const bool is_accel = msg->data[0] == 0x04U;
     const bool is_decel = msg->data[0] == 0x08U;
@@ -207,14 +216,10 @@ static safety_config chrysler_init(uint16_t param) {
     {.msg = {{CHRYSLER_RAM_HD_Center_Stack_2, 0, 8, 1U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true, .ignore_frequency_check = true}, { 0 }, { 0 }}},
   };
 
-  static const CanMsg CHRYSLER_RAM_HD_TX_MSGS[] = {
-    {CHRYSLER_RAM_HD_CRUISE_BUTTONS, 2, 3, .check_relay = false},
-    {CHRYSLER_RAM_HD_LKAS_COMMAND, 0, 8, .check_relay = true},
-    {CHRYSLER_RAM_HD_DAS_6, 0, 8, .check_relay = true},
-  };
-
   const uint32_t CHRYSLER_PARAM_RAM_HD = 2U;  // set for Ram HD platform
+  const uint16_t CHRYSLER_PARAM_SP_RAM_HD_ALT_BUTTONS = 1U;
   bool enable_ram_hd = GET_FLAG(param, CHRYSLER_PARAM_RAM_HD);
+  bool ram_hd_alt_buttons = GET_FLAG(current_safety_param_sp, CHRYSLER_PARAM_SP_RAM_HD_ALT_BUTTONS);
 #endif
 
   safety_config ret;
@@ -226,8 +231,23 @@ static safety_config chrysler_init(uint16_t param) {
     ret = BUILD_SAFETY_CFG(chrysler_ram_dt_rx_checks, CHRYSLER_RAM_DT_TX_MSGS);
 #ifdef ALLOW_DEBUG
   } else if (enable_ram_hd) {
+    static const CanMsg CHRYSLER_RAM_HD_TX_MSGS[] = {
+      CHRYSLER_RAM_HD_COMMON_TX_MSGS
+      {CHRYSLER_RAM_HD_CRUISE_BUTTONS, 2, 3, .check_relay = false},
+    };
+
+    static const CanMsg CHRYSLER_RAM_HD_ALT_BUTTONS_TX_MSGS[] = {
+      CHRYSLER_RAM_HD_COMMON_TX_MSGS
+      {CHRYSLER_RAM_HD_CRUISE_BUTTONS_ALT, 2, 3, .check_relay = false},
+    };
+
     chrysler_platform = CHRYSLER_RAM_HD;
-    ret = BUILD_SAFETY_CFG(chrysler_ram_hd_rx_checks, CHRYSLER_RAM_HD_TX_MSGS);
+    SET_RX_CHECKS(chrysler_ram_hd_rx_checks, ret);
+    if (ram_hd_alt_buttons) {
+      SET_TX_MSGS(CHRYSLER_RAM_HD_ALT_BUTTONS_TX_MSGS, ret);
+    } else {
+      SET_TX_MSGS(CHRYSLER_RAM_HD_TX_MSGS, ret);
+    }
 #endif
   } else {
     chrysler_platform = CHRYSLER_PACIFICA;
