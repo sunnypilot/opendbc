@@ -243,7 +243,6 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
                                for rt in self.radar_tracks)
     self.seen_radar_addrs = {(rt.spec.name, rt.bus): set(rt.address_range) for rt in detected_tracks}
     self.updated_messages: set[tuple[int, int]] = set()
-    self.pending_radar_can: dict[tuple[str, int], list] = {}
     self.active_radar_buses: dict[str, int] = {}
     self.trigger_msg = DEFAULT_RADAR_TRIGGER_MSG
 
@@ -292,9 +291,6 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
         if (track.spec.name, track.bus) in upgraded_tracks else parser
         for track, parser in zip(self.radar_tracks, self.radar_parsers, strict=True)
       )
-      for parser_key in upgraded_tracks:
-        self.pending_radar_can.pop(parser_key, None)
-
     discovered_tracks = []
     for (spec_name, bus), spec in updated_candidates.items():
       seen_addrs = self.seen_radar_addrs[(spec_name, bus)]
@@ -333,7 +329,6 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
 
     self.pts.clear()
     self.updated_messages.clear()
-    self.pending_radar_can.clear()
     self.active_radar_buses.clear()
 
     if radar_mode == RadarType.FULL_RADAR:
@@ -374,7 +369,6 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     for radar_parser in self.radar_parsers:
       parser_key = (radar_parser.spec.name, radar_parser.bus)
       filtered_can = []
-      parser_cycle_started = False
       parser_cycle_complete = False
       cycle_end_timestamps = []
       for mono_time, can_messages in can_strings:
@@ -385,30 +379,30 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
         ]
         if relevant_messages:
           filtered_can.append((mono_time, relevant_messages))
-          parser_cycle_started |= any(msg[0] == radar_parser.spec.start_addr for msg in relevant_messages)
           parser_cycle_complete |= any(msg[0] == radar_parser.end_addr for msg in relevant_messages)
           cycle_end_timestamps.extend(mono_time for msg in relevant_messages if msg[0] == radar_parser.end_addr)
 
-      if filtered_can:
-        if parser_cycle_started:
-          self.pending_radar_can.pop(parser_key, None)
-        pending_can = self.pending_radar_can.setdefault(parser_key, [])
-        pending_can.extend(filtered_can)
-        del pending_can[:max(0, len(pending_can) - radar_parser.msg_count * 2)]
-      if not parser_cycle_complete:
+      if not filtered_can:
         continue
 
-      vls = radar_parser.parser.update(self.pending_radar_can.pop(parser_key, []))
+      # Feed every batch straight to the parser. Holding frames back until a whole cycle was seen starved
+      # individual track messages whenever a radar burst was split across CAN batches: their timestamps went
+      # stale, the parser stopped reporting can_valid and selfdrived raised a spurious canError.
+      vls = radar_parser.parser.update(filtered_can)
       relevant_addrs = {
         addr for addr in vls
         if radar_parser.spec.start_addr <= addr <= radar_parser.end_addr
       }
       if relevant_addrs:
-        self.seen_radar_addrs.setdefault((radar_parser.spec.name, radar_parser.bus), set()).update(relevant_addrs)
+        self.seen_radar_addrs.setdefault(parser_key, set()).update(relevant_addrs)
         self.updated_messages.update((radar_parser.bus, addr) for addr in relevant_addrs)
-        for timestamp in cycle_end_timestamps:
-          if not radar_parser.cycle_timestamps or timestamp != radar_parser.cycle_timestamps[-1]:
-            radar_parser.cycle_timestamps.append(timestamp)
+
+      if not parser_cycle_complete:
+        continue
+
+      for timestamp in cycle_end_timestamps:
+        if not radar_parser.cycle_timestamps or timestamp != radar_parser.cycle_timestamps[-1]:
+          radar_parser.cycle_timestamps.append(timestamp)
       radar_cycle_complete = True
 
     if not radar_cycle_complete:
