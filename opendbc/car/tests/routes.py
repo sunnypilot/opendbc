@@ -424,5 +424,7 @@ routes = [
   #CarTestRoute("bf5d5a62cc79a28e/00000002--4d370e2bc2", HYUNDAI.GENESIS_GV80_2025),
   CarTestRoute("355c475957beb901/00000005--afeab070c7", HYUNDAI.HYUNDAI_IONIQ_5_PE),  # LFA steering
   CarTestRoute("355c475957beb901/00000003--043d8a2e45", HYUNDAI.HYUNDAI_IONIQ_5_PE),  # LFA steering, openpilot longitudinal
+  CarTestRoute("97ca61196eb73e0d/000001cf--44d7ac5bbd", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=4),  # 2024 hybrid, ccNC, LFA steering
+  CarTestRoute("97ca61196eb73e0d/000001ce--5d54b9e55d", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=1),  # 2024 hybrid, ccNC, LFA steering, openpilot longitudinal
   CarTestRoute("8bae07514ce06ad4/00000008--9f43d90441", CHRYSLER.RAM_HD_5TH_GEN),  # 2024 Ram HD with alt cruise buttons
 ]
