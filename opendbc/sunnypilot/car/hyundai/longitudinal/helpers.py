@@ -4,17 +4,11 @@ Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
 This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
-from opendbc.car import structs, DT_CTRL, rate_limit
+from opendbc.car import structs, rate_limit
 from opendbc.sunnypilot.car.hyundai.longitudinal.config import CarTuningConfig, TUNING_CONFIGS, CAR_SPECIFIC_CONFIGS
 
 JERK_THRESHOLD = 0.1
 JERK_STEP = 0.1
-
-
-class LongitudinalTuningType:
-  OFF = 0
-  DYNAMIC = 1
-  PREDICTIVE = 2
 
 
 def get_car_config(CP: structs.CarParams) -> CarTuningConfig:
@@ -32,10 +26,10 @@ def get_longitudinal_tune(CP: structs.CarParams) -> None:
   CP.longitudinalActuatorDelay = config.longitudinal_actuator_delay
 
 
-def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower) -> float:
+def jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower, dt) -> float:
   if desired_accel >= last_accel:
-    val = jerk_upper * DT_CTRL * 5
+    val = jerk_upper * dt
   else:
-    val = jerk_lower * DT_CTRL * 5
+    val = jerk_lower * dt
 
   return rate_limit(desired_accel, last_accel, -val, val)

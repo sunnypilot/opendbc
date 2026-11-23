@@ -22,7 +22,6 @@ from opendbc.car.toyota.values import ToyotaFlags
 from opendbc.car.volkswagen.values import VolkswagenFlags
 from opendbc.car.toyota.values import ToyotaSafetyFlags
 from opendbc.sunnypilot.car.hyundai.enable_radar_tracks import enable_radar_tracks as hyundai_enable_radar_tracks
-from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from opendbc.sunnypilot.car.rivian.values import RivianFlagsSP
 from opendbc.sunnypilot.car.subaru.values_ext import SubaruFlagsSP, SubaruSafetyFlagsSP
@@ -123,13 +122,8 @@ def setup_interfaces(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
 def _initialize_custom_longitudinal_tuning(CI, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
                                            params_dict: dict[str, str]) -> None:
 
-  # Hyundai Custom Longitudinal Tuning
-  if CP.brand == 'hyundai':
-    hyundai_longitudinal_tuning = int(params_dict.get("HyundaiLongitudinalTuning", 0))
-    if hyundai_longitudinal_tuning == LongitudinalTuningType.DYNAMIC:
-      CP_SP.flags |= HyundaiFlagsSP.LONG_TUNING_DYNAMIC.value
-    if hyundai_longitudinal_tuning == LongitudinalTuningType.PREDICTIVE:
-      CP_SP.flags |= HyundaiFlagsSP.LONG_TUNING_PREDICTIVE.value
+  if CP.brand == 'hyundai' and int(params_dict.get("HyundaiLongitudinalTuning", 0)) == 1:
+    CP_SP.flags |= HyundaiFlagsSP.LONG_TUNING.value
 
   _ = CI.get_longitudinal_tuning_sp(CP, CP_SP)
 
