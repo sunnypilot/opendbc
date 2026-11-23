@@ -713,7 +713,7 @@ class CAR(Platforms):
   GENESIS_G70_2024 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Genesis G70 2024", "All", car_parts=CarParts.common([CarHarness.hyundai_l]))],
     CarSpecs(wheelbase=2.83, steerRatio=15.0),
-    flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.CAMERA_SCC,
+    flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.CAMERA_SCC | HyundaiFlags.ALT_LIMITS,
   )
 
 
