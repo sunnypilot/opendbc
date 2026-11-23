@@ -153,6 +153,10 @@ void hyundai_common_cruise_buttons_check(const int cruise_button, const bool mai
       acc_main_on = !acc_main_on;
     }
 
+    if (set || res) {
+      heartbeat_engaged_mismatches = 0U;
+    }
+
     cruise_button_prev = cruise_button;
     main_button_prev = main_button;
   }

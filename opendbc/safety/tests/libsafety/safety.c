@@ -329,6 +329,14 @@ void set_heartbeat_engaged_mads(bool c){
   heartbeat_engaged_mads = c;
 }
 
+void set_heartbeat_engaged_mismatches(uint32_t c){
+  heartbeat_engaged_mismatches = c;
+}
+
+uint32_t get_heartbeat_engaged_mismatches(void){
+  return heartbeat_engaged_mismatches;
+}
+
 void set_steering_disengage(bool c){
   steering_disengage = c;
 }
