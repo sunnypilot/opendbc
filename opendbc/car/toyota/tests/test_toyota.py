@@ -1,6 +1,8 @@
 import unittest
 
+from opendbc.can import CANPacker
 from opendbc.car import Bus
+from opendbc.car.car_helpers import interfaces
 from opendbc.car.structs import CarParams
 from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.toyota.fingerprints import FW_VERSIONS
@@ -54,6 +56,21 @@ class TestToyotaInterfaces(unittest.TestCase):
 
         if car_model not in (CAR.TOYOTA_PRIUS_V, CAR.LEXUS_CTH):
           assert Ecu.eps in present_ecus
+
+  def test_radar_status(self):
+    # Only RADAR_STATUS marks the radar temporarily unavailable, RADAR_PRE_FAULT alone does not
+    car_model = CAR.TOYOTA_RAV4H
+    CarInterface = interfaces[car_model]
+    CP = CarInterface.get_non_essential_params(car_model)
+    CP_SP = CarInterface.get_non_essential_params_sp(CP, car_model)
+    RI = CarInterface.RadarInterface(CP, CP_SP)
+    packer = CANPacker(DBC[car_model][Bus.radar])
+
+    for radar_status, radar_pre_fault, unavailable in [(1, 0, False), (1, 3, False), (0, 0, True), (2, 0, True)]:
+      with self.subTest(radar_status=radar_status, radar_pre_fault=radar_pre_fault):
+        msg = packer.make_can_msg('STATUS_MSG', 1, {'RADAR_STATUS': radar_status, 'RADAR_PRE_FAULT': radar_pre_fault})
+        RI.rcp.update([(0, [msg])])
+        assert RI._update(set()).errors.radarUnavailableTemporary == unavailable
 
 
 class TestToyotaFingerprint(unittest.TestCase):
