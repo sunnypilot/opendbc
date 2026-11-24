@@ -25,6 +25,11 @@ STOP_DISTANCE_V = [3.5, 6.0]  # m
 T_FOLLOW = {1: 1.25, 2: 1.45, 3: 1.75}  # s
 TARGET_DISTANCE_MAX = 204.6  # m
 LEAD_FILTER_RC = 0.5  # s
+LANELINE_CURVATURE_NONE = 15.0  # the ADAS DRV ECU's "no lane geometry" default
+LANELINE_CURVATURE_GAIN = 1000.0  # cluster curvature counts per 1/m
+LANELINE_CURVATURE_DEADBAND = 0.0002  # 1/m, ~5 km radius
+LANELINE_CURVATURE_MAX = 6
+PATH_CURVATURE_FILTER_RC = 0.3  # s
 
 
 # the interceptor firmware toggles the DCU's main with injected presses; the DCU's cruise popups would show
@@ -50,6 +55,16 @@ def ccnc_hud_enabled(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> bool:
   return True
 
 
+def encode_laneline_curvature(curvature: float) -> float:
+  # LANELINE_CURVATURE is LANELINE_CURVATURE_NONE when the ADAS DRV ECU has no lane geometry, and counts of 1/m
+  # otherwise, signed: 0 straight, 1/m either way
+  if abs(curvature) < LANELINE_CURVATURE_DEADBAND:
+    return 0.0
+
+  mag = min(LANELINE_CURVATURE_MAX, max(1, round(abs(curvature) * LANELINE_CURVATURE_GAIN)))
+  return float(mag if curvature > 0 else -mag)
+
+
 def create_ccnc_mdps(packer, CAN, mdps, lfa_alt=None):
   values = {k: v for k, v in mdps.items() if k != "COUNTER"}
 
@@ -65,7 +80,7 @@ def create_ccnc_mdps(packer, CAN, mdps, lfa_alt=None):
 
 
 def create_ccnc_0x161(packer, CAN, frame, msg_161, enabled, lat_active, paused, long_enabled, main_cruise_enabled, gas_override,
-                      hud_control, set_speed, v_ego, lead_visible, show_distance_bars, interceptor=False):
+                      hud_control, set_speed, v_ego, lead_visible, show_distance_bars, interceptor=False, path_curvature=0.0):
   values = {k: v for k, v in msg_161.items() if k != "COUNTER"}
 
   values.update({
@@ -78,6 +93,9 @@ def create_ccnc_0x161(packer, CAN, frame, msg_161, enabled, lat_active, paused, 
     "LCA_RIGHT_ICON": 2 if lat_active else 0,
     "DAW_ICON": 0,
   })
+
+  if interceptor and lat_active and values["LANELINE_CURVATURE"] == LANELINE_CURVATURE_NONE:
+    values["LANELINE_CURVATURE"] = encode_laneline_curvature(path_curvature)
 
   # suppress consider taking a break and its chime
   if values["ALERTS_2"] == 5:
@@ -170,6 +188,7 @@ class CcncCarController:
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
     self.buttons_counter = 0
+    self.path_curvature_filter = FirstOrderFilter(0.0, PATH_CURVATURE_FILTER_RC, 5 * DT_CTRL, initialized=False)
 
   def create_alt_button_msgs(self, CS, CC):
     can_sends = []
@@ -197,7 +216,7 @@ class CcncCarController:
     set_speed = round(v_cruise_cluster * unit_conv)
     return min_speed if set_speed > max_speed else set_speed
 
-  def update(self, CS, CC):
+  def update(self, CS, CC, CC_SP):
     can_sends = []
 
     if self.ccnc_lka_alt_buttons and not self.CP.openpilotLongitudinalControl:
@@ -229,11 +248,12 @@ class CcncCarController:
       lat_active = self.mads.lat_active if self.mads.enable_mads else CC.enabled
       paused = self.mads.enable_mads and self.mads.paused
       set_speed = self._get_set_speed(CS.out.vCruiseCluster, CS.is_metric)
+      path_curvature = self.path_curvature_filter.update(CC_SP.pathCurvature)
 
       can_sends.append(create_ccnc_0x161(self.packer, self.CAN, self.frame, CS.msg_161, CC.enabled, lat_active, paused,
                                          self.CP.openpilotLongitudinalControl, CS.main_cruise_enabled, CC.cruiseControl.override,
                                          CC.hudControl, set_speed, CS.out.vEgo, self.lead_visible,
-                                         self.frame - self.distance_bar_frame < 400, self.ccnc_interceptor))
+                                         self.frame - self.distance_bar_frame < 400, self.ccnc_interceptor, path_curvature))
       can_sends.append(create_ccnc_0x162(self.packer, self.CAN, CS.msg_162, CC.enabled, self.CP.openpilotLongitudinalControl,
                                          CS.main_cruise_enabled, CC.cruiseControl.override, self.lead_visible,
                                          self.lead_distance_filter.x))
