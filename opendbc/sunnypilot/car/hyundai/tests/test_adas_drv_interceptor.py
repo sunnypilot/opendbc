@@ -8,7 +8,10 @@ import unittest
 from types import SimpleNamespace
 
 from opendbc.can import CANPacker, CANParser
-from opendbc.car.hyundai.values import HyundaiFlags
+from opendbc.car import Bus, structs
+from opendbc.car.hyundai.hyundaicanfd import CanBus
+from opendbc.car.hyundai.values import CAR, HyundaiFlags
+from opendbc.sunnypilot.car.hyundai.carstate_ext import CarStateExt
 from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import AdasDrvEcuInterceptor
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
@@ -88,3 +91,42 @@ class TestLkasAlt(unittest.TestCase):
   def test_without_camera(self):
     out, _ = lkas_alt({})
     assert out["LFA_BUTTON"] == 0 and out["LKAS_ANGLE_ACTIVE"] == 1
+
+
+def dcu_emergency(angle, long, ecan=(), acan=(), msg_161=None):
+  CP = SimpleNamespace(flags=HyundaiFlags.CANFD | HyundaiFlags.CANFD_LKA_STEER_MSG | HyundaiFlags.CANFD_LKA_STEER_MSG_ALT,
+                       openpilotLongitudinalControl=long, carFingerprint=CAR.KIA_CARNIVAL_4TH_GEN, safetyConfigs=[None])
+  CP_SP = SimpleNamespace(flags=HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR | (HyundaiFlagsSP.CANFD_ANGLE_STEERING if angle else 0))
+  CS = CarStateExt(CP, CP_SP)
+  CS.msg_161 = msg_161 or {}
+  parsers = CarStateExt.get_parser(CP, CP_SP)
+  packer, CAN = CANPacker(DBC_NAME), CanBus(CP)
+  frames = [packer.make_can_msg(n, CAN.ECAN, v) for n, v in ecan] + [packer.make_can_msg(n, CAN.ACAN, v) for n, v in acan]
+  for cp in parsers.values():
+    cp.update([(0, frames)])
+  ret, ret_sp = structs.CarState(), structs.CarStateSP()
+  CS.update_dcu_emergency(ret, ret_sp, parsers)
+  return ret, ret_sp, parsers
+
+
+class TestDcuEmergency(unittest.TestCase):
+  def test_aeb_from_ccnc_alert(self):
+    for alert, aeb in ((5, False), (11, True), (15, True), (21, False)):
+      assert dcu_emergency(True, True, msg_161={"ALERTS_1": alert})[0].stockAeb == aeb, alert
+
+  def test_lfa_copy_bus(self):
+    # the DCU's LFA reaches A-CAN only on torque cars with long, where we send our own
+    for angle, long, on_ecan in ((True, True, True), (True, False, True), (False, False, True), (False, True, False)):
+      frames = {"ecan" if on_ecan else "acan": [("LFA", {"FCA_LS_WrnSta": 2})]}
+      _, ret_sp, parsers = dcu_emergency(angle, long, **frames)
+      assert "LFA" in parsers[Bus.alt if on_ecan else Bus.adas].vl, (angle, long)
+      assert ret_sp.stockSteerIntervention, (angle, long)
+
+  def test_triggers(self):
+    for values in ({"FCA_LO_WrnSta": 1}, {"FCA_ESA_WrnSta": 1}, {"FCA_ESA_CtrlSta": 1}, {"BCA_Rear_WrnSta": 4}, {"ELK_SymbDisp": 3}):
+      assert dcu_emergency(True, True, ecan=[("LFA", values)])[1].stockSteerIntervention, values
+    assert not dcu_emergency(True, True, ecan=[("LFA", {"ELK_SymbDisp": 1})])[1].stockSteerIntervention
+    for values in ({"FCA_ESA_ActvSta": 1}, {"FCA_ESA_TqBstGainVal": 0.1}):
+      assert dcu_emergency(True, True, acan=[("LFA_ALT", values)])[1].stockSteerIntervention, values
+    for alert, hit in ((5, False), (11, True), (21, True), (26, True), (33, False)):
+      assert dcu_emergency(True, True, msg_161={"ALERTS_1": alert})[1].stockSteerIntervention == hit, alert

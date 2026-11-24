@@ -203,7 +203,7 @@ BO_ 298 LFA: 16 ADRV
  SG_ BCA_Rear_WrnSta : 57|3@1+ (1,0) [0|255] "" ADRV
  SG_ LKA_SysWrn : 60|4@1+ (1,0) [0|15] "" CLU,CGW
  SG_ FCA_LO_WrnSta : 64|1@1+ (1,0) [0|1] "" ADRV
- SG_ FCA_LS_WrnSta : 68|1@1+ (1,0) [0|1] "" ADRV
+ SG_ FCA_LS_WrnSta : 68|2@1+ (1,0) [0|3] "" ADRV
  SG_ LKA_OnOffEquip2Sta : 72|2@1+ (1,0) [0|255] "" ADRV
  SG_ LKA_UsmMod : 80|2@1+ (1,0) [0|3] "" CLU,CGW
  SG_ Info_PedtrnDst : 84|3@0+ (1,0) [0|7] "" ADAS_DRV
