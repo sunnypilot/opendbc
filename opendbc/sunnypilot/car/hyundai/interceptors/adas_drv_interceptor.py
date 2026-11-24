@@ -12,7 +12,7 @@ ADAS_DRV_INTERCEPTOR_PROTOCOL_VERSION = 1
 ADAS_INTERCEPTOR_HEARTBEAT_MSG = 0x1258
 LFA_PRESS_FRAMES = 2  # 20 ms, as the camera pulses LFA_BUTTON
 LFA_PRESS_PERIOD = 50  # 0.5 s: the ADAS DRV shows its LFA icon 120-140 ms after a pulse, a second one would toggle it off
-DCU_161_TIMEOUT_FRAMES = 15  # 3 periods of its 0x161
+DCU_161_TIMEOUT_FRAMES = 15  # 3 periods of its 0x161, or of its 0x1E0 without ccNC
 
 
 class ActvACISta(IntEnum):
@@ -57,7 +57,7 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
   def lfa_press(self, msg_161):
     # call once per frame. The ADAS DRV toggles LFA on LFA_BUTTON in 0x50/0x110, not on CRUISE_BUTTONS: we press it until
     # its LFA icon shows, then own the button for the drive so its LFA stays on for HDA and the side cars. Its 0x161
-    # reaches us only once the interceptor diverts it
+    # (0x1E0 without ccNC) reaches us only once the interceptor diverts it
     self.frame += 1
     counter = msg_161.get("COUNTER")
     if counter != self.dcu_161_counter:

@@ -24,6 +24,7 @@ class CarStateExt:
     self.aBasis = 0.0
     self.msg_161 = {}
     self.msg_162 = {}
+    self.msg_1e0 = {}
     self.mdps = {}
     self.cruise_buttons_msg = {}
     self.lkas_alt = {}
@@ -107,6 +108,8 @@ class CarStateExt:
           self.lfa_alt = copy.copy(cp_cam.vl["LFA_ALT"])
       self.msg_161 = copy.copy(cp_hud.vl["CCNC_0x161"])
       self.msg_162 = copy.copy(cp_hud.vl["CCNC_0x162"])
+    elif Bus.adas in can_parsers:
+      self.msg_1e0 = copy.copy(can_parsers[Bus.adas].vl["LFAHDA_CLUSTER"])
 
     if self.CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT:
       self.lkas_alt = copy.copy(cp_cam.vl["LKAS_ALT"])
@@ -125,5 +128,9 @@ class CarStateExt:
       # initializes selfdrived, so they can't gate canValid
       messages[Bus.adas] = CANParser(DBC[CP.carFingerprint][Bus.pt], [("CCNC_0x161", float('nan')), ("CCNC_0x162", float('nan'))],
                                      CanBus(CP).ACAN)
+    elif CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and \
+         CP.openpilotLongitudinalControl:
+      # no ccNC: the ADAS DRV ECU's LFA state is in its 0x1E0, redirected to A-CAN once ours is seen on E-CAN
+      messages[Bus.adas] = CANParser(DBC[CP.carFingerprint][Bus.pt], [("LFAHDA_CLUSTER", float('nan'))], CanBus(CP).ACAN)
 
     return messages

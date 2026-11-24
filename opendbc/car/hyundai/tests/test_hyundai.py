@@ -1,6 +1,6 @@
 import unittest
 
-from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
+from opendbc.car import Bus, DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.structs import CarParams
 from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.hyundai.interface import CarInterface
@@ -127,11 +127,32 @@ class TestHyundaiFingerprint(unittest.TestCase):
       presses = []
       for i in range(300):
         CI.update([])
-        CI.CS.msg_161 = {"COUNTER": (i // 5) % 256, "LFA_ICON": 1 if i >= 150 else 0}
+        CI.CS.msg_1e0 = {"COUNTER": (i // 5) % 256, "LFA_ICON": 1 if i >= 150 else 0}  # no ccNC: its 0x1E0
         sends = CI.apply(CC, structs.CarControlSP(), int(i * DT_CTRL * 1e9))[1]
         presses += [i for addr, dat, _ in sends if addr == lkas_addr and dat[7] & 1]
       assert presses and max(presses) < 150, (hex(lkas_addr), presses)
       assert all(b - a in (1, 49) for a, b in zip(presses, presses[1:], strict=False)), presses
+
+  def test_interceptor_long_without_ccnc(self):
+    # type1 torque HDA2 (Ioniq 5): no 0x161/0x162. Our 0x1A0/0x12A/0x1E0 replace the ADAS DRV's, its 0x1EA and
+    # 0x160 still reach the car, and its LFA state is read from its diverted 0x1E0 on A-CAN
+    fingerprint = gen_empty_fingerprint()
+    fingerprint[0][ADAS_INTERCEPTOR_HEARTBEAT_MSG] = 8
+    fingerprint[CanBus(None, fingerprint).CAM] = {0x50: 16}
+    CP = CarInterface.get_params(CAR.HYUNDAI_IONIQ_5, fingerprint, [], True, False, False)
+    CP_SP = CarInterface.get_params_sp(CP, CAR.HYUNDAI_IONIQ_5, fingerprint, [], True, False, False)
+    assert CP.openpilotLongitudinalControl and CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG
+    assert CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and not CP_SP.flags & HyundaiFlagsSP.CCNC
+
+    CI = CarInterface(CP, CP_SP)
+    assert "LFAHDA_CLUSTER" in CI.CS.get_can_parsers(CP, CP_SP)[Bus.adas].vl
+    CC = structs.CarControl().as_reader()
+    addrs = set()
+    for i in range(100):
+      CI.update([])
+      addrs |= {addr for addr, _, _ in CI.apply(CC, structs.CarControlSP(), int(i * DT_CTRL * 1e9))[1]}
+    assert {0x1a0, 0x12a, 0x1e0, 0x1256} <= addrs
+    assert not addrs & {0x161, 0x162, 0x1ea, 0x160}
 
   def test_alternate_limits(self):
     # Alternate lateral control limits, for high torque cars, verify Panda safety mode flag is set
