@@ -25,10 +25,10 @@ STOP_DISTANCE_V = [3.5, 6.0]  # m
 T_FOLLOW = {1: 1.25, 2: 1.45, 3: 1.75}  # s
 TARGET_DISTANCE_MAX = 204.6  # m
 LEAD_FILTER_RC = 0.5  # s
-LANELINE_CURVATURE_NONE = 15.0  # the ADAS DRV ECU's "no lane geometry" default
+LANELINE_CURVATURE_NONE = 0.0
 LANELINE_CURVATURE_GAIN = 1000.0  # cluster curvature counts per 1/m
-LANELINE_CURVATURE_DEADBAND = 0.0002  # 1/m, ~5 km radius
-LANELINE_CURVATURE_MAX = 6
+LANELINE_CURVATURE_DEADBAND = 0.00025  # 1/m, ~4 km radius
+LANELINE_CURVATURE_MAX = 15
 PATH_CURVATURE_FILTER_RC = 0.3  # s
 
 
@@ -56,13 +56,12 @@ def ccnc_hud_enabled(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> bool:
 
 
 def encode_laneline_curvature(curvature: float) -> float:
-  # LANELINE_CURVATURE is LANELINE_CURVATURE_NONE when the ADAS DRV ECU has no lane geometry, and counts of 1/m
-  # otherwise, signed: 0 straight, 1/m either way
+  # 5-bit sign-magnitude: 0 straight, 1..15 left (curvature < 0), 16..30 right (curvature > 0)
   if abs(curvature) < LANELINE_CURVATURE_DEADBAND:
     return 0.0
 
   mag = min(LANELINE_CURVATURE_MAX, max(1, round(abs(curvature) * LANELINE_CURVATURE_GAIN)))
-  return float(mag if curvature > 0 else -mag)
+  return float(mag if curvature < 0 else 16 + mag - 1)
 
 
 def create_ccnc_mdps(packer, CAN, mdps, lfa_alt=None):
