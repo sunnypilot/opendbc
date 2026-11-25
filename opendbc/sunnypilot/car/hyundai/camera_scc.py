@@ -10,6 +10,8 @@ from opendbc.car.hyundai.values import HyundaiFlags
 
 hyundai_checksum = mk_crc8_fun(CRC8J1850, init_crc=0xFD, xor_out=0xDF)
 
+DAW_TAKE_A_BREAK = 6
+
 
 def create_camera_scc_mdps12(packer, frame, CP, mdps12):
   values = mdps12.copy()
@@ -31,9 +33,23 @@ def create_camera_scc_mdps12(packer, frame, CP, mdps12):
   return packer.make_can_msg("MDPS12", 2, values)
 
 
+def create_camera_scc_lkas12(packer, lkas12, daw_status):
+  values = lkas12.copy()
+
+  # suppress the camera's driver attention "take a break" popup, the driver is monitored by sunnypilot
+  if values["CF_LkasDawStatus"] == DAW_TAKE_A_BREAK:
+    values.update({
+      "CF_LkasDawStatus": daw_status,
+      "CF_Lkas12_Unknown4": 0,
+    })
+
+  return packer.make_can_msg("LKAS12", 0, values)
+
+
 class CameraSccCarController:
   def __init__(self, CP):
     self.camera_scc = bool(CP.flags & HyundaiFlags.CAMERA_SCC)
+    self.lkas12_daw_status = 0
 
   def update(self, CS):
     can_sends = []
@@ -42,4 +58,9 @@ class CameraSccCarController:
       return can_sends
 
     can_sends.append(create_camera_scc_mdps12(self.packer, self.frame, self.CP, CS.mdps12))
+
+    if self.frame % 10 == 0 and CS.lkas12:
+      if CS.lkas12["CF_LkasDawStatus"] != DAW_TAKE_A_BREAK:
+        self.lkas12_daw_status = CS.lkas12["CF_LkasDawStatus"]
+      can_sends.append(create_camera_scc_lkas12(self.packer, CS.lkas12, self.lkas12_daw_status))
     return can_sends

@@ -309,11 +309,13 @@ static safety_config hyundai_init(uint16_t param) {
   static const CanMsg HYUNDAI_CAMERA_SCC_TX_MSGS[] = {
     HYUNDAI_COMMON_TX_MSGS(2)
     {0x251, 2, 8, .check_relay = true},  // MDPS12
+    {0x53E, 0, 8, .check_relay = true},  // LKAS12
   };
 
   static const CanMsg HYUNDAI_CAMERA_SCC_LONG_TX_MSGS[] = {
     HYUNDAI_LONG_COMMON_TX_MSGS(2)
     {0x251, 2, 8, .check_relay = true},  // MDPS12
+    {0x53E, 0, 8, .check_relay = true},  // LKAS12
   };
 
   static const CanMsg HYUNDAI_LONG_ESCC_TX_MSGS[] = {
