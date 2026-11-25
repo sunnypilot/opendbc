@@ -123,5 +123,4 @@ class TestDcuEmergency(unittest.TestCase):
     assert not dcu_emergency(True, True, ecan=[("LFA", {"ELK_SymbDisp": 1})])[0].stockSteerIntervention
     for values in ({"FCA_ESA_ActvSta": 1}, {"FCA_ESA_TqBstGainVal": 0.1}):
       assert dcu_emergency(True, True, acan=[("LFA_ALT", values)])[0].stockSteerIntervention, values
-    for alert, hit in ((5, False), (11, True), (21, True), (26, True), (33, False)):
-      assert dcu_emergency(True, True, msg_161={"ALERTS_1": alert})[0].stockSteerIntervention == hit, alert
+    assert not dcu_emergency(True, True, msg_161={"ALERTS_1": 21})[0].stockSteerIntervention

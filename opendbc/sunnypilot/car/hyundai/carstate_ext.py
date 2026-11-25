@@ -15,8 +15,6 @@ from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC
 from opendbc.sunnypilot.car.hyundai.ccnc import ccnc_hud_enabled
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
-DCU_EMERGENCY_ALERTS = (*range(11, 16), *range(21, 27))
-
 
 class CarStateExt:
   def __init__(self, CP, CP_SP):
@@ -131,7 +129,7 @@ class CarStateExt:
     if self.CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING:
       lfa_alt = can_parsers[Bus.adas].vl["LFA_ALT"]
       emergency = emergency or lfa_alt["FCA_ESA_ActvSta"] != 0 or lfa_alt["FCA_ESA_TqBstGainVal"] != 0
-    ret_sp.stockSteerIntervention = emergency or self.msg_161.get("ALERTS_1", 0) in DCU_EMERGENCY_ALERTS
+    ret_sp.stockSteerIntervention = emergency
 
   @staticmethod
   def get_parser(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> dict[StrEnum, CANParser]:
