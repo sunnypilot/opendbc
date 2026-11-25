@@ -167,3 +167,4 @@ class CarControlSP:
 class CarStateSP:
   speedLimit: float = auto_field()
   stockSteerIntervention: bool = auto_field()
+  stockAeb: bool = auto_field()

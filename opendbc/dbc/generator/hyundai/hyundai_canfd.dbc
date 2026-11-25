@@ -227,6 +227,7 @@ BO_ 352 ADRV_0x160: 16 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
  SG_ AEB_SETTING : 24|2@1+ (1,0) [0|255] "" XXX
+ SG_ AEB_BRAKE_REQ : 40|8@1+ (1,0) [0|255] "" XXX
  SG_ SET_ME_2 : 56|8@1+ (1,0) [0|1] "" XXX
  SG_ SET_ME_FF : 64|8@1+ (1,0) [0|255] "" XXX
  SG_ SET_ME_FC : 72|8@1+ (1,0) [0|255] "" XXX

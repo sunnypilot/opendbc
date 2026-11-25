@@ -117,6 +117,10 @@ class TestDcuEmergency(unittest.TestCase):
       assert "LFA" in parsers[Bus.alt if on_ecan else Bus.adas].vl, (angle, long)
       assert ret_sp.stockSteerIntervention, (angle, long)
 
+  def test_aeb_from_brake_request(self):
+    for values, aeb in (({"SET_ME_2": 32}, False), ({"SET_ME_2": 64}, False), ({"SET_ME_2": 64, "AEB_BRAKE_REQ": 60}, True)):
+      assert dcu_emergency(True, True, ecan=[("ADRV_0x160", values)])[0].stockAeb == aeb, values
+
   def test_triggers(self):
     for values in ({"FCA_LO_WrnSta": 1}, {"FCA_ESA_WrnSta": 1}, {"FCA_ESA_CtrlSta": 1}, {"BCA_Rear_WrnSta": 4}, {"ELK_SymbDisp": 3}):
       assert dcu_emergency(True, True, ecan=[("LFA", values)])[0].stockSteerIntervention, values

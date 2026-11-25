@@ -130,6 +130,8 @@ class CarStateExt:
       lfa_alt = can_parsers[Bus.adas].vl["LFA_ALT"]
       emergency = emergency or lfa_alt["FCA_ESA_ActvSta"] != 0 or lfa_alt["FCA_ESA_TqBstGainVal"] != 0
     ret_sp.stockSteerIntervention = emergency
+    # the 0x160 stage also rises during emergency steering, only a brake request is AEB
+    ret_sp.stockAeb = can_parsers[Bus.alt].vl["ADRV_0x160"]["AEB_BRAKE_REQ"] > 0
 
   @staticmethod
   def get_parser(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> dict[StrEnum, CANParser]:
@@ -148,6 +150,7 @@ class CarStateExt:
       (ecan if dcu_lfa_on_ecan(CP, CP_SP) else acan).append("LFA")
       if CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING:
         acan.append("LFA_ALT")
+      ecan.append("ADRV_0x160")
 
     messages = {}
     if acan:
