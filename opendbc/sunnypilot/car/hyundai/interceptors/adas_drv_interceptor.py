@@ -13,6 +13,7 @@ ADAS_INTERCEPTOR_HEARTBEAT_MSG = 0x1258
 LFA_PRESS_FRAMES = 2  # 20 ms, as the camera pulses LFA_BUTTON
 LFA_PRESS_PERIOD = 50  # 0.5 s: the ADAS DRV shows its LFA icon 120-140 ms after a pulse, a second one would toggle it off
 DCU_161_TIMEOUT_FRAMES = 15  # 3 periods of its 0x161, or of its 0x1E0 without ccNC
+DCU_RESUME_FRAMES = 2  # the panda refuses our first steering frame after a gap and restarts its limits, the second passes
 
 
 class ActvACISta(IntEnum):
@@ -90,6 +91,12 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
     values["LFA_BUTTON"] = 1 if press else 0
     return [packer.make_can_msg("LKAS_ALT", CAN.ACAN, values)]
 
+  def create_lkas(self, packer, CAN, lkas, lfa_button, lat_active, apply_torque):
+    # torque cars: the camera's own frame with our steering request and button in place of its own
+    values = {k: v for k, v in lkas.items() if k not in ("CHECKSUM", "COUNTER")}
+    values |= {"StrTqReqVal": apply_torque, "ActToiSta": 1 if lat_active else 0, "LFA_BUTTON": 1 if lfa_button else 0}
+    return packer.make_can_msg("LKAS_ALT" if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS", CAN.ACAN, values)
+
   def create_adas_drv_intercept_msg(self, packer, CAN):
     nav = int(self.CP.openpilotLongitudinalControl)
     values = {
@@ -117,6 +124,21 @@ class AdasDrvEcuInterceptorCarState(EcuInterceptorCarStateBase):
 class AdasDrvEcuInterceptorCarController(EcuInterceptorCarControllerBase):
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     super().__init__(CP, CP_SP)
+    self.dcu_resume_frames = 0
+
+  def update(self, car_state):
+    super().update(car_state)
+    # our steering frame is held back while the ADAS DRV steers in an emergency. After it, our command restarts where the
+    # panda's limits do: at the wheel angle, or at no torque
+    if car_state.dcu_passthrough:
+      self.dcu_resume_frames = DCU_RESUME_FRAMES
+    elif self.dcu_resume_frames > 0:
+      self.dcu_resume_frames -= 1
+      if self.interceptor.lfa_alt_steering:
+        self.apply_angle_last = car_state.out.steeringAngleDeg
+        self.angle_filter.x = self.apply_angle_last
+      else:
+        self.apply_torque_last = 0
 
   def initialize(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> AdasDrvEcuInterceptor:
     """

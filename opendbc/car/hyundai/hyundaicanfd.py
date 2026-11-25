@@ -65,10 +65,13 @@ def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_
 
   ret = []
   if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+    # with the ADAS DRV intercepted our LFA steers the MDPS directly, and the camera's own frame is passed on instead of ours
+    interceptor = CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR
     lkas_msg = "LKAS_ALT" if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS"
-    if CP.openpilotLongitudinalControl:
+    if CP.openpilotLongitudinalControl or interceptor:
       ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
-    ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, values))
+    if not interceptor:
+      ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, values))
   else:
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
 

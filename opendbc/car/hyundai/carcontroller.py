@@ -295,23 +295,27 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
 
     # steering control
     if self.interceptor.lfa_alt_steering:
-      can_sends.append(self.interceptor.create_lfa_alt(self.packer, self.CAN, apply_steer_req, self.apply_angle_last, apply_torque))
-      can_sends.extend(self.interceptor.create_lkas_alt(self.packer, self.CAN, CS.lkas_alt, CS.msg_161,
+      if not CS.dcu_passthrough:
+        can_sends.append(self.interceptor.create_lfa_alt(self.packer, self.CAN, apply_steer_req, self.apply_angle_last, apply_torque))
+      can_sends.extend(self.interceptor.create_lkas_alt(self.packer, self.CAN, CS.lkas, CS.msg_161,
                                                                   CC.enabled, self.apply_angle_last))
     elif self.lfa_alt_steering:
       can_sends.append(create_lfa_alt(self.packer, self.CAN, apply_steer_req, self.apply_angle_last, apply_torque))
     else:
       lfa_button = bool(self.interceptor.available and lka_steering and self.interceptor.lfa_press(CS.msg_161 if self.ccnc_hud else CS.msg_1e0))
-      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CP_SP, self.CAN, CC.enabled, apply_steer_req, apply_torque,
-                                                             self.apply_angle_last, self.lkas_icon, lfa_button))
+      if not (self.interceptor.available and lka_steering and CS.dcu_passthrough):
+        can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CP_SP, self.CAN, CC.enabled, apply_steer_req, apply_torque,
+                                                               self.apply_angle_last, self.lkas_icon, lfa_button))
+      if self.interceptor.available and lka_steering:
+        can_sends.append(self.interceptor.create_lkas(self.packer, self.CAN, CS.lkas, lfa_button, apply_steer_req, apply_torque))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU
-    if self.frame % 5 == 0 and lka_steering and not self.interceptor.lfa_alt_steering:
+    if self.frame % 5 == 0 and lka_steering and not self.interceptor.available:
       can_sends.append(hyundaicanfd.create_suppress_lfa(self.packer, self.CAN, CS.lfa_block_msg,
                                                         self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT))
 
     # LFA and HDA icons
-    if self.frame % 5 == 0 and (not lka_steering or lka_steering_long) and not self.ccnc_hud:
+    if self.frame % 5 == 0 and (not lka_steering or lka_steering_long or self.interceptor.available) and not self.ccnc_hud:
       can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled, self.lfa_icon))
 
     # blinkers

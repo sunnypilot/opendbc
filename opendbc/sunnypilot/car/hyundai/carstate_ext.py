@@ -15,6 +15,8 @@ from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC
 from opendbc.sunnypilot.car.hyundai.ccnc import ccnc_hud_enabled
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
+DCU_STEER_TIMEOUT_FRAMES = 3  # 3 periods of its steering frame
+
 
 class CarStateExt:
   def __init__(self, CP, CP_SP):
@@ -27,8 +29,11 @@ class CarStateExt:
     self.msg_1e0 = {}
     self.mdps = {}
     self.cruise_buttons_msg = {}
-    self.lkas_alt = {}
+    self.lkas = {}
     self.lfa_alt = {}
+    self.dcu_steer_frame = None
+    self.dcu_steer_age = 0
+    self.dcu_passthrough = False
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -111,8 +116,8 @@ class CarStateExt:
     elif Bus.adas in can_parsers:
       self.msg_1e0 = copy.copy(can_parsers[Bus.adas].vl["LFAHDA_CLUSTER"])
 
-    if self.CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT:
-      self.lkas_alt = copy.copy(cp_cam.vl["LKAS_ALT"])
+    if self.CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+      self.lkas = copy.copy(cp_cam.vl["LKAS_ALT" if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS"])
 
     if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
       self.cruise_buttons_msg = copy.copy(cp.vl[self.cruise_btns_msg_canfd])
@@ -123,15 +128,30 @@ class CarStateExt:
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
 
   def update_dcu_emergency(self, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]) -> None:
-    lfa = can_parsers[Bus.alt if dcu_lfa_on_ecan(self.CP, self.CP_SP) else Bus.adas].vl["LFA"]
+    angle = bool(self.CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING)
+    # the ADAS DRV's steering frame is on A-CAN while the interceptor blocks it, and on E-CAN while it reaches the car
+    steer_msg = "LFA_ALT" if angle else "LFA"
+    cp_steer = max(can_parsers[Bus.adas], can_parsers[Bus.alt], key=lambda cp: cp.ts_nanos[steer_msg]["COUNTER"])
+    dcu_steer = cp_steer.vl[steer_msg]
+    lfa = can_parsers[Bus.alt].vl["LFA"] if angle else dcu_steer
+
     emergency = any(lfa[s] != 0 for s in ("FCA_LO_WrnSta", "FCA_LS_WrnSta", "FCA_ESA_WrnSta", "FCA_ESA_CtrlSta", "BCA_Rear_WrnSta"))
     emergency = emergency or lfa["ELK_SymbDisp"] == 3
-    if self.CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING:
-      lfa_alt = can_parsers[Bus.adas].vl["LFA_ALT"]
-      emergency = emergency or lfa_alt["FCA_ESA_ActvSta"] != 0 or lfa_alt["FCA_ESA_TqBstGainVal"] != 0
+    if angle:
+      esa = dcu_steer["FCA_ESA_ActvSta"] != 0 or dcu_steer["FCA_ESA_TqBstGainVal"] != 0
+      emergency = emergency or esa
+      dcu_steering = esa or dcu_steer["ADAS_ActvACILvl2Sta"] == 2
+    else:
+      dcu_steering = dcu_steer["ActToiSta"] != 0
     ret_sp.stockSteerIntervention = emergency
     # the 0x160 stage also rises during emergency steering, only a brake request is AEB
     ret_sp.stockAeb = can_parsers[Bus.alt].vl["ADRV_0x160"]["AEB_BRAKE_REQ"] > 0
+
+    # while it steers in an emergency we hold our steering frame back, and the interceptor lets its own reach the car
+    frame = (cp_steer.bus, dcu_steer["COUNTER"])
+    self.dcu_steer_age = 0 if frame != self.dcu_steer_frame else self.dcu_steer_age + 1
+    self.dcu_steer_frame = frame
+    self.dcu_passthrough = bool(emergency and dcu_steering and self.dcu_steer_age < DCU_STEER_TIMEOUT_FRAMES)
 
   @staticmethod
   def get_parser(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> dict[StrEnum, CANParser]:
@@ -141,16 +161,15 @@ class CarStateExt:
 
     if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and ccnc_hud_enabled(CP, CP_SP):
       acan += ["CCNC_0x161", "CCNC_0x162"]
-    elif CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and \
-         CP.openpilotLongitudinalControl:
+    elif CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
       # no ccNC: the ADAS DRV ECU's LFA state is in its 0x1E0
       acan.append("LFAHDA_CLUSTER")
 
     if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
-      (ecan if dcu_lfa_on_ecan(CP, CP_SP) else acan).append("LFA")
-      if CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING:
-        acan.append("LFA_ALT")
-      ecan.append("ADRV_0x160")
+      # the ADAS DRV's steering frame, blocked or not. Its LFA is never blocked on angle cars
+      steer_msg = "LFA_ALT" if CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING else "LFA"
+      acan.append(steer_msg)
+      ecan += list(dict.fromkeys([steer_msg, "LFA", "ADRV_0x160"]))
 
     messages = {}
     if acan:
@@ -158,8 +177,3 @@ class CarStateExt:
     if ecan:
       messages[Bus.alt] = CANParser(DBC[CP.carFingerprint][Bus.pt], [(m, float('nan')) for m in ecan], CanBus(CP).ECAN)
     return messages
-
-
-def dcu_lfa_on_ecan(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> bool:
-  # the ADAS DRV ECU's LFA reaches A-CAN only while we send our own
-  return bool(CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING or not CP.openpilotLongitudinalControl)

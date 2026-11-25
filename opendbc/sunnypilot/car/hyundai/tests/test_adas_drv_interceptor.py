@@ -4,15 +4,17 @@ Copyright (c) 2021-, sunnypilot, and a number of other contributors.
 This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
+import random
 import unittest
 from types import SimpleNamespace
 
 from opendbc.can import CANPacker, CANParser
-from opendbc.car import Bus, structs
+from opendbc.can.dbc import DBC
+from opendbc.car import structs
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import CAR, HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.carstate_ext import CarStateExt
-from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import AdasDrvEcuInterceptor
+from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import AdasDrvEcuInterceptor, AdasDrvEcuInterceptorCarController
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 DBC_NAME = "hyundai_canfd_generated"
@@ -21,8 +23,8 @@ CAMERA = {"LFA_BUTTON": 1, "FCA_ESA_CtrlSta": 1, "LKA_StrSnd": 2, "LKA_HndsoffSn
           "ADAS_StrAnglReqVal": 30.0, "ADAS_ACIAnglTqRedcGainVal": 0.5, "CHECKSUM": 1234, "COUNTER": 77}
 
 
-def interceptor(long=True):
-  CP = SimpleNamespace(flags=HyundaiFlags.CANFD_LKA_STEER_MSG_ALT | HyundaiFlags.CANFD_LKA_STEER_MSG, openpilotLongitudinalControl=long)
+def interceptor(long=True, alt=True):
+  CP = SimpleNamespace(flags=HyundaiFlags.CANFD_LKA_STEER_MSG | (HyundaiFlags.CANFD_LKA_STEER_MSG_ALT if alt else 0), openpilotLongitudinalControl=long)
   return AdasDrvEcuInterceptor(CP, SimpleNamespace(flags=HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR | HyundaiFlagsSP.CANFD_ANGLE_STEERING))
 
 
@@ -31,6 +33,41 @@ class TestInterceptOpt(unittest.TestCase):
     for long, features in ((True, 0x4F), (False, 0x03)):
       (_, dat, _), = interceptor(long).create_adas_drv_intercept_msg(CANPacker(DBC_NAME), SimpleNamespace(ACAN=0))
       self.assertEqual(dat[7], features, f"long {long}")
+
+  def test_copied_frames_fully_defined(self):
+    # frames passed on from the camera or the ADAS DRV are rebuilt from their signals: a bit without one comes out 0
+    dbc = DBC(DBC_NAME)
+    for addr in (0x50, 0x110, 0x12A, 0xCB):
+      msg = dbc.addr_to_msg[addr]
+      for bit in range(msg.size * 8):
+        dat = bytearray(msg.size)
+        dat[bit // 8] = 1 << (bit % 8)
+        self.assertTrue(any(s.get_raw_value(dat) for s in msg.sigs.values()), f"{msg.name} bit {bit}")
+
+
+def decode(addr, dat):
+  values = {}
+  for sig in DBC(DBC_NAME).addr_to_msg[addr].sigs.values():
+    raw = sig.get_raw_value(dat)
+    if sig.is_signed and raw >> (sig.size - 1):
+      raw -= 1 << sig.size
+    values[sig.name] = raw * sig.factor + sig.offset
+  return values
+
+
+class TestLkasTorque(unittest.TestCase):
+  def test_camera_frame_with_our_request(self):
+    for alt, addr, size in ((True, 0x110, 32), (False, 0x50, 16)):
+      for seed in range(20):
+        camera = decode(addr, random.Random(seed).randbytes(size))
+        for lfa_button, lat_active in ((True, True), (False, False)):
+          out_addr, dat, _ = interceptor(alt=alt).create_lkas(CANPacker(DBC_NAME), SimpleNamespace(ACAN=0), camera, lfa_button, lat_active, 150)
+          out = decode(out_addr, dat)
+          self.assertEqual(out_addr, addr)
+          self.assertEqual((out["StrTqReqVal"], out["ActToiSta"], out["LFA_BUTTON"]), (150, int(lat_active), int(lfa_button)))
+          for k, v in camera.items():
+            if k not in ("CHECKSUM", "COUNTER", "StrTqReqVal", "ActToiSta", "LFA_BUTTON"):
+              self.assertEqual(out[k], v, (alt, seed, k))
 
 
 def lkas_alt(camera, enabled=True, angle=5.0, msg_161=None, ic=None):
@@ -93,29 +130,68 @@ class TestLkasAlt(unittest.TestCase):
     assert out["LFA_BUTTON"] == 0 and out["LKAS_ANGLE_ACTIVE"] == 1
 
 
-def dcu_emergency(angle, long, ecan=(), acan=(), msg_161=None):
+def dcu_emergency(angle, long, ecan=(), acan=(), msg_161=None, CS=None, t=1):
   CP = SimpleNamespace(flags=HyundaiFlags.CANFD | HyundaiFlags.CANFD_LKA_STEER_MSG | HyundaiFlags.CANFD_LKA_STEER_MSG_ALT,
                        openpilotLongitudinalControl=long, carFingerprint=CAR.KIA_CARNIVAL_4TH_GEN, safetyConfigs=[None])
   CP_SP = SimpleNamespace(flags=HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR | (HyundaiFlagsSP.CANFD_ANGLE_STEERING if angle else 0))
-  CS = CarStateExt(CP, CP_SP)
+  if CS is None:
+    CS = CarStateExt(CP, CP_SP)
+    CS.parsers = CarStateExt.get_parser(CP, CP_SP)
+    CS.packer = CANPacker(DBC_NAME)
   CS.msg_161 = msg_161 or {}
-  parsers = CarStateExt.get_parser(CP, CP_SP)
-  packer, CAN = CANPacker(DBC_NAME), CanBus(CP)
-  frames = [packer.make_can_msg(n, CAN.ECAN, v) for n, v in ecan] + [packer.make_can_msg(n, CAN.ACAN, v) for n, v in acan]
-  for cp in parsers.values():
-    cp.update([(0, frames)])
+  CAN = CanBus(CP)
+  frames = [CS.packer.make_can_msg(n, CAN.ECAN, v) for n, v in ecan] + [CS.packer.make_can_msg(n, CAN.ACAN, v) for n, v in acan]
+  for cp in CS.parsers.values():
+    cp.update([(t, frames)])
   ret_sp = structs.CarStateSP()
-  CS.update_dcu_emergency(ret_sp, parsers)
-  return ret_sp, parsers
+  CS.update_dcu_emergency(ret_sp, CS.parsers)
+  return ret_sp, CS
 
 
 class TestDcuEmergency(unittest.TestCase):
-  def test_lfa_copy_bus(self):
-    for angle, long, on_ecan in ((True, True, True), (True, False, True), (False, False, True), (False, True, False)):
-      frames = {"ecan" if on_ecan else "acan": [("LFA", {"FCA_LS_WrnSta": 1})]}
-      ret_sp, parsers = dcu_emergency(angle, long, **frames)
-      assert "LFA" in parsers[Bus.alt if on_ecan else Bus.adas].vl, (angle, long)
-      assert ret_sp.stockSteerIntervention, (angle, long)
+  def test_steering_frame_from_either_bus(self):
+    for bus in ("acan", "ecan"):
+      ret_sp, CS = dcu_emergency(False, True, **{bus: [("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})]})
+      assert ret_sp.stockSteerIntervention and CS.dcu_passthrough, bus
+      frames = {"ecan": [("LFA", {"FCA_LS_WrnSta": 1})], "acan": []}
+      frames[bus].append(("LFA_ALT", {"ADAS_ActvACILvl2Sta": 2}))
+      ret_sp, CS = dcu_emergency(True, True, **frames)
+      assert ret_sp.stockSteerIntervention and CS.dcu_passthrough, bus
+
+  def test_newest_steering_frame_wins(self):
+    _, CS = dcu_emergency(False, True, acan=[("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})])
+    assert CS.dcu_passthrough
+    _, CS = dcu_emergency(False, True, ecan=[("LFA", {"ActToiSta": 1})], CS=CS, t=2)
+    assert not CS.dcu_passthrough
+
+  def test_passthrough_needs_emergency_and_its_steering_request(self):
+    for angle, lfa, lfa_alt, passthrough in (
+      (False, {"FCA_LS_WrnSta": 1, "ActToiSta": 1}, None, True), (False, {"FCA_LS_WrnSta": 1}, None, False), (False, {"ActToiSta": 1}, None, False),
+      (True, {"FCA_LS_WrnSta": 1}, {"ADAS_ActvACILvl2Sta": 2}, True), (True, {"FCA_LS_WrnSta": 1}, {"ADAS_ActvACILvl2Sta": 1}, False),
+      (True, {}, {"ADAS_ActvACILvl2Sta": 2}, False), (True, {}, {"ADAS_ActvACILvl2Sta": 1, "FCA_ESA_ActvSta": 1}, True),
+    ):
+      acan = [("LFA_ALT", lfa_alt)] if angle else [("LFA", lfa)]
+      _, CS = dcu_emergency(angle, True, ecan=[("LFA", lfa)] if angle else [], acan=acan)
+      assert CS.dcu_passthrough == passthrough, (angle, lfa, lfa_alt)
+
+  def test_passthrough_ends_when_steering_frame_stops(self):
+    _, CS = dcu_emergency(False, True, acan=[("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})])
+    seen = []
+    for _ in range(4):
+      seen.append(dcu_emergency(False, True, CS=CS)[1].dcu_passthrough)
+    self.assertEqual(seen, [True, True, False, False])
+
+  def test_command_restarts_after_passthrough(self):
+    for angle in (True, False):
+      CC = AdasDrvEcuInterceptorCarController(interceptor().CP, SimpleNamespace(flags=HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR |
+                                                                              (HyundaiFlagsSP.CANFD_ANGLE_STEERING if angle else 0)))
+      CC.apply_angle_last, CC.apply_torque_last, CC.angle_filter = 10.0, 200, SimpleNamespace(x=10.0)
+      restarted = []
+      for passthrough in (False, True, True, False, False, False):
+        CC.apply_angle_last, CC.apply_torque_last = 10.0, 200
+        CC.update(SimpleNamespace(dcu_passthrough=passthrough, out=SimpleNamespace(steeringAngleDeg=-25.0)))
+        restarted.append((CC.apply_angle_last, CC.angle_filter.x) == (-25.0, -25.0) if angle else CC.apply_torque_last == 0)
+      self.assertEqual(restarted, [False, False, False, True, True, False], angle)
 
   def test_aeb_from_brake_request(self):
     for values, aeb in (({"SET_ME_2": 32}, False), ({"SET_ME_2": 64}, False), ({"SET_ME_2": 64, "AEB_BRAKE_REQ": 60}, True)):
