@@ -50,10 +50,19 @@ BO_ 80 LKAS: 16 XXX
  SG_ ActToiSta : 52|2@1+ (1,0) [0|3] "" ADAS_DRV
  SG_ ToiFltSta : 54|2@1+ (1,0) [0|3] "" ADAS_DRV
  SG_ LFA_BUTTON : 56|1@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_1 : 57|3@1+ (1,0) [0|7] "" XXX
  SG_ LKA_SysWrn : 60|4@1+ (1,0) [0|15] "" ADAS_DRV
  SG_ Damping_Gain : 64|8@1+ (1,0) [0|255] "" CGW
+ SG_ BYTE9 : 72|8@1+ (1,0) [0|255] "" XXX
  SG_ LKA_UsmMod : 80|2@1+ (1,0) [0|3] "" ADAS_DRV
+ SG_ NEW_SIGNAL_2 : 82|2@1+ (1,0) [0|3] "" XXX
  SG_ Info_PedtrnDst : 84|3@1+ (1,0) [0|7] "" ADAS_DRV
+ SG_ NEW_SIGNAL_3 : 87|1@1+ (1,0) [0|1] "" XXX
+ SG_ BYTE11 : 88|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE12 : 96|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE13 : 104|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE14 : 112|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE15 : 120|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 81 ADRV_0x51: 32 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
