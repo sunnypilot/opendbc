@@ -42,7 +42,7 @@
 // The camera's lane message is not replaced, so it is forwarded
 #define HYUNDAI_CANFD_LKA_STEER_MSG_ADAS_DRV_INTERCEPTOR_COMMON_TX_MSGS(lka_addr, lka_len) \
   HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(1)                                                 \
-  {lka_addr, 0, lka_len, .check_relay = true},  /* LKAS, LKAS_ALT */                     \
+  {(lka_addr), 0, (lka_len), .check_relay = true},  /* LKAS, LKAS_ALT */                 \
   HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(1)                                           \
   HYUNDAI_CANFD_ADAS_INTERCEPTOR_MESSAGES(0)                                             \
 
