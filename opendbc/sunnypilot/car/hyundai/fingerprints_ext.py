@@ -161,10 +161,12 @@ FW_VERSIONS_EXT = {
   },
   CAR.KIA_CARNIVAL_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00KA4 MFC  AT USA LHD 1.00 1.02 99210-R0800 251031',
       b'\xf1\x00KA4HMFC  AT USA LHD 1.00 1.00 99210-R0700 250324',
       b'\xf1\x00KA4HMFC  AT USA LHD 1.00 1.05 99210-R0500 240305',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00KA4_ RDR -----      1.00 1.02 99110-R0510         ',
       b'\xf1\x00KAhe RDR -----      1.00 1.01 99110-ES500         ',
     ],
   },
@@ -173,9 +175,12 @@ FW_VERSIONS_EXT = {
       b'\xf1\x00NX4 FR_CMR AT CAN LHD 1.00 1.00 99211-N9250 14W',
       b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 1.00 99211-N7030 C55',
       b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 1.00 99211-N7035 C5C',
+      b'\xf1\x00NX4 FR_CMR AT GEN LHD 1.00 1.00 99211-N7030 C55',
+      b'\xf1\x00NX4 FR_CMR AT GEN LHD 1.00 1.00 99211-N7035 C5C',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7030 C55',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7035 C5C',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7060 C5B',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.01 99211-N7050 C5A',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NX4__               1.00 1.02 99110N7000          ',
