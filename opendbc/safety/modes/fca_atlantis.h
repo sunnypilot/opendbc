@@ -14,20 +14,19 @@
 #define FCA_ATLANTIS_ACC_2           0x22AU
 #define FCA_ATLANTIS_ACC_BUTTON      0x2FAU
 
-// Torque winddown after controls are lost (e.g. brake press). Cutting torque to zero in one frame is suspected of
-// latching EPS LKA_FAULT, and stock LKA always ramps down. After a disengage, allow torque with LKA_ACTIVE set that
+// Torque winddown after controls are lost (e.g. brake press). Cutting torque to zero in one frame is observed to
+// latch EPS LKA_FAULT, and stock LKA always ramps down. After a disengage, allow torque with LKA_ACTIVE set that
 // never grows in magnitude or changes sign, and stays under a limit that falls at FCA_ATLANTIS_MAX_RATE_DOWN per
 // frame from the last torque allowed while engaged. The limit depends only on time, so it ends by itself.
 #define FCA_ATLANTIS_MAX_RATE_DOWN 12
 #define FCA_ATLANTIS_FRAME_US 10000U  // LKA_COMMAND_2 is sent at 100 Hz
 #define FCA_ATLANTIS_WINDDOWN_SLACK_FRAMES 5  // frames of delay tolerated before the limit starts falling
 
-// fca_atlantis torque winddown: the last LKA_COMMAND_2 torque allowed while engaged and when, and the last allowed
-// torque during the winddown
-static int fca_atlantis_engaged_torque = 0;
-static uint32_t fca_atlantis_ts_engaged = 0;
-static int fca_atlantis_winddown_torque = 0;
-static bool fca_atlantis_in_winddown = false;  // the last allowed LKA_COMMAND_2 was a winddown frame
+// fca_atlantis torque winddown
+static int fca_atlantis_engaged_torque = 0;  // last LKA_COMMAND_2 torque allowed while engaged (0 after a violation)
+static uint32_t fca_atlantis_ts_engaged = 0;  // time of that frame
+static int fca_atlantis_winddown_torque = 0;  // max magnitude of the next winddown frame; 0 for no winddown
+static bool fca_atlantis_in_winddown = false;  // the last LKA_COMMAND_2 was an allowed winddown frame
 // fca_atlantis LKA_COMMAND: one 1/4 scale copy of the last LKA_COMMAND_2 may be sent
 static bool fca_atlantis_lka_copy_pending = false;
 static int fca_atlantis_lka_copy_torque = 0;
@@ -193,10 +192,10 @@ static bool fca_atlantis_tx_hook(const CANPacket_t *msg) {
     }
   }
 
-  // LKA_COMMAND is a 1/4 scale copy of LKA_COMMAND_2. The EPS is suspected to listen only to LKA_COMMAND_2: it
-  // engaged and steered with LKA_COMMAND_2 alone, and stock sends LKA_COMMAND one frame later as a rounded copy
-  // of LKA_COMMAND_2 / 4. Rather than running the shared torque rate-limit state twice per frame, allow one
-  // rounded copy (either direction) of each LKA_COMMAND_2, which openpilot sends first each frame.
+  // LKA_COMMAND is a 1/4 scale copy of LKA_COMMAND_2. The EPS is suspected to listen only to LKA_COMMAND_2:
+  // stock sends LKA_COMMAND one frame later as a rounded copy of LKA_COMMAND_2 / 4. Rather than running the shared
+  // torque rate-limit state twice per frame, allow one rounded copy (either direction) of each LKA_COMMAND_2, which
+  // openpilot sends first each frame.
   if (msg->addr == FCA_ATLANTIS_LKA_COMMAND) {
     // Signal: LKA_COMMAND.LKA_TORQUE
     int desired_torque = ((msg->data[0] << 3) | (msg->data[1] >> 5)) - 1024U;
