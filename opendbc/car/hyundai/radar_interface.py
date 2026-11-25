@@ -12,6 +12,8 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, RadarType
 RADAR_TRACK_BUSES = (0, 1, 2)
 RADAR_CADENCE_TOLERANCE = 0.25
 RADAR_FRESH_CYCLE_PERIODS = 3
+RADAR_DISCOVERY_INTERVAL = 50
+RADAR_PUBLISH_INTERVAL_NS = 45_000_000  # ~20 Hz to match radard/modelV2
 
 
 # POC for parsing corner radars: https://github.com/commaai/openpilot/pull/24221/
@@ -244,6 +246,12 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.seen_radar_addrs = {(rt.spec.name, rt.bus): set(rt.address_range) for rt in detected_tracks}
     self.updated_messages: set[tuple[int, int]] = set()
     self.active_radar_buses: dict[str, int] = {}
+    self._parser_by_bus_addr: dict[tuple[int, int], tuple[int, HyundaiRadarParserConfig]] = {}
+    self._parser_track_counts: dict[tuple[str, int], int] = {}
+    self._pending_completed_parsers: set[tuple[str, int]] = set()
+    self._discovery_counter = 0
+    self._last_publish_ns = 0
+    self._rebuild_parser_lookup()
     self.trigger_msg = DEFAULT_RADAR_TRIGGER_MSG
 
     self.radar_off_can = True
@@ -257,6 +265,13 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     else:
       radar_mode = RadarType.OFF
     self.set_radar_mode(radar_mode)
+
+  def _rebuild_parser_lookup(self) -> None:
+    self._parser_by_bus_addr = {
+      (rp.bus, addr): (idx, rp)
+      for idx, rp in enumerate(self.radar_parsers)
+      for addr in rp.address_range
+    }
 
   def _discover_radar_parsers(self, can_strings) -> None:
     existing_parsers = {(parser.spec.name, parser.bus): parser for parser in self.radar_parsers}
@@ -291,6 +306,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
         if (track.spec.name, track.bus) in upgraded_tracks else parser
         for track, parser in zip(self.radar_tracks, self.radar_parsers, strict=True)
       )
+      self._rebuild_parser_lookup()
     discovered_tracks = []
     for (spec_name, bus), spec in updated_candidates.items():
       seen_addrs = self.seen_radar_addrs[(spec_name, bus)]
@@ -306,6 +322,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.radar_parsers = (*self.radar_parsers, *(
       HyundaiRadarParserConfig(track.spec, track.bus, track.end_addr, get_radar_can_parser(track)) for track in discovered_tracks
     ))
+    self._rebuild_parser_lookup()
     if self.rcp is None:
       self.rcp = self.radar_parsers[0].parser
 
@@ -330,6 +347,9 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     self.pts.clear()
     self.updated_messages.clear()
     self.active_radar_buses.clear()
+    self._parser_track_counts.clear()
+    self._pending_completed_parsers.clear()
+    self._last_publish_ns = 0
 
     if radar_mode == RadarType.FULL_RADAR:
       self.trigger_msg = max((track.end_addr for track in self.radar_tracks), default=DEFAULT_RADAR_TRIGGER_MSG)
@@ -364,31 +384,47 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
       self.updated_messages.clear()
       return rr
 
-    self._discover_radar_parsers(can_strings)
-    radar_cycle_complete = False
-    for radar_parser in self.radar_parsers:
-      parser_key = (radar_parser.spec.name, radar_parser.bus)
-      filtered_can = []
-      parser_cycle_complete = False
-      cycle_end_timestamps = []
-      for mono_time, can_messages in can_strings:
-        relevant_messages = [
-          msg for msg in can_messages
-          if msg[2] == radar_parser.bus and radar_parser.spec.start_addr <= msg[0] <= radar_parser.end_addr and
-             len(msg[1]) == radar_parser.spec.message_size
-        ]
-        if relevant_messages:
-          filtered_can.append((mono_time, relevant_messages))
-          parser_cycle_complete |= any(msg[0] == radar_parser.end_addr for msg in relevant_messages)
-          cycle_end_timestamps.extend(mono_time for msg in relevant_messages if msg[0] == radar_parser.end_addr)
+    if not self.radar_parsers or self._discovery_counter % RADAR_DISCOVERY_INTERVAL == 0:
+      self._discover_radar_parsers(can_strings)
+    self._discovery_counter += 1
 
+    num_parsers = len(self.radar_parsers)
+    filtered_by_parser: list[list[tuple[int, list]]] = [[] for _ in range(num_parsers)]
+    completed_by_parser = [False] * num_parsers
+    cycle_ts_by_parser: list[list[int]] = [[] for _ in range(num_parsers)]
+    lookup = self._parser_by_bus_addr
+    latest_mono_time = 0
+
+    for mono_time, can_messages in can_strings:
+      if mono_time > latest_mono_time:
+        latest_mono_time = mono_time
+      batch_by_parser: dict[int, list] = {}
+      for msg in can_messages:
+        hit = lookup.get((msg[2], msg[0]))
+        if hit is None:
+          continue
+        idx, rp = hit
+        if len(msg[1]) != rp.spec.message_size:
+          continue
+        batch = batch_by_parser.get(idx)
+        if batch is None:
+          batch = []
+          batch_by_parser[idx] = batch
+        batch.append(msg)
+        if msg[0] == rp.end_addr:
+          completed_by_parser[idx] = True
+          cycle_ts_by_parser[idx].append(mono_time)
+      for idx, batch in batch_by_parser.items():
+        filtered_by_parser[idx].append((mono_time, batch))
+
+    for idx, radar_parser in enumerate(self.radar_parsers):
+      filtered_can = filtered_by_parser[idx]
       if not filtered_can:
         continue
 
-      # Feed every batch straight to the parser. Holding frames back until a whole cycle was seen starved
-      # individual track messages whenever a radar burst was split across CAN batches: their timestamps went
-      # stale, the parser stopped reporting can_valid and selfdrived raised a spurious canError.
+      # Feed every batch straight to the parser so track timestamps stay fresh and can_valid stays true.
       vls = radar_parser.parser.update(filtered_can)
+      parser_key = (radar_parser.spec.name, radar_parser.bus)
       relevant_addrs = {
         addr for addr in vls
         if radar_parser.spec.start_addr <= addr <= radar_parser.end_addr
@@ -397,19 +433,25 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
         self.seen_radar_addrs.setdefault(parser_key, set()).update(relevant_addrs)
         self.updated_messages.update((radar_parser.bus, addr) for addr in relevant_addrs)
 
-      if not parser_cycle_complete:
+      if not completed_by_parser[idx]:
         continue
 
-      for timestamp in cycle_end_timestamps:
+      for timestamp in cycle_ts_by_parser[idx]:
         if not radar_parser.cycle_timestamps or timestamp != radar_parser.cycle_timestamps[-1]:
           radar_parser.cycle_timestamps.append(timestamp)
-      radar_cycle_complete = True
+      self._pending_completed_parsers.add(parser_key)
 
-    if not radar_cycle_complete:
+    if not self._pending_completed_parsers:
       return None
 
-    rr = self._update(self.updated_messages)
+    if self._last_publish_ns != 0 and latest_mono_time > self._last_publish_ns and \
+       (latest_mono_time - self._last_publish_ns) < RADAR_PUBLISH_INTERVAL_NS:
+      return None
+
+    self._last_publish_ns = latest_mono_time
+    rr = self._update(self.updated_messages, self._pending_completed_parsers)
     self.updated_messages.clear()
+    self._pending_completed_parsers.clear()
     return rr
 
   def _radar_range_complete(self, radar_parser: HyundaiRadarParserConfig) -> bool:
@@ -447,6 +489,11 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
     return 2 if relative_error <= RADAR_CADENCE_TOLERANCE else 0
 
   def _select_active_radar_parser(self, radar_parsers: list[HyundaiRadarParserConfig]) -> HyundaiRadarParserConfig:
+    if len(radar_parsers) == 1:
+      best_parser = radar_parsers[0]
+      self.active_radar_buses[best_parser.spec.name] = best_parser.bus
+      return best_parser
+
     valid_counts = {rp.bus: self._radar_parser_valid_count(rp, set()) for rp in radar_parsers}
     current_bus = self.active_radar_buses.get(radar_parsers[0].spec.name)
     latest_cycle_timestamp = max((rp.cycle_timestamps[-1] for rp in radar_parsers if rp.cycle_timestamps), default=0)
@@ -505,7 +552,7 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
           del self.pts[track_key]
     return track_count
 
-  def _update(self, updated_messages):
+  def _update(self, updated_messages, completed_parsers: set[tuple[str, int]] | None = None):
     ret = structs.RadarData()
     ret.radarTracksAvailable = self.radar_tracks_available
 
@@ -527,9 +574,15 @@ class RadarInterface(RadarInterfaceBase, RadarInterfaceExt):
       ret.radarTracksAvailable = self.radar_tracks_available
 
       for radar_parsers in radar_parsers_by_spec.values():
+        prev_bus = self.active_radar_buses.get(radar_parsers[0].spec.name)
         active_radar_parser = self._select_active_radar_parser(radar_parsers)
         active_radar_parsers.append(active_radar_parser)
-        track_count = self._update_radar_points_from_parser(active_radar_parser)
+        parser_key = (active_radar_parser.spec.name, active_radar_parser.bus)
+        if completed_parsers is None or parser_key in completed_parsers or active_radar_parser.bus != prev_bus:
+          track_count = self._update_radar_points_from_parser(active_radar_parser)
+          self._parser_track_counts[parser_key] = track_count
+        else:
+          track_count = self._parser_track_counts.get(parser_key, 0)
         active_radar_sources.append((active_radar_parser, track_count))
 
     if any(not radar_parser.parser.can_valid for radar_parser in active_radar_parsers):
