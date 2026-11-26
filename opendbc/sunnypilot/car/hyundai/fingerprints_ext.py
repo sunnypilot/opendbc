@@ -13,7 +13,7 @@ FW_VERSIONS_EXT = {
       b'\xf1\x00CDH LKAS AT EUR LHD 1.00 1.01 99211-CR700 931',
     ],
   },
-  # TODO-SP: HYUNDAI_KONA_EV_NON_SCC has the same FW versions as HYUNDAI_KONA_EV, in the future we may
+  # TODO-SP: HYUNDAI_KONA_EV_NON_SCC has the same FW versions as HYUNDAI_KONA_EV and HYUNDAI_KONA_EV_2022, in the future we may
   #          allow similar FW versions across different platforms
   # CAR.HYUNDAI_KONA_EV_NON_SCC: {
   #   (Ecu.abs, 0x7d1, None): [
@@ -21,9 +21,11 @@ FW_VERSIONS_EXT = {
   #   ],
   #   (Ecu.eps, 0x7d4, None): [
   #     b'\xf1\x00OS  MDPS C 1.00 1.04 56310K4000\x00 4OEDC104',
+  #     b'\xf1\x00OSP MDPS C 1.00 1.02 56310K4261\x00 4OEPC102',
   #   ],
   #   (Ecu.fwdCamera, 0x7c4, None): [
   #     b'\xf1\x00OSE LKAS AT USA LHD 1.00 1.00 95740-K4100 W40',
+  #     b'\xf1\x00OSP LKA  AT USA LHD 1.00 1.04 99211-J9200 904',
   #   ],
   # },
   CAR.GENESIS_G70_2021_NON_SCC: {

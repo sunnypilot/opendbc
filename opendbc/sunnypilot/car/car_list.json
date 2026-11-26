@@ -1821,6 +1821,16 @@
     ],
     "package": "No Smart Cruise Control (Non-SCC)"
   },
+  "Hyundai Kona Electric Non-SCC 2023": {
+    "platform": "HYUNDAI_KONA_EV_NON_SCC",
+    "make": "Hyundai",
+    "brand": "hyundai",
+    "model": "Kona Electric Non-SCC",
+    "year": [
+      "2023"
+    ],
+    "package": "No Smart Cruise Control (Non-SCC)"
+  },
   "Hyundai Kona Hybrid 2020": {
     "platform": "HYUNDAI_KONA_HEV",
     "make": "Hyundai",

@@ -670,7 +670,10 @@ class CAR(Platforms):
     flags=HyundaiFlags.ALT_LIMITS,
   )
   HYUNDAI_KONA_EV_NON_SCC = HyundaiNonSccPlatformConfig(
-    [HyundaiNonSccCarDocs("Hyundai Kona Electric Non-SCC 2019", car_parts=CarParts.common([CarHarness.hyundai_g]))],
+    [
+      HyundaiNonSccCarDocs("Hyundai Kona Electric Non-SCC 2019", car_parts=CarParts.common([CarHarness.hyundai_g])),
+      HyundaiNonSccCarDocs("Hyundai Kona Electric Non-SCC 2023", car_parts=CarParts.common([CarHarness.hyundai_o])),
+    ],
     HYUNDAI_KONA_EV.specs,
     flags=HyundaiFlags.EV | HyundaiFlags.ALT_LIMITS,
   )
