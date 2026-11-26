@@ -9,29 +9,15 @@ import copy
 from enum import StrEnum
 
 from opendbc.car import Bus, structs
-from opendbc.can.dbc import SignalType
 from opendbc.can.parser import CANParser
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC
 from opendbc.sunnypilot.car.hyundai.ccnc import ccnc_hud_enabled
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
-DCU_STEER_TIMEOUT_FRAMES = 3  # 3 periods of its steering frame
+ADAS_DRV_STEER_TIMEOUT_FRAMES = 3  # 3 periods of its steering frame
 
-DCU_FCA_WARNINGS = ("FCA_LO_WrnSta", "FCA_LS_WrnSta", "FCA_ESA_WrnSta", "FCA_ESA_CtrlSta", "BCA_Rear_WrnSta")
-DCU_EMERGENCY_SIGNALS = {
-  "LFA": (*DCU_FCA_WARNINGS, "ELK_SymbDisp", "ActToiSta"),
-  "LFA_ALT": ("FCA_ESA_ActvSta", "FCA_ESA_TqBstGainVal", "ADAS_ActvACILvl2Sta"),
-  "ADRV_0x160": ("AEB_BRAKE_REQ",),
-}
-
-
-def decode_only(cp: CANParser, signals: dict[str, tuple[str, ...]]) -> CANParser:
-  # the parser decodes every signal each frame, and these wide CAN FD frames are read for a few. Counter and checksum stay checked
-  for state in cp.message_states.values():
-    if state.name in signals:
-      state.signals = [s for s in state.signals if s.name in signals[state.name] or s.type != SignalType.DEFAULT]
-  return cp
+ADAS_DRV_FCA_WARNINGS = ("FCA_LO_WrnSta", "FCA_LS_WrnSta", "FCA_ESA_WrnSta", "FCA_ESA_CtrlSta", "BCA_Rear_WrnSta")
 
 
 class CarStateExt:
@@ -47,11 +33,11 @@ class CarStateExt:
     self.cruise_buttons_msg = {}
     self.lkas = {}
     self.lfa_alt = {}
-    self.dcu_intercepted = bool(CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG)
-    self.dcu_angle = bool(CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING)
-    self.dcu_steer_msg = "LFA_ALT" if self.dcu_angle else "LFA"
-    self.dcu_steer_age = DCU_STEER_TIMEOUT_FRAMES
-    self.dcu_passthrough = False
+    self.adas_drv_intercepted = bool(CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG)
+    self.adas_drv_angle = bool(CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING)
+    self.adas_drv_steer_msg = "LFA_ALT" if self.adas_drv_angle else "LFA"
+    self.adas_drv_steer_age = ADAS_DRV_STEER_TIMEOUT_FRAMES
+    self.adas_drv_passthrough = False
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -134,42 +120,38 @@ class CarStateExt:
     elif Bus.adas in can_parsers:
       self.msg_1e0 = copy.copy(can_parsers[Bus.adas].vl["LFAHDA_CLUSTER"])
 
-    if self.dcu_intercepted:
+    if self.adas_drv_intercepted:
       self.lkas = copy.copy(cp_cam.vl["LKAS_ALT" if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS"])
 
     if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
       self.cruise_buttons_msg = copy.copy(cp.vl[self.cruise_btns_msg_canfd])
 
-    if self.dcu_intercepted:
-      self.update_dcu_emergency(ret, ret_sp, can_parsers)
+    if self.adas_drv_intercepted:
+      self.update_adas_drv_emergency(ret, ret_sp, can_parsers)
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
 
-  def dcu_steer_frame(self, can_parsers: dict[StrEnum, CANParser]) -> tuple[dict[str, float], bool]:
-    # the ADAS DRV's steering frame is on A-CAN while the interceptor diverts it, and on E-CAN while it reaches the car
-    cp = max(can_parsers[Bus.adas], can_parsers[Bus.alt], key=lambda p: p.ts_nanos[self.dcu_steer_msg]["COUNTER"])
-    return cp.vl[self.dcu_steer_msg], len(cp.vl_all[self.dcu_steer_msg]["COUNTER"]) > 0
+  def adas_drv_steer_frame(self, can_parsers: dict[StrEnum, CANParser]) -> tuple[dict[str, float], bool]:
+    cp = max(can_parsers[Bus.adas], can_parsers[Bus.alt], key=lambda p: p.ts_nanos[self.adas_drv_steer_msg]["COUNTER"])
+    return cp.vl[self.adas_drv_steer_msg], len(cp.vl_all[self.adas_drv_steer_msg]["COUNTER"]) > 0
 
-  def update_dcu_emergency(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]) -> None:
-    steer, fresh = self.dcu_steer_frame(can_parsers)
-    # angle cars: its LFA is never diverted, so the warnings are always on E-CAN
-    lfa = can_parsers[Bus.alt].vl["LFA"] if self.dcu_angle else steer
+  def update_adas_drv_emergency(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]) -> None:
+    steer, fresh = self.adas_drv_steer_frame(can_parsers)
+    lfa = can_parsers[Bus.alt].vl["LFA"] if self.adas_drv_angle else steer
 
-    warning = any(lfa[s] != 0 for s in DCU_FCA_WARNINGS) or lfa["ELK_SymbDisp"] == 3
-    if self.dcu_angle:
+    warning = any(lfa[s] != 0 for s in ADAS_DRV_FCA_WARNINGS) or lfa["ELK_SymbDisp"] == 3
+    if self.adas_drv_angle:
       esa = steer["FCA_ESA_ActvSta"] != 0 or steer["FCA_ESA_TqBstGainVal"] != 0
-      dcu_steering = esa or steer["ADAS_ActvACILvl2Sta"] == 2
+      adas_drv_steering = esa or steer["ADAS_ActvACILvl2Sta"] == 2
     else:
       esa = False
-      dcu_steering = steer["ActToiSta"] != 0
+      adas_drv_steering = steer["ActToiSta"] != 0
 
     ret_sp.stockSteerIntervention = warning or esa
-    # the 0x160 stage also rises during emergency steering, only a brake request is AEB
     ret.stockAeb = can_parsers[Bus.alt].vl["ADRV_0x160"]["AEB_BRAKE_REQ"] > 0
 
-    # while it steers in an emergency we hold our steering frame back, and the interceptor lets its own reach the car
-    self.dcu_steer_age = 0 if fresh else self.dcu_steer_age + 1
-    self.dcu_passthrough = ret_sp.stockSteerIntervention and dcu_steering and self.dcu_steer_age < DCU_STEER_TIMEOUT_FRAMES
+    self.adas_drv_steer_age = 0 if fresh else self.adas_drv_steer_age + 1
+    self.adas_drv_passthrough = ret_sp.stockSteerIntervention and adas_drv_steering and self.adas_drv_steer_age < ADAS_DRV_STEER_TIMEOUT_FRAMES
 
   @staticmethod
   def get_parser(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> dict[StrEnum, CANParser]:
@@ -191,9 +173,7 @@ class CarStateExt:
 
     messages = {}
     if acan:
-      messages[Bus.adas] = decode_only(CANParser(DBC[CP.carFingerprint][Bus.pt], [(m, float('nan')) for m in acan], CanBus(CP).ACAN),
-                                       DCU_EMERGENCY_SIGNALS)
+      messages[Bus.adas] = CANParser(DBC[CP.carFingerprint][Bus.pt], [(m, float('nan')) for m in acan], CanBus(CP).ACAN)
     if ecan:
-      messages[Bus.alt] = decode_only(CANParser(DBC[CP.carFingerprint][Bus.pt], [(m, float('nan')) for m in ecan], CanBus(CP).ECAN),
-                                      DCU_EMERGENCY_SIGNALS)
+      messages[Bus.alt] = CANParser(DBC[CP.carFingerprint][Bus.pt], [(m, float('nan')) for m in ecan], CanBus(CP).ECAN)
     return messages

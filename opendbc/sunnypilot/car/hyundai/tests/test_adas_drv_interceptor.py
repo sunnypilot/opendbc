@@ -83,7 +83,7 @@ class TestLkasAlt(unittest.TestCase):
       assert out[k] == CAMERA[k], k
 
   def test_camera_frame_passes(self):
-    # 0x110 from a GV80 and a Carnival camera: everything we do not set reaches the ADAS DRV as the camera sent it
+    # GV80, Carnival
     msg = DBC(DBC_NAME).addr_to_msg[0x110]
     ours = {"CHECKSUM", "COUNTER", "LFA_BUTTON", "LKA_OptUsmSta", "LKA_SysIndReq", "StrTqReqVal", "LKA_SysWrn", "ActToiSta", "LKA_UsmMod",
             "LKA_RcgSta", "Damping_Gain", "ADAS_StrAnglReqVal", "LKAS_ANGLE_ACTIVE", "ADAS_ACIAnglTqRedcGainVal"}
@@ -122,7 +122,7 @@ class TestLkasAlt(unittest.TestCase):
       presses.append(int(lkas_alt(CAMERA, msg_161=msg_161, ic=ic)[0]["LFA_BUTTON"]))
     return presses
 
-  def test_lfa_pressed_until_dcu_lfa_shows(self):
+  def test_lfa_pressed_until_adas_drv_lfa_shows(self):
     ic = interceptor()
     presses = self._drive(ic, 200)
     self.assertEqual(sum(presses), 7, "20 ms every 0.5 s, from the first 0x161 counter change")
@@ -138,7 +138,7 @@ class TestLkasAlt(unittest.TestCase):
     out, _ = lkas_alt({**CAMERA, "LFA_BUTTON": 1}, msg_161={"COUNTER": 99, "LFA_ICON": 1}, ic=ic)
     self.assertEqual(out["LFA_BUTTON"], 0)
 
-  def test_no_press_without_dcu_161(self):
+  def test_no_press_without_adas_drv_161(self):
     ic = interceptor()
     self.assertEqual(sum(self._drive(ic, 200, fresh=False)), 0, "stale or not diverted yet")
     self.assertEqual(sum(int(lkas_alt(CAMERA, ic=ic)[0]["LFA_BUTTON"]) for _ in range(100)), 0, "no 0x161 at all")
@@ -148,7 +148,7 @@ class TestLkasAlt(unittest.TestCase):
     assert out["LFA_BUTTON"] == 0 and out["LKAS_ANGLE_ACTIVE"] == 1
 
 
-def dcu_emergency(angle, long, ecan=(), acan=(), msg_161=None, CS=None, t=1):
+def adas_drv_emergency(angle, long, ecan=(), acan=(), msg_161=None, CS=None, t=1):
   CP = SimpleNamespace(flags=HyundaiFlags.CANFD | HyundaiFlags.CANFD_LKA_STEER_MSG | HyundaiFlags.CANFD_LKA_STEER_MSG_ALT,
                        openpilotLongitudinalControl=long, carFingerprint=CAR.KIA_CARNIVAL_4TH_GEN, safetyConfigs=[None])
   CP_SP = SimpleNamespace(flags=HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR | (HyundaiFlagsSP.CANFD_ANGLE_STEERING if angle else 0))
@@ -162,25 +162,25 @@ def dcu_emergency(angle, long, ecan=(), acan=(), msg_161=None, CS=None, t=1):
   for cp in CS.parsers.values():
     cp.update([(t, frames)])
   ret, ret_sp = structs.CarState(), structs.CarStateSP()
-  CS.update_dcu_emergency(ret, ret_sp, CS.parsers)
+  CS.update_adas_drv_emergency(ret, ret_sp, CS.parsers)
   return ret_sp, CS, ret
 
 
-class TestDcuEmergency(unittest.TestCase):
+class TestAdasDrvEmergency(unittest.TestCase):
   def test_steering_frame_from_either_bus(self):
     for bus in ("acan", "ecan"):
-      ret_sp, CS, _ = dcu_emergency(False, True, **{bus: [("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})]})
-      assert ret_sp.stockSteerIntervention and CS.dcu_passthrough, bus
+      ret_sp, CS, _ = adas_drv_emergency(False, True, **{bus: [("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})]})
+      assert ret_sp.stockSteerIntervention and CS.adas_drv_passthrough, bus
       frames = {"ecan": [("LFA", {"FCA_LS_WrnSta": 1})], "acan": []}
       frames[bus].append(("LFA_ALT", {"ADAS_ActvACILvl2Sta": 2}))
-      ret_sp, CS, _ = dcu_emergency(True, True, **frames)
-      assert ret_sp.stockSteerIntervention and CS.dcu_passthrough, bus
+      ret_sp, CS, _ = adas_drv_emergency(True, True, **frames)
+      assert ret_sp.stockSteerIntervention and CS.adas_drv_passthrough, bus
 
   def test_newest_steering_frame_wins(self):
-    _, CS, _ = dcu_emergency(False, True, acan=[("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})])
-    assert CS.dcu_passthrough
-    _, CS, _ = dcu_emergency(False, True, ecan=[("LFA", {"ActToiSta": 1})], CS=CS, t=2)
-    assert not CS.dcu_passthrough
+    _, CS, _ = adas_drv_emergency(False, True, acan=[("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})])
+    assert CS.adas_drv_passthrough
+    _, CS, _ = adas_drv_emergency(False, True, ecan=[("LFA", {"ActToiSta": 1})], CS=CS, t=2)
+    assert not CS.adas_drv_passthrough
 
   def test_passthrough_needs_emergency_and_its_steering_request(self):
     for angle, lfa, lfa_alt, passthrough in (
@@ -189,14 +189,14 @@ class TestDcuEmergency(unittest.TestCase):
       (True, {}, {"ADAS_ActvACILvl2Sta": 2}, False), (True, {}, {"ADAS_ActvACILvl2Sta": 1, "FCA_ESA_ActvSta": 1}, True),
     ):
       acan = [("LFA_ALT", lfa_alt)] if angle else [("LFA", lfa)]
-      _, CS, _ = dcu_emergency(angle, True, ecan=[("LFA", lfa)] if angle else [], acan=acan)
-      assert CS.dcu_passthrough == passthrough, (angle, lfa, lfa_alt)
+      _, CS, _ = adas_drv_emergency(angle, True, ecan=[("LFA", lfa)] if angle else [], acan=acan)
+      assert CS.adas_drv_passthrough == passthrough, (angle, lfa, lfa_alt)
 
   def test_passthrough_ends_when_steering_frame_stops(self):
-    _, CS, _ = dcu_emergency(False, True, acan=[("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})])
+    _, CS, _ = adas_drv_emergency(False, True, acan=[("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})])
     seen = []
     for _ in range(4):
-      seen.append(dcu_emergency(False, True, CS=CS)[1].dcu_passthrough)
+      seen.append(adas_drv_emergency(False, True, CS=CS)[1].adas_drv_passthrough)
     self.assertEqual(seen, [True, True, False, False])
 
   def test_command_restarts_after_passthrough(self):
@@ -207,18 +207,18 @@ class TestDcuEmergency(unittest.TestCase):
       restarted = []
       for passthrough in (False, True, True, False, False, False):
         CC.apply_angle_last, CC.apply_torque_last = 10.0, 200
-        CC.update(SimpleNamespace(dcu_passthrough=passthrough, out=SimpleNamespace(steeringAngleDeg=-25.0)))
+        CC.update(SimpleNamespace(adas_drv_passthrough=passthrough, out=SimpleNamespace(steeringAngleDeg=-25.0)))
         restarted.append((CC.apply_angle_last, CC.angle_filter.x) == (-25.0, -25.0) if angle else CC.apply_torque_last == 0)
       self.assertEqual(restarted, [False, False, False, True, True, False], angle)
 
   def test_aeb_from_brake_request(self):
     for values, aeb in (({"SET_ME_2": 32}, False), ({"SET_ME_2": 64}, False), ({"SET_ME_2": 64, "AEB_BRAKE_REQ": 60}, True)):
-      assert dcu_emergency(True, True, ecan=[("ADRV_0x160", values)])[2].stockAeb == aeb, values
+      assert adas_drv_emergency(True, True, ecan=[("ADRV_0x160", values)])[2].stockAeb == aeb, values
 
   def test_triggers(self):
     for values in ({"FCA_LO_WrnSta": 1}, {"FCA_ESA_WrnSta": 1}, {"FCA_ESA_CtrlSta": 1}, {"BCA_Rear_WrnSta": 4}, {"ELK_SymbDisp": 3}):
-      assert dcu_emergency(True, True, ecan=[("LFA", values)])[0].stockSteerIntervention, values
-    assert not dcu_emergency(True, True, ecan=[("LFA", {"ELK_SymbDisp": 1})])[0].stockSteerIntervention
+      assert adas_drv_emergency(True, True, ecan=[("LFA", values)])[0].stockSteerIntervention, values
+    assert not adas_drv_emergency(True, True, ecan=[("LFA", {"ELK_SymbDisp": 1})])[0].stockSteerIntervention
     for values in ({"FCA_ESA_ActvSta": 1}, {"FCA_ESA_TqBstGainVal": 0.1}):
-      assert dcu_emergency(True, True, acan=[("LFA_ALT", values)])[0].stockSteerIntervention, values
-    assert not dcu_emergency(True, True, msg_161={"ALERTS_1": 21})[0].stockSteerIntervention
+      assert adas_drv_emergency(True, True, acan=[("LFA_ALT", values)])[0].stockSteerIntervention, values
+    assert not adas_drv_emergency(True, True, msg_161={"ALERTS_1": 21})[0].stockSteerIntervention

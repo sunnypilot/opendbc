@@ -156,7 +156,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     # angle control
     else:
       v_ego_raw = CS.out.vEgoRaw
-      angle_max = MAX_ANGLE_LFA_ALT if self.CP.openpilotLongitudinalControl or self.dcu_angle_steering else \
+      angle_max = MAX_ANGLE_LFA_ALT if self.CP.openpilotLongitudinalControl or self.adas_drv_angle_steering else \
                   self.params.ANGLE_LIMITS.STEER_ANGLE_MAX
       desired_angle = float(np.clip(actuators.steeringAngleDeg, -angle_max, angle_max))
 
@@ -294,9 +294,8 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
       can_sends.extend(self.interceptor.create_adas_drv_intercept_msg(self.packer, self.CAN))
 
     # steering control
-    if self.dcu_intercepted:
-      can_sends.extend(self.create_intercepted_steering(CS, CC.enabled, apply_steer_req, apply_torque, self.apply_angle_last,
-                                                        CS.msg_161 if self.ccnc_hud else CS.msg_1e0))
+    if self.adas_drv_intercepted:
+      can_sends.extend(self.create_adas_drv_steering(CS, CC, apply_steer_req, apply_torque))
     elif self.lfa_alt_steering:
       can_sends.append(create_lfa_alt(self.packer, self.CAN, apply_steer_req, self.apply_angle_last, apply_torque))
     else:
