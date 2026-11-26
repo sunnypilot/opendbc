@@ -35,15 +35,12 @@ class TestInterceptOpt(unittest.TestCase):
       self.assertEqual(dat[7], features, f"long {long}")
 
   def test_copied_frames_fully_defined(self):
-    # frames passed on from the camera or the ADAS DRV are rebuilt from their signals: a bit without one comes out 0
-    dbc = DBC(DBC_NAME)
-    for addr in (0x50, 0x110, 0x12A, 0xCB):
-      msg = dbc.addr_to_msg[addr]
-      for bit in range(msg.size * 8):
-        dat = bytearray(msg.size)
-        dat[bit // 8] = 1 << (bit % 8)
-        self.assertTrue(any(s.get_raw_value(dat) for s in msg.sigs.values()), f"{msg.name} bit {bit}")
-
+    # the camera's 0x50 is rebuilt from its signals: a bit without one comes out 0
+    msg = DBC(DBC_NAME).addr_to_msg[0x50]
+    for bit in range(msg.size * 8):
+      dat = bytearray(msg.size)
+      dat[bit // 8] = 1 << (bit % 8)
+      self.assertTrue(any(s.get_raw_value(dat) for s in msg.sigs.values()), f"{msg.name} bit {bit}")
 
 def decode(addr, dat):
   values = {}
@@ -83,6 +80,26 @@ class TestLkasAlt(unittest.TestCase):
     out, _ = lkas_alt(CAMERA)
     for k in ("FCA_ESA_CtrlSta", "LKA_StrSnd", "LKA_HndsoffSnd", "LKA_LHLnWrnSta", "ToiFltSta"):
       assert out[k] == CAMERA[k], k
+
+  def test_camera_frame_passes(self):
+    # 0x110 from a GV80 and a Carnival camera: everything we do not set reaches the ADAS DRV as the camera sent it
+    msg = DBC(DBC_NAME).addr_to_msg[0x110]
+    ours = {"CHECKSUM", "COUNTER", "LFA_BUTTON", "LKA_OptUsmSta", "LKA_SysIndReq", "StrTqReqVal", "LKA_SysWrn", "ActToiSta", "LKA_UsmMod",
+            "LKA_RcgSta", "Damping_Gain", "ADAS_StrAnglReqVal", "LKAS_ANGLE_ACTIVE", "ADAS_ACIAnglTqRedcGainVal"}
+    mask = bytearray(msg.size)
+    for sig in msg.sigs.values():
+      if sig.name in ours:
+        for bit in range(msg.size * 8):
+          probe = bytearray(msg.size)
+          probe[bit // 8] = 1 << (bit % 8)
+          if sig.get_raw_value(probe):
+            mask[bit // 8] |= 1 << (bit % 8)
+    for frame in ("f771ae18a000080000120c00000900000000000000000000000000009201ffff",
+                  "0b97c5006000080064020000000000000000000000000000000000009201ffff"):
+      camera = bytes.fromhex(frame)
+      _, dat = lkas_alt(decode(0x110, camera))
+      for i, m in enumerate(mask):
+        self.assertEqual(dat[i] & ~m & 0xFF, camera[i] & ~m & 0xFF, (frame, i))
 
   def test_steering_never_engaged(self):
     out, dat = lkas_alt(CAMERA, enabled=False)
