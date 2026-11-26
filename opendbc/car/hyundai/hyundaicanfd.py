@@ -37,7 +37,7 @@ class CanBus(CanBusBase):
     return self._cam
 
 
-def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon, lfa_button=False):
+def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_torque, apply_angle, lkas_icon):
   values = {
     "LKA_OptUsmSta": 2,
     "LKA_SysIndReq": 2 if enabled else 1,
@@ -47,7 +47,6 @@ def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_
     "LKA_UsmMod": 0,  # hide LKAS settings
     "LKA_RcgSta": 0,  # lane recognition status (0 for "not recognized")
     "Damping_Gain": 100,  # can potentially tuned for better perf [3, 200]
-    "LFA_BUTTON": 1 if lfa_button else 0,
   }
 
   # Angle control doesn't support using LFA yet
@@ -65,13 +64,10 @@ def create_steering_messages(packer, CP, CP_SP, CAN, enabled, lat_active, apply_
 
   ret = []
   if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
-    # with the ADAS DRV intercepted our LFA steers the MDPS directly, and the camera's own frame is passed on instead of ours
-    interceptor = CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR
     lkas_msg = "LKAS_ALT" if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS"
-    if CP.openpilotLongitudinalControl or interceptor:
+    if CP.openpilotLongitudinalControl:
       ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
-    if not interceptor:
-      ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, values))
+    ret.append(packer.make_can_msg(lkas_msg, CAN.ACAN, values))
   else:
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
 

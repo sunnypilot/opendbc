@@ -156,7 +156,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     # angle control
     else:
       v_ego_raw = CS.out.vEgoRaw
-      angle_max = MAX_ANGLE_LFA_ALT if self.CP.openpilotLongitudinalControl or self.interceptor.lfa_alt_steering else \
+      angle_max = MAX_ANGLE_LFA_ALT if self.CP.openpilotLongitudinalControl or self.dcu_angle_steering else \
                   self.params.ANGLE_LIMITS.STEER_ANGLE_MAX
       desired_angle = float(np.clip(actuators.steeringAngleDeg, -angle_max, angle_max))
 
@@ -294,20 +294,14 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
       can_sends.extend(self.interceptor.create_adas_drv_intercept_msg(self.packer, self.CAN))
 
     # steering control
-    if self.interceptor.lfa_alt_steering:
-      if not CS.dcu_passthrough:
-        can_sends.append(self.interceptor.create_lfa_alt(self.packer, self.CAN, apply_steer_req, self.apply_angle_last, apply_torque))
-      can_sends.extend(self.interceptor.create_lkas_alt(self.packer, self.CAN, CS.lkas, CS.msg_161,
-                                                                  CC.enabled, self.apply_angle_last))
+    if self.dcu_intercepted:
+      can_sends.extend(self.create_intercepted_steering(CS, CC.enabled, apply_steer_req, apply_torque, self.apply_angle_last,
+                                                        CS.msg_161 if self.ccnc_hud else CS.msg_1e0))
     elif self.lfa_alt_steering:
       can_sends.append(create_lfa_alt(self.packer, self.CAN, apply_steer_req, self.apply_angle_last, apply_torque))
     else:
-      lfa_button = bool(self.interceptor.available and lka_steering and self.interceptor.lfa_press(CS.msg_161 if self.ccnc_hud else CS.msg_1e0))
-      if not (self.interceptor.available and lka_steering and CS.dcu_passthrough):
-        can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CP_SP, self.CAN, CC.enabled, apply_steer_req, apply_torque,
-                                                               self.apply_angle_last, self.lkas_icon, lfa_button))
-      if self.interceptor.available and lka_steering:
-        can_sends.append(self.interceptor.create_lkas(self.packer, self.CAN, CS.lkas, lfa_button, apply_steer_req, apply_torque))
+      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CP_SP, self.CAN, CC.enabled, apply_steer_req, apply_torque,
+                                                             self.apply_angle_last, self.lkas_icon))
 
     # prevent LFA from activating on LKA steering cars by sending "no lane lines detected" to ADAS ECU
     if self.frame % 5 == 0 and lka_steering and not self.interceptor.available:

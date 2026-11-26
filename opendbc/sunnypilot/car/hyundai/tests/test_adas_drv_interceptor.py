@@ -69,7 +69,8 @@ class TestLkasTorque(unittest.TestCase):
 
 def lkas_alt(camera, enabled=True, angle=5.0, msg_161=None, ic=None):
   ic = ic or interceptor()
-  (addr, dat, bus), = ic.create_lkas_alt(CANPacker(DBC_NAME), SimpleNamespace(ACAN=0), camera, msg_161 or {}, enabled, angle)
+  ic.update_car_state(None)
+  (addr, dat, bus), = ic.create_lkas_alt(CANPacker(DBC_NAME), SimpleNamespace(ACAN=0), camera, ic.lfa_press(msg_161 or {}), enabled, angle)
   parser = CANParser(DBC_NAME, [("LKAS_ALT", 0)], 0)
   parser.update([(0, [(addr, dat, bus)])])
   return parser.vl["LKAS_ALT"], dat

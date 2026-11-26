@@ -38,10 +38,9 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
   def trigger_msg(self):
     return 0x1A0
 
-  @property
-  def lfa_alt_steering(self):
-    # the MDPS on angle steering cars only listens to LFA_ALT, so with the ADAS DRV intercepted we steer it directly
-    return bool(self.available and self.CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG)
+  def update_car_state(self, car_state):
+    super().update_car_state(car_state)
+    self.frame += 1
 
   @staticmethod
   def create_lfa_alt(packer, CAN, lat_active, apply_angle, apply_torque):
@@ -55,11 +54,25 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
     }
     return packer.make_can_msg("LFA_ALT", CAN.ECAN, values)
 
+  @staticmethod
+  def create_lfa(packer, CAN, enabled, lat_active, apply_torque, lfa_button):
+    values = {
+      "LKA_OptUsmSta": 2,
+      "LKA_SysIndReq": 2 if enabled else 1,
+      "StrTqReqVal": apply_torque,
+      "LKA_SysWrn": 0,
+      "ActToiSta": 1 if lat_active else 0,
+      "LKA_UsmMod": 0,
+      "LKA_RcgSta": 0,
+      "Damping_Gain": 100,
+      "LFA_BUTTON": 1 if lfa_button else 0,
+    }
+    return packer.make_can_msg("LFA", CAN.ECAN, values)
+
   def lfa_press(self, msg_161):
     # call once per frame. The ADAS DRV toggles LFA on LFA_BUTTON in 0x50/0x110, not on CRUISE_BUTTONS: we press it until
     # its LFA icon shows, then own the button for the drive so its LFA stays on for HDA and the side cars. Its 0x161
     # (0x1E0 without ccNC) reaches us only once the interceptor diverts it
-    self.frame += 1
     counter = msg_161.get("COUNTER")
     if counter != self.dcu_161_counter:
       if None not in (counter, self.dcu_161_counter):
@@ -69,11 +82,10 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
     self.dcu_lfa_on = self.dcu_lfa_on or (dcu_161_fresh and msg_161.get("LFA_ICON", 0) != 0)
     return dcu_161_fresh and not self.dcu_lfa_on and self.frame % LFA_PRESS_PERIOD < LFA_PRESS_FRAMES
 
-  def create_lkas_alt(self, packer, CAN, lkas_alt, msg_161, enabled, apply_angle):
+  def create_lkas_alt(self, packer, CAN, lkas_alt, press, enabled, apply_angle):
     # the camera's copy, never engaged, so the ADAS DRV is never asked to steer. The rest passes through
     if not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT:
       return []
-    press = self.lfa_press(msg_161)
     values = {k: v for k, v in lkas_alt.items() if k not in ("CHECKSUM", "COUNTER")}
     values.update({
       "LKA_OptUsmSta": 0,
@@ -124,6 +136,9 @@ class AdasDrvEcuInterceptorCarState(EcuInterceptorCarStateBase):
 class AdasDrvEcuInterceptorCarController(EcuInterceptorCarControllerBase):
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     super().__init__(CP, CP_SP)
+    self.dcu_intercepted = bool(self.interceptor.available and CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG)
+    # the MDPS on angle steering cars only listens to LFA_ALT, so with the ADAS DRV intercepted we steer it directly
+    self.dcu_angle_steering = self.dcu_intercepted and bool(CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING)
     self.dcu_resume_frames = 0
 
   def update(self, car_state):
@@ -134,11 +149,20 @@ class AdasDrvEcuInterceptorCarController(EcuInterceptorCarControllerBase):
       self.dcu_resume_frames = DCU_RESUME_FRAMES
     elif self.dcu_resume_frames > 0:
       self.dcu_resume_frames -= 1
-      if self.interceptor.lfa_alt_steering:
+      if self.dcu_angle_steering:
         self.apply_angle_last = car_state.out.steeringAngleDeg
         self.angle_filter.x = self.apply_angle_last
       else:
         self.apply_torque_last = 0
+
+  def create_intercepted_steering(self, CS, enabled, lat_active, apply_torque, apply_angle, msg_161):
+    # while the ADAS DRV steers in an emergency the interceptor lets its own frame through, so ours is held back
+    press = self.interceptor.lfa_press(msg_161)
+    if self.dcu_angle_steering:
+      steer = [] if CS.dcu_passthrough else [self.interceptor.create_lfa_alt(self.packer, self.CAN, lat_active, apply_angle, apply_torque)]
+      return steer + self.interceptor.create_lkas_alt(self.packer, self.CAN, CS.lkas, press, enabled, apply_angle)
+    steer = [] if CS.dcu_passthrough else [self.interceptor.create_lfa(self.packer, self.CAN, enabled, lat_active, apply_torque, press)]
+    return steer + [self.interceptor.create_lkas(self.packer, self.CAN, CS.lkas, press, lat_active, apply_torque)]
 
   def initialize(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> AdasDrvEcuInterceptor:
     """
