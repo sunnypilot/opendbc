@@ -10,12 +10,14 @@ from opendbc.car import structs, Bus
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
+from opendbc.sunnypilot.car.hyundai.carstate_ext import decode_only
 from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
 
 RADAR_TRACKS_START_ADDR = 0x3A5
 RADAR_TRACKS_MSG_COUNT = 32
 RADAR_TRACKS_MSG_SIZE = 24
 RADAR_TRACKS_ADDRS = range(RADAR_TRACKS_START_ADDR, RADAR_TRACKS_START_ADDR + RADAR_TRACKS_MSG_COUNT)
+RADAR_TRACK_SIGNALS = ("STATE", "LONG_DIST", "LAT_DIST", "REL_SPEED")
 
 
 def has_radar_tracks(fingerprint: dict[int, dict[int, int]], bus: int) -> bool:
@@ -52,7 +54,8 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
   def get_radar_ext_can_parser(self) -> CANParser:
     if self.use_radar_tracks:
       messages = [(f"RADAR_TRACK_{addr:x}", 20) for addr in RADAR_TRACKS_ADDRS]
-      return CANParser(DBC[self.CP.carFingerprint][Bus.radar], messages, CanBus(self.CP).ACAN)
+      cp = CANParser(DBC[self.CP.carFingerprint][Bus.radar], messages, CanBus(self.CP).ACAN)
+      return decode_only(cp, {m: RADAR_TRACK_SIGNALS for m, _ in messages})
 
     if self.ESCC.enabled:
       lead_src, bus = "ESCC", 0

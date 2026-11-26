@@ -9,6 +9,7 @@ import copy
 from enum import StrEnum
 
 from opendbc.car import Bus, structs
+from opendbc.can.dbc import SignalType
 from opendbc.can.parser import CANParser
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC
@@ -16,6 +17,20 @@ from opendbc.sunnypilot.car.hyundai.ccnc import ccnc_hud_enabled
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 DCU_STEER_TIMEOUT_FRAMES = 3  # 3 periods of its steering frame
+
+DCU_EMERGENCY_SIGNALS = {
+  "LFA": ("FCA_LO_WrnSta", "FCA_LS_WrnSta", "FCA_ESA_WrnSta", "FCA_ESA_CtrlSta", "BCA_Rear_WrnSta", "ELK_SymbDisp", "ActToiSta"),
+  "LFA_ALT": ("FCA_ESA_ActvSta", "FCA_ESA_TqBstGainVal", "ADAS_ActvACILvl2Sta"),
+  "ADRV_0x160": ("AEB_BRAKE_REQ",),
+}
+
+
+def decode_only(cp: CANParser, signals: dict[str, tuple[str, ...]]) -> CANParser:
+  # the parser decodes every signal each frame, and these wide CAN FD frames are read for a few. Counter and checksum stay checked
+  for state in cp.message_states.values():
+    if state.name in signals:
+      state.signals = [s for s in state.signals if s.name in signals[state.name] or s.type != SignalType.DEFAULT]
+  return cp
 
 
 class CarStateExt:
@@ -173,7 +188,9 @@ class CarStateExt:
 
     messages = {}
     if acan:
-      messages[Bus.adas] = CANParser(DBC[CP.carFingerprint][Bus.pt], [(m, float('nan')) for m in acan], CanBus(CP).ACAN)
+      messages[Bus.adas] = decode_only(CANParser(DBC[CP.carFingerprint][Bus.pt], [(m, float('nan')) for m in acan], CanBus(CP).ACAN),
+                                       DCU_EMERGENCY_SIGNALS)
     if ecan:
-      messages[Bus.alt] = CANParser(DBC[CP.carFingerprint][Bus.pt], [(m, float('nan')) for m in ecan], CanBus(CP).ECAN)
+      messages[Bus.alt] = decode_only(CANParser(DBC[CP.carFingerprint][Bus.pt], [(m, float('nan')) for m in ecan], CanBus(CP).ECAN),
+                                      DCU_EMERGENCY_SIGNALS)
     return messages

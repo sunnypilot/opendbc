@@ -1,5 +1,8 @@
+import math
 from enum import IntEnum
 
+from opendbc.can.dbc import SignalType
+from opendbc.can.packer import set_value
 from opendbc.car import structs
 from opendbc.car.hyundai.values import HyundaiFlags
 
@@ -29,6 +32,7 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
     self.frame = 0
     self.dcu_161_counter = None
     self.dcu_161_frame = -DCU_161_TIMEOUT_FRAMES
+    self.last_packed = {}
 
   @property
   def available(self):
@@ -89,13 +93,36 @@ class AdasDrvEcuInterceptor(EcuInterceptorBase):
       "ADAS_ACIAnglTqRedcGainVal": 0,
     })
     values["LFA_BUTTON"] = 1 if press else 0
-    return [packer.make_can_msg("LKAS_ALT", CAN.ACAN, values)]
+    return [self.make_can_msg_changed(packer, "LKAS_ALT", CAN.ACAN, values)]
 
   def create_lkas(self, packer, CAN, lkas, lfa_button, lat_active, apply_torque):
     # torque cars: the camera's own frame with our steering request and button in place of its own
     values = {k: v for k, v in lkas.items() if k not in ("CHECKSUM", "COUNTER")}
     values |= {"StrTqReqVal": apply_torque, "ActToiSta": 1 if lat_active else 0, "LFA_BUTTON": 1 if lfa_button else 0}
-    return packer.make_can_msg("LKAS_ALT" if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS", CAN.ACAN, values)
+    return self.make_can_msg_changed(packer, "LKAS_ALT" if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS", CAN.ACAN, values)
+
+  def make_can_msg_changed(self, packer, name, bus, values):
+    # repacking all ~30 signals of the camera's copy every frame costs more than the few that change
+    msg = packer.dbc.name_to_msg[name]
+    if name not in self.last_packed or msg.address not in packer.counters:
+      _, dat, _ = packer.make_can_msg(name, bus, values)
+      self.last_packed[name] = (dict(values), bytearray(dat))
+      return msg.address, dat, bus
+
+    last_values, dat = self.last_packed[name]
+    for sig_name, value in values.items():
+      if last_values.get(sig_name) != value:
+        sig = msg.sigs[sig_name]
+        ival = int(math.floor((value - sig.offset) / sig.factor + 0.5))
+        set_value(dat, sig, ival + (1 << sig.size) if ival < 0 else ival)
+        last_values[sig_name] = value
+
+    counter = next(s for s in msg.sigs.values() if s.type == SignalType.COUNTER or s.name == "COUNTER")
+    set_value(dat, counter, packer.counters[msg.address])
+    packer.counters[msg.address] = (packer.counters[msg.address] + 1) % (1 << counter.size)
+    checksum = next(s for s in msg.sigs.values() if s.type > SignalType.COUNTER)
+    set_value(dat, checksum, checksum.calc_checksum(msg.address, checksum, dat))
+    return msg.address, bytes(dat), bus
 
   def create_adas_drv_intercept_msg(self, packer, CAN):
     nav = int(self.CP.openpilotLongitudinalControl)
