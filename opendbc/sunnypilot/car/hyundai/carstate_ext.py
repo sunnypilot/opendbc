@@ -18,8 +18,9 @@ from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 DCU_STEER_TIMEOUT_FRAMES = 3  # 3 periods of its steering frame
 
+DCU_FCA_WARNINGS = ("FCA_LO_WrnSta", "FCA_LS_WrnSta", "FCA_ESA_WrnSta", "FCA_ESA_CtrlSta", "BCA_Rear_WrnSta")
 DCU_EMERGENCY_SIGNALS = {
-  "LFA": ("FCA_LO_WrnSta", "FCA_LS_WrnSta", "FCA_ESA_WrnSta", "FCA_ESA_CtrlSta", "BCA_Rear_WrnSta", "ELK_SymbDisp", "ActToiSta"),
+  "LFA": (*DCU_FCA_WARNINGS, "ELK_SymbDisp", "ActToiSta"),
   "LFA_ALT": ("FCA_ESA_ActvSta", "FCA_ESA_TqBstGainVal", "ADAS_ActvACILvl2Sta"),
   "ADRV_0x160": ("AEB_BRAKE_REQ",),
 }
@@ -46,8 +47,10 @@ class CarStateExt:
     self.cruise_buttons_msg = {}
     self.lkas = {}
     self.lfa_alt = {}
-    self.dcu_steer_frame = None
-    self.dcu_steer_age = 0
+    self.dcu_intercepted = bool(CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG)
+    self.dcu_angle = bool(CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING)
+    self.dcu_steer_msg = "LFA_ALT" if self.dcu_angle else "LFA"
+    self.dcu_steer_age = DCU_STEER_TIMEOUT_FRAMES
     self.dcu_passthrough = False
 
   def update_speed_limit(self, cp, cp_cam) -> float:
@@ -131,42 +134,42 @@ class CarStateExt:
     elif Bus.adas in can_parsers:
       self.msg_1e0 = copy.copy(can_parsers[Bus.adas].vl["LFAHDA_CLUSTER"])
 
-    if self.CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+    if self.dcu_intercepted:
       self.lkas = copy.copy(cp_cam.vl["LKAS_ALT" if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS"])
 
     if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
       self.cruise_buttons_msg = copy.copy(cp.vl[self.cruise_btns_msg_canfd])
 
-    if self.CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
-      self.update_dcu_emergency(ret_sp, can_parsers)
+    if self.dcu_intercepted:
+      self.update_dcu_emergency(ret, ret_sp, can_parsers)
 
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
 
-  def update_dcu_emergency(self, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]) -> None:
-    angle = bool(self.CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING)
-    # the ADAS DRV's steering frame is on A-CAN while the interceptor blocks it, and on E-CAN while it reaches the car
-    steer_msg = "LFA_ALT" if angle else "LFA"
-    cp_steer = max(can_parsers[Bus.adas], can_parsers[Bus.alt], key=lambda cp: cp.ts_nanos[steer_msg]["COUNTER"])
-    dcu_steer = cp_steer.vl[steer_msg]
-    lfa = can_parsers[Bus.alt].vl["LFA"] if angle else dcu_steer
+  def dcu_steer_frame(self, can_parsers: dict[StrEnum, CANParser]) -> tuple[dict[str, float], bool]:
+    # the ADAS DRV's steering frame is on A-CAN while the interceptor diverts it, and on E-CAN while it reaches the car
+    cp = max(can_parsers[Bus.adas], can_parsers[Bus.alt], key=lambda p: p.ts_nanos[self.dcu_steer_msg]["COUNTER"])
+    return cp.vl[self.dcu_steer_msg], len(cp.vl_all[self.dcu_steer_msg]["COUNTER"]) > 0
 
-    emergency = any(lfa[s] != 0 for s in ("FCA_LO_WrnSta", "FCA_LS_WrnSta", "FCA_ESA_WrnSta", "FCA_ESA_CtrlSta", "BCA_Rear_WrnSta"))
-    emergency = emergency or lfa["ELK_SymbDisp"] == 3
-    if angle:
-      esa = dcu_steer["FCA_ESA_ActvSta"] != 0 or dcu_steer["FCA_ESA_TqBstGainVal"] != 0
-      emergency = emergency or esa
-      dcu_steering = esa or dcu_steer["ADAS_ActvACILvl2Sta"] == 2
+  def update_dcu_emergency(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]) -> None:
+    steer, fresh = self.dcu_steer_frame(can_parsers)
+    # angle cars: its LFA is never diverted, so the warnings are always on E-CAN
+    lfa = can_parsers[Bus.alt].vl["LFA"] if self.dcu_angle else steer
+
+    warning = any(lfa[s] != 0 for s in DCU_FCA_WARNINGS) or lfa["ELK_SymbDisp"] == 3
+    if self.dcu_angle:
+      esa = steer["FCA_ESA_ActvSta"] != 0 or steer["FCA_ESA_TqBstGainVal"] != 0
+      dcu_steering = esa or steer["ADAS_ActvACILvl2Sta"] == 2
     else:
-      dcu_steering = dcu_steer["ActToiSta"] != 0
-    ret_sp.stockSteerIntervention = emergency
+      esa = False
+      dcu_steering = steer["ActToiSta"] != 0
+
+    ret_sp.stockSteerIntervention = warning or esa
     # the 0x160 stage also rises during emergency steering, only a brake request is AEB
-    ret_sp.stockAeb = can_parsers[Bus.alt].vl["ADRV_0x160"]["AEB_BRAKE_REQ"] > 0
+    ret.stockAeb = can_parsers[Bus.alt].vl["ADRV_0x160"]["AEB_BRAKE_REQ"] > 0
 
     # while it steers in an emergency we hold our steering frame back, and the interceptor lets its own reach the car
-    frame = (cp_steer.bus, dcu_steer["COUNTER"])
-    self.dcu_steer_age = 0 if frame != self.dcu_steer_frame else self.dcu_steer_age + 1
-    self.dcu_steer_frame = frame
-    self.dcu_passthrough = bool(emergency and dcu_steering and self.dcu_steer_age < DCU_STEER_TIMEOUT_FRAMES)
+    self.dcu_steer_age = 0 if fresh else self.dcu_steer_age + 1
+    self.dcu_passthrough = ret_sp.stockSteerIntervention and dcu_steering and self.dcu_steer_age < DCU_STEER_TIMEOUT_FRAMES
 
   @staticmethod
   def get_parser(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> dict[StrEnum, CANParser]:

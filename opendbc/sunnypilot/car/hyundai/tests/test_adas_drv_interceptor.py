@@ -143,25 +143,25 @@ def dcu_emergency(angle, long, ecan=(), acan=(), msg_161=None, CS=None, t=1):
   frames = [CS.packer.make_can_msg(n, CAN.ECAN, v) for n, v in ecan] + [CS.packer.make_can_msg(n, CAN.ACAN, v) for n, v in acan]
   for cp in CS.parsers.values():
     cp.update([(t, frames)])
-  ret_sp = structs.CarStateSP()
-  CS.update_dcu_emergency(ret_sp, CS.parsers)
-  return ret_sp, CS
+  ret, ret_sp = structs.CarState(), structs.CarStateSP()
+  CS.update_dcu_emergency(ret, ret_sp, CS.parsers)
+  return ret_sp, CS, ret
 
 
 class TestDcuEmergency(unittest.TestCase):
   def test_steering_frame_from_either_bus(self):
     for bus in ("acan", "ecan"):
-      ret_sp, CS = dcu_emergency(False, True, **{bus: [("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})]})
+      ret_sp, CS, _ = dcu_emergency(False, True, **{bus: [("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})]})
       assert ret_sp.stockSteerIntervention and CS.dcu_passthrough, bus
       frames = {"ecan": [("LFA", {"FCA_LS_WrnSta": 1})], "acan": []}
       frames[bus].append(("LFA_ALT", {"ADAS_ActvACILvl2Sta": 2}))
-      ret_sp, CS = dcu_emergency(True, True, **frames)
+      ret_sp, CS, _ = dcu_emergency(True, True, **frames)
       assert ret_sp.stockSteerIntervention and CS.dcu_passthrough, bus
 
   def test_newest_steering_frame_wins(self):
-    _, CS = dcu_emergency(False, True, acan=[("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})])
+    _, CS, _ = dcu_emergency(False, True, acan=[("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})])
     assert CS.dcu_passthrough
-    _, CS = dcu_emergency(False, True, ecan=[("LFA", {"ActToiSta": 1})], CS=CS, t=2)
+    _, CS, _ = dcu_emergency(False, True, ecan=[("LFA", {"ActToiSta": 1})], CS=CS, t=2)
     assert not CS.dcu_passthrough
 
   def test_passthrough_needs_emergency_and_its_steering_request(self):
@@ -171,11 +171,11 @@ class TestDcuEmergency(unittest.TestCase):
       (True, {}, {"ADAS_ActvACILvl2Sta": 2}, False), (True, {}, {"ADAS_ActvACILvl2Sta": 1, "FCA_ESA_ActvSta": 1}, True),
     ):
       acan = [("LFA_ALT", lfa_alt)] if angle else [("LFA", lfa)]
-      _, CS = dcu_emergency(angle, True, ecan=[("LFA", lfa)] if angle else [], acan=acan)
+      _, CS, _ = dcu_emergency(angle, True, ecan=[("LFA", lfa)] if angle else [], acan=acan)
       assert CS.dcu_passthrough == passthrough, (angle, lfa, lfa_alt)
 
   def test_passthrough_ends_when_steering_frame_stops(self):
-    _, CS = dcu_emergency(False, True, acan=[("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})])
+    _, CS, _ = dcu_emergency(False, True, acan=[("LFA", {"FCA_LS_WrnSta": 1, "ActToiSta": 1})])
     seen = []
     for _ in range(4):
       seen.append(dcu_emergency(False, True, CS=CS)[1].dcu_passthrough)
@@ -195,7 +195,7 @@ class TestDcuEmergency(unittest.TestCase):
 
   def test_aeb_from_brake_request(self):
     for values, aeb in (({"SET_ME_2": 32}, False), ({"SET_ME_2": 64}, False), ({"SET_ME_2": 64, "AEB_BRAKE_REQ": 60}, True)):
-      assert dcu_emergency(True, True, ecan=[("ADRV_0x160", values)])[0].stockAeb == aeb, values
+      assert dcu_emergency(True, True, ecan=[("ADRV_0x160", values)])[2].stockAeb == aeb, values
 
   def test_triggers(self):
     for values in ({"FCA_LO_WrnSta": 1}, {"FCA_ESA_WrnSta": 1}, {"FCA_ESA_CtrlSta": 1}, {"BCA_Rear_WrnSta": 4}, {"ELK_SymbDisp": 3}):
