@@ -8,6 +8,7 @@ from enum import StrEnum
 
 from opendbc.car import Bus, structs
 from opendbc.can.parser import CANParser
+from opendbc.car.honda.values import GearShifter
 from opendbc.sunnypilot.car.honda.values_ext import HondaFlagsSP
 
 
@@ -32,3 +33,6 @@ class CarStateExt:
       # Same threshold as panda, equivalent to 1e-5 with previous DBC scaling
       gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
       ret.gasPressed = gas > 492
+
+    if ret.gearShifter == GearShifter.brake:
+      ret.brakePressed = True # allows MADS in B (regen braking) mode
