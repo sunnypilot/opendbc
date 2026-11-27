@@ -1,54 +1,32 @@
 # **How custom longitudinal tuning works for Hyundai/Kia/Genesis vehicles in sunnypilot.**
 
-This document explains the custom longitudinal control tuning implemented in sunnypilot for Hyundai, Kia, and Genesis vehicles.
+The controller (`controller.py`) sits between LongControl and SCC12 / SCC14 (SCC_CONTROL on CAN-FD) and runs with every SCC12 frame
+(50 Hz), as the radar's own SCC does. With `HyundaiLongitudinalTuning` on it sends what the car's own radar sends the ESC for the
+same request.
 
-**Safety First: ISO 15622:2018**
+**What it sends**
 
-Our primary safety guideline is [ISO 15622:2018](https://www.iso.org/obp/ui/en/#iso:std:iso:15622:ed-3:v1:en).
-This standard provides the foundation for the safety limits enforced by this tuning, particularly concerning maximum allowable jerk based on speed.
+*   `aReqRaw` (`desired_accel`): LongControl's accel, clipped to `CarControllerParams`; 0 while stopping (StopReq).
+*   `aReqValue` (`actual_accel`): a jerk-limited integrator toward `aReqRaw` at the jerk fields sent.
+*   `JerkUpperLimit` / `JerkLowerLimit`: the rate `aReqValue` is allowed to move at.
+*   `ComfortBandUpper` / `ComfortBandLower`: how far the ESC may sit from the request before it corrects.
 
-**Core Concepts**
+**Jerk fields** (SCC14 `rate` family, the Kia Niro EV's)
 
-1.  **Jerk-Limited Acceleration:** Instead of directly applying the planner's target acceleration (`CC.actuators.accel`), we use a jerk-limited integrator. This ensures smoother transitions by limiting the rate of change of acceleration (jerk).
-    *   `desired_accel`: The target acceleration from the planner, clipped within safe limits (`CarControllerParams.ACCEL_MIN`, `CarControllerParams.ACCEL_MAX`). During stopping, this is forced to 0.
-    *   `actual_accel`: The acceleration command sent to the car. It's calculated by integrating `desired_accel` but limiting the change from the previous step (`state.accel_last`) based on calculated `jerk_upper` and `jerk_lower` limits.
-    *   `jerk_limited_integrator(desired_accel, last_accel, jerk_upper, jerk_lower)`: This function calculates the maximum allowable acceleration change per control step (`DT_CTRL * 2`) based on the upper and lower jerk limits and applies it using `rate_limit`.
+*   Close the gap between `aReqRaw` and `aReqValue` in 0.9 s up / 0.5 s down, and carry the request's own rate (over 0.1 s) only
+    when releasing braking (`aReqValue` below -0.5) or launching (below 2 m/s).
+*   Floors: 0.3 up; 0.5 down, 1.0 with a lead inside the following distance the gap setting asks for
+    (20 m + 0.44 s x distance bars x speed).
+*   Caps: the lower field at ISO 15622 / 22179's negative jerk (5.0 m/s³ below 5 m/s to 2.5 above 20 m/s), the upper at the
+    speed-based limit.
+*   Under StopReq the fields are the floors, so `aReqValue` rises to 0 at 0.3 m/s³ while the ESC holds the car.
+*   On `radarUnavailable` cars the lower field is 5.0 and `aReqValue` follows `aReqRaw`.
 
-2.  **Predictive Jerk Limits:** The upper and lower jerk limits (`jerk_upper`, `jerk_lower`) are not fixed but calculated dynamically based on several factors:
-    *   **Actual Acceleration (`aego`):** The car's current acceleration (`CS.out.aEgo`, potentially blended with `CS.aBasis` at low speeds) is smoothed using a `FirstOrderFilter` (`self.aego`).
-    *   **Acceleration Error:** The difference between the *commanded* acceleration (`self.accel_cmd`) and the *actual* smoothed acceleration (`self.aego.x`).
-    *   **Lookahead Jerk:** We estimate the jerk required to reach the target acceleration (`accel_cmd`) within a future time window. This window (`future_t_upper`, `future_t_lower`) varies with speed, defined in `config.py` (`lookahead_jerk_bp`, `lookahead_jerk_upper_v`, `lookahead_jerk_lower_v`).
-        *   `j_ego_upper = accel_error / future_t_upper`
-        *   `j_ego_lower = accel_error / future_t_lower`
-    *   **ISO 15622 Speed Factors:** Maximum allowed jerk decreases with speed according to ISO 15622. We interpolate values based on current velocity (`CS.out.vEgo`) to get `upper_speed_factor` and `lower_speed_factor`.
-    *   **Minimum Jerk (`MIN_JERK`):** A baseline minimum jerk (currently 0.5 m/s³) is enforced to ensure responsiveness.
-    *   **Combining Factors:**
-        *   `desired_jerk_upper = min(max(j_ego_upper, MIN_JERK), upper_speed_factor)`
-        *   `desired_jerk_lower = min(max(-j_ego_lower, MIN_JERK), lower_speed_factor)` (Note: `j_ego_lower` is negated for the lower limit calculation).
+**Comfort bands** only with a lead and not under StopReq, by `aReqValue`: lower 0.15-0.19 while braking, upper to 0.085 accelerating.
+On CAN-FD the car's own fixed bands with a lead that isn't pulling away.
 
-3.  **Dynamic Braking Tune:** For use of the tune without the `LONG_TUNING_PREDICTIVE` flag, a specific negative jerk profile is applied during braking (`gen1_accel_error < 0`).
-    *   `gen1_accel_error = a_ego_blended - self.state.accel_last`
-    *   A dynamic lower jerk limit (`gen1_lower_jerk`) is interpolated based on this error using `DYNAMIC_LOWER_JERK_BP` and a dynamically scaled `DYNAMIC_LOWER_JERK_V` (scaled by `car_config.jerk_limits`).
-    *   `gen1_desired_jerk_lower = min(gen1_lower_jerk, lower_speed_factor)`
+**Other radars** (`config.py`, `CAR_SPECIFIC_CONFIGS`): per-car floors, and the SCC14 family each car's radar sends: `fixed` jerk
+fields, `zeros` or `none` (`aReqValue` is the request, no SCC14 sent for `none`), or CAN-FD `stepped` fields that switch on the
+request's sign.
 
-4.  **Applying Jerk Limits:**
-    *   The `jerk_upper` limit is always smoothed using `ramp_update` to prevent abrupt changes.
-    *   The `jerk_lower` limit is applied differently based on the `LONG_TUNING_PREDICTIVE` flag:
-        *   **If Flag Set (predictive tune):** `jerk_lower` is set directly to `desired_jerk_lower`.
-        *   **If Flag Not Set (dynamic tune):** `jerk_lower` is smoothed using `ramp_update` towards `gen1_desired_jerk_lower`.
-
-**Configuration (`config.py`)**
-
-*   The `CarTuningConfig` dataclass holds tuning parameters like lookahead jerk profiles, actuator delay, and base jerk limits.
-*   `TUNING_CONFIGS` provides default configurations based on car type (CANFD, EV, HYBRID, DEFAULT).
-*   `CAR_SPECIFIC_CONFIGS` allows overriding defaults for specific car models (e.g., `KIA_NIRO_EV`).
-*   The `get_car_config` helper function selects the appropriate configuration based on the car fingerprint and flags.
-*   `get_longitudinal_tune` applies the actuator delay config value to the main `CarParams` (CP).
-
-**Summary**
-
-This tuning aims for smoother and more responsive longitudinal control by:
-*   Using a jerk-limited integrator for acceleration commands.
-*   Dynamically calculating jerk limits based on lookahead predictions, actual acceleration, and ISO 15622 speed constraints.
-*   Providing specific tuning profiles via a configuration system based on car type and model.
-*   Applying special braking logic for use of predictive or dynamic tune.
+**Off** sends upstream's fixed values: jerk 3.0 up (1.0 outside PID) and 5.0 down, `aReqValue` = `aReqRaw`, no bands.
