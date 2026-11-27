@@ -2,7 +2,7 @@ from opendbc.car.crc import CRC8J1850, mk_crc8_fun
 from opendbc.car.hyundai.values import CAR, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.escc import EnhancedSmartCruiseControl
-from opendbc.sunnypilot.car.hyundai.lead_data_ext import CanLeadData
+from opendbc.sunnypilot.car.hyundai.lead_data_ext import LeadData
 
 hyundai_checksum = mk_crc8_fun(CRC8J1850, init_crc=0xFD, xor_out=0xDF)
 
@@ -131,7 +131,7 @@ def create_lfahda_mfc(packer, enabled, lfa_icon):
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_data: CanLeadData,
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_data: LeadData,
                         hud_control, set_speed, stopping, long_override, use_fca, CP,
                         main_cruise_enabled, tuning, ESCC: EnhancedSmartCruiseControl | None = None):
   commands = []
@@ -204,6 +204,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_data: CanL
 
   scc12_values = get_scc12_values()
   scc12_values = calculate_scc12_checksum(scc12_values)
+
   commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
 
   scc14_values = get_scc14_values()
@@ -266,3 +267,13 @@ def create_frt_radar_opt(packer):
     "CF_FCA_Equip_Front_Radar": 1,
   }
   return packer.make_can_msg("FRT_RADAR11", 0, frt_radar11_values)
+
+
+def hyundai_can_checksum(address: int, sig, d: bytearray) -> int:
+  if address == 0x386:
+    checksum = sum((b & (0x3F if i % 2 else 0xFF)).bit_count() for i, b in enumerate(d)) ^ 9
+    return (checksum >> (2 if sig.name.endswith("_MSB") else 0)) & 0x3
+
+  if address == 0x394:
+    d = d[:7]
+  return (sig.get_raw_value(d) - sum((b >> 4) + (b & 0xF) for b in d)) & 0xF

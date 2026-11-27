@@ -20,7 +20,7 @@ class GasInterceptorCarController:
     self.gas = 0.
     self.interceptor_gas_cmd = 0.
 
-  def update(self, CC: structs.CarControl, CS: structs.CarState, gas: float, brake: float, wind_brake: float,
+  def update_gas_interceptor(self, CC: structs.CarControl, CS: structs.CarState, gas: float, brake: float, wind_brake: float,
              packer, frame: int) -> list[CanData]:
     can_sends = []
 

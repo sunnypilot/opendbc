@@ -28,7 +28,7 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt, Inte
     self.params = CarControllerParams(CP)
 
   def update(self, CC, CC_SP, CS, now_nanos):
-    MadsCarController.update(self, CC, CC_SP, CS)
+    MadsCarController.update_mads(self, CC, CC_SP, CS)
     can_sends = []
 
     lkas_active = CC.latActive and self.lkas_control_bit_prev
@@ -93,7 +93,7 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt, Inte
       can_sends.append(MadsCarController.create_lkas_heartbit(self.packer, CS.lkas_heartbit, self.mads))
 
     # Intelligent Cruise Button Management
-    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame))
+    can_sends.extend(IntelligentCruiseButtonManagementInterface.update_icbm(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame))
 
     self.frame += 1
 

@@ -52,7 +52,7 @@ class TestLeadDataCarController(unittest.TestCase):
   def test_update(self):
     ctrl = LeadDataCarController(make_carparams())
     sp = make_carcontrolsp(leadDistance=25, leadRelSpeed=-0.5, leadVisible=True)
-    ctrl.update(sp)
+    ctrl.update_lead_data(sp)
     self.assertEqual(ctrl.lead_distance, 25)
     self.assertEqual(ctrl.lead_rel_speed, -0.5)
     self.assertIsInstance(ctrl.lead_visible, bool)

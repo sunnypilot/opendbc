@@ -41,7 +41,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
     self.queued_buttons.clear()
     self.last_button_frame = self.frame
 
-  def update(self, CS, CC_SP, packer, frame, last_button_frame, pcm_cancel_cmd) -> list[CanData]:
+  def update_icbm(self, CS, CC_SP, packer, frame, last_button_frame, pcm_cancel_cmd) -> list[CanData]:
     self.CC_SP = CC_SP
     self.ICBM = CC_SP.intelligentCruiseButtonManagement
     self.frame = frame

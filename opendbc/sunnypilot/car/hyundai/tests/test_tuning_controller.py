@@ -50,8 +50,7 @@ class CS:
 class TestLongitudinalTuningController(unittest.TestCase):
   def setUp(self):
     self.CP = CP(flags=0)
-    self.CP_SP = CP(flags=0)
-    self.CP_SP.flags = HyundaiFlagsSP.LONG_TUNING_PREDICTIVE
+    self.CP_SP = structs.CarParamsSP(flags=HyundaiFlagsSP.LONG_TUNING_PREDICTIVE)
     self.CS = CS()
     self.CC = CC()
     self.controller = LongitudinalController(self.CP, self.CP_SP)
@@ -165,7 +164,7 @@ class TestLongitudinalTuningController(unittest.TestCase):
     self.CS.out.aEgo = 2.0
     self.CS.out.vEgo = 5.0
 
-    self.controller.update(self.CC, self.CS)
+    self.controller.update_longitudinal(self.CC, self.CS)
     self.assertEqual(self.controller.jerk_lower, 0.5)
     self.assertEqual(self.controller.jerk_upper, 3.0)
     self.assertEqual(self.controller.comfort_band_lower, 0.0)

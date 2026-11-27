@@ -97,7 +97,7 @@ class GMCarDocs(CarDocs):
 class GMNonAccCarDocs(GMCarDocs):
   package: str = "No Adaptive Cruise Control (Non-ACC)"
   support_type: SupportType = SupportType.COMMUNITY
-  support_link: str = "community"
+  support_link: str | None = "community"
 
 
 @dataclass(frozen=True, kw_only=True)
