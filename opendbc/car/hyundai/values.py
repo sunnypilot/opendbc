@@ -581,6 +581,7 @@ class CAR(Platforms):
       HyundaiCarDocs("Kia Carnival 2022-24", car_parts=CarParts.common([CarHarness.hyundai_a])),
       HyundaiCarDocs("Kia Carnival (China only) 2023", car_parts=CarParts.common([CarHarness.hyundai_k])),
       HyundaiCarDocs("Kia Carnival Hybrid (with HDA II) 2025-26", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_q])),
+      HyundaiCarDocs("Kia Carnival (with HDA II, Australia only) 2025", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p])),
     ],
     CarSpecs(wheelbase=3.09, steerRatio=14.23),
     flags=HyundaiFlags.CANFD_RADAR_SCC,
