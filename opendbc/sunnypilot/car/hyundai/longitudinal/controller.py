@@ -124,8 +124,6 @@ class LongitudinalController:
         self.jerk_upper, self.jerk_lower = self._calculate_stepped_jerk(CS.out.vEgo, long_control_state)
       else:
         self.jerk_upper, self.jerk_lower = self.car_config.scc14_jerk
-      if self.CP.radarUnavailable:
-        self.jerk_lower = 5.0
 
   def calculate_accel(self, CC: structs.CarControl) -> None:
     if not self.enabled:
@@ -138,7 +136,7 @@ class LongitudinalController:
 
     self.desired_accel = 0.0 if self.stopping else float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
     # radars that send no jerk fields send the request itself
-    if not self.CP.radarUnavailable and self.scc14 not in (SCC14Family.ZEROS, SCC14Family.NONE):
+    if self.scc14 not in (SCC14Family.ZEROS, SCC14Family.NONE):
       self.actual_accel = jerk_limited_integrator(self.desired_accel, self.accel_last, self.jerk_upper, self.jerk_lower, DT)
     else:
       self.actual_accel = self.desired_accel
