@@ -206,8 +206,9 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_data: CanL
   scc12_values = calculate_scc12_checksum(scc12_values)
   commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
 
-  scc14_values = get_scc14_values()
-  commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
+  if tuning.send_scc14:
+    scc14_values = get_scc14_values()
+    commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
   # Only send FCA11 on cars where it exists on the bus
   # On Camera SCC cars, FCA11 is not disabled, so we forward stock FCA11 back to the car forward hooks

@@ -162,6 +162,8 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "VSetDis": set_speed,
     "JerkLowerLimit": tuning.jerk_lower,
     "JerkUpperLimit": tuning.jerk_upper,
+    "ComfortBandUpper": tuning.comfort_band_upper,
+    "ComfortBandLower": tuning.comfort_band_lower,
 
     "ACC_ObjDist": int(lead_data.lead_distance),
     "ACC_ObjRelSpd": lead_data.lead_rel_speed,

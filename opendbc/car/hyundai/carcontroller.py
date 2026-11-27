@@ -139,7 +139,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     EsccCarController.update(self, CS)
     LeadDataCarController.update(self, CC_SP)
     MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
-    if self.frame % 5 == 0:
+    if self.frame % 2 == 0:
       LongitudinalController.update(self, CC, CS)
 
     actuators = CC.actuators
