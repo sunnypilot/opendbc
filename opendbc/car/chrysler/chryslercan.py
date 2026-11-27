@@ -78,9 +78,10 @@ def create_cruise_buttons(packer, cruise_msg, frame, bus, cancel=False, resume=F
 
 
 def chrysler_checksum(address: int, sig, d: bytearray) -> int:
+  # covers the bytes preceding the checksum, which is not always the last byte (e.g. fca_atlantis ACC_BUTTON)
   # standard CRC-8 SAE J1850 (poly 0x1D, init 0xFF, final XOR 0xFF)
   crc = 0xFF
-  for i in range(len(d) - 1):
+  for i in range(sig.msb // 8):
     crc ^= d[i]
     crc = CRC8J1850[crc]
   return crc ^ 0xFF
