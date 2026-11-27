@@ -15,6 +15,7 @@ class ToyotaFlagsSP(IntFlag):
   STOCK_LONGITUDINAL = 8
   STOP_AND_GO_HACK = 16
   TSS2_SMOOTH = 32
+  ENHANCED_BSM = 64
 
 
 # kiBP, kiV for the PCM accel PID with TSS2_SMOOTH
@@ -25,3 +26,4 @@ class ToyotaSafetyFlagsSP:
   DEFAULT = 0
   UNSUPPORTED_DSU = 1
   GAS_INTERCEPTOR = 2
+  ENHANCED_BSM = 4
