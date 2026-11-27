@@ -5,6 +5,7 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
+from opendbc.can.dbc import SignalType
 from opendbc.can.parser import CANParser
 from opendbc.car import structs, Bus
 from opendbc.car.hyundai.hyundaicanfd import CanBus
@@ -12,10 +13,19 @@ from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
 
+def _decode_only(cp: CANParser, signals: dict[str, tuple[str, ...]]) -> CANParser:
+  # ~0.7 ms device per radar update without this; the wide CAN FD frames carry signals we never read
+  for state in cp.message_states.values():
+    if state.name in signals:
+      state.signals = [s for s in state.signals if s.name in signals[state.name] or s.type != SignalType.DEFAULT]
+  return cp
+
+
 RADAR_TRACKS_START_ADDR = 0x3A5
 RADAR_TRACKS_MSG_COUNT = 32
 RADAR_TRACKS_MSG_SIZE = 24
 RADAR_TRACKS_ADDRS = range(RADAR_TRACKS_START_ADDR, RADAR_TRACKS_START_ADDR + RADAR_TRACKS_MSG_COUNT)
+RADAR_TRACK_SIGNALS = ("STATE", "LONG_DIST", "LAT_DIST", "REL_SPEED")
 
 
 def has_radar_tracks(fingerprint: dict[int, dict[int, int]], bus: int) -> bool:
@@ -52,7 +62,8 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
   def get_radar_ext_can_parser(self) -> CANParser:
     if self.use_radar_tracks:
       messages = [(f"RADAR_TRACK_{addr:x}", 20) for addr in RADAR_TRACKS_ADDRS]
-      return CANParser(DBC[self.CP.carFingerprint][Bus.radar], messages, CanBus(self.CP).ACAN)
+      cp = CANParser(DBC[self.CP.carFingerprint][Bus.radar], messages, CanBus(self.CP).ACAN)
+      return _decode_only(cp, {m: RADAR_TRACK_SIGNALS for m, _ in messages})
 
     if self.ESCC.enabled:
       lead_src, bus = "ESCC", 0

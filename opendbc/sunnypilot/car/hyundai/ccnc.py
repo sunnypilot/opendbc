@@ -32,12 +32,11 @@ LANELINE_CURVATURE_MAX = 15
 PATH_CURVATURE_FILTER_RC = 0.3  # s
 
 
-# the interceptor firmware toggles the DCU's main with injected presses; the DCU's cruise popups would show
-DCU_ALERTS_2_KEEP = (7, 8, 9, 10, 14, 21)
+ADAS_DRV_ALERTS_2_KEEP = (7, 8, 9, 10, 14, 21)
 
 
-def drop_dcu_cruise_alerts(values: dict) -> None:
-  if values["ALERTS_2"] not in DCU_ALERTS_2_KEEP and values["ALERTS_2"]:
+def drop_adas_drv_cruise_alerts(values: dict) -> None:
+  if values["ALERTS_2"] not in ADAS_DRV_ALERTS_2_KEEP and values["ALERTS_2"]:
     values["ALERTS_2"] = 0
     values["SOUNDS_2"] = 0
   if values["ALERTS_3"] or values["ALERTS_4"] or values["ALERTS_5"]:
@@ -49,9 +48,8 @@ def ccnc_hud_enabled(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> bool:
     return False
   if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
     # HDA2: only through the ADAS DRV interceptor, which blocks the ADAS DRV ECU's own copies. Needed without
-    # openpilot long on angle cars: we steer the MDPS directly, so the ADAS DRV ECU's LFA icon stays gray
-    return bool(CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and
-                (CP.openpilotLongitudinalControl or CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING))
+    # openpilot long too: we steer the MDPS directly, so the ADAS DRV ECU's LFA icon stays gray
+    return bool(CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR)
   return True
 
 
@@ -105,7 +103,7 @@ def create_ccnc_0x161(packer, CAN, frame, msg_161, enabled, lat_active, paused, 
 
   if long_enabled:
     if interceptor:
-      drop_dcu_cruise_alerts(values)
+      drop_adas_drv_cruise_alerts(values)
     override_blink = gas_override and frame % OVERRIDE_BLINK_FRAMES < OVERRIDE_BLINK_ON_FRAMES
     long_active = enabled and not gas_override
     hud_state = 2 if long_active else (3 if override_blink else 0) if enabled else 1 if main_cruise_enabled else 0

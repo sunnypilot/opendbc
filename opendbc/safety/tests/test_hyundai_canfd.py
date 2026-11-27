@@ -812,10 +812,10 @@ class TestHyundaiCanfdLKASteeringInterceptorLongEV(TestHyundaiCanfdLKASteeringLo
   SAFETY_PARAM = HyundaiSafetyFlags.CANFD_LKA_STEER_MSG | HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.EV_GAS
   SAFETY_PARAM_SP = HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR
 
-  TX_MSGS = [[0x50, 0], [0x2A4, 0], [0x1CF, 1], [0x1256, 0], [0x12A, 1], [0x1E0, 1], [0x1A0, 1]]
+  TX_MSGS = [[0x50, 0], [0x1CF, 1], [0x1256, 0], [0x12A, 1], [0x1E0, 1], [0x1A0, 1]]
   SCANNED_ADDRS = [*common.SafetyTest.SCANNED_ADDRS, 0x1256]
-  RELAY_MALFUNCTION_ADDRS = {0: (0x50, 0x2A4), 1: (0x1A0,)}
-  FWD_BLACKLISTED_ADDRS = {2: [0x50, 0x2A4]}
+  RELAY_MALFUNCTION_ADDRS = {0: (0x50,), 1: (0x1A0,)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x50]}
 
   def setUp(self):
     libsafety_py.libsafety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
@@ -827,6 +827,10 @@ class TestHyundaiCanfdLKASteeringInterceptorLongEV(TestHyundaiCanfdLKASteeringLo
   def test_tester_present_allowed(self, ecu_disable: bool = True):
     super().test_tester_present_allowed(ecu_disable=False)
 
+  def test_lane_message_not_replaced(self):
+    for addr, size in ((0x2A4, 24), (0x362, 32)):
+      self.assertFalse(self._tx(libsafety_py.make_CANPacket(addr, 0, bytes(size))), hex(addr))
+
 
 class TestHyundaiCanfdLKASteeringAltInterceptorLongHybrid(HyundaiCanfdLKASteeringAltButtonsMixin, TestHyundaiCanfdLKASteeringInterceptorLongEV):
 
@@ -834,11 +838,56 @@ class TestHyundaiCanfdLKASteeringAltInterceptorLongHybrid(HyundaiCanfdLKASteerin
                  HyundaiSafetyFlags.HYBRID_GAS | HyundaiSafetyFlags.CANFD_ALT_BUTTONS
   SAFETY_PARAM_SP = HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR | HyundaiSafetyFlagsSP.CCNC
 
-  TX_MSGS = [[0x110, 0], [0x362, 0], [0x1CF, 1], [0x1256, 0], [0x12A, 1], [0x1E0, 1], [0x1A0, 1], [0x161, 1], [0x162, 1]]
-  RELAY_MALFUNCTION_ADDRS = {0: (0x110, 0x362), 1: (0x1A0,)}
-  FWD_BLACKLISTED_ADDRS = {2: [0x110, 0x362]}
+  TX_MSGS = [[0x110, 0], [0x1CF, 1], [0x1256, 0], [0x12A, 1], [0x1E0, 1], [0x1A0, 1], [0x161, 1], [0x162, 1]]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x110,), 1: (0x1A0,)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x110]}
 
   GAS_MSG = ("ACCELERATOR_ALT", "ACCELERATOR_PEDAL")
+
+
+class TestHyundaiCanfdLKASteeringInterceptorEV(TestHyundaiCanfdLKASteeringEV):
+
+  SAFETY_PARAM_SP = HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR
+
+  TX_MSGS = [[0x50, 0], [0x1CF, 1], [0x1256, 0], [0x12A, 1], [0x1E0, 1]]
+  SCANNED_ADDRS = [*common.SafetyTest.SCANNED_ADDRS, 0x1256]
+  RELAY_MALFUNCTION_ADDRS = {0: (0x50,)}
+  FWD_BLACKLISTED_ADDRS = {2: [0x50]}
+
+  STEER_MSG = "LFA"
+  STEER_BUS = 1
+
+  def setUp(self):
+    libsafety_py.libsafety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
+    super().setUp()
+
+  def tearDown(self):
+    self.safety.set_current_safety_param_sp(0)
+
+  test_lane_message_not_replaced = TestHyundaiCanfdLKASteeringInterceptorLongEV.test_lane_message_not_replaced
+
+  def test_interceptor_tx_msgs(self):
+    lka = HyundaiSafetyFlags.CANFD_LKA_STEER_MSG | HyundaiSafetyFlags.EV_GAS
+    alt, interceptor, ccnc = HyundaiSafetyFlags.CANFD_LKA_STEER_MSG_ALT, HyundaiSafetyFlagsSP.ADAS_DRV_ECU_INTERCEPTOR, HyundaiSafetyFlagsSP.CCNC
+    for safety_param, safety_param_sp, allowed in (
+      (lka, interceptor, {0x50, 0x12A, 0x1E0, 0x1256}),
+      (lka | alt, interceptor, {0x110, 0x12A, 0x1E0, 0x1256}),
+      (lka, interceptor | ccnc, {0x50, 0x12A, 0x1E0, 0x1256, 0x161, 0x162}),
+      (lka | alt, interceptor | ccnc, {0x110, 0x12A, 0x1E0, 0x1256, 0x161, 0x162}),
+      (lka | HyundaiSafetyFlags.CANFD_ALT_BUTTONS, interceptor, {0x50, 0x12A, 0x1E0, 0x1256}),
+      (lka, 0, {0x50, 0x2A4}),
+    ):
+      self.safety.set_current_safety_param_sp(safety_param_sp)
+      self.safety.set_safety_hooks(CarParams.SafetyModel.hyundaiCanfd, safety_param)
+      self.safety.init_tests()
+      for addr, bus, size in ((0x50, 0, 16), (0x110, 0, 32), (0x2A4, 0, 24), (0x362, 0, 32), (0x12A, 1, 16), (0x1E0, 1, 16), (0x1A0, 1, 32),
+                              (0x161, 1, 32), (0x162, 1, 32), (0x1256, 0, 8)):
+        dat = bytearray(size)
+        if addr in (0x50, 0x110, 0x12A):
+          dat[5:7] = (1024 << 1).to_bytes(2, "little")
+        if addr == 0x1256:
+          dat[3:7] = b"\x00\x05\x00\x01"
+        self.assertEqual(addr in allowed, self._tx(libsafety_py.make_CANPacket(addr, bus, bytes(dat))), (safety_param, safety_param_sp, hex(addr)))
 
 
 # Tests longitudinal for ICE, hybrid, EV cars with LFA steering
