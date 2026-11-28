@@ -711,6 +711,10 @@ class CAR(Platforms):
     ],
     CarSpecs(wheelbase=2.84, steerRatio=13.27),
   )
+  KIA_SORENTO_2024 = HyundaiCanFDPlatformConfig(
+    [HyundaiCarDocs("Kia Sorento (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_a]))],
+    KIA_SORENTO_4TH_GEN.specs,
+  )
 
 
 class Buttons:
