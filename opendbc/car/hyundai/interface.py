@@ -194,6 +194,14 @@ class CarInterface(CarInterfaceBase):
 
       if any(0x161 in fingerprint[b] and 0x162 in fingerprint[b] for b in (CAN.ECAN, CAN.CAM)):
         ret.flags |= HyundaiFlagsSP.CCNC.value
+
+      # CANFD_NO_RADAR_DISABLE only blocks ADAS DRV (LKA steering) cars; LFA steering cars run camera SCC
+      if stock_cp.flags & HyundaiFlags.CANFD_NO_RADAR_DISABLE and not lka_steering:
+        stock_cp.alphaLongitudinalAvailable = True
+        if alpha_long:
+          stock_cp.openpilotLongitudinalControl = True
+          stock_cp.pcmCruise = False
+          stock_cp.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.LONG.value
     else:
       # Detect smartMDPS, which bypasses EPS low-speed lockout, allowing sunnypilot to send steering commands down to 0
       if 0x2AA in fingerprint[0]:

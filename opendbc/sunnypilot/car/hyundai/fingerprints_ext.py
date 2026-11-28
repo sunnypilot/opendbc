@@ -213,4 +213,10 @@ FW_VERSIONS_EXT = {
       b'\xf1\x00OE2 LKAS AT EUR RHD 1.00 1.00 95740-K4200 200',
     ],
   },
+  CAR.HYUNDAI_KONA_EV_2ND_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00SX2EMFC  AT EUR RHD 1.00 1.01 99211-BF101 250117',
+      b'\xf1\x00SX2EMFC  AT USA LHD 1.00 1.02 99211-BF000 230823',
+    ],
+  },
 }
