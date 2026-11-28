@@ -438,7 +438,7 @@ class CAR(Platforms):
       HondaCarDocs("Acura MDX Hybrid 2017-20", "All"),
     ],
     CarSpecs(wheelbase=2.82, steerRatio=16.8, centerToFrontRatio=0.428),  # as spec, learned steerRatio
-    radar_dbc_dict('acura_mdx_3g_can_generated'),
+    radar_dbc_dict('acura_ilx_2016_can_generated'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
 
