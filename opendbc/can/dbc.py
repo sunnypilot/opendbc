@@ -65,19 +65,38 @@ class Signal:
 
   def __post_init__(self):
     self.max_counter = (1 << self.size) - 1
-
-  def get_raw_value(self, dat: bytes | bytearray) -> int:
-    ret = 0
+    self._sign_bit = 1 << (self.size - 1) if self.is_signed else 0
+    self._sign_sub = 1 << self.size if self.is_signed else 0
+    # Precompute fast extraction parameters for get_raw_value
+    self._le_start = self.lsb // 8
+    self._le_end = self.msb // 8 + 1
+    self._le_shift = self.lsb & 7
+    self._le_mask = (1 << self.size) - 1
+    self._le_single_byte = self.is_little_endian and (self._le_start == self._le_end - 1)
+    # Precompute byte-by-byte steps for big-endian or truncated-frame fallback
+    steps: list[tuple[int, int, int, int]] = []
     i = self.msb // 8
     bits = self.size
-    while 0 <= i < len(dat) and bits > 0:
+    while i >= 0 and bits > 0:
       lsb = self.lsb if (self.lsb // 8) == i else i * 8
       msb = self.msb if (self.msb // 8) == i else (i + 1) * 8 - 1
       size = msb - lsb + 1
-      d = (dat[i] >> (lsb - (i * 8))) & ((1 << size) - 1)
-      ret |= d << (bits - size)
+      steps.append((i, lsb - (i * 8), (1 << size) - 1, bits - size))
       bits -= size
       i = i - 1 if self.is_little_endian else i + 1
+    self._steps = tuple(steps)
+
+  def get_raw_value(self, dat: bytes | bytearray) -> int:
+    n = len(dat)
+    if self._le_single_byte:
+      return ((dat[self._le_start] >> self._le_shift) & self._le_mask) if self._le_start < n else 0
+    if self.is_little_endian and self._le_end <= n:
+      return (int.from_bytes(dat[self._le_start:self._le_end], 'little') >> self._le_shift) & self._le_mask
+    ret = 0
+    for idx, rshift, mask, lshift in self._steps:
+      if idx >= n:
+        break
+      ret |= ((dat[idx] >> rshift) & mask) << lshift
     return ret
 
 
@@ -258,7 +277,9 @@ def get_checksum_state(dbc_name: str) -> ChecksumState | None:
   elif dbc_name == "hyundai_can_generated":
     # TODO: some cars set them and some don't. check them on the ones that do set them
     return ChecksumState(SignalType.HYUNDAI_CHECKSUM, hyundai_can_checksum, hyundai_setup_signal, ignore_checksum=True, ignore_counter=True)
-  elif dbc_name.startswith(("hyundai_canfd_generated", "hyundai_radar_3a5_3c4_generated")):
+  elif dbc_name.startswith(("hyundai_canfd_generated", "hyundai_corner_radar_240_28f_generated",
+                            "hyundai_radar_210_21f_generated", "hyundai_radar_3a5_3c4_generated",
+                            "hyundai_radar_detections_3d0_3d4_generated")):
     return ChecksumState(SignalType.HKG_CAN_FD_CHECKSUM, hkg_can_fd_checksum)
   elif dbc_name.startswith("vw_meb_2024"):
     return ChecksumState(SignalType.VOLKSWAGEN_MQB_MEB_CHECKSUM, volkswagen_meb_alt_crc_checksum)

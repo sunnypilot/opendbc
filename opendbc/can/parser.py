@@ -30,6 +30,12 @@ class MessageState:
   counter_fail: int = 0
   first_seen_nanos: int = 0
   last_warning_log_nanos: int = 0
+  track_all_vals: bool = True
+
+  def __post_init__(self):
+    self._has_checksum = not self.ignore_checksum and any(s.calc_checksum is not None for s in self.signals)
+    self._has_counter = not self.ignore_counter and any(s.type == 1 for s in self.signals)
+    self._sig_names = tuple(s.name for s in self.signals)
 
   def rate_limited_log(self, last_update_nanos: int, msg: str) -> None:
     if (last_update_nanos - self.last_warning_log_nanos) >= 1_000_000_000:
@@ -37,46 +43,76 @@ class MessageState:
       self.last_warning_log_nanos = last_update_nanos
 
   def parse(self, nanos: int, dat: bytes) -> bool:
-    tmp_vals: list[float] = [0.0] * len(self.signals)
-    checksum_failed = False
-    counter_failed = False
-    counter = 0
-    counter_sig = None
-
+    signals = self.signals
+    n_sigs = len(signals)
     if self.first_seen_nanos == 0:
       self.first_seen_nanos = nanos
 
-    for i, sig in enumerate(self.signals):
-      tmp = sig.get_raw_value(dat)
-      if sig.is_signed:
-        tmp -= ((tmp >> (sig.size - 1)) & 0x1) * (1 << sig.size)
+    if not self._has_checksum and not self._has_counter:
+      if not self.vals:
+        self.vals = [0.0] * n_sigs
+        if self.track_all_vals:
+          self.all_vals = [[] for _ in range(n_sigs)]
+      vals = self.vals
+      if self.track_all_vals:
+        all_vals = self.all_vals
+        for i, sig in enumerate(signals):
+          tmp = sig.get_raw_value(dat)
+          if sig._sign_bit and tmp >= sig._sign_bit:
+            tmp -= sig._sign_sub
+          v = tmp * sig.factor + sig.offset
+          vals[i] = v
+          all_vals[i].append(v)
+      else:
+        for i, sig in enumerate(signals):
+          tmp = sig.get_raw_value(dat)
+          if sig._sign_bit and tmp >= sig._sign_bit:
+            tmp -= sig._sign_sub
+          vals[i] = tmp * sig.factor + sig.offset
+    else:
+      tmp_vals: list[float] = [0.0] * n_sigs
+      checksum_failed = False
+      counter_failed = False
+      counter = 0
+      counter_sig = None
 
-      if not self.ignore_checksum and sig.calc_checksum is not None:
-        expected_checksum = sig.calc_checksum(self.address, sig, bytearray(dat))
-        if tmp != expected_checksum:
-          checksum_failed = True
-          self.rate_limited_log(nanos, f"checksum failed: received {hex(tmp)}, calculated {hex(expected_checksum)}")
+      for i, sig in enumerate(signals):
+        tmp = sig.get_raw_value(dat)
+        if sig._sign_bit and tmp >= sig._sign_bit:
+          tmp -= sig._sign_sub
 
-      if sig.type == 1:  # COUNTER, which may be split across signals
-        counter |= tmp << sig.counter_shift
-        counter_sig = sig
+        if not self.ignore_checksum and sig.calc_checksum is not None:
+          expected_checksum = sig.calc_checksum(self.address, sig, bytearray(dat))
+          if tmp != expected_checksum:
+            checksum_failed = True
+            self.rate_limited_log(nanos, f"checksum failed: received {hex(tmp)}, calculated {hex(expected_checksum)}")
 
-      tmp_vals[i] = tmp * sig.factor + sig.offset
+        if sig.type == 1:  # COUNTER, which may be split across signals
+          counter |= tmp << sig.counter_shift
+          counter_sig = sig
 
-    if not self.ignore_counter and counter_sig is not None:
-      counter_failed = not self.update_counter(counter, counter_sig.max_counter)
+        tmp_vals[i] = tmp * sig.factor + sig.offset
 
-    # must have good counter and checksum to update data
-    if checksum_failed or counter_failed:
-      return False
+      if not self.ignore_counter and counter_sig is not None:
+        counter_failed = not self.update_counter(counter, counter_sig.max_counter)
 
-    if not self.vals:
-      self.vals = [0.0] * len(self.signals)
-      self.all_vals = [[] for _ in self.signals]
+      # must have good counter and checksum to update data
+      if checksum_failed or counter_failed:
+        return False
 
-    for i, v in enumerate(tmp_vals):
-      self.vals[i] = v
-      self.all_vals[i].append(v)
+      if not self.vals:
+        self.vals = [0.0] * n_sigs
+        if self.track_all_vals:
+          self.all_vals = [[] for _ in range(n_sigs)]
+
+      vals = self.vals
+      if self.track_all_vals:
+        all_vals = self.all_vals
+        for i, v in enumerate(tmp_vals):
+          vals[i] = v
+          all_vals[i].append(v)
+      else:
+        self.vals = tmp_vals
 
     self.timestamps.append(nanos)
 
@@ -110,23 +146,28 @@ class VLDict(dict):
     super().__init__()
     self.parser = parser
 
-  def __getitem__(self, key):
-    if key not in self:
-      self.parser._add_message(key)
-    return super().__getitem__(key)
+  def __missing__(self, key):
+    self.parser._add_message(key)
+    return dict.__getitem__(self, key)
 
 
 class CANParser:
-  def __init__(self, dbc_name: str, messages: Sequence[tuple[str | int, float]], bus: int):
+  def __init__(self, dbc_name: str, messages: Sequence[tuple[str | int, float]], bus: int,
+               signals: set[str] | None = None, track_all_vals: bool = True):
     self.dbc_name: str = dbc_name
     self.bus: int = bus
     self.dbc = DBC(dbc_name)
+    self.signals = signals
+    self.track_all_vals = track_all_vals
 
     self.vl: dict[int | str, dict[str, float]] = VLDict(self)
     self.vl_all: dict[int | str, dict[str, list[float]]] = {}
     self.ts_nanos: dict[int | str, dict[str, int]] = {}
     self.addresses: set[int] = set()
     self.message_states: dict[int, MessageState] = {}
+    self._dirty_vl_all_addrs: set[int] = set()
+    self._ignore_alive: bool = True
+    self._bus_timeout_threshold: float = 500 * 1_000_000
 
     for name_or_addr, freq in messages:
       if isinstance(name_or_addr, numbers.Number):
@@ -154,7 +195,13 @@ class CANParser:
     assert msg.address not in self.addresses
 
     self.addresses.add(msg.address)
-    signal_names = list(msg.sigs.keys())
+    if self.signals is not None:
+      missing_signals = self.signals - msg.sigs.keys()
+      if missing_signals:
+        raise RuntimeError(f"could not find signals {sorted(missing_signals)} in message {msg.name}")
+      signal_names = [name for name in msg.sigs if name in self.signals]
+    else:
+      signal_names = list(msg.sigs.keys())
     signals_dict = {s: 0.0 for s in signal_names}
     dict.__setitem__(self.vl, msg.address, signals_dict)
     dict.__setitem__(self.vl, msg.name, signals_dict)
@@ -167,10 +214,11 @@ class CANParser:
       address=msg.address,
       name=msg.name,
       size=msg.size,
-      signals=list(msg.sigs.values()),
+      signals=[msg.sigs[name] for name in signal_names],
       ignore_alive=freq is not None and math.isnan(freq),
       ignore_checksum=self.dbc.checksum_state.ignore_checksum if self.dbc.checksum_state else False,
       ignore_counter=self.dbc.checksum_state.ignore_counter if self.dbc.checksum_state else False,
+      track_all_vals=self.track_all_vals,
     )
     if freq is not None and freq > 0:
       state.frequency = freq
@@ -180,15 +228,14 @@ class CANParser:
     state.timeout_threshold = (1_000_000_000 / freq) * 10
 
     self.message_states[msg.address] = state
+    if not state.ignore_alive:
+      self._ignore_alive = False
+    if state.timeout_threshold > 0:
+      self._bus_timeout_threshold = min(self._bus_timeout_threshold, state.timeout_threshold)
 
   @property
   def bus_timeout(self) -> bool:
-    ignore_alive = all(s.ignore_alive for s in self.message_states.values())
-    bus_timeout_threshold = 500 * 1_000_000
-    for st in self.message_states.values():
-      if st.timeout_threshold > 0:
-        bus_timeout_threshold = min(bus_timeout_threshold, st.timeout_threshold)
-    return ((self._last_update_nanos - self.last_nonempty_nanos) > bus_timeout_threshold) and not ignore_alive
+    return ((self._last_update_nanos - self.last_nonempty_nanos) > self._bus_timeout_threshold) and not self._ignore_alive
 
   @property
   def can_valid(self) -> bool:
@@ -218,38 +265,59 @@ class CANParser:
     if strings and not isinstance(strings[0], list | tuple):
       strings = [strings]
 
-    for addr in self.addresses:
-      for k in self.vl_all[addr]:
-        self.vl_all[addr][k].clear()
+    track_all_vals = self.track_all_vals
+    if track_all_vals and self._dirty_vl_all_addrs:
+      vl_all = self.vl_all
+      for addr in self._dirty_vl_all_addrs:
+        for lst in vl_all[addr].values():
+          lst.clear()
+      self._dirty_vl_all_addrs.clear()
 
     updated_addrs: set[int] = set()
+    bus = self.bus
+    msg_states = self.message_states
+    vl = self.vl
+    vl_all = self.vl_all
+    ts_nanos = self.ts_nanos
     for entry in strings:
       t = entry[0]
       frames = entry[1]
       bus_empty = True
       for address, dat, src in frames:
-        if src != self.bus:
+        if src != bus:
           continue
         bus_empty = False
-        state = self.message_states.get(address)
+        state = msg_states.get(address)
         if state is None or len(dat) > 64:
           continue
         if state.parse(t, dat):
           updated_addrs.add(address)
 
-          vl_addr = self.vl[address]
-          vl_all_addr = self.vl_all[address]
-          ts_addr = self.ts_nanos[address]
+          vl_addr = dict.__getitem__(vl, address)
+          ts_addr = ts_nanos[address]
+          sig_names = state._sig_names
+          vals = state.vals
+          last_ts = state.timestamps[-1]
 
-          for i, sig in enumerate(state.signals):
-            vl_addr[sig.name] = state.vals[i]
-            vl_all_addr[sig.name] = state.all_vals[i]
-            ts_addr[sig.name] = state.timestamps[-1]
+          if track_all_vals:
+            vl_all_addr = vl_all[address]
+            all_vals = state.all_vals
+            for i, name in enumerate(sig_names):
+              vl_addr[name] = vals[i]
+              vl_all_addr[name] = all_vals[i]
+              ts_addr[name] = last_ts
+          else:
+            for i, name in enumerate(sig_names):
+              vl_addr[name] = vals[i]
+              ts_addr[name] = last_ts
 
       if not bus_empty:
         self.last_nonempty_nanos = t
 
       self._last_update_nanos = t
+
+    if track_all_vals and updated_addrs:
+      self._dirty_vl_all_addrs.update(updated_addrs)
 
     return updated_addrs
 

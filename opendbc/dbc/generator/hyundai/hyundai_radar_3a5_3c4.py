@@ -56,10 +56,7 @@ RADAR_3A5_3C4_SIGNAL_COMMENTS = (
   ("REL_SPEED", "Longitudinal speed relative to ego; negative means the target is moving longitudinally slower than ego."),
   ("NEW_SIGNAL_4", "Unknown category, observed 0-2. Zero dominates; 1/2 occur more often on moving targets."),
   ("REL_LAT_SPEED", "Target lateral speed relative to the ego vehicle axis."),
-  ("REL_ACCEL", _comment(
-    "Target longitudinal acceleration relative to ego acceleration. Scale unconfirmed:",
-    "the REL_SPEED derivative runs about 2.5-3x this value where the two correlate well.",
-  )),
+  ("REL_ACCEL", "Target longitudinal acceleration relative to ego acceleration."),
   ("NEW_SIGNAL_18", _comment(
     "Unknown optional measurement-status attribute. EV9/Ioniq 9 use 1/2 almost exclusively for measured STATE=3 tracks",
     "and 0 for coasted STATE=4 tracks; the distinction between 1 and 2 is unknown. The rare value 3 is also observed.",

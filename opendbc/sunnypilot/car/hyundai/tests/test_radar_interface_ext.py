@@ -158,8 +158,10 @@ class TestRadarTracks(unittest.TestCase):
 
   def test_real_frame(self):
     # GENESIS_GV80_2025 79f534ddd71804c0/00000207--d9c251d178/1
+    from opendbc.sunnypilot.car.hyundai.values import RadarType
     addr, dat = 0x3B0, bytes.fromhex("8f4a804a24b83007e0e0eccd3fe19fff01000005d0020000")
     RD, _ = self._setup(CAR.GENESIS_GV80_2025, _radar_tracks_fingerprint())
+    RD.set_radar_mode(RadarType.FULL_RADAR)
     RD.rcp.update([(0, [(addr, dat, 0)])])
     msg = RD.rcp.vl[f"RADAR_TRACK_{addr:x}"]
     self.assertEqual(msg['STATE'], 3)
@@ -168,7 +170,9 @@ class TestRadarTracks(unittest.TestCase):
     self.assertAlmostEqual(msg['REL_SPEED'], -0.51, places=2)
 
   def test_tracks(self):
+    from opendbc.sunnypilot.car.hyundai.values import RadarType
     RD, _ = self._setup(CAR.GENESIS_GV80_2025, _radar_tracks_fingerprint())
+    RD.set_radar_mode(RadarType.FULL_RADAR)
     packer = CANPacker('hyundai_radar_3a5_3c4_generated')
     target = 0x3B0
 
@@ -181,7 +185,7 @@ class TestRadarTracks(unittest.TestCase):
 
     track_ids = set()
     for i in range(5):
-      rr = cycle(i * 0.05, 3)
+      rr = cycle((i + 1) * 0.05, 3)
       self.assertFalse(rr.errors.canError)
       self.assertEqual(len(rr.points), 1)
       pt = rr.points[0]
@@ -191,5 +195,5 @@ class TestRadarTracks(unittest.TestCase):
       track_ids.add(pt.trackId)
     self.assertEqual(len(track_ids), 1)
 
-    self.assertEqual(len(cycle(0.25, 0).points), 0)
-    self.assertNotIn(cycle(0.3, 3).points[0].trackId, track_ids)
+    self.assertEqual(len(cycle(0.30, 0).points), 0)
+    self.assertNotIn(cycle(0.35, 3).points[0].trackId, track_ids)
