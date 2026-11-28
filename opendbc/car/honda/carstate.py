@@ -75,6 +75,7 @@ class CarState(CarStateBase, CarStateExt):
     # used for car hud message
     # TODO: find CAR_SPEED for HONDA_ODYSSEY_TWN or use ACC_HUD w/ detection
     self.is_metric = self.CP.carFingerprint in (CAR.HONDA_ODYSSEY_TWN,) or not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
+    speed_conv = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
     self.v_cruise_factor = CV.MPH_TO_MS if self.dynamic_v_cruise_units and not self.is_metric else CV.KPH_TO_MS
 
     # ******************* parse out can *******************
@@ -233,7 +234,7 @@ class CarState(CarStateBase, CarStateExt):
       *create_button_events(self.cruise_setting, prev_cruise_setting, SETTINGS_BUTTONS_DICT),
     ]
 
-    CarStateExt.update_ext(self, ret, can_parsers)
+    CarStateExt.update_ext(self, ret, ret_sp, can_parsers, speed_conv)
 
     return ret, ret_sp
 

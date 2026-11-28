@@ -6,8 +6,9 @@ See the LICENSE.md file in the root directory for more details.
 """
 from enum import StrEnum
 
-from opendbc.car import Bus, structs
 from opendbc.can.parser import CANParser
+from opendbc.car import Bus, structs
+from opendbc.car.honda.values import HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_BOSCH_CANFD
 from opendbc.sunnypilot.car.honda.values_ext import HondaFlagsSP
 
 
@@ -16,9 +17,21 @@ class CarStateExt:
     self.CP = CP
     self.CP_SP = CP_SP
 
-  def update_ext(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
+  def update_ext(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser],
+                 speed_conv: float) -> None:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
+
+    if self.CP_SP.flags & HondaFlagsSP.HAS_CAMERA_MESSAGES:
+      speed_bus = cp if self.CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS - HONDA_BOSCH_CANFD) else cp_cam
+      speed_msg = speed_bus.vl["CAMERA_MESSAGES"]
+      speed_type = speed_msg["SPEED_LIMIT_TYPE"]
+      speed_idx = speed_msg["SPEED_LIMIT_INDEX"]
+      speed_idx_max = 24 if speed_type in (3, 6) else 16
+      speed_scale = 5 if speed_type in (3, 6) else 10
+      ret_sp.speedLimit = 0.0
+      if (1 <= speed_idx <= speed_idx_max) and (speed_type != 1):
+        ret_sp.speedLimit = speed_idx * speed_scale * speed_conv
 
     if self.CP_SP.flags & HondaFlagsSP.NIDEC_HYBRID:
       ret.accFaulted = bool(cp.vl["HYBRID_BRAKE_ERROR"]["BRAKE_ERROR_1"] or cp.vl["HYBRID_BRAKE_ERROR"]["BRAKE_ERROR_2"])
