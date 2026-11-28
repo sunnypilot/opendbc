@@ -161,7 +161,7 @@ class HyundaiCarDocs(CarDocs):
 class HyundaiNonSccCarDocs(CarDocs):
   package: str = "No Smart Cruise Control (Non-SCC)"
   support_type: SupportType = SupportType.COMMUNITY
-  support_link: str = "community"
+  support_link: str | None = "community"
 
 
 @dataclass
@@ -397,9 +397,10 @@ class CAR(Platforms):
     [
       HyundaiCarDocs("Hyundai Tucson 2022", car_parts=CarParts.common([CarHarness.hyundai_n])),
       HyundaiCarDocs("Hyundai Tucson 2023-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
+      HyundaiCarDocs("Hyundai Tucson (without HDA II) 2025-26", car_parts=CarParts.common([CarHarness.hyundai_n])),
       HyundaiCarDocs("Hyundai Tucson Hybrid 2022-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
       HyundaiCarDocs("Hyundai Tucson Hybrid (without HDA II) 2025-26", car_parts=CarParts.common([CarHarness.hyundai_n])),
-      HyundaiCarDocs("Hyundai Tucson Plug-in Hybrid 2024", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
+      HyundaiCarDocs("Hyundai Tucson Plug-in Hybrid 2023-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
     CarSpecs(wheelbase=2.756, steerRatio=13.7, tireStiffnessFactor=0.385),
   )
@@ -657,7 +658,10 @@ class CAR(Platforms):
     flags=HyundaiFlags.CHECKSUM_CRC8,
   )
   HYUNDAI_KONA_2ND_GEN = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Hyundai Kona (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_l]))],
+    [
+      HyundaiCarDocs("Hyundai Kona (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_l])),
+      HyundaiCarDocs("Hyundai Kona Hybrid (without HDA II) 2024-26", car_parts=CarParts.common([CarHarness.hyundai_l])),
+    ],
     HYUNDAI_KONA_EV_2ND_GEN.specs,
   )
   HYUNDAI_KONA_NON_SCC = HyundaiNonSccPlatformConfig(
@@ -706,6 +710,10 @@ class CAR(Platforms):
       HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-26", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
     ],
     CarSpecs(wheelbase=2.84, steerRatio=13.27),
+  )
+  KIA_SORENTO_2024 = HyundaiCanFDPlatformConfig(
+    [HyundaiCarDocs("Kia Sorento (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_a]))],
+    KIA_SORENTO_4TH_GEN.specs,
   )
 
 

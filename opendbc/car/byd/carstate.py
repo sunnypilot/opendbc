@@ -18,11 +18,11 @@ GEAR_MAP = {
 
 
 class CarState(CarStateBase):
-  def __init__(self, CP, CP_SP=None):
+  def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
     self.lkas_hud = {}
 
-  def update(self, can_parsers) -> structs.CarState:
+  def update(self, can_parsers) -> tuple[structs.CarState, structs.CarStateSP]:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
     ret = structs.CarState()

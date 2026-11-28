@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 
-from opendbc.car.nissan.values import NissanSafetyFlags
+from opendbc.car.nissan.values import CarControllerParams, NissanSafetyFlags
 from opendbc.sunnypilot.car.nissan.values import NissanSafetyFlagsSP
 from opendbc.car.structs import CarParams
 import opendbc.safety.tests.common as common
@@ -79,6 +79,17 @@ class TestNissanSafety(common.CarSafetyTest, common.AngleSteeringSafetyTest):
         args = {} if btn is None else {btn: 1}
         tx = self._tx(self._acc_button_cmd(**args))
         self.assertEqual(tx, should_tx)
+
+  def test_lkas_max_torque(self):
+    # the EPS torque limit the LKAS msg sets is at most what openpilot sends, which the driver can easily overpower
+    for enabled in (True, False):
+      self.safety.set_controls_allowed(enabled)
+      for raw in range(256):
+        values = {"DESIRED_ANGLE": 0, "LKA_ACTIVE": enabled, "MAX_TORQUE": raw * 0.01}
+        should_tx = raw * 0.01 <= CarControllerParams.LKAS_MAX_TORQUE
+        self.assertEqual(should_tx, self._tx(self.packer.make_can_msg_safety("LKAS", 0, values)), raw)
+
+
 class TestNissanSafetyAltEpsBus(TestNissanSafety):
   """Altima uses different buses"""
   SAFETY_PARAM = NissanSafetyFlags.ALT_EPS_BUS
@@ -102,7 +113,8 @@ class TestNissanLeafSafety(TestNissanSafety):
   def setUp(self):
     self.packer = CANPackerSafety("nissan_leaf_2018_generated")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_sp(NissanSafetyFlagsSP.LEAF)
+    self._safety_param_sp = NissanSafetyFlagsSP.LEAF
+    self.safety.set_current_safety_param_sp(self._safety_param_sp)
     self.safety.set_safety_hooks(CarParams.SafetyModel.nissan, 0)
     self.safety.init_tests()
 

@@ -38,7 +38,7 @@ class TeslaCarDocsHW4(CarDocs):
 @dataclass
 class TeslaCarHW4ModelSXDocs(TeslaCarDocsHW4):
   support_type: SupportType = SupportType.COMMUNITY
-  support_link: str = "community"
+  support_link: str | None = "community"
 
 
 @dataclass

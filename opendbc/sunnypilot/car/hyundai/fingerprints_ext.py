@@ -149,10 +149,24 @@ FW_VERSIONS_EXT = {
       b'\xf1\x00SX2 MFC  AT AUS RHD 1.00 1.03 99211-BE000 230517',
       b'\xf1\x00SX2 MFC  AT USA LHD 1.00 1.03 99211-BE000 230517',
       b'\xf1\x00SX2 MFC  AT USA LHD 1.00 1.07 99211-BE000 240611',
+      b'\xf1\x00SX2HMFC  AT AUS RHD 1.00 1.00 99211-BE001 241015',
+      b'\xf1\x00SX2HMFC  AT AUS RHD 1.00 1.01 99211-BE001 250117',
+      b'\xf1\x00SX2HMFC  AT EUR LHD 1.00 1.01 99211-BE001 250117',
+      b'\xf1\x00SX2HMFC  AT EUR RHD 1.00 1.04 99211-BE000 231010',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00SX2_ RDR -----      1.00 1.02 99110-BE000         ',
       b'\xf1\x00SX2_ RDR -----      1.00 1.02 99110-BE500         ',
+    ],
+  },
+  CAR.KIA_SORENTO_2024: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00MQ4 MFC  AT AUS RHD 1.01 1.04 99210-P2550 231127',
+      b'\xf1\x00MQ4 MFC  AT USA LHD 1.01 1.04 99210-R5500 231127',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00MQ4_ RDR -----      1.00 1.01 99110-P2500         ',
+      b'\xf1\x00MQ4_ RDR -----      1.00 1.01 99110-R5500         ',
     ],
   },
   CAR.KIA_CARNIVAL_4TH_GEN: {
@@ -166,10 +180,15 @@ FW_VERSIONS_EXT = {
   },
   CAR.HYUNDAI_TUCSON_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NX4 FR_CMR AT CAN LHD 1.00 1.00 99211-N9250 14W',
       b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 1.00 99211-N7030 C55',
+      b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 1.00 99211-N7035 C5C',
+      b'\xf1\x00NX4 FR_CMR AT GEN LHD 1.00 1.00 99211-N7030 C55',
+      b'\xf1\x00NX4 FR_CMR AT GEN LHD 1.00 1.00 99211-N7035 C5C',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7030 C55',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7035 C5C',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N7060 C5B',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.01 99211-N7050 C5A',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NX4__               1.00 1.02 99110N7000          ',

@@ -5,12 +5,14 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 import unittest
+from collections.abc import Callable
 
 from opendbc.safety.tests.libsafety import libsafety_py
 
 
 class RxChecksSafetyTestBase(unittest.TestCase):
   safety: libsafety_py.LibSafety
+  _rx: Callable[[libsafety_py.CANPacket], bool]
 
   def _ignore_frequency_check_msgs(self):
     return []

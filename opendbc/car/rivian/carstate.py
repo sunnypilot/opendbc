@@ -45,7 +45,7 @@ class CarState(CarStateBase, CarStateExt):
     ret.steeringTorque = cp.vl["EPAS_SystemStatus"]["EPAS_TorsionBarTorque"]
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > 1.0, 5)
 
-    ret.steerFaultTemporary = cp.vl["EPAS_AdasStatus"]["EPAS_EacErrorCode"] != 0
+    ret.steerFaultTemporary = cp.vl["EPAS_AdasStatus"]["EPAS_EacErrorCode"] != 0 or cp.vl["EPAS_SystemStatus"]["H_CAN_EPSS_ToiFlt"] != 0
 
     # Cruise state
     ret.cruiseState.enabled = cp_cam.vl["ACM_Status"]["ACM_FeatureStatus"] == 1
@@ -97,7 +97,7 @@ class CarState(CarStateBase, CarStateExt):
     adas_status_msgs = cp.vl_all["VDM_AdasSts"]
     self.vdm_adas_status = [dict(zip(adas_status_msgs, vals, strict=True)) for vals in zip(*adas_status_msgs.values(), strict=True)]
 
-    CarStateExt.update(self, ret, can_parsers)
+    CarStateExt.update_ext(self, ret, can_parsers)
 
     return ret, ret_sp
 

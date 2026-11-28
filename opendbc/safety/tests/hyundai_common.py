@@ -1,7 +1,9 @@
+from collections.abc import Callable
+
 from opendbc.sunnypilot.car.hyundai.values import HyundaiSafetyFlagsSP
+
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.libsafety import libsafety_py
-from opendbc.safety.tests.common import make_msg
 
 
 class Buttons:
@@ -15,9 +17,11 @@ PREV_BUTTON_SAMPLES = 8
 ENABLE_BUTTONS = (Buttons.RESUME, Buttons.SET, Buttons.CANCEL)
 
 
-class HyundaiButtonBase:
+class HyundaiButtonBase(common.CarSafetyTest):
   BUTTONS_TX_BUS = 0  # tx on this bus, rx on 0
   SCC_BUS = 0  # rx on this bus
+
+  _button_msg: Callable[..., libsafety_py.CANPacket]
 
   def test_button_sends(self):
     """
@@ -56,6 +60,9 @@ class HyundaiButtonBase:
         self._rx(self._pcm_status_msg(True))
         controls_allowed = btn in ENABLE_BUTTONS or main_button
         self.assertEqual(controls_allowed, self.safety.get_controls_allowed())
+        self.safety.set_controls_allowed(False)
+        self._rx(self._pcm_status_msg(True))
+        self.assertFalse(self.safety.get_controls_allowed())
 
   def test_sampling_cruise_buttons(self):
     """
@@ -74,7 +81,9 @@ class HyundaiButtonBase:
 class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
 
   DISABLED_ECU_UDS_MSG: tuple[int, int]
-  DISABLED_ECU_ACTUATION_MSG: tuple[int, int]
+
+  _button_msg: Callable[..., libsafety_py.CANPacket]
+  _main_cruise_button_msg: Callable[..., libsafety_py.CANPacket]
 
   # override these tests from CarSafetyTest, hyundai longitudinal uses button enable
   def test_disable_control_allowed_from_cruise(self):
@@ -94,9 +103,6 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
 
   def _pcm_status_msg(self, enable):
     raise Exception
-
-  def _accel_msg(self, accel, aeb_req=False, aeb_decel=0):
-    raise NotImplementedError
 
   def _acc_state_msg(self, enable):
     raise NotImplementedError
@@ -126,6 +132,19 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
 
         self._rx(self._button_msg(btn_cur))
         self.assertEqual(should_enable, self.safety.get_controls_allowed())
+
+  def test_set_resume_resets_heartbeat_mismatches(self):
+    for btn in (Buttons.SET, Buttons.RESUME):
+      with self.subTest(btn=btn):
+        self.safety.set_controls_allowed(1)
+        self.safety.set_heartbeat_engaged_mismatches(2)
+
+        self._rx(self._button_msg(btn))
+        self.assertEqual(2, self.safety.get_heartbeat_engaged_mismatches())
+
+        self._rx(self._button_msg(Buttons.NONE))
+        self.assertTrue(self.safety.get_controls_allowed())
+        self.assertEqual(0, self.safety.get_heartbeat_engaged_mismatches())
 
   def test_cancel_button(self):
     self.safety.set_controls_allowed(1)
@@ -231,6 +250,10 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
         self.assertTrue(self.safety.get_acc_main_on())
         self.assertEqual(2, self.safety.get_acc_main_on_mismatches())
 
+        # acc_main_on held, not a rising edge: no reset
+        self._rx(self._main_cruise_button_msg(0))
+        self.assertEqual(2, self.safety.get_acc_main_on_mismatches())
+
         # Third mismatch should trigger disengagement
         self._tx(self._tx_acc_state_msg(False))
         self.assertFalse(self.safety.get_acc_main_on())
@@ -276,13 +299,3 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
                            (False, b"\x03\xAA\xAA\x00\x00\x00\x00\x00")):
       tester_present = libsafety_py.make_CANPacket(addr, bus, msg)
       self.assertEqual(should_tx and ecu_disable, self._tx(tester_present))
-
-  def test_disabled_ecu_alive(self):
-    """
-      If the ECU knockout failed, make sure the relay malfunction is shown
-    """
-
-    addr, bus = self.DISABLED_ECU_ACTUATION_MSG
-    self.assertFalse(self.safety.get_relay_malfunction())
-    self._rx(make_msg(bus, addr, 8))
-    self.assertTrue(self.safety.get_relay_malfunction())

@@ -6,11 +6,14 @@ See the LICENSE.md file in the root directory for more details.
 """
 
 import numpy as np
-from opendbc.car import DT_CTRL
+from opendbc.can import CANPacker
+from opendbc.car import DT_CTRL, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.crc import CRC8J1850, mk_crc8_fun
+from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons
+from opendbc.sunnypilot.car.hyundai.mads import MadsDataSP
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 cruise_buttons_checksum = mk_crc8_fun(CRC8J1850, init_crc=0x97, xor_out=0x97)  # mk_crc8_fun xors init with xor_out: register starts at 0
@@ -129,6 +132,16 @@ def create_ccnc_alt_buttons(packer, CAN, cruise_buttons_msg, cnt, btn):
 
 
 class CcncCarController:
+  CP: structs.CarParams
+  CAN: CanBus
+  packer: CANPacker
+  frame: int
+  mads: MadsDataSP
+  lead_one: structs.LeadData
+  lead_distance: float
+  lead_visible: bool
+  cancel_counter: int
+
   def __init__(self, CP, CP_SP):
     self.ccnc_lfa_steering = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and not (CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG))
     self.ccnc_lka_alt_buttons = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and
@@ -163,7 +176,7 @@ class CcncCarController:
     set_speed = round(v_cruise_cluster * unit_conv)
     return min_speed if set_speed > max_speed else set_speed
 
-  def update(self, CS, CC):
+  def update_ccnc(self, CS, CC):
     can_sends = []
 
     if self.ccnc_lka_alt_buttons:

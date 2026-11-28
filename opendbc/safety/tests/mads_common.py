@@ -1,12 +1,18 @@
 from opendbc.testing import parameterized
 import abc
 import unittest
+from collections.abc import Callable
 
 from opendbc.safety.tests.libsafety import libsafety_py
 
 
 class MadsSafetyTestBase(unittest.TestCase):
   safety: libsafety_py.LibSafety
+  _rx: Callable[[libsafety_py.CANPacket], bool]
+  _speed_msg: Callable[..., libsafety_py.CANPacket]
+  _user_brake_msg: Callable[..., libsafety_py.CANPacket]
+  _tx: Callable[[libsafety_py.CANPacket], bool]
+  _reset_safety_hooks: Callable[[], None]
 
   @abc.abstractmethod
   def _lkas_button_msg(self, enabled):
@@ -42,7 +48,7 @@ class MadsSafetyTestBase(unittest.TestCase):
         # Call the heartbeat check function multiple times
         # We know from the implementation that it takes 3 mismatches to disengage
         for _ in range(4):  # More than 3 times to ensure we pass the threshold
-          self.safety.mads_heartbeat_engaged_check()
+          self.safety.mads_heartbeat_check()
 
         # Verify engagement state matches expectation
         self.assertEqual(self.safety.get_controls_allowed_lateral(), boolean,
@@ -376,14 +382,43 @@ class MadsSafetyTestBase(unittest.TestCase):
 
     # After 2 mismatches: still engaged
     for _ in range(2):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.mads_heartbeat_check()
     self.assertTrue(self.safety.get_controls_allowed_lateral(),
                     "Should still be engaged after 2 mismatches")
 
     # 3rd mismatch: disengaged
-    self.safety.mads_heartbeat_engaged_check()
+    self.safety.mads_heartbeat_check()
     self.assertFalse(self.safety.get_controls_allowed_lateral(),
                      "Should disengage after exactly 3 mismatches")
+
+  def test_heartbeat_mads_drops_after_three_ticks(self):
+    """Each heartbeat tick counts one missed MADS heartbeat, so lateral drops on the third"""
+    self.safety.set_mads_params(True, False, False)
+    self.safety.set_controls_allowed(False)
+    self.safety.set_controls_allowed_lateral(True)
+    self.safety.set_heartbeat_engaged_mads(False)
+
+    self.safety.safety_heartbeat_check()
+    self.safety.safety_heartbeat_check()
+    self.assertTrue(self.safety.get_controls_allowed_lateral(), "Should still be engaged after 2 missed heartbeats")
+
+    self.safety.safety_heartbeat_check()
+    self.assertFalse(self.safety.get_controls_allowed_lateral(), "Should disengage after exactly 3 missed heartbeats")
+
+  def test_alt_exp_before_safety_mode_keeps_mads(self):
+    """pandad sends the alternative experience before the safety mode, MADS must survive the mode init"""
+    try:
+      self._lkas_button_msg(False)
+    except NotImplementedError as err:
+      raise unittest.SkipTest("Skipping test because MADS button is not supported") from err
+
+    self.safety.set_mads_params(True, False, False)
+    self._reset_safety_hooks()
+    self.assertTrue(self.safety.get_enable_mads())
+
+    self._rx(self._lkas_button_msg(True))
+    self._rx(self._lkas_button_msg(False))
+    self.assertTrue(self.safety.get_controls_allowed_lateral())
 
   def test_heartbeat_engaged_mads_reset_on_match(self):
     """Test that mismatch counter resets when heartbeat matches"""
@@ -393,20 +428,38 @@ class MadsSafetyTestBase(unittest.TestCase):
 
     # 2 mismatches
     for _ in range(2):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.mads_heartbeat_check()
     self.assertTrue(self.safety.get_controls_allowed_lateral())
 
     # Match resets counter
     self.safety.set_heartbeat_engaged_mads(True)
-    self.safety.mads_heartbeat_engaged_check()
+    self.safety.mads_heartbeat_check()
     self.assertTrue(self.safety.get_controls_allowed_lateral())
 
     # Need 3 more mismatches from scratch to disengage
     self.safety.set_heartbeat_engaged_mads(False)
     for _ in range(2):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.mads_heartbeat_check()
     self.assertTrue(self.safety.get_controls_allowed_lateral(),
                     "Counter should have reset; 2 mismatches after reset should not disengage")
+
+  def test_heartbeat_engaged_mads_reset_on_request(self):
+    self.safety.set_mads_params(True, False, False)
+    self.safety.set_controls_allowed(False)
+    self._rx(self._speed_msg(0))
+    self.safety.set_controls_allowed_lateral(True)
+    self.safety.set_heartbeat_engaged_mads(False)
+
+    for _ in range(2):
+      self.safety.mads_heartbeat_check()
+
+    self.safety.set_controls_allowed(True)
+    self._rx(self._speed_msg(0))
+
+    for _ in range(2):
+      self.safety.mads_heartbeat_check()
+    self.assertTrue(self.safety.get_controls_allowed_lateral(),
+                    "Counter should have reset; 2 mismatches after a request should not disengage")
 
   def test_mads_button_not_engaged_without_press(self):
     """Test that MADS button in idle state does not engage lateral control"""
@@ -589,7 +642,7 @@ class MadsSafetyTestBase(unittest.TestCase):
 
     # Heartbeat matches — both active
     self.safety.set_heartbeat_engaged_mads(True)
-    self.safety.mads_heartbeat_engaged_check()
+    self.safety.mads_heartbeat_check()
     self.assertTrue(self.safety.get_controls_allowed_lateral())
 
     # Brake: safety clears controls_allowed_lateral
@@ -599,7 +652,7 @@ class MadsSafetyTestBase(unittest.TestCase):
     # Python side: disengage mode → state=disabled → enabled=False → heartbeat sends False
     self.safety.set_heartbeat_engaged_mads(False)
     for _ in range(4):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.mads_heartbeat_check()
     # No mismatch: controls_allowed_lateral=False, so check doesn't trigger
     self.assertFalse(self.safety.get_controls_allowed_lateral())
 
@@ -620,7 +673,7 @@ class MadsSafetyTestBase(unittest.TestCase):
     # Python side: pause mode → state=paused → enabled=True → heartbeat sends True
     self.safety.set_heartbeat_engaged_mads(True)
     for _ in range(4):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.mads_heartbeat_check()
     # No mismatch: controls_allowed_lateral=False, check condition (lat && !hb) = False
     self.assertFalse(self.safety.get_controls_allowed_lateral())
 
@@ -630,7 +683,7 @@ class MadsSafetyTestBase(unittest.TestCase):
     # Heartbeat still True (Python side: paused→enabled, enabled=True)
     self.safety.set_heartbeat_engaged_mads(True)
     for _ in range(4):
-      self.safety.mads_heartbeat_engaged_check()
+      self.safety.mads_heartbeat_check()
     # No mismatch: both agree lateral is active
     self.assertTrue(self.safety.get_controls_allowed_lateral())
 
@@ -650,3 +703,53 @@ class MadsSafetyTestBase(unittest.TestCase):
     self.assertFalse(self.safety.get_enable_mads())
     self.assertFalse(self.safety.get_disengage_lateral_on_brake())
     self.assertFalse(self.safety.get_pause_lateral_on_brake())
+
+  def _lateral_steer_msg(self) -> libsafety_py.CANPacket | None:
+    from opendbc.safety.tests import common  # common imports this module
+
+    if isinstance(self, common.CurvatureSteeringSafetyTest):
+      self._reset_speed_measurement(0)
+      self._reset_curvature_measurement(0)
+      self._set_prev_desired_curvature(0)
+      return self._curvature_cmd_msg(0, True)
+    if isinstance(self, common.AngleSteeringSafetyTest):
+      self._reset_speed_measurement(0)
+      self._reset_angle_measurement(0)
+      self._set_prev_desired_angle(0)
+      return self._angle_cmd_msg(0, True)
+    if isinstance(self, common.TorqueSteeringSafetyTestBase):
+      self._set_prev_torque(0)
+      if isinstance(self, common.DriverTorqueSteeringSafetyTest):
+        self._reset_torque_driver_measurement(0)
+      return self._torque_cmd_msg(self.MAX_RATE_UP)
+    return None
+
+  def test_controls_allowed_lateral_steering(self):
+    """Lateral-only MADS engagement allows the same steering commands as controls_allowed"""
+    results = []
+    for controls_allowed, controls_allowed_lateral in ((True, False), (False, True), (False, False)):
+      self.setUp()
+      self.safety.set_mads_params(True, False, False)
+      msg = self._lateral_steer_msg()
+      if msg is None:
+        raise unittest.SkipTest("no steering command")
+      self.safety.set_controls_allowed(controls_allowed)
+      self.safety.set_controls_allowed_lateral(controls_allowed_lateral)
+      results.append(self._tx(msg))
+    self.assertEqual([True, True, False], results)
+
+  def test_mads_inputs_ignored_on_other_bus(self):
+    """The MADS button and main cruise state count only on the bus they are read from"""
+    for build in (self._lkas_button_msg, self._acc_state_msg):
+      try:
+        bus = build(True)[0].bus
+      except NotImplementedError:
+        continue
+      for other_bus in {0, 1, 2} - {bus}:
+        with self.subTest(msg=build.__name__, bus=other_bus):
+          self.setUp()
+          msg = build(True)
+          msg[0].bus = other_bus
+          self._rx(msg)
+          self.assertEqual(-1, self.safety.get_mads_button_press())
+          self.assertFalse(self.safety.get_acc_main_on())

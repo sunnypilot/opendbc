@@ -24,5 +24,5 @@ class CoopSteeringCarController:
 
     return CoopSteeringDataSP(control_type)
 
-  def update(self, CP_SP: structs.CarParamsSP) -> None:
+  def update_coop_steering(self, CP_SP: structs.CarParamsSP) -> None:
     self.coop_steering = self.coop_steering_status_update(CP_SP)
