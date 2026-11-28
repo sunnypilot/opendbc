@@ -2552,6 +2552,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Kia Sorento (without HDA II, Middle East only) 2024": {
+    "platform": "KIA_SORENTO_2024",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Sorento (without HDA II, Middle East only)",
+    "year": [
+      "2024"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
   "Kia Sorento Hybrid 2021-23": {
     "platform": "KIA_SORENTO_HEV_4TH_GEN",
     "make": "Kia",

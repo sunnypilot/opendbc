@@ -148,6 +148,7 @@ class CarHarness(EnumBase):
 
   # custom harness
   honda_clarity = BaseCarHarness("Honda Nidec connector + Honda Clarity Proxy Board")
+  hyundai_s = BaseCarHarness("Hyundai S connector")
 
 
 class Device(EnumBase):
