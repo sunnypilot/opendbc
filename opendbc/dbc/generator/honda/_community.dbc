@@ -22,5 +22,7 @@ BO_ 513 GAS_SENSOR: 6 INTERCEPTOR
  SG_ PEDAL_COUNTER : 35|4@0+ (1,0) [0|15] "" EON
  SG_ PEDAL_CHECKSUM : 47|8@0+ (1,0) [0|255] "" EON
 
+CM_ SG_ 400 "Supports older serial steering cars";
+
 VAL_ 400 STEER_STATUS 7 "permanent_fault" 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 1 "driver_steering" 0 "normal" ;
 VAL_ 513 STATE 5 "FAULT_TIMEOUT" 4 "FAULT_STARTUP" 3 "FAULT_SCE" 2 "FAULT_SEND" 1 "FAULT_BAD_CHECKSUM" 0 "NO_FAULT" ;
