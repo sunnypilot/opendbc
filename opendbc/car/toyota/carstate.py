@@ -84,15 +84,12 @@ class CarState(CarStateBase, CarStateExt):
       if not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
         ret.stockAeb = bool(cp_acc.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_acc.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
 
-    self.parse_wheel_speeds(ret,
-      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
-      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FR"],
-      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RL"],
-      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RR"],
-    )
+    wheel_speeds = [cp.vl["WHEEL_SPEEDS"][f"WHEEL_SPEED_{whl}"] for whl in ("FL", "FR", "RL", "RR")]
+    self.parse_wheel_speeds(ret, *wheel_speeds)
     ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
 
-    ret.standstill = abs(ret.vEgoRaw) < 1e-3
+    # moving if any wheel turns, either way, like the safety
+    ret.standstill = all(abs(speed) < 1e-3 for speed in wheel_speeds)
 
     ret.vehicleSensorsInvalid = any(cp.vl["WHEEL_SPEEDS"][f"WHEEL_SPEED_{whl}_FAULT"]
                                     for whl in ("FL", "FR", "RL", "RR"))
@@ -212,7 +209,7 @@ class CarState(CarStateBase, CarStateExt):
 
     ret.buttonEvents = buttonEvents
 
-    CarStateExt.update(self, ret, ret_sp, can_parsers)
+    CarStateExt.update_ext(self, ret, ret_sp, can_parsers)
 
     return ret, ret_sp
 

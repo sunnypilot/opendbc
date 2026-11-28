@@ -57,14 +57,20 @@ def replay_drive(msgs, safety_mode, param, alternative_experience, param_sp):
     **{var: None for var in DEBUG_VARS}
   })
 
-  can_msgs = [m for m in msgs if m.which() in ('can', 'sendcan')]
+  # the panda enters the safety mode only when openpilot sets it: until then the relay is open and stock ECUs are on bus 0
+  mode_t = next((m.logMonoTime for m in msgs if m.which() == 'pandaStates' and
+                 any(ps.safetyModel.raw == safety_mode for ps in m.pandaStates)), 0)
+  can_msgs = [m for m in msgs if m.which() in ('can', 'sendcan') and m.logMonoTime >= mode_t]
   start_t = can_msgs[0].logMonoTime
   end_t = can_msgs[-1].logMonoTime
+  last_tick_t = start_t
   for msg in tqdm(can_msgs):
     safety.set_timer((msg.logMonoTime // 1000) % 0xFFFFFFFF)
 
     # skip start and end of route, warm up/down period
-    if msg.logMonoTime - start_t > 1e9 and end_t - msg.logMonoTime > 1e9:
+    # tick at 1Hz like the panda: safety_tick advances safety_mode_cnt, which gates the relay malfunction check
+    if msg.logMonoTime - start_t > 1e9 and end_t - msg.logMonoTime > 1e9 and msg.logMonoTime - last_tick_t >= 1e9:
+      last_tick_t = msg.logMonoTime
       safety.safety_tick()
       safety_tick_rx_invalid |= not safety.safety_config_valid() or safety_tick_rx_invalid
 

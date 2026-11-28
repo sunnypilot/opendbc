@@ -70,7 +70,7 @@ class CarTestRoute(NamedTuple):
 routes = [
   CarTestRoute("efdf9af95e71cd84/2022-05-13--19-03-31", COMMA.COMMA_BODY),
 
-  CarTestRoute("c5e3aa51055c8f47|2023-12-06--20-01-44", CHRYSLER.JEEP_CHEROKEE_5TH_GEN),
+  CarTestRoute("c5e3aa51055c8f47/2023-12-06--20-01-44", CHRYSLER.JEEP_CHEROKEE_5TH_GEN),
   CarTestRoute("0c94aa1e1296d7c6/2021-05-05--19-48-37", CHRYSLER.JEEP_GRAND_CHEROKEE),
   CarTestRoute("91dfedae61d7bd75/2021-05-22--20-07-52", CHRYSLER.JEEP_GRAND_CHEROKEE_2019),
   CarTestRoute("420a8e183f1aed48/2020-03-05--07-15-29", CHRYSLER.CHRYSLER_PACIFICA_2018_HYBRID),  # 2017
@@ -314,7 +314,7 @@ routes = [
   CarTestRoute("ffcd23abbbd02219/2024-02-28--14-59-38", VOLKSWAGEN.VOLKSWAGEN_CADDY_MK3),
   CarTestRoute("cae14e88932eb364/2021-03-26--14-43-28", VOLKSWAGEN.VOLKSWAGEN_GOLF_MK7),  # Stock ACC
   CarTestRoute("3cfdec54aa035f3f/2022-10-13--14-58-58", VOLKSWAGEN.VOLKSWAGEN_GOLF_MK7),  # openpilot longitudinal
-  CarTestRoute("578742b26807f756|00000010--41ee3e5bec", VOLKSWAGEN.VOLKSWAGEN_JETTA_MK6),
+  CarTestRoute("578742b26807f756/00000010--41ee3e5bec", VOLKSWAGEN.VOLKSWAGEN_JETTA_MK6),
   CarTestRoute("58a7d3b707987d65/2021-03-25--17-26-37", VOLKSWAGEN.VOLKSWAGEN_JETTA_MK7),
   CarTestRoute("4d134e099430fba2/2021-03-26--00-26-06", VOLKSWAGEN.VOLKSWAGEN_PASSAT_MK8),
   CarTestRoute("3cfdec54aa035f3f/2022-07-19--23-45-10", VOLKSWAGEN.VOLKSWAGEN_PASSAT_NMS),
@@ -404,5 +404,7 @@ routes = [
   CarTestRoute("c36828a00b81bdab/000000e2--04a43142f7", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=8),  # 2025, ccNC, LFA steering, openpilot longitudinal
   CarTestRoute("97ca61196eb73e0d/000001cf--44d7ac5bbd", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=4),  # 2024 hybrid, ccNC, LFA steering
   CarTestRoute("97ca61196eb73e0d/000001ce--5d54b9e55d", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=1),  # 2024 hybrid, ccNC, LFA steering, openpilot longitudinal
+  CarTestRoute("34b196abd2f01c39/00000123--68511c9256", HYUNDAI.KIA_SORENTO_2024, segment=3),  # 2024, ccNC, LFA steering
+  CarTestRoute("34b196abd2f01c39/00000124--5e041abe8a", HYUNDAI.KIA_SORENTO_2024, segment=4),  # 2024, ccNC, LFA steering, openpilot longitudinal
   CarTestRoute("8bae07514ce06ad4/00000008--9f43d90441", CHRYSLER.RAM_HD_5TH_GEN),  # 2024 Ram HD with alt cruise buttons
 ]

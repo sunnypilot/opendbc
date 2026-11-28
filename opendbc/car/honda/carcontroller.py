@@ -119,7 +119,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
     self.last_torque = 0.0
 
   def update(self, CC, CC_SP, CS, now_nanos):
-    MadsCarController.update(self, self.CP, CC, CC_SP)
+    MadsCarController.update_mads(self, self.CP, CC, CC_SP)
     actuators = CC.actuators
     hud_control = CC.hudControl
     hud_v_cruise = hud_control.setSpeed / CS.v_cruise_factor if hud_control.speedVisible else 255
@@ -227,7 +227,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
           self.apply_brake_last = apply_brake
           self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
 
-          can_sends.extend(GasInterceptorCarController.update(self, CC, CS, gas, brake, wind_brake, self.packer, self.frame))
+          can_sends.extend(GasInterceptorCarController.update_gas_interceptor(self, CC, CS, gas, brake, wind_brake, self.packer, self.frame))
 
     # Send dashboard UI commands.
     if self.frame % 10 == 0:
@@ -252,7 +252,7 @@ class CarController(CarControllerBase, MadsCarController, GasInterceptorCarContr
             self.gas = pcm_accel / self.params.NIDEC_GAS_MAX
 
     # Intelligent Cruise Button Management
-    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CC_SP, self.packer, self.frame,
+    can_sends.extend(IntelligentCruiseButtonManagementInterface.update_icbm(self, CC_SP, self.packer, self.frame,
                                                                        self.last_button_frame, self.CAN))
 
     new_actuators = actuators.as_builder()

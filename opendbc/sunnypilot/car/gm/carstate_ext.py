@@ -17,7 +17,7 @@ class CarStateExt:
     self.CP = CP
     self.CP_SP = CP_SP
 
-  def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
+  def update_ext(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     pt_cp = can_parsers[Bus.pt]
 
     if self.CP_SP.flags & GMFlagsSP.NON_ACC:

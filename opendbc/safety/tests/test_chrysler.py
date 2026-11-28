@@ -151,7 +151,8 @@ class TestChryslerRamHDAltButtonSafety(TestChryslerRamHDSafety):
   TX_MSGS = [[0x275, 0], [0x276, 0], [0x23B, 2]]
 
   def setUp(self):
-    libsafety_py.libsafety.set_current_safety_param_sp(ChryslerSafetyFlagsSP.RAM_HD_ALT_BUTTONS)
+    self._safety_param_sp = ChryslerSafetyFlagsSP.RAM_HD_ALT_BUTTONS
+    libsafety_py.libsafety.set_current_safety_param_sp(self._safety_param_sp)
     super().setUp()
 
   def _button_msg(self, cancel=False, resume=False, accel=False, decel=False):

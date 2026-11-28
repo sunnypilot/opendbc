@@ -3,6 +3,7 @@ import numpy as np
 from dataclasses import dataclass, field
 from enum import ReprEnum, StrEnum, EnumType, auto, IntFlag
 from dataclasses import replace
+from typing import Generic, TypeVar
 
 from opendbc.car import structs, uds
 from opendbc.car.can_definitions import CanData
@@ -168,9 +169,12 @@ class Freezable:
     super().__setattr__(*args, **kwargs)
 
 
+CarDocsT = TypeVar("CarDocsT", bound=CarDocs)
+
+
 @dataclass
-class PlatformConfigBase(Freezable):
-  car_docs: list[CarDocs] | list[ExtraCarDocs]
+class PlatformConfigBase(Freezable, Generic[CarDocsT]):
+  car_docs: list[CarDocsT]
   specs: CarSpecs
 
   dbc_dict: DbcDict
@@ -180,7 +184,7 @@ class PlatformConfigBase(Freezable):
 
   platform_str: str | None = None
 
-  origin_car_docs: list[CarDocs] | list[ExtraCarDocs] = field(init=False)
+  origin_car_docs: list[CarDocsT] = field(init=False)
 
   def __hash__(self) -> int:
     return hash(self.platform_str)
@@ -200,15 +204,12 @@ class PlatformConfigBase(Freezable):
 
 
 @dataclass
-class PlatformConfig(PlatformConfigBase):
-  car_docs: list[CarDocs]
-  specs: CarSpecs
-  dbc_dict: DbcDict
+class PlatformConfig(PlatformConfigBase[CarDocsT]):
+  pass
 
 
 @dataclass
-class ExtraPlatformConfig(PlatformConfigBase):
-  car_docs: list[ExtraCarDocs]
+class ExtraPlatformConfig(PlatformConfigBase[ExtraCarDocs]):
   specs: CarSpecs = CarSpecs(wheelbase=0., steerRatio=0.)
   dbc_dict: DbcDict = field(default_factory=lambda: dict())
 

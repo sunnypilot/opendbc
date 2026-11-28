@@ -161,7 +161,7 @@ class HyundaiCarDocs(CarDocs):
 class HyundaiNonSccCarDocs(CarDocs):
   package: str = "No Smart Cruise Control (Non-SCC)"
   support_type: SupportType = SupportType.COMMUNITY
-  support_link: str = "community"
+  support_link: str | None = "community"
 
 
 @dataclass
@@ -710,6 +710,10 @@ class CAR(Platforms):
       HyundaiCarDocs("Hyundai Sonata Hybrid (without HDA II) 2024-26", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
     ],
     CarSpecs(wheelbase=2.84, steerRatio=13.27),
+  )
+  KIA_SORENTO_2024 = HyundaiCanFDPlatformConfig(
+    [HyundaiCarDocs("Kia Sorento (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_a]))],
+    KIA_SORENTO_4TH_GEN.specs,
   )
 
 

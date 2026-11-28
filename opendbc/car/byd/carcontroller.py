@@ -13,7 +13,7 @@ def get_safety_CP():
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_names, CP, CP_SP=None):
+  def __init__(self, dbc_names, CP, CP_SP):
     super().__init__(dbc_names, CP, CP_SP)
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.apply_angle_last = 0.0
