@@ -52,5 +52,6 @@ class EpsModCarController:
     self.eps_mod_lookup = get_eps_mod_torque_lookup(CP, CP_SP)
 
   def get_apply_torque(self, limited_torque: float) -> int:
+    assert self.eps_mod_lookup is not None
     bp, v = self.eps_mod_lookup
     return int(np.interp(-limited_torque * bp[-1], bp, v))

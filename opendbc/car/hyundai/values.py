@@ -161,7 +161,7 @@ class HyundaiCarDocs(CarDocs):
 class HyundaiNonSccCarDocs(CarDocs):
   package: str = "No Smart Cruise Control (Non-SCC)"
   support_type: SupportType = SupportType.COMMUNITY
-  support_link: str = "community"
+  support_link: str | None = "community"
 
 
 @dataclass

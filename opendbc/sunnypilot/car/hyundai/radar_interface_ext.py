@@ -9,7 +9,7 @@ from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
 class RadarInterfaceExt(EsccRadarInterfaceBase):
   msg_src: str
   trigger_msg: int
-  rcp: CANParser
+  rcp: CANParser | None
   pts: dict[int, structs.RadarData.RadarPoint]
 
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
@@ -23,13 +23,12 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
   def use_radar_interface_ext(self) -> bool:
     return self.use_escc or self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC)
 
-  def get_msg_src(self) -> str | None:
+  def get_msg_src(self) -> str:
     if self.use_escc:
       return "ESCC"
-    if self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
-      return "SCC_CONTROL" if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else "SCC11"
+    return "SCC_CONTROL" if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else "SCC11"
 
-  def get_radar_ext_can_parser(self) -> CANParser:
+  def get_radar_ext_can_parser(self) -> CANParser | None:
     if self.ESCC.enabled:
       lead_src, bus = "ESCC", 0
     elif self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
@@ -55,14 +54,14 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     self.rcp = self.get_radar_ext_can_parser()
     self.trigger_msg = self.get_trigger_msg(default_trigger_msg)
 
-  def update_ext(self, ret: structs.RadarData) -> structs.RadarData:
-    if not self.rcp.can_valid:
+  def update_ext(self, rcp: CANParser, ret: structs.RadarData) -> structs.RadarData:
+    if not rcp.can_valid:
       ret.errors.canError = True
       return ret
 
     for ii in range(1):
       msg_src = self.get_msg_src()
-      msg = self.rcp.vl[msg_src]
+      msg = rcp.vl[msg_src]
 
       if ii not in self.pts:
         self.pts[ii] = structs.RadarData.RadarPoint()

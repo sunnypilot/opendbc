@@ -26,7 +26,7 @@ class CarStateExt:
     self.button_events = []
     self.button_states = {button.event_type: False for button in self.buttons}
 
-  def update(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]):
+  def update_ext(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]):
     cp = can_parsers[Bus.pt]
 
     button_events = []

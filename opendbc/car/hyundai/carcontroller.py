@@ -77,11 +77,11 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     self.cancel_counter = 0
 
   def update(self, CC, CC_SP, CS, now_nanos):
-    EsccCarController.update(self, CS)
-    LeadDataCarController.update(self, CC_SP)
-    MadsCarController.update(self, self.CP, CC, CC_SP, self.frame)
+    EsccCarController.update_escc(self, CS)
+    LeadDataCarController.update_lead_data(self, CC_SP)
+    MadsCarController.update_mads(self, self.CP, CC, CC_SP, self.frame)
     if self.frame % 5 == 0:
-      LongitudinalController.update(self, CC, CS)
+      LongitudinalController.update_longitudinal(self, CC, CS)
 
     actuators = CC.actuators
     hud_control = CC.hudControl
@@ -130,7 +130,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
     if self.CP.flags & HyundaiFlags.CANFD:
       can_sends.extend(self.create_canfd_msgs(apply_steer_req, apply_torque, set_speed_in_units, accel,
                                               stopping, hud_control, CS, CC))
-      can_sends.extend(CcncCarController.update(self, CS, CC))
+      can_sends.extend(CcncCarController.update_ccnc(self, CS, CC))
     else:
       # Hold torque with induced temporary fault when cutting the actuation bit
       # FIXME: we don't use this with CAN FD?
@@ -140,7 +140,7 @@ class CarController(CarControllerBase, CcncCarController, EsccCarController, Lea
                                             stopping, hud_control, actuators, CS, CC))
 
     # Intelligent Cruise Button Management
-    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame, self.CAN))
+    can_sends.extend(IntelligentCruiseButtonManagementInterface.update_icbm(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame, self.CAN))
 
     new_actuators = actuators.as_builder()
     new_actuators.torque = apply_torque / self.params.STEER_MAX

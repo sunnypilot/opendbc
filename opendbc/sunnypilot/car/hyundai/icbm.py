@@ -60,7 +60,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
 
     return can_sends
 
-  def update(self, CS, CC_SP, packer, frame, last_button_frame, CAN) -> list[CanData]:
+  def update_icbm(self, CS, CC_SP, packer, frame, last_button_frame, CAN) -> list[CanData]:
     can_sends = []
     self.CC_SP = CC_SP
     self.ICBM = CC_SP.intelligentCruiseButtonManagement

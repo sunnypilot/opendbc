@@ -4087,7 +4087,7 @@
     ],
     "package": "All"
   },
-  "Toyota Sienna 2021-23": {
+  "Toyota Sienna 2021-26": {
     "platform": "TOYOTA_SIENNA_4TH_GEN",
     "make": "Toyota",
     "brand": "toyota",
@@ -4095,7 +4095,10 @@
     "year": [
       "2021",
       "2022",
-      "2023"
+      "2023",
+      "2024",
+      "2025",
+      "2026"
     ],
     "package": "All"
   },

@@ -162,7 +162,7 @@ class CarState(CarStateBase, CarStateExt):
     if ret.vEgo < self.CP.minSteerSpeed:
       ret.lowSpeedAlert = True
 
-    CarStateExt.update(self, ret, can_parsers)
+    CarStateExt.update_ext(self, ret, can_parsers)
 
     return ret, ret_sp
 

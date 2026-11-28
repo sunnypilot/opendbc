@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SAFETY_MODES_BODY_H
+#define SAFETY_MODES_BODY_H
 
 #include "opendbc/safety/declarations.h"
 
@@ -12,7 +13,7 @@ static uint32_t body_get_checksum(const CANPacket_t *msg) {
 
 static uint32_t body_compute_checksum(const CANPacket_t *msg) {
   uint8_t checksum = 0xFFU;
-  int len = GET_LEN(msg);
+  int len = (int)GET_LEN(msg);
   for (int i = len - 2; i >= 0; i--) {
     checksum = crc8_update(checksum, msg->data[i], 0xD5U);
   }
@@ -23,19 +24,19 @@ static void body_rx_hook(const CANPacket_t *msg) {
   SAFETY_UNUSED(msg);
 
   // controls allowed as soon as RX is valid
-  controls_allowed = true;
+  enter_controls();
 }
 
 static bool body_tx_hook(const CANPacket_t *msg) {
   bool tx = true;
 
-  if (!controls_allowed && (msg->addr != 0x1U)) {
+  if (!safety.controls_allowed && (msg->addr != 0x1U)) {
     tx = false;
   }
 
   // Allow going into CAN flashing mode even if controls are not allowed
   bool flash_msg = (msg->addr == 0x250U) && (GET_LEN(msg) == 8U);
-  if (!controls_allowed && flash_msg && (GET_BYTES_64_LE(msg, 0, 8) == 0x0AB00B1EDEADFACEULL)) {
+  if (!safety.controls_allowed && flash_msg && (GET_BYTES_64_LE(msg, 0, 8) == 0x0AB00B1EDEADFACEULL)) {
     tx = true;
   }
 
@@ -43,7 +44,7 @@ static bool body_tx_hook(const CANPacket_t *msg) {
 }
 
 static safety_config body_init(uint16_t param) {
-  static RxCheck body_rx_checks[] = {
+  static const RxCheck body_rx_checks[] = {
     {.msg = {{0x201, 0, 8, 100U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
   };
 
@@ -60,7 +61,7 @@ static safety_config body_init(uint16_t param) {
   return ret;
 }
 
-const safety_hooks body_hooks = {
+static const safety_hooks body_hooks = {
   .init = body_init,
   .rx = body_rx_hook,
   .tx = body_tx_hook,
@@ -68,3 +69,5 @@ const safety_hooks body_hooks = {
   .get_checksum = body_get_checksum,
   .compute_checksum = body_compute_checksum,
 };
+
+#endif  // SAFETY_MODES_BODY_H
