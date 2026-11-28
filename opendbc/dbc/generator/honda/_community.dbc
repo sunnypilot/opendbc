@@ -1,3 +1,13 @@
+BO_ 400 STEER_STATUS_LEGACY: 5 EPS
+ SG_ STEER_TORQUE_SENSOR : 0|9@1- (6.667,0) [-256|256] "" XXX
+ SG_ LIN_INTERFACE_FATAL_ERROR : 10|1@0+ (1,0) [0|1] "" XXX
+ SG_ LATE_MESSAGE : 11|1@0+ (1,0) [0|1] "" XXX
+ SG_ STEER_STATUS : 12|4@1+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" XXX
+ SG_ LKAS_ALLOWED : 9|1@0+ (1,0) [0|1] "" XXX
+ SG_ STEER_CONTROL_ACTIVE : 23|16@0- (1,0) [0|511] "" XXX
+
 BO_ 512 GAS_COMMAND: 6 EON
  SG_ GAS_COMMAND : 7|16@0+ (0.253984064,-83.3) [0|1] "" INTERCEPTOR
  SG_ GAS_COMMAND2 : 23|16@0+ (0.126992032,-83.3) [0|1] "" INTERCEPTOR
@@ -12,4 +22,7 @@ BO_ 513 GAS_SENSOR: 6 INTERCEPTOR
  SG_ PEDAL_COUNTER : 35|4@0+ (1,0) [0|15] "" EON
  SG_ PEDAL_CHECKSUM : 47|8@0+ (1,0) [0|255] "" EON
 
+CM_ SG_ 400 "Supports older serial steering cars";
+
+VAL_ 400 STEER_STATUS 7 "permanent_fault" 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 1 "driver_steering" 0 "normal" ;
 VAL_ 513 STATE 5 "FAULT_TIMEOUT" 4 "FAULT_STARTUP" 3 "FAULT_SCE" 2 "FAULT_SEND" 1 "FAULT_BAD_CHECKSUM" 0 "NO_FAULT" ;
