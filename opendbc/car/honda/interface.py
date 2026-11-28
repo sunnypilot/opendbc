@@ -234,7 +234,7 @@ class CarInterface(CarInterfaceBase):
       if 0x223 in fingerprint[CAN.pt]:
         ret.flags |= HondaFlagsSP.HYBRID_ALT_BRAKEHOLD.value
 
-    if 0x35E in fingerprint[CAN.pt]:
+    if 0x35E in fingerprint[CAN.pt] or 0x35E in fingerprint[CAN.camera]:
       ret.flags |= HondaFlagsSP.HAS_CAMERA_MESSAGES.value
 
     if candidate == CAR.HONDA_CIVIC:

@@ -24,8 +24,14 @@ class CarStateExt:
 
     if self.CP_SP.flags & HondaFlagsSP.HAS_CAMERA_MESSAGES:
       speed_bus = cp if self.CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS - HONDA_BOSCH_CANFD) else cp_cam
-      speed_limit_raw = speed_bus.vl["CAMERA_MESSAGES"]["SPEED_LIMIT_SIGN"] % 32
-      ret_sp.speedLimit = speed_limit_raw * 5.0 * CV.MPH_TO_MS if (1 <= speed_limit_raw <= 17) else 0.0
+      speed_msg = speed_bus.vl["CAMERA_MESSAGES"]
+      speed_type = speed_msg["SPEED_LIMIT_TYPE"]
+      speed_idx = speed_msg["SPEED_LIMIT_INDEX"]
+      speed_idx_max = 24 if speed_type in (3, 6) else 16
+      speed_scale = 5 if speed_type in (3, 6) else 10
+      ret_sp.speedLimit = 0.0
+      if (1 <= speed_idx <= speed_idx_max) and (speed_type != 1):
+        ret_sp.speedLimit = speed_idx * speed_scale * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS)
 
     if self.CP_SP.flags & HondaFlagsSP.NIDEC_HYBRID:
       ret.accFaulted = bool(cp.vl["HYBRID_BRAKE_ERROR"]["BRAKE_ERROR_1"] or cp.vl["HYBRID_BRAKE_ERROR"]["BRAKE_ERROR_2"])
