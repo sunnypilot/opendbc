@@ -1,0 +1,22 @@
+CM_ "IMPORT _community.dbc";
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
+CM_ "IMPORT _lkas_hud_5byte.dbc";
+CM_ "IMPORT _nidec_scm_group_a.dbc";
+CM_ "IMPORT _steering_sensors_b.dbc";
+CM_ "IMPORT _steering_control_a.dbc";
+CM_ "IMPORT _gearbox_common.dbc";
+
+CM_ "Above is identical to 2016 ILX"
+
+BO_ 400 STEER_STATUS_LEGACY: 5 EPS
+ SG_ STEER_TORQUE_SENSOR : 0|9@1- (6.667,0) [-256|256] "" XXX
+ SG_ LIN_INTERFACE_FATAL_ERROR : 10|1@0+ (1,0) [0|1] "" XXX
+ SG_ LATE_MESSAGE : 11|1@0+ (1,0) [0|1] "" XXX
+ SG_ STEER_STATUS : 12|4@1+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" XXX
+ SG_ LKAS_ALLOWED : 9|1@0+ (1,0) [0|1] "" XXX
+ SG_ STEER_CONTROL_ACTIVE : 23|16@0- (1,0) [0|511] "" XXX
+
+VAL_ 400 STEER_STATUS 7 "permanent_fault" 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 1 "driver_steering" 0 "normal" ;
