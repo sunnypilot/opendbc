@@ -29,9 +29,9 @@ class CarInterface(CarInterfaceBase):
     ret.steerControlType = structs.CarParams.SteerControlType.torque
     ret.radarUnavailable = True
 
-    # TODO: pending finding/handling missing set speed
-    ret.alphaLongitudinalAvailable = False
-    if alpha_long:
+    # TODO is GEN2 the same?
+    ret.alphaLongitudinalAvailable = docs or not (ret.flags & RivianFlags.GEN2)
+    if alpha_long and ret.alphaLongitudinalAvailable:
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs[0].safetyParam |= RivianSafetyFlags.LONG_CONTROL.value
 
@@ -46,7 +46,6 @@ class CarInterface(CarInterfaceBase):
     if 0x131a in fingerprint[1]:
       ret.flags |= RivianFlagsSP.LONGITUDINAL_HARNESS_UPGRADE.value
       stock_cp.radarUnavailable = False
-      stock_cp.enableBsm = True
       stock_cp.alphaLongitudinalAvailable = True
 
     if alpha_long and stock_cp.alphaLongitudinalAvailable:

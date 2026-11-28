@@ -10,7 +10,6 @@ from enum import StrEnum
 
 from opendbc.car import Bus, structs, DT_CTRL
 from opendbc.car.can_definitions import CanData
-from opendbc.car.interfaces import CarStateBase
 from opendbc.car.subaru.values import SubaruFlags
 
 from opendbc.sunnypilot.car.subaru import subarucan_ext
@@ -45,7 +44,7 @@ class SnGCarController:
 
     return send_resume
 
-  def update_stop_and_go(self, CC: structs.CarControl, CS: CarStateBase, frame: int) -> bool:
+  def update_stop_and_go(self, CC: structs.CarControl, CS, frame: int) -> bool:
     """
     Manages stop-and-go functionality for adaptive cruise control (ACC).
 
@@ -91,7 +90,7 @@ class SnGCarController:
 
     return send_resume
 
-  def create_stop_and_go(self, packer, CC: structs.CarControl, CS: CarStateBase, frame: int) -> list[CanData]:
+  def create_stop_and_go(self, packer, CC: structs.CarControl, CS, frame: int) -> list[CanData]:
     can_sends = []
 
     if not self.enabled:
@@ -115,7 +114,7 @@ class SnGCarState:
     self.brake_pedal_msg: dict[str, float] = {}
     self.throttle_msg: dict[str, float] = {}
 
-  def update(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
+  def update_sng(self, ret: structs.CarState, can_parsers: dict[StrEnum, CANParser]) -> None:
     cp = can_parsers[Bus.pt]
 
     self.brake_pedal_msg = copy.copy(cp.vl["Brake_Pedal"])

@@ -13,7 +13,7 @@ class MadsCarController:
   def __init__(self):
     self.dashed_lanes = False
 
-  def update(self, CP: structs.CarParams, CC: structs.CarControl, CC_SP: structs.CarControlSP) -> None:
+  def update_mads(self, CP: structs.CarParams, CC: structs.CarControl, CC_SP: structs.CarControlSP) -> None:
     enable_mads = CC_SP.mads.available
 
     if enable_mads:

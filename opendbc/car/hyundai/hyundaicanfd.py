@@ -2,7 +2,7 @@ import numpy as np
 from opendbc.car import CanBusBase
 from opendbc.car.crc import CRC16_XMODEM
 from opendbc.car.hyundai.values import HyundaiFlags
-from opendbc.sunnypilot.car.hyundai.lead_data_ext import CanFdLeadData
+from opendbc.sunnypilot.car.hyundai.lead_data_ext import LeadData
 
 
 class CanBus(CanBusBase):
@@ -126,7 +126,7 @@ def create_lfahda_cluster(packer, CAN, enabled, lfa_icon):
 
 
 def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed, hud_control,
-                       lead_data: CanFdLeadData, main_cruise_enabled, tuning):
+                       lead_data: LeadData, main_cruise_enabled, tuning):
   jerk = 5
   jn = jerk / 50
   if not enabled or gas_override:

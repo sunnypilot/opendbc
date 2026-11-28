@@ -57,7 +57,7 @@ cd opendbc
 ./test.sh
 
 # here are the individual commands it runs
-pip3 install -e .[testing,docs]  # install dependencies
+pip3 install -e .[testing]  # install dependencies
 scons -j8                        # build with 8 cores
 unittest-parallel                # run the tests
 lefthook run lint                # run the linter
@@ -108,6 +108,10 @@ Start off by recording a route with lots of interesting events: enable LKAS and 
 #### Longitudinal
 
 Use the [longitudinal maneuvers](https://github.com/commaai/openpilot/tree/master/tools/longitudinal_maneuvers) report to evaluate your car's longitudinal control and tune it.
+
+### Validation
+
+Before submitting a port, go through the [car porting checklist](docs/CAR_PORTING_CHECKLIST.md).
 
 ## Contributing
 

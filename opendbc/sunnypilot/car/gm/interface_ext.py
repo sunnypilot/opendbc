@@ -22,10 +22,11 @@ NON_LINEAR_TORQUE_PARAMS = {
 
 
 class CarInterfaceExt:
+  neural_ff_model: NanoFFModel
+
   def __init__(self, CP: structs.CarParams, CI_Base):
     self.CP = CP
     self.CI_Base = CI_Base
-    self.neural_ff_model = None
 
   def torque_from_lateral_accel_siglin(self, latcontrol_inputs: LatControlInputs, torque_params: structs.CarParams.LateralTorqueTuning,
                                        gravity_adjusted: bool) -> float:

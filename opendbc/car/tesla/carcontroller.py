@@ -28,7 +28,7 @@ class CarController(CarControllerBase, CoopSteeringCarController):
     self.VM = VehicleModel(get_safety_CP())
 
   def update(self, CC, CC_SP, CS, now_nanos):
-    CoopSteeringCarController.update(self, self.CP_SP)
+    CoopSteeringCarController.update_coop_steering(self, self.CP_SP)
     actuators = CC.actuators
     can_sends = []
 

@@ -83,19 +83,6 @@ typedef struct {
 } MADSState;
 
 // ===============================
-// Global Variables
-// ===============================
-
-extern ButtonState mads_button_press;
-extern MADSState m_mads_state;
-
-extern bool controls_allowed_lateral;
-
-// state for mads controls_allowed_lateral timeout logic
-extern bool heartbeat_engaged_mads;
-extern uint32_t heartbeat_engaged_mads_mismatches;
-
-// ===============================
 // External Function Declarations (kept as needed)
 // ===============================
 

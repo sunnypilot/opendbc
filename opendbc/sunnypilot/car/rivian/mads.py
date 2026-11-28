@@ -32,5 +32,5 @@ class MadsCarController:
 
     return MadsDataSP(self.lka_icon_states, self.lat_active)
 
-  def update(self, CC: structs.CarControl, CC_SP: structs.CarControlSP, CS: CarStateBase) -> None:
+  def update_mads(self, CC: structs.CarControl, CC_SP: structs.CarControlSP, CS: CarStateBase) -> None:
     self.mads = self.mads_status_update(CC, CC_SP, CS)

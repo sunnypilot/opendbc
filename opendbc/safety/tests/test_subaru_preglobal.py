@@ -3,13 +3,11 @@ import unittest
 
 from opendbc.car.structs import CarParams
 from opendbc.car.subaru.values import SubaruSafetyFlags
-from opendbc.safety.tests.libsafety import libsafety_py
+from opendbc.sunnypilot.car.subaru.values_ext import SubaruSafetyFlagsSP
 import opendbc.safety.tests.common as common
-from opendbc.safety.tests.common import CANPackerSafety
-
-
 class TestSubaruPreglobalSafety(common.CarSafetyTest, common.DriverTorqueSteeringSafetyTest):
-  FLAGS = 0
+  SAFETY_MODEL = CarParams.SafetyModel.subaruPreglobal
+
   DBC = "subaru_outback_2015_generated"
   TX_MSGS = [[0x161, 0], [0x164, 0]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x164, 0x161)}
@@ -23,16 +21,6 @@ class TestSubaruPreglobalSafety(common.CarSafetyTest, common.DriverTorqueSteerin
 
   DRIVER_TORQUE_ALLOWANCE = 75
   DRIVER_TORQUE_FACTOR = 10
-
-  def setUp(self):
-    self.packer = CANPackerSafety(self.DBC)
-    self.safety = libsafety_py.libsafety
-    self.safety.set_safety_hooks(CarParams.SafetyModel.subaruPreglobal, self.FLAGS)
-    self.safety.init_tests()
-
-  def _set_prev_torque(self, t):
-    self.safety.set_desired_torque_last(t)
-    self.safety.set_rt_torque_last(t)
 
   def _torque_driver_msg(self, torque):
     values = {"Steer_Torque_Sensor": torque}
@@ -58,11 +46,16 @@ class TestSubaruPreglobalSafety(common.CarSafetyTest, common.DriverTorqueSteerin
   def _pcm_status_msg(self, enable):
     values = {"Cruise_Activated": enable}
     return self.packer.make_can_msg_safety("CruiseControl", 0, values)
-
-
 class TestSubaruPreglobalReversedDriverTorqueSafety(TestSubaruPreglobalSafety):
-  FLAGS = SubaruSafetyFlags.PREGLOBAL_REVERSED_DRIVER_TORQUE
+  SAFETY_PARAM = SubaruSafetyFlags.PREGLOBAL_REVERSED_DRIVER_TORQUE
+
   DBC = "subaru_outback_2019_generated"
+
+
+class TestSubaruPreglobalStopAndGoSafety(TestSubaruPreglobalSafety):
+  _safety_param_sp = SubaruSafetyFlagsSP.STOP_AND_GO
+
+  TX_MSGS = TestSubaruPreglobalSafety.TX_MSGS + [[0x140, 2], [0xD1, 2]]
 
 
 if __name__ == "__main__":

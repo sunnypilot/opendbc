@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 import unittest
+from collections.abc import Callable
 
 from opendbc.car.gm.values import GMSafetyFlags
 from opendbc.car.structs import CarParams
-from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.common import CANPackerSafety
+from opendbc.safety.tests.libsafety import libsafety_py
 
 from opendbc.sunnypilot.car.gm.values_ext import GMSafetyFlagsSP
-
-
 class Buttons:
   UNPRESS = 1
   RES_ACCEL = 2
   DECEL_SET = 3
   CANCEL = 6
-
-
 class GmLongitudinalBase(common.CarSafetyTest, common.LongitudinalGasBrakeSafetyTest):
 
   RELAY_MALFUNCTION_ADDRS = {0: (0x180, 0x2CB), 2: (0x184,)}  # ASCMLKASteeringCmd, ASCMGasRegenCmd, PSCMStatus
@@ -29,6 +26,10 @@ class GmLongitudinalBase(common.CarSafetyTest, common.LongitudinalGasBrakeSafety
 
   PCM_CRUISE = False  # openpilot can control the PCM state if longitudinal
 
+  BRAKE_BUS: int
+  packer_chassis: CANPackerSafety
+  _button_msg: Callable[..., libsafety_py.CANPacket]
+
   def _send_brake_msg(self, brake):
     values = {"FrictionBrakeCmd": -brake}
     return self.packer_chassis.make_can_msg_safety("EBCMFrictionBrakeCmd", self.BRAKE_BUS, values)
@@ -37,10 +38,12 @@ class GmLongitudinalBase(common.CarSafetyTest, common.LongitudinalGasBrakeSafety
     values = {"GasRegenCmd": gas}
     return self.packer.make_can_msg_safety("ASCMGasRegenCmd", 0, values)
 
-  # override these tests from CarSafetyTest, GM longitudinal uses button enable
-  def _pcm_status_msg(self, enable):
-    raise NotImplementedError
+  def test_gas_apply(self):
+    # apply bit is only allowed with controls allowed
+    values = {"GasRegenCmd": self.INACTIVE_GAS, "GasRegenCmdActive": 1}
+    self.assertFalse(self._tx(self.packer.make_can_msg_safety("ASCMGasRegenCmd", 0, values)))
 
+  # override these tests from CarSafetyTest, GM longitudinal uses button enable
   def test_disable_control_allowed_from_cruise(self):
     pass
 
@@ -71,9 +74,10 @@ class GmLongitudinalBase(common.CarSafetyTest, common.LongitudinalGasBrakeSafety
     self.safety.set_controls_allowed(1)
     self._rx(self._button_msg(Buttons.CANCEL))
     self.assertFalse(self.safety.get_controls_allowed())
-
-
 class TestGmSafetyBase(common.CarSafetyTest, common.DriverTorqueSteeringSafetyTest):
+  DBC = "gm_global_a_powertrain_generated"
+  SAFETY_MODEL = CarParams.SafetyModel.gm
+
   STANDSTILL_THRESHOLD = 10 * 0.0311
   # Ensures ASCM is off on ASCM cars, and relay is not malfunctioning for camera-ACC cars
   RELAY_MALFUNCTION_ADDRS = {0: (0x180,), 2: (0x184,)}  # ASCMLKASteeringCmd, PSCMStatus
@@ -92,11 +96,8 @@ class TestGmSafetyBase(common.CarSafetyTest, common.DriverTorqueSteeringSafetyTe
   EXTRA_SAFETY_PARAM = 0
 
   def setUp(self):
-    self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
+    super().setUp()
     self.packer_chassis = CANPackerSafety("gm_global_a_chassis")
-    self.safety = libsafety_py.libsafety
-    self.safety.set_safety_hooks(CarParams.SafetyModel.gm, 0)
-    self.safety.init_tests()
 
   def _pcm_status_msg(self, enable):
     if self.PCM_CRUISE:
@@ -106,7 +107,7 @@ class TestGmSafetyBase(common.CarSafetyTest, common.DriverTorqueSteeringSafetyTe
       raise NotImplementedError
 
   def _speed_msg(self, speed):
-    values = {"%sWheelSpd" % s: speed for s in ["RL", "RR"]}
+    values = {"%sWheelSpd" % s: speed for s in ("RL", "RR")}
     return self.packer.make_can_msg_safety("EBCMWheelSpdRear", 0, values)
 
   def _user_brake_msg(self, brake):
@@ -133,8 +134,6 @@ class TestGmSafetyBase(common.CarSafetyTest, common.DriverTorqueSteeringSafetyTe
   def _button_msg(self, buttons):
     values = {"ACCButtons": buttons}
     return self.packer.make_can_msg_safety("ASCMSteeringButton", self.BUTTONS_BUS, values)
-
-
 class TestGmEVSafetyBase(TestGmSafetyBase):
   EXTRA_SAFETY_PARAM = GMSafetyFlags.EV
 
@@ -142,6 +141,9 @@ class TestGmEVSafetyBase(TestGmSafetyBase):
   def _user_regen_msg(self, regen):
     values = {"RegenPaddle": 2 if regen else 0}
     return self.packer.make_can_msg_safety("EBCMRegenPaddle", 0, values)
+
+  def test_regen_braking_bits(self):
+    self._test_signal_bits(self._user_regen_msg, self.safety.get_regen_braking_prev, 0)
 
 
 class TestGmAscmSafety(GmLongitudinalBase, TestGmSafetyBase):
@@ -157,36 +159,28 @@ class TestGmAscmSafety(GmLongitudinalBase, TestGmSafetyBase):
   MIN_GAS = -650  # maximum regen
   INACTIVE_GAS = -650
 
-  def setUp(self):
-    self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
-    self.packer_chassis = CANPackerSafety("gm_global_a_chassis")
-    self.safety = libsafety_py.libsafety
-    self.safety.set_safety_hooks(CarParams.SafetyModel.gm, self.EXTRA_SAFETY_PARAM)
-    self.safety.init_tests()
-
-
+  @property
+  def SAFETY_PARAM(self):
+    return self.EXTRA_SAFETY_PARAM
 class TestGmAscmEVSafety(TestGmAscmSafety, TestGmEVSafetyBase):
   pass
-
-
 class TestGmCameraSafetyBase(TestGmSafetyBase):
   def _user_brake_msg(self, brake):
     values = {"BrakePressed": brake}
     return self.packer.make_can_msg_safety("ECMEngineStatus", 0, values)
-
-
 class TestGmCameraSafety(TestGmCameraSafetyBase):
   TX_MSGS = [[0x180, 0],  # pt bus
              [0x184, 2]]  # camera bus
   FWD_BLACKLISTED_ADDRS = {2: [0x180], 0: [0x184]}  # block LKAS message and PSCMStatus
   BUTTONS_BUS = 2  # tx only
 
-  def setUp(self):
-    self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
-    self.packer_chassis = CANPackerSafety("gm_global_a_chassis")
-    self.safety = libsafety_py.libsafety
-    self.safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | self.EXTRA_SAFETY_PARAM)
-    self.safety.init_tests()
+  @property
+  def SAFETY_PARAM(self):
+    return GMSafetyFlags.HW_CAM | self.EXTRA_SAFETY_PARAM
+
+  def test_rx_buttons_do_not_enable(self):
+    self._rx(self.packer.make_can_msg_safety("ASCMSteeringButton", 0, {"ACCButtons": Buttons.RES_ACCEL}))
+    self.assertFalse(self.safety.get_controls_allowed())
 
   def test_buttons(self):
     # Only CANCEL button is allowed while cruise is enabled
@@ -201,12 +195,8 @@ class TestGmCameraSafety(TestGmCameraSafetyBase):
     for enabled in (True, False):
       self._rx(self._pcm_status_msg(enabled))
       self.assertEqual(enabled, self._tx(self._button_msg(Buttons.CANCEL)))
-
-
 class TestGmCameraEVSafety(TestGmCameraSafety, TestGmEVSafetyBase):
   pass
-
-
 class TestGmCameraLongitudinalSafety(GmLongitudinalBase, TestGmCameraSafetyBase):
   TX_MSGS = [[0x180, 0], [0x315, 0], [0x2CB, 0], [0x370, 0],  # pt bus
              [0x184, 2]]  # camera bus
@@ -218,27 +208,19 @@ class TestGmCameraLongitudinalSafety(GmLongitudinalBase, TestGmCameraSafetyBase)
   MIN_GAS = -540  # maximum regen
   INACTIVE_GAS = -500
 
-  def setUp(self):
-    self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
-    self.packer_chassis = CANPackerSafety("gm_global_a_chassis")
-    self.safety = libsafety_py.libsafety
-    self.safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG | self.EXTRA_SAFETY_PARAM)
-    self.safety.init_tests()
-
-
+  @property
+  def SAFETY_PARAM(self):
+    return GMSafetyFlags.HW_CAM | GMSafetyFlags.HW_CAM_LONG | self.EXTRA_SAFETY_PARAM
 class TestGmCameraLongitudinalEVSafety(TestGmCameraLongitudinalSafety, TestGmEVSafetyBase):
   pass
-
-
 class TestGmCameraNonACCSafety(TestGmCameraSafety):
+  @property
+  def SAFETY_PARAM(self):
+    return GMSafetyFlags.HW_CAM | self.EXTRA_SAFETY_PARAM
 
   def setUp(self):
-    self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
-    self.packer_chassis = CANPackerSafety("gm_global_a_chassis")
-    self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_sp(GMSafetyFlagsSP.NON_ACC)
-    self.safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | self.EXTRA_SAFETY_PARAM)
-    self.safety.init_tests()
+    self._safety_param_sp = GMSafetyFlagsSP.NON_ACC
+    super().setUp()
 
   def _pcm_status_msg(self, enable):
     values = {"CruiseActive": enable}
@@ -249,27 +231,13 @@ class TestGmCameraEVNonACCSafety(TestGmCameraNonACCSafety, TestGmEVSafetyBase):
   pass
 
 
-class TestGmIgnition(unittest.TestCase):
-  TX_MSGS: list = []
+class TestGmIgnition(common.CanIgnitionSafetyTest):
+  DBC = "gm_global_a_powertrain_generated"
+  IGNITION_VALUES = range(4)
+  IGNITION_ON_VALUES = {2, 3}  # SystemPowerMode 2=Run, 3=Crank Request
 
-  def setUp(self):
-    self.safety = libsafety_py.libsafety
-    self.safety.init_tests()
-    self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
-
-  def _msg(self, mode):
-    return self.packer.make_can_msg_safety("BCMGeneralPlatformStatus", 0, {"SystemPowerMode": mode})
-
-  # SystemPowerMode 2=Run, 3=Crank Request
-  def test_ignition_on(self):
-    self.safety.ignition_can_hook(self._msg(2))
-    self.assertTrue(self.safety.get_ignition_can())
-
-  def test_ignition_off(self):
-    self.safety.ignition_can_hook(self._msg(2))
-    self.assertTrue(self.safety.get_ignition_can())
-    self.safety.ignition_can_hook(self._msg(0))
-    self.assertFalse(self.safety.get_ignition_can())
+  def _ignition_msg(self, value, counter=None, bus=0):
+    return self.packer.make_can_msg_safety("BCMGeneralPlatformStatus", bus, {"SystemPowerMode": value})
 
 
 if __name__ == "__main__":

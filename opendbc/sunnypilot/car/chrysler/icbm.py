@@ -19,7 +19,7 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
   def __init__(self, CP, CP_SP):
     super().__init__(CP, CP_SP)
 
-  def update(self, CS, CC_SP, packer, frame, last_button_frame) -> list[CanData]:
+  def update_icbm(self, CS, CC_SP, packer, frame, last_button_frame) -> list[CanData]:
     can_sends = []
     self.CC_SP = CC_SP
     self.ICBM = CC_SP.intelligentCruiseButtonManagement
@@ -36,13 +36,13 @@ class IntelligentCruiseButtonManagementInterface(IntelligentCruiseButtonManageme
         self.last_button_frame = CS.button_counter
 
         if ram_cars:
-          can_sends.append(chryslercan.create_cruise_buttons(packer, CS.button_counter, das_bus,
+          can_sends.append(chryslercan.create_cruise_buttons(packer, CS.cruise_btns, CS.button_counter, das_bus,
                                                              accel=accel, decel=decel))
         else:
           self.button_frame += 1
           button_counter_offset = [1, 1, 0, None][self.button_frame % 4]
           if button_counter_offset is not None:
-            can_sends.append(chryslercan.create_cruise_buttons(packer, CS.button_counter + button_counter_offset, das_bus,
+            can_sends.append(chryslercan.create_cruise_buttons(packer, CS.cruise_btns, CS.button_counter + button_counter_offset, das_bus,
                                                                accel=accel, decel=decel))
 
     return can_sends

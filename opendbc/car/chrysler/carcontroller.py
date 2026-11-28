@@ -28,7 +28,7 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt, Inte
     self.params = CarControllerParams(CP)
 
   def update(self, CC, CC_SP, CS, now_nanos):
-    MadsCarController.update(self, CC, CC_SP, CS)
+    MadsCarController.update_mads(self, CC, CC_SP, CS)
     can_sends = []
 
     lkas_active = CC.latActive and self.lkas_control_bit_prev
@@ -40,12 +40,12 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt, Inte
       # ACC cancellation
       if CC.cruiseControl.cancel:
         self.last_button_frame = self.frame
-        can_sends.append(chryslercan.create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, cancel=True))
+        can_sends.append(chryslercan.create_cruise_buttons(self.packer, CS.cruise_btns, CS.button_counter + 1, das_bus, cancel=True))
 
       # ACC resume from standstill
       elif CC.cruiseControl.resume:
         self.last_button_frame = self.frame
-        can_sends.append(chryslercan.create_cruise_buttons(self.packer, CS.button_counter + 1, das_bus, resume=True))
+        can_sends.append(chryslercan.create_cruise_buttons(self.packer, CS.cruise_btns, CS.button_counter + 1, das_bus, resume=True))
 
     # HUD alerts
     if self.frame % 25 == 0:
@@ -93,7 +93,7 @@ class CarController(CarControllerBase, MadsCarController, CarControllerExt, Inte
       can_sends.append(MadsCarController.create_lkas_heartbit(self.packer, CS.lkas_heartbit, self.mads))
 
     # Intelligent Cruise Button Management
-    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame))
+    can_sends.extend(IntelligentCruiseButtonManagementInterface.update_icbm(self, CS, CC_SP, self.packer, self.frame, self.last_button_frame))
 
     self.frame += 1
 

@@ -52,7 +52,7 @@ class TestMisraMutation(unittest.TestCase):
       with self.subTest(fn=fn, rule=rule, should_fail=should_fail):
         with tempfile.TemporaryDirectory() as tmp:
           shutil.copytree(ROOT, tmp, dirs_exist_ok=True,
-                          ignore=shutil.ignore_patterns('.venv', '.git', '*.ctu-info', '.hypothesis'))
+                          ignore=shutil.ignore_patterns('.venv', '.git', '*.ctu-info'))
 
           # apply patch
           if fn is not None:
@@ -67,5 +67,5 @@ class TestMisraMutation(unittest.TestCase):
           print(r.stdout) # helpful for debugging failures
           failed = r.returncode != 0
           assert failed == should_fail
-          if should_fail:
+          if rule is not None:
             assert rule in r.stdout, "MISRA test failed but not for the correct violation"

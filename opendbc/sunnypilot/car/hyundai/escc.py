@@ -58,7 +58,7 @@ class EsccCarController:
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     self.ESCC = EnhancedSmartCruiseControl(CP, CP_SP)
 
-  def update(self, car_state):
+  def update_escc(self, car_state):
     self.ESCC.update_car_state(car_state)
 
 
