@@ -403,5 +403,7 @@ routes = [
   CarTestRoute("c36828a00b81bdab/000000e2--04a43142f7", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=8),  # 2025, ccNC, LFA steering, openpilot longitudinal
   CarTestRoute("97ca61196eb73e0d/000001cf--44d7ac5bbd", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=4),  # 2024 hybrid, ccNC, LFA steering
   CarTestRoute("97ca61196eb73e0d/000001ce--5d54b9e55d", HYUNDAI.HYUNDAI_KONA_2ND_GEN, segment=1),  # 2024 hybrid, ccNC, LFA steering, openpilot longitudinal
+  CarTestRoute("34b196abd2f01c39/00000123--68511c9256", HYUNDAI.KIA_SORENTO_2024, segment=3),  # 2024, ccNC, LFA steering
+  CarTestRoute("34b196abd2f01c39/00000124--5e041abe8a", HYUNDAI.KIA_SORENTO_2024, segment=4),  # 2024, ccNC, LFA steering, openpilot longitudinal
   CarTestRoute("8bae07514ce06ad4/00000008--9f43d90441", CHRYSLER.RAM_HD_5TH_GEN),  # 2024 Ram HD with alt cruise buttons
 ]
