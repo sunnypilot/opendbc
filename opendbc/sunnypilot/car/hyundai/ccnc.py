@@ -13,6 +13,7 @@ from opendbc.car.common.filter_simple import FirstOrderFilter
 from opendbc.car.crc import CRC8J1850, mk_crc8_fun
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import HyundaiFlags, Buttons
+from opendbc.sunnypilot.car.hyundai.lfa_alt import mdps_aci_lv2_for_camera
 from opendbc.sunnypilot.car.hyundai.mads import MadsDataSP
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
@@ -29,7 +30,28 @@ TARGET_DISTANCE_MAX = 204.6  # m
 LEAD_FILTER_RC = 0.5  # s
 
 
-def create_ccnc_mdps(packer, CAN, mdps):
+ADAS_DRV_ALERTS_2_KEEP = (7, 8, 9, 10, 14, 21)
+
+
+def drop_adas_drv_cruise_alerts(values: dict) -> None:
+  if values["ALERTS_2"] not in ADAS_DRV_ALERTS_2_KEEP and values["ALERTS_2"]:
+    values["ALERTS_2"] = 0
+    values["SOUNDS_2"] = 0
+  if values["ALERTS_3"] or values["ALERTS_4"] or values["ALERTS_5"]:
+    values.update({"ALERTS_3": 0, "ALERTS_4": 0, "ALERTS_5": 0, "SOUNDS_3": 0, "SOUNDS_4": 0})
+
+
+def ccnc_hud_enabled(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> bool:
+  if not CP_SP.flags & HyundaiFlagsSP.CCNC:
+    return False
+  if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+    # HDA2: only through the ADAS DRV interceptor, which blocks the ADAS DRV ECU's own copies. Needed without
+    # openpilot long too: we steer the MDPS directly, so the ADAS DRV ECU's LFA icon stays gray
+    return bool(CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR)
+  return True
+
+
+def create_ccnc_mdps(packer, CAN, mdps, lfa_alt=None):
   values = {k: v for k, v in mdps.items() if k != "COUNTER"}
 
   values.update({
@@ -37,12 +59,15 @@ def create_ccnc_mdps(packer, CAN, mdps):
     "MDPS_LkaToiUnblSta": 1,
   })
 
+  if lfa_alt is not None:
+    values.update(mdps_aci_lv2_for_camera(mdps, lfa_alt))
+
   return packer.make_can_msg("MDPS", CAN.CAM, values)
 
 
 def create_ccnc_0x161(packer, CAN, frame, msg_161, enabled, lat_active, paused, long_enabled, main_cruise_enabled, gas_override,
-                      hud_control, set_speed, v_ego, lead_visible, show_distance_bars):
-  values = msg_161.copy()
+                      hud_control, set_speed, v_ego, lead_visible, show_distance_bars, interceptor=False):
+  values = {k: v for k, v in msg_161.items() if k != "COUNTER"}
 
   values.update({
     "LKA_ICON": 4 if lat_active else 3,
@@ -63,6 +88,8 @@ def create_ccnc_0x161(packer, CAN, frame, msg_161, enabled, lat_active, paused, 
     })
 
   if long_enabled:
+    if interceptor:
+      drop_adas_drv_cruise_alerts(values)
     override_blink = gas_override and frame % OVERRIDE_BLINK_FRAMES < OVERRIDE_BLINK_ON_FRAMES
     long_active = enabled and not gas_override
     hud_state = 2 if long_active else (3 if override_blink else 0) if enabled else 1 if main_cruise_enabled else 0
@@ -94,7 +121,7 @@ def create_ccnc_0x161(packer, CAN, frame, msg_161, enabled, lat_active, paused, 
 
 
 def create_ccnc_0x162(packer, CAN, msg_162, enabled, long_enabled, main_cruise_enabled, gas_override, lead_visible, lead_distance):
-  values = msg_162.copy()
+  values = {k: v for k, v in msg_162.items() if k != "COUNTER"}
 
   if long_enabled:
     values.update({
@@ -106,10 +133,11 @@ def create_ccnc_0x162(packer, CAN, msg_162, enabled, long_enabled, main_cruise_e
   return packer.make_can_msg("CCNC_0x162", CAN.ECAN, values)
 
 
-def create_ccnc_buttons(packer, CAN, cruise_buttons_msg, main_btn):
+def create_ccnc_buttons(packer, CAN, cruise_buttons_msg, main_btn, counter):
   values = cruise_buttons_msg.copy()
 
   values.update({
+    "COUNTER": counter,
     "ADAPTIVE_CRUISE_MAIN_BTN": 1 if main_btn else 0,
     "NORMAL_CRUISE_MAIN_BTN": 0,
   })
@@ -144,11 +172,15 @@ class CcncCarController:
 
   def __init__(self, CP, CP_SP):
     self.ccnc_lfa_steering = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and not (CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG))
+    self.ccnc_hud = ccnc_hud_enabled(CP, CP_SP)
+    self.ccnc_interceptor = bool(CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR)
+    self.lfa_alt_steering = bool(CP_SP.flags & HyundaiFlagsSP.CANFD_LFA_ALT_STEER)
     self.ccnc_lka_alt_buttons = bool(CP_SP.flags & HyundaiFlagsSP.CCNC and CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and
                                      CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS)
     self.lead_distance_filter = FirstOrderFilter(TARGET_DISTANCE_MAX, LEAD_FILTER_RC, 5 * DT_CTRL, initialized=False)
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
+    self.buttons_counter = 0
 
   def create_alt_button_msgs(self, CS, CC):
     can_sends = []
@@ -179,22 +211,24 @@ class CcncCarController:
   def update_ccnc(self, CS, CC):
     can_sends = []
 
-    if self.ccnc_lka_alt_buttons:
-      return self.create_alt_button_msgs(CS, CC)
+    if self.ccnc_lka_alt_buttons and not self.CP.openpilotLongitudinalControl:
+      can_sends.extend(self.create_alt_button_msgs(CS, CC))
 
-    if not self.ccnc_lfa_steering:
+    if not self.ccnc_hud:
       return can_sends
 
-    can_sends.append(create_ccnc_mdps(self.packer, self.CAN, CS.mdps))
+    if self.ccnc_lfa_steering:
+      can_sends.append(create_ccnc_mdps(self.packer, self.CAN, CS.mdps, CS.lfa_alt if self.lfa_alt_steering else None))
 
     if self.CP.openpilotLongitudinalControl:
       if not CC.enabled or CC.hudControl.leadDistanceBars != self.lead_distance_bars_last:
         self.distance_bar_frame = self.frame
       self.lead_distance_bars_last = CC.hudControl.leadDistanceBars
 
-      if self.frame % 2 == 0 and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
+      if self.ccnc_lfa_steering and self.frame % 2 == 0 and self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
         press_main = CS.cruise_info["MainMode_ACC"] and self.frame % (2 * MAIN_PRESS_FRAMES) < MAIN_PRESS_FRAMES
-        can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main))
+        can_sends.append(create_ccnc_buttons(self.packer, self.CAN, CS.cruise_buttons_msg, press_main, self.buttons_counter))
+        self.buttons_counter = (self.buttons_counter + 1) % 15  # stock counts 0-14
 
       if self.frame % 5 == 0:
         if not self.lead_visible:
@@ -210,7 +244,7 @@ class CcncCarController:
       can_sends.append(create_ccnc_0x161(self.packer, self.CAN, self.frame, CS.msg_161, CC.enabled, lat_active, paused,
                                          self.CP.openpilotLongitudinalControl, CS.main_cruise_enabled, CC.cruiseControl.override,
                                          CC.hudControl, set_speed, CS.out.vEgo, self.lead_visible,
-                                         self.frame - self.distance_bar_frame < 400))
+                                         self.frame - self.distance_bar_frame < 400, self.ccnc_interceptor))
       can_sends.append(create_ccnc_0x162(self.packer, self.CAN, CS.msg_162, CC.enabled, self.CP.openpilotLongitudinalControl,
                                          CS.main_cruise_enabled, CC.cruiseControl.override, self.lead_visible,
                                          self.lead_distance_filter.x))

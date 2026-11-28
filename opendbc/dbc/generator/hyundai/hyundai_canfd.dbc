@@ -1,4 +1,6 @@
 CM_ "IMPORT _hyundai_canfd_common.dbc";
+CM_ "IMPORT _hyundai_canfd_hda2_cam_unknown.dbc";
+CM_ "IMPORT _hyundai_canfd_sunnypilot.dbc";
 
 BO_ 53 ACCELERATOR: 32 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -147,11 +149,17 @@ BO_ 272 LKAS_ALT: 32 XXX
  SG_ LFA_BUTTON : 56|1@1+ (1,0) [0|255] "" XXX
  SG_ LKA_SysWrn : 60|4@1+ (1,0) [0|15] "" ADAS_DRV
  SG_ Damping_Gain : 64|8@1+ (1,0) [0|255] "" CGW
+ SG_ NEW_SIGNAL_2 : 72|4@1+ (1,0) [0|15] "" XXX
  SG_ LKAS_ANGLE_ACTIVE : 77|2@0+ (1,0) [0|3] "" XXX
  SG_ LKA_UsmMod : 80|2@1+ (1,0) [0|3] "" ADAS_DRV
  SG_ ADAS_StrAnglReqVal : 82|14@1- (0.1,0) [0|176.7] "Deg" GW_RGW,MDPS,SFA
  SG_ ADAS_ACIAnglTqRedcGainVal : 96|8@1+ (0.004,0) [0|1] "" GW_RGW,MDPS,SFA
+ SG_ NEW_SIGNAL_4 : 104|3@1+ (1,0) [0|7] "" XXX
  SG_ FCA_ESA_CtrlSta : 107|1@0+ (1,0) [0|1] "" XXX
+ SG_ BYTE28 : 224|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE29 : 232|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE30 : 240|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE31 : 248|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 282 FR_CMR_01_10ms: 16 FR_CMR
  SG_ FR_CMR_Crc1Val : 0|16@1+ (1,0) [0|0] "" Dummy,IBU_HS,vBDM
@@ -201,7 +209,7 @@ BO_ 298 LFA: 16 ADRV
  SG_ BCA_Rear_WrnSta : 57|3@1+ (1,0) [0|255] "" ADRV
  SG_ LKA_SysWrn : 60|4@1+ (1,0) [0|15] "" CLU,CGW
  SG_ FCA_LO_WrnSta : 64|1@1+ (1,0) [0|1] "" ADRV
- SG_ FCA_LS_WrnSta : 68|1@1+ (1,0) [0|1] "" ADRV
+ SG_ FCA_LS_WrnSta : 68|2@1+ (1,0) [0|3] "" ADRV
  SG_ LKA_OnOffEquip2Sta : 72|2@1+ (1,0) [0|255] "" ADRV
  SG_ LKA_UsmMod : 80|2@1+ (1,0) [0|3] "" CLU,CGW
  SG_ Info_PedtrnDst : 84|3@0+ (1,0) [0|7] "" ADAS_DRV
@@ -209,6 +217,9 @@ BO_ 298 LFA: 16 ADRV
  SG_ ELK_SymbDisp : 90|3@1+ (1,0) [0|7] "" ADRV
  SG_ FCA_ESA_WrnSta : 93|1@1+ (1,0) [0|7] "" ADRV
  SG_ FCA_ESA_CtrlSta : 101|1@1+ (1,0) [0|7] "" ADRV
+ SG_ LKAS_ANGLE_ACTIVE : 77|2@0+ (1,0) [0|3] "" XXX
+ SG_ ADAS_StrAnglReqVal : 82|14@1- (0.1,0) [0|176.7] "Deg" GW_RGW,MDPS,SFA
+ SG_ ADAS_ACIAnglTqRedcGainVal : 96|8@1+ (0.004,0) [0|1] "" GW_RGW,MDPS,SFA
  SG_ Damping_Gain : 104|8@1+ (1,0) [0|255] "" CGW
 
 BO_ 304 GEAR_SHIFTER: 16 XXX
@@ -222,6 +233,7 @@ BO_ 352 ADRV_0x160: 16 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
  SG_ AEB_SETTING : 24|2@1+ (1,0) [0|255] "" XXX
+ SG_ AEB_BRAKE_REQ : 40|8@1+ (1,0) [0|255] "" XXX
  SG_ SET_ME_2 : 56|8@1+ (1,0) [0|1] "" XXX
  SG_ SET_ME_FF : 64|8@1+ (1,0) [0|255] "" XXX
  SG_ SET_ME_FC : 72|8@1+ (1,0) [0|255] "" XXX
@@ -834,7 +846,9 @@ CM_ SG_ 282 FR_CMR_SCCEquipSta "This signal indicates equipment for SCC";
 CM_ SG_ 282 FR_CMR_ReqADASMapMsgVal "This signal indicates an ADAS map message request from FR_CMR to H_U. Each bit indicates the request messages as follows. - Bit 0 : H_U_NAVI_V2_STUB_E - Bit 1 : HU_NAVI_V2_PROSHORT_E_00 (곡률) - Bit 2 : HU_NAVI_V2_PROSHORT_E_00 (곡률 외 정보)";
 CM_ SG_ 282 FR_CMR_SwVer1Val "This signal indicates a major version of FR_CMR software. If FR_CMR software version is A.00, 'A' and '00' mean major and minor version respectively.";
 CM_ SG_ 282 FR_CMR_SwVer2Val "This signal indicates a minor version of FR_CMR software. If FR_CMR software version is A.00, 'A' and '00' mean major and minor version respectively.";
-CM_ BO_ 298 "This message controls steering and alerts regarding lateral control. Formerly known as LFA. Node is flagged as ADRV, but in reality this signal can be seen from either the FR_CMR (front camera) or the ADRV (adas ecu) for some trims.";
+CM_ BO_ 298 "This message controls steering and alerts regarding lateral control. Formerly known as LFA.
+
+Node is flagged as ADRV, but in reality this signal can be seen from either the FR_CMR (front camera) or the ADRV (adas ecu) for some trims.";
 CM_ SG_ 298 LKA_OptUsmSta "LKA_OptionUsmStatus ##2G##LDW_LKA - LKA11 - CF_LKA_Opt_USM";
 CM_ SG_ 298 LKA_RcgSta "LKA_RecognitionStatus ##2G##LDW_LKA - LKA11 - CF_LKA_LaneRecogState";
 CM_ SG_ 298 LKA_LHLnWrnSta "LKA_LHLaneWarningStatus ##2G##LDW_LKA - LKA11 - CF_LKA_LHWarning";

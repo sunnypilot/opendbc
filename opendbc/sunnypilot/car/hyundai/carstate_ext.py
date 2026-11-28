@@ -10,8 +10,14 @@ from enum import StrEnum
 
 from opendbc.car import Bus, structs
 from opendbc.can.parser import CANParser
-from opendbc.car.hyundai.values import HyundaiFlags, CAR
+from opendbc.car.hyundai.hyundaicanfd import CanBus
+from opendbc.car.hyundai.values import HyundaiFlags, CAR, DBC
+from opendbc.sunnypilot.car.hyundai.ccnc import ccnc_hud_enabled
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+
+ADAS_DRV_STEER_TIMEOUT_FRAMES = 3  # 3 periods of its steering frame
+
+ADAS_DRV_FCA_WARNINGS = ("FCA_LO_WrnSta", "FCA_LS_WrnSta", "FCA_ESA_WrnSta", "FCA_ESA_CtrlSta", "BCA_Rear_WrnSta")
 
 
 class CarStateExt:
@@ -24,8 +30,16 @@ class CarStateExt:
     self.aBasis = 0.0
     self.msg_161 = {}
     self.msg_162 = {}
+    self.msg_1e0 = {}
     self.mdps = {}
     self.cruise_buttons_msg = {}
+    self.lkas = {}
+    self.lfa_alt = {}
+    self.adas_drv_intercepted = bool(CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG)
+    self.adas_drv_angle = bool(CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING)
+    self.adas_drv_steer_msg = "LFA_ALT" if self.adas_drv_angle else "LFA"
+    self.adas_drv_steer_age = ADAS_DRV_STEER_TIMEOUT_FRAMES
+    self.adas_drv_passthrough = False
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -92,16 +106,78 @@ class CarStateExt:
 
     self.aBasis = cp.vl["TCS"]["aBasis"]
 
-    if self.CP_SP.flags & HyundaiFlagsSP.CCNC and not self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
-      self.msg_161 = copy.copy(cp_cam.vl["CCNC_0x161"])
-      self.msg_162 = copy.copy(cp_cam.vl["CCNC_0x162"])
-      self.mdps = copy.copy(cp.vl["MDPS"])
-      self.cruise_info = copy.copy(cp_cam.vl["SCC_CONTROL"])
-      # reading a message adds it to the parser, and one the car doesn't send is never valid
-      if not self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
-        self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
+    if ccnc_hud_enabled(self.CP, self.CP_SP):
+      if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
+        # the interceptor redirects the ADAS DRV ECU's copies to A-CAN once ours are seen on E-CAN
+        cp_hud = can_parsers[Bus.adas]
+      else:
+        cp_hud = cp_cam
+        self.mdps = copy.copy(cp.vl["MDPS"])
+        self.cruise_info = copy.copy(cp_cam.vl["SCC_CONTROL"])
+        # reading a message adds it to the parser, and one the car doesn't send is never valid
+        if not self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
+          self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
+        if self.CP_SP.flags & HyundaiFlagsSP.CANFD_LFA_ALT_STEER:
+          self.lfa_alt = copy.copy(cp_cam.vl["LFA_ALT"])
+      self.msg_161 = copy.copy(cp_hud.vl["CCNC_0x161"])
+      self.msg_162 = copy.copy(cp_hud.vl["CCNC_0x162"])
+    elif Bus.adas in can_parsers:
+      self.msg_1e0 = copy.copy(can_parsers[Bus.adas].vl["LFAHDA_CLUSTER"])
+
+    if self.adas_drv_intercepted:
+      self.lkas = copy.copy(cp_cam.vl["LKAS_ALT" if self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG_ALT else "LKAS"])
 
     if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
       self.cruise_buttons_msg = copy.copy(cp.vl[self.cruise_btns_msg_canfd])
 
+    if self.adas_drv_intercepted:
+      self.update_adas_drv_emergency(ret, ret_sp, can_parsers)
+
     ret_sp.speedLimit = self.update_speed_limit(cp, cp_cam) * speed_factor
+
+  def adas_drv_steer_frame(self, can_parsers: dict[StrEnum, CANParser]) -> tuple[dict[str, float], bool]:
+    cp = max(can_parsers[Bus.adas], can_parsers[Bus.alt], key=lambda p: p.ts_nanos[self.adas_drv_steer_msg]["COUNTER"])
+    return cp.vl[self.adas_drv_steer_msg], len(cp.vl_all[self.adas_drv_steer_msg]["COUNTER"]) > 0
+
+  def update_adas_drv_emergency(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]) -> None:
+    steer, fresh = self.adas_drv_steer_frame(can_parsers)
+    lfa = can_parsers[Bus.alt].vl["LFA"] if self.adas_drv_angle else steer
+
+    warning = any(lfa[s] != 0 for s in ADAS_DRV_FCA_WARNINGS) or lfa["ELK_SymbDisp"] == 3
+    if self.adas_drv_angle:
+      esa = steer["FCA_ESA_ActvSta"] != 0 or steer["FCA_ESA_TqBstGainVal"] != 0
+      adas_drv_steering = esa or steer["ADAS_ActvACILvl2Sta"] == 2
+    else:
+      esa = False
+      adas_drv_steering = steer["ActToiSta"] != 0
+
+    ret_sp.stockSteerIntervention = warning or esa
+    ret.stockAeb = can_parsers[Bus.alt].vl["ADRV_0x160"]["AEB_BRAKE_REQ"] > 0
+
+    self.adas_drv_steer_age = 0 if fresh else self.adas_drv_steer_age + 1
+    self.adas_drv_passthrough = ret_sp.stockSteerIntervention and adas_drv_steering and self.adas_drv_steer_age < ADAS_DRV_STEER_TIMEOUT_FRAMES
+
+  @staticmethod
+  def get_parser(CP: structs.CarParams, CP_SP: structs.CarParamsSP) -> dict[StrEnum, CANParser]:
+    # the interceptor redirects the ADAS DRV ECU's copies to A-CAN once ours are seen on E-CAN, and we only send after
+    # canValid initializes selfdrived, so none of them can gate canValid
+    acan, ecan = [], []
+
+    if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and ccnc_hud_enabled(CP, CP_SP):
+      acan += ["CCNC_0x161", "CCNC_0x162"]
+    elif CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
+      # no ccNC: the ADAS DRV ECU's LFA state is in its 0x1E0
+      acan.append("LFAHDA_CLUSTER")
+
+    if CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG and CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR:
+      # the ADAS DRV's steering frame, blocked or not. Its LFA is never blocked on angle cars
+      steer_msg = "LFA_ALT" if CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING else "LFA"
+      acan.append(steer_msg)
+      ecan += list(dict.fromkeys([steer_msg, "LFA", "ADRV_0x160"]))
+
+    messages = {}
+    if acan:
+      messages[Bus.adas] = CANParser(DBC[CP.carFingerprint][Bus.pt], [(m, float('nan')) for m in acan], CanBus(CP).ACAN)
+    if ecan:
+      messages[Bus.alt] = CANParser(DBC[CP.carFingerprint][Bus.pt], [(m, float('nan')) for m in ecan], CanBus(CP).ECAN)
+    return messages

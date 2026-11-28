@@ -232,6 +232,10 @@ void set_desired_angle_last(int t){
   SAFETY_SET(desired_angle_last, t);
 }
 
+int get_desired_angle_last(void){
+  return safety.desired_angle_last;
+}
+
 void set_angle_meas(int min, int max){
   SAFETY_SET(angle_meas.min, min);
   SAFETY_SET(angle_meas.max, max);
@@ -320,6 +324,10 @@ uint32_t get_acc_main_on_mismatches(void) {
 
 uint16_t get_current_safety_param_sp(void){
   return safety_setup.current_safety_param_sp;
+}
+
+uint8_t get_hyundai_angle_model_id() {
+  return safety_setup.hyundai_canfd_angle_model_id;
 }
 
 void set_mads_button_press(int c){

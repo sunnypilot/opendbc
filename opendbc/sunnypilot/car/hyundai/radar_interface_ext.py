@@ -1,9 +1,35 @@
+"""
+Copyright (c) 2021-, sunnypilot, and a number of other contributors.
+
+This file is part of sunnypilot and is licensed under the MIT License.
+See the LICENSE.md file in the root directory for more details.
+"""
+
+from opendbc.can.dbc import SignalType
 from opendbc.can.parser import CANParser
 from opendbc.car import structs, Bus
 from opendbc.car.hyundai.hyundaicanfd import CanBus
 from opendbc.car.hyundai.values import DBC, HyundaiFlags
 
 from opendbc.sunnypilot.car.hyundai.escc import EsccRadarInterfaceBase
+
+def _decode_only(cp: CANParser, signals: dict[str, tuple[str, ...]]) -> CANParser:
+  # ~0.7 ms device per radar update without this; the wide CAN FD frames carry signals we never read
+  for state in cp.message_states.values():
+    if state.name in signals:
+      state.signals = [s for s in state.signals if s.name in signals[state.name] or s.type != SignalType.DEFAULT]
+  return cp
+
+
+RADAR_TRACKS_START_ADDR = 0x3A5
+RADAR_TRACKS_MSG_COUNT = 32
+RADAR_TRACKS_MSG_SIZE = 24
+RADAR_TRACKS_ADDRS = range(RADAR_TRACKS_START_ADDR, RADAR_TRACKS_START_ADDR + RADAR_TRACKS_MSG_COUNT)
+RADAR_TRACK_SIGNALS = ("STATE", "LONG_DIST", "LAT_DIST", "REL_SPEED")
+
+
+def has_radar_tracks(fingerprint: dict[int, dict[int, int]], bus: int) -> bool:
+  return all(fingerprint[bus].get(addr) == RADAR_TRACKS_MSG_SIZE for addr in RADAR_TRACKS_ADDRS)
 
 
 class RadarInterfaceExt(EsccRadarInterfaceBase):
@@ -20,8 +46,12 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     self.track_id = 0
 
   @property
+  def use_radar_tracks(self) -> bool:
+    return bool(self.CP.flags & HyundaiFlags.CANFD) and Bus.radar in DBC[self.CP.carFingerprint] and not self.CP.radarUnavailable
+
+  @property
   def use_radar_interface_ext(self) -> bool:
-    return self.use_escc or self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC)
+    return self.use_escc or self.use_radar_tracks or self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC)
 
   def get_msg_src(self) -> str:
     if self.use_escc:
@@ -29,6 +59,10 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     return "SCC_CONTROL" if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else "SCC11"
 
   def get_radar_ext_can_parser(self) -> CANParser | None:
+    if self.use_radar_tracks:
+      messages = [(f"RADAR_TRACK_{addr:x}", 20) for addr in RADAR_TRACKS_ADDRS]
+      cp = CANParser(DBC[self.CP.carFingerprint][Bus.radar], messages, CanBus(self.CP).ACAN)
+      return _decode_only(cp, {m: RADAR_TRACK_SIGNALS for m, _ in messages})
     if self.ESCC.enabled:
       lead_src, bus = "ESCC", 0
     elif self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
@@ -41,6 +75,8 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
     return CANParser(DBC[self.CP.carFingerprint][Bus.pt], messages, bus)
 
   def get_trigger_msg(self, default_trigger_msg) -> int:
+    if self.use_radar_tracks:
+      return RADAR_TRACKS_ADDRS[-1]
     if self.ESCC.enabled:
       return self.ESCC.trigger_msg
     if self.CP.flags & (HyundaiFlags.CAMERA_SCC | HyundaiFlags.CANFD_CAMERA_SCC):
@@ -59,6 +95,9 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
       ret.errors.canError = True
       return ret
 
+    if self.use_radar_tracks:
+      return self.update_radar_tracks(ret)
+
     for ii in range(1):
       msg_src = self.get_msg_src()
       msg = rcp.vl[msg_src]
@@ -76,6 +115,27 @@ class RadarInterfaceExt(EsccRadarInterfaceBase):
 
       else:
         del self.pts[ii]
+
+    ret.points = list(self.pts.values())
+    return ret
+
+  def update_radar_tracks(self, ret: structs.RadarData) -> structs.RadarData:
+    for addr in RADAR_TRACKS_ADDRS:
+      msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
+
+      # 3 = measured, 4 = coasted
+      if msg['STATE'] not in (3, 4):
+        self.pts.pop(addr, None)
+        continue
+
+      if addr not in self.pts:
+        self.pts[addr] = structs.RadarData.RadarPoint()
+        self.pts[addr].trackId = self.track_id
+        self.track_id += 1
+
+      self.pts[addr].dRel = msg['LONG_DIST']
+      self.pts[addr].yRel = msg['LAT_DIST']
+      self.pts[addr].vRel = msg['REL_SPEED']
 
     ret.points = list(self.pts.values())
     return ret

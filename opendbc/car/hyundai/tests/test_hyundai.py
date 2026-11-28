@@ -1,6 +1,6 @@
 import unittest
 
-from opendbc.car import gen_empty_fingerprint
+from opendbc.car import Bus, DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.structs import CarParams
 from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.hyundai.interface import CarInterface
@@ -13,6 +13,8 @@ from opendbc.car.hyundai.values import CAR, DATE_FW_ECUS, \
                                          NON_SCC_CAR, match_fw_to_car_fuzzy
 from opendbc.car.hyundai.fingerprints import FW_VERSIONS
 from opendbc.testing import fuzzy_test
+from opendbc.sunnypilot.car.hyundai.interceptors.adas_drv_interceptor import ADAS_INTERCEPTOR_HEARTBEAT_MSG
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
 Ecu = CarParams.Ecu
 
@@ -21,6 +23,8 @@ Ecu = CarParams.Ecu
 NO_DATES_PLATFORMS = {
   # CAN FD
   CAR.KIA_SPORTAGE_5TH_GEN,
+  CAR.KIA_SPORTAGE_2026,
+  CAR.KIA_SPORTAGE_HEV_2026, # no date on camera
   CAR.HYUNDAI_SANTA_CRUZ_1ST_GEN,
   CAR.HYUNDAI_TUCSON_4TH_GEN,
   # CAN
@@ -71,6 +75,84 @@ class TestHyundaiFingerprint(unittest.TestCase):
         fingerprint[1][RADAR_START_ADDR] = 8
       CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
       assert CP.radarUnavailable != radar
+
+  def test_angle_interceptor_ccnc_safety_bit(self):
+    # CCNC flag must be set before the safety bit is derived from it, or panda refuses our 0x161/0x162
+    fingerprint = gen_empty_fingerprint()
+    fingerprint[0][ADAS_INTERCEPTOR_HEARTBEAT_MSG] = 8
+    cam_can = CanBus(None, fingerprint).CAM
+    fingerprint[cam_can] = {0x50: 16, 0x110: 32}
+    CP = CarInterface.get_params(CAR.GENESIS_GV80_2025, fingerprint, [], True, False, False)
+    CP_SP = CarInterface.get_params_sp(CP, CAR.GENESIS_GV80_2025, fingerprint, [], True, False, False)
+    assert CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG
+    assert CP_SP.flags & HyundaiFlagsSP.CCNC
+    assert CP_SP.safetyParam & HyundaiSafetyFlagsSP.CCNC
+
+  def test_interceptor_long_ccnc_alt_buttons(self):
+    # torque HDA2 with ccNC and 0x1AA buttons: our 0x161/0x162 replace the ADAS DRV's, no cancel spam on 0x1AA
+    fingerprint = gen_empty_fingerprint()
+    fingerprint[0][ADAS_INTERCEPTOR_HEARTBEAT_MSG] = 8
+    cam_can = CanBus(None, fingerprint).CAM
+    fingerprint[cam_can] = {0x50: 16, 0x110: 32}
+    ecan = CanBus(None, fingerprint, True).ECAN
+    fingerprint[ecan].update({0x161: 32, 0x162: 32, 0x1aa: 16})
+    CP = CarInterface.get_params(CAR.KIA_CARNIVAL_4TH_GEN, fingerprint, [], True, False, False)
+    CP_SP = CarInterface.get_params_sp(CP, CAR.KIA_CARNIVAL_4TH_GEN, fingerprint, [], True, False, False)
+    assert CP.openpilotLongitudinalControl and CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS
+    assert CP_SP.flags & HyundaiFlagsSP.CCNC and CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR
+
+    CI = CarInterface(CP, CP_SP)
+    CC = structs.CarControl()
+    CC.enabled = True
+    CC.cruiseControl.cancel = True
+    CC = CC.as_reader()
+    addrs = set()
+    for i in range(100):
+      CI.update([])
+      addrs |= {addr for addr, _, _ in CI.apply(CC, structs.CarControlSP(), int(i * DT_CTRL * 1e9))[1]}
+    assert {0x161, 0x162} <= addrs
+    assert 0x1aa not in addrs
+
+  def test_interceptor_torque_lfa_press(self):
+    # torque HDA2 presses the ADAS DRV's LFA in 0x50/0x110 like angle cars do, until its LFA icon shows
+    for cam_msgs in ({0x50: 16}, {0x50: 16, 0x110: 32}):
+      fingerprint = gen_empty_fingerprint()
+      fingerprint[0][ADAS_INTERCEPTOR_HEARTBEAT_MSG] = 8
+      fingerprint[CanBus(None, fingerprint).CAM] = dict(cam_msgs)
+      CP = CarInterface.get_params(CAR.KIA_CARNIVAL_4TH_GEN, fingerprint, [], True, False, False)
+      CP_SP = CarInterface.get_params_sp(CP, CAR.KIA_CARNIVAL_4TH_GEN, fingerprint, [], True, False, False)
+      lkas_addr = 0x110 if 0x110 in cam_msgs else 0x50
+      CI = CarInterface(CP, CP_SP)
+      CC = structs.CarControl().as_reader()
+      presses = []
+      for i in range(300):
+        CI.update([])
+        CI.CS.msg_1e0 = {"COUNTER": (i // 5) % 256, "LFA_ICON": 1 if i >= 150 else 0}  # no ccNC: its 0x1E0
+        sends = CI.apply(CC, structs.CarControlSP(), int(i * DT_CTRL * 1e9))[1]
+        presses += [i for addr, dat, _ in sends if addr == lkas_addr and dat[7] & 1]
+      assert presses and max(presses) < 150, (hex(lkas_addr), presses)
+      assert all(b - a in (1, 49) for a, b in zip(presses, presses[1:], strict=False)), presses
+
+  def test_interceptor_long_without_ccnc(self):
+    # type1 torque HDA2 (Ioniq 5): no 0x161/0x162. Our 0x1A0/0x12A/0x1E0 replace the ADAS DRV's, its 0x1EA and
+    # 0x160 still reach the car, and its LFA state is read from its diverted 0x1E0 on A-CAN
+    fingerprint = gen_empty_fingerprint()
+    fingerprint[0][ADAS_INTERCEPTOR_HEARTBEAT_MSG] = 8
+    fingerprint[CanBus(None, fingerprint).CAM] = {0x50: 16}
+    CP = CarInterface.get_params(CAR.HYUNDAI_IONIQ_5, fingerprint, [], True, False, False)
+    CP_SP = CarInterface.get_params_sp(CP, CAR.HYUNDAI_IONIQ_5, fingerprint, [], True, False, False)
+    assert CP.openpilotLongitudinalControl and CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG
+    assert CP_SP.flags & HyundaiFlagsSP.ADAS_ECU_INTERCEPTOR and not CP_SP.flags & HyundaiFlagsSP.CCNC
+
+    CI = CarInterface(CP, CP_SP)
+    assert "LFAHDA_CLUSTER" in CI.CS.get_can_parsers(CP, CP_SP)[Bus.adas].vl
+    CC = structs.CarControl().as_reader()
+    addrs = set()
+    for i in range(100):
+      CI.update([])
+      addrs |= {addr for addr, _, _ in CI.apply(CC, structs.CarControlSP(), int(i * DT_CTRL * 1e9))[1]}
+    assert {0x1a0, 0x12a, 0x1e0, 0x1256} <= addrs
+    assert not addrs & {0x161, 0x162, 0x1ea, 0x160}
 
   def test_alternate_limits(self):
     # Alternate lateral control limits, for high torque cars, verify Panda safety mode flag is set
@@ -201,7 +283,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
           else:
             assert all(date is not None for _, date in codes)
 
-          if car_model == CAR.HYUNDAI_GENESIS:
+          if car_model in (CAR.HYUNDAI_GENESIS, CAR.KIA_SPORTAGE_2026, CAR.KIA_SPORTAGE_HEV_2026):
             raise unittest.SkipTest("No part numbers for car model")
 
           # Hyundai places the ECU part number in their FW versions, assert all parsable

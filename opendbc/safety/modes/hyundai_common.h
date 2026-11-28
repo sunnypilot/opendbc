@@ -17,6 +17,9 @@ enum {
   HYUNDAI_PARAM_SP_HAS_LDA_BUTTON = 4,
   HYUNDAI_PARAM_SP_NON_SCC = 8,
   HYUNDAI_PARAM_SP_CCNC = 16,
+  HYUNDAI_PARAM_SP_ADAS_DRV_INTERCEPTOR = 32,
+  HYUNDAI_PARAM_SP_CANFD_LFA_ALT_STEER = 64,
+  HYUNDAI_PARAM_SP_CANFD_ANGLE_STEERING = 128,
 };
 
 static void hyundai_common_init(uint16_t param) {
@@ -40,6 +43,7 @@ static void hyundai_common_init(uint16_t param) {
   safety_setup.hyundai_longitudinal_main_cruise_toggleable = GET_FLAG(safety_setup.current_safety_param_sp, HYUNDAI_PARAM_SP_LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE);
   safety_setup.hyundai_has_lda_button = GET_FLAG(safety_setup.current_safety_param_sp, HYUNDAI_PARAM_SP_HAS_LDA_BUTTON);
   safety_setup.hyundai_non_scc = GET_FLAG(safety_setup.current_safety_param_sp, HYUNDAI_PARAM_SP_NON_SCC);
+  safety_setup.hyundai_canfd_adas_drv_interceptor = GET_FLAG(safety_setup.current_safety_param_sp, HYUNDAI_PARAM_SP_ADAS_DRV_INTERCEPTOR);
   safety_setup.hyundai_ccnc = GET_FLAG(safety_setup.current_safety_param_sp, HYUNDAI_PARAM_SP_CCNC);
 
   safety.hyundai_last_button_interaction = HYUNDAI_PREV_BUTTON_SAMPLES;
