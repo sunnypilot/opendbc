@@ -26,6 +26,7 @@ class Buttons:
 #  * CAN with openpilot longitudinal
 #  * CAN FD with stock longitudinal
 #  * CAN FD with openpilot longitudinal
+#  * CAN FD with stock longitudinal on the 2026 F-150 (TRON), which sends 16-byte frames
 
 class TestFordSafetyBase(common.CarSafetyTest):
   DBC = "ford_lincoln_base_pt"
@@ -434,6 +435,47 @@ class TestFordCANFDStockSafety(TestFordSafetyBase):
 
   FWD_BLACKLISTED_ADDRS = {2: [MSG_ACCDATA_3, MSG_Lane_Assist_Data1, MSG_LateralMotionControl2,
                                MSG_IPMA_Data]}
+class TestFordCANFDTronSafety(TestFordCANFDStockSafety):
+  DBC = "ford_lincoln_base_pt_tron_generated"
+  SAFETY_PARAM = FordSafetyFlags.CANFD | FordSafetyFlags.TRON
+
+  # ACCDATA_3 and IPMA_Data stay the camera's
+  TX_MSGS = [
+    [MSG_Steering_Data_FD1, 0], [MSG_Steering_Data_FD1, 2], [MSG_Lane_Assist_Data1, 0], [MSG_LateralMotionControl2, 0],
+  ]
+  RELAY_MALFUNCTION_ADDRS = {0: (MSG_Lane_Assist_Data1, MSG_LateralMotionControl2)}
+
+  FWD_BLACKLISTED_ADDRS = {2: [MSG_Lane_Assist_Data1, MSG_LateralMotionControl2]}
+
+  def test_zero_tail(self):
+    # bytes 8-15 of the lane messages must be zero
+    for msg in (self._lat_ctl_msg(False, 0, 0, 0, 0), self._lkas_command_msg(0)):
+      self.assertTrue(self._tx(msg))
+      msg[0].data[8] = 1
+      self.assertFalse(self._tx(msg))
+
+  def test_mads_lateral_without_cruise(self):
+    # MADS: the TJA button or ACC main allows the 16-byte lane messages with cruise off, and only when MADS is enabled
+    for enable_mads in (True, False):
+      for engage_msg in (self._acc_button_msg(Buttons.TJA_TOGGLE, 0),
+                         self.packer.make_can_msg_safety("EngBrakeData", 0, {"BpedDrvAppl_D_Actl": 1, "CcStat_D_Actl": 3})):
+        with self.subTest(enable_mads=enable_mads, engage_msg=hex(engage_msg[0].addr)):
+          self._reset_safety_hooks()
+          self.safety.set_mads_button_press(-1)
+          self.safety.set_acc_main_on(False)
+          self.safety.set_mads_params(enable_mads, False, False)
+          self.assertFalse(self._tx(self._lat_ctl_msg(True, 0, 0, 0, 0)))
+
+          self._rx(engage_msg)
+          self.assertFalse(self.safety.get_controls_allowed())
+          self.assertEqual(enable_mads, self.safety.get_controls_allowed_lateral())
+          self.assertEqual(enable_mads, self._tx(self._lat_ctl_msg(True, 0, 0, 0, 0)))
+          self.assertTrue(self._tx(self._lkas_command_msg(0)))
+
+          # the zero tail holds in MADS too
+          msg = self._lat_ctl_msg(True, 0, 0, 0, 0)
+          msg[0].data[8] = 1
+          self.assertFalse(self._tx(msg))
 class TestFordLongitudinalSafetyBase(TestFordSafetyBase):
   MAX_ACCEL = 2.0  # accel is used for brakes, but openpilot can set positive values
   MIN_ACCEL = -3.5
