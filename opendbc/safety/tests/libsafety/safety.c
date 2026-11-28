@@ -322,6 +322,10 @@ uint16_t get_current_safety_param_sp(void){
   return safety_setup.current_safety_param_sp;
 }
 
+uint8_t get_hyundai_angle_model_id() {
+  return safety_setup.hyundai_canfd_angle_model_id;
+}
+
 void set_mads_button_press(int c){
   SAFETY_SET(mads_button_press, c);
 }

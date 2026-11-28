@@ -26,6 +26,7 @@ class CarStateExt:
     self.msg_162 = {}
     self.mdps = {}
     self.cruise_buttons_msg = {}
+    self.lfa_alt = {}
 
   def update_speed_limit(self, cp, cp_cam) -> float:
     speed_limit = 0
@@ -100,6 +101,8 @@ class CarStateExt:
       # reading a message adds it to the parser, and one the car doesn't send is never valid
       if not self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
+      if self.CP_SP.flags & HyundaiFlagsSP.CANFD_LFA_ALT_STEER:
+        self.lfa_alt = copy.copy(cp_cam.vl["LFA_ALT"])
 
     if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS and self.CP.flags & HyundaiFlags.CANFD_LKA_STEER_MSG:
       self.cruise_buttons_msg = copy.copy(cp.vl[self.cruise_btns_msg_canfd])

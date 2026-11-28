@@ -424,6 +424,9 @@ typedef struct {
   bool hyundai_has_lda_button;
   bool hyundai_non_scc;
   bool hyundai_ccnc;
+  bool hyundai_canfd_angle_steering;
+  bool hyundai_canfd_lfa_alt_steer;
+  uint8_t hyundai_canfd_angle_model_id;
 
   bool subaru_stop_and_go;
 
