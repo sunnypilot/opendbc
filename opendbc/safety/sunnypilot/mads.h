@@ -88,6 +88,7 @@ inline void m_update_control_state(void) {
       (m_mads_state.mads_button.transition == MADS_EDGE_RISING) ||
       (m_mads_state.op_controls_allowed.transition == MADS_EDGE_RISING)) {
     m_mads_state.controls_requested_lateral = true;
+    heartbeat_engaged_mads_mismatches = 0U;
   }
 
   // Primary control blockers - these prevent any further control processing
@@ -148,6 +149,7 @@ inline void mads_heartbeat_engaged_check(void) {
 // Function Implementations
 // ===============================
 
+// cppcheck-suppress misra-c2012-8.7; called from libsafety test harness
 inline void mads_set_alternative_experience(const int *mode) {
   const bool mads_enabled = (*mode & ALT_EXP_ENABLE_MADS) != 0;
   const bool disengage_lateral_on_brake = (*mode & ALT_EXP_MADS_DISENGAGE_LATERAL_ON_BRAKE) != 0;

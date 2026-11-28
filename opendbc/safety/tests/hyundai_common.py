@@ -1,5 +1,3 @@
-import unittest
-
 from opendbc.sunnypilot.car.hyundai.values import HyundaiSafetyFlagsSP
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.libsafety import libsafety_py
@@ -78,12 +76,6 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
   DISABLED_ECU_UDS_MSG: tuple[int, int]
   DISABLED_ECU_ACTUATION_MSG: tuple[int, int]
 
-  @classmethod
-  def setUpClass(cls):
-    if cls.__name__ == "HyundaiLongitudinalBase":
-      cls.safety = None
-      raise unittest.SkipTest
-
   # override these tests from CarSafetyTest, hyundai longitudinal uses button enable
   def test_disable_control_allowed_from_cruise(self):
     pass
@@ -134,6 +126,19 @@ class HyundaiLongitudinalBase(common.LongitudinalAccelSafetyTest):
 
         self._rx(self._button_msg(btn_cur))
         self.assertEqual(should_enable, self.safety.get_controls_allowed())
+
+  def test_set_resume_resets_heartbeat_mismatches(self):
+    for btn in (Buttons.SET, Buttons.RESUME):
+      with self.subTest(btn=btn):
+        self.safety.set_controls_allowed(1)
+        self.safety.set_heartbeat_engaged_mismatches(2)
+
+        self._rx(self._button_msg(btn))
+        self.assertEqual(2, self.safety.get_heartbeat_engaged_mismatches())
+
+        self._rx(self._button_msg(Buttons.NONE))
+        self.assertTrue(self.safety.get_controls_allowed())
+        self.assertEqual(0, self.safety.get_heartbeat_engaged_mismatches())
 
   def test_cancel_button(self):
     self.safety.set_controls_allowed(1)
