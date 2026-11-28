@@ -153,6 +153,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_data: CanL
     scc12_values = {
       "ACCMode": 2 if enabled and long_override else 1 if enabled else 0,
       "StopReq": 1 if tuning.stopping else 0,
+      "CF_VSM_DecCmdAct": 1 if tuning.dec_cmd_act else 0,
       "aReqRaw": tuning.desired_accel,
       "aReqValue": tuning.actual_accel,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
       "CR_VSM_Alive": idx % 0xF,

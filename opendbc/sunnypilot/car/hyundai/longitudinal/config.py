@@ -28,6 +28,7 @@ class CarTuningConfig:
   scc14_jerk: tuple[float, float] = (0.0, 0.0)  # FIXED: upper, lower
   stepped_jerk: tuple[float, float, float, float] = (0.7, 1.8, 1.6, 1.0)  # STEPPED: upper, lower accelerating; upper, lower braking
   canfd_band: tuple[float, float] = (0.0, 0.0)  # CAN-FD: upper, lower with a lead
+  stop_dec_cmd_act: bool = False  # SCC12 CF_VSM_DecCmdAct while stopping
 
 
 # Default configurations for different car types
@@ -77,7 +78,7 @@ CAR_SPECIFIC_CONFIGS: dict[str, CarTuningConfig] = {
   CAR.KIA_OPTIMA_G4_FL: CarTuningConfig(scc14=SCC14Family.NONE),
   CAR.KIA_OPTIMA_H_G4_FL: CarTuningConfig(scc14=SCC14Family.NONE),
   CAR.KIA_SORENTO: CarTuningConfig(scc14=SCC14Family.NONE),
-  CAR.KIA_STINGER: CarTuningConfig(scc14=SCC14Family.NONE),
+  CAR.KIA_STINGER: CarTuningConfig(scc14=SCC14Family.NONE, stop_dec_cmd_act=True),
   CAR.HYUNDAI_STARIA_4TH_GEN: CarTuningConfig(jerk_upper_floor=0.5),
   CAR.KIA_EV6: CarTuningConfig(scc14=SCC14Family.STEPPED, stepped_jerk=(0.5, 2.0, 0.5, 0.6)),
   CAR.KIA_CARNIVAL_4TH_GEN: CarTuningConfig(jerk_upper_floor=0.5, jerk_lower_floor=(0.5, 1.5)),

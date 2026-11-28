@@ -6,7 +6,8 @@ same request.
 
 **What it sends**
 
-*   `aReqRaw` (`desired_accel`): LongControl's accel, clipped to `CarControllerParams`; 0 while stopping (StopReq).
+*   `aReqRaw` (`desired_accel`): LongControl's accel, clipped to `CarControllerParams`; 0 while stopping (StopReq) where
+    `aReqValue` ramps, LongControl's stopping accel where it is the request.
 *   `aReqValue` (`actual_accel`): a jerk-limited integrator toward `aReqRaw` at the jerk fields sent.
 *   `JerkUpperLimit` / `JerkLowerLimit`: the rate `aReqValue` is allowed to move at.
 *   `ComfortBandUpper` / `ComfortBandLower`: how far the ESC may sit from the request before it corrects.
@@ -20,7 +21,6 @@ same request.
 *   Caps: the lower field at ISO 15622 / 22179's negative jerk (5.0 m/s³ below 5 m/s to 2.5 above 20 m/s), the upper at the
     speed-based limit.
 *   Under StopReq the fields are the floors, so `aReqValue` rises to 0 at 0.3 m/s³ while the ESC holds the car.
-*   On `radarUnavailable` cars the lower field is 5.0 and `aReqValue` follows `aReqRaw`.
 
 **Comfort bands** only with a lead and not under StopReq, by `aReqValue`: lower 0.15-0.19 while braking, upper to 0.085 accelerating.
 On CAN-FD the car's own fixed bands with a lead that isn't pulling away.

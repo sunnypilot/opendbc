@@ -50,6 +50,7 @@ class LongitudinalState:
   comfort_band_lower: float = 0.0
   stopping: bool = False
   send_scc14: bool = True
+  dec_cmd_act: bool = False
 
 
 class LongitudinalController:
@@ -134,9 +135,9 @@ class LongitudinalController:
       self.desired_accel = self.actual_accel = self.accel_last = 0.0
       return
 
-    self.desired_accel = 0.0 if self.stopping else float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
-    # radars that send no jerk fields send the request itself
-    if self.scc14 not in (SCC14Family.ZEROS, SCC14Family.NONE):
+    ramps = self.scc14 not in (SCC14Family.ZEROS, SCC14Family.NONE)
+    self.desired_accel = 0.0 if self.stopping and ramps else float(np.clip(self.accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX))
+    if ramps:
       self.actual_accel = jerk_limited_integrator(self.desired_accel, self.accel_last, self.jerk_upper, self.jerk_lower, DT)
     else:
       self.actual_accel = self.desired_accel
@@ -164,6 +165,7 @@ class LongitudinalController:
       comfort_band_lower=self.comfort_band_lower,
       stopping=self.stopping,
       send_scc14=self.scc14 != SCC14Family.NONE,
+      dec_cmd_act=self.enabled and self.stopping and self.car_config.stop_dec_cmd_act,
     )
 
   def update(self, CC: structs.CarControl, CS: CarStateBase) -> None:

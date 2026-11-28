@@ -29,7 +29,6 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 class CP:
   carFingerprint: str = "KIA_NIRO_EV"
   flags: int = 0
-  radarUnavailable: bool = False
 
 
 @dataclass
@@ -155,11 +154,6 @@ class TestLongitudinalTuning(ControllerTest):
       t = self.step(-0.7, LongCtrlState.stopping)
     self.assertEqual(t.actual_accel, 0.0)
 
-  def test_radar_unavailable(self):
-    self.CP.radarUnavailable = True
-    t = self.step(-1.0)
-    self.assertEqual((t.jerk_lower, t.actual_accel), (5.0, -1.0))
-
   def test_jerk_upper_floor_per_car(self):
     for car, floor in (("KIA_NIRO_EV", 0.3), ("HYUNDAI_SONATA", 0.5), ("HYUNDAI_PALISADE", 1.0), ("GENESIS_GV80", 0.2)):
       self.drive(car)
@@ -209,7 +203,7 @@ class TestSCC14Families(ControllerTest):
       self.assertEqual((t.desired_accel, t.actual_accel, t.send_scc14), (-2.0, -2.0, True))
       self.CS.out.vEgo = 0.25
       t = self.step(-1.7, LongCtrlState.stopping)
-      self.assertEqual((t.stopping, t.desired_accel, t.actual_accel), (True, 0.0, 0.0))
+      self.assertEqual((t.stopping, t.desired_accel, t.actual_accel), (True, -1.7, -1.7))
 
   def test_none(self):
     for car in ("GENESIS_G70", "HYUNDAI_TUCSON", "HYUNDAI_SONATA_LF", "HYUNDAI_IONIQ_EV_LTD", "KIA_OPTIMA_G4", "KIA_OPTIMA_G4_FL",
@@ -218,6 +212,10 @@ class TestSCC14Families(ControllerTest):
       t = self.step(-2.0)
       self.assertFalse(t.send_scc14)
       self.assertEqual((t.desired_accel, t.actual_accel), (-2.0, -2.0))
+      t = self.step(-1.2, LongCtrlState.stopping)
+      self.assertEqual((t.stopping, t.desired_accel, t.actual_accel), (True, -1.2, -1.2))
+      self.assertEqual(t.dec_cmd_act, car == "KIA_STINGER")
+      self.assertFalse(self.step(-1.2).dec_cmd_act)
 
   def test_stepped(self):
     self.drive("HYUNDAI_TUCSON_4TH_GEN", cp_flags=HyundaiFlags.CANFD)
@@ -237,6 +235,11 @@ class TestSCC14Families(ControllerTest):
       msgs = create_acc_commands(packer, True, -2.0, 1.0, 0, lead, SimpleNamespace(leadDistanceBars=2), 20, False, False, True,
                                  SimpleNamespace(flags=HyundaiFlags.USE_FCA), True, ctl.LongitudinalState(send_scc14=send))
       self.assertEqual(0x389 in [addr for addr, _, _ in msgs], send)
+    for act in (True, False):
+      msgs = create_acc_commands(packer, True, -1.0, 1.0, 0, lead, SimpleNamespace(leadDistanceBars=2), 20, True, False, True,
+                                 SimpleNamespace(flags=HyundaiFlags.USE_FCA), True, ctl.LongitudinalState(stopping=True, dec_cmd_act=act))
+      scc12 = next(dat for addr, dat, _ in msgs if addr == 0x421)
+      self.assertEqual((bool(scc12[0] & 0x2), scc12[2]), (act, 0))
 
 
 class TestCanFdBands(ControllerTest):
