@@ -87,12 +87,10 @@ FW_VERSIONS_EXT = {
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TRX-A820\x00\x00',
       b'36161-TYS-A020\x00\x00',
-      b'36161-TYS-A020\x00\x00',
       b'36161-TYT-A220\x00\x00',
       b'36161-TZ6-A340\x00\x00',
       b'36161-TZ6-A640\x00\x00',
       b'36161-TZ6-A730\x00\x00',
-      b'36161-TRX-A820\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TRX-A710\x00\x00',
