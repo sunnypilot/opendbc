@@ -90,14 +90,14 @@ class TestFordSafetyBase(common.CarSafetyTest):
     return self.packer.make_can_msg_safety("EngBrakeData", 0, values)
 
   # ABS vehicle speed
-  def _speed_msg(self, speed: float, quality_flag=True):
-    values = {"Veh_V_ActlBrk": speed * 3.6, "VehVActlBrk_D_Qf": 3 if quality_flag else 0}
+  def _speed_msg(self, speed: float):
+    values = {"Veh_V_ActlBrk": speed * 3.6, "VehVActlBrk_D_Qf": 3}
     return self.packer.make_can_msg_safety("BrakeSysFeatures", 0, values)
 
   # PCM vehicle speed
-  def _speed_msg_2(self, speed: float, quality_flag=True):
+  def _speed_msg_2(self, speed: float):
     # Ford relies on speed for driver curvature limiting, so it checks two sources
-    values = {"Veh_V_ActlEng": speed * 3.6, "VehVActlEng_D_Qf": 3 if quality_flag else 0}
+    values = {"Veh_V_ActlEng": speed * 3.6, "VehVActlEng_D_Qf": 3}
     return self.packer.make_can_msg_safety("EngVehicleSpThrottle2", 0, values)
 
   # Standstill state
@@ -105,9 +105,15 @@ class TestFordSafetyBase(common.CarSafetyTest):
     values = {"VehStop_D_Stat": 1 if speed <= self.STANDSTILL_THRESHOLD else random.choice((0, 2, 3))}
     return self.packer.make_can_msg_safety("DesiredTorqBrk", 0, values)
 
+  RX_QUALITY_FLAGS = {
+    "BrakeSysFeatures": {"VehVActlBrk_D_Qf": (3,)},
+    "EngVehicleSpThrottle2": {"VehVActlEng_D_Qf": (3,)},
+    "Yaw_Data_FD1": {"VehYawWActl_D_Qf": (3,)},
+  }
+
   # Current curvature
-  def _yaw_rate_msg(self, curvature: float, speed: float, quality_flag=True):
-    values = {"VehYaw_W_Actl": curvature * speed, "VehYawWActl_D_Qf": 3 if quality_flag else 0}
+  def _yaw_rate_msg(self, curvature: float, speed: float):
+    values = {"VehYaw_W_Actl": curvature * speed, "VehYawWActl_D_Qf": 3}
     return self.packer.make_can_msg_safety("Yaw_Data_FD1", 0, values)
 
   # Drive throttle input
@@ -125,6 +131,14 @@ class TestFordSafetyBase(common.CarSafetyTest):
       "CcStat_D_Actl": 5 if enable else 0,
     }
     return self.packer.make_can_msg_safety("EngBrakeData", 0, values)
+
+  def _lateral_steer_msg(self):
+    return self._lat_ctl_msg(True, 0, 0, 0, 0)
+
+  def test_acc_main_on_from_cruise_state(self):
+    for cruise_state in range(8):
+      self._rx(self.packer.make_can_msg_safety("EngBrakeData", 0, {"BpedDrvAppl_D_Actl": 1, "CcStat_D_Actl": cruise_state}))
+      self.assertEqual(cruise_state in (3, 4, 5), self.safety.get_acc_main_on(), cruise_state)
 
   def test_enable_control_allowed_from_queue_assist(self):
     msg = self.packer.make_can_msg_safety("EngBrakeData", 0, {"BpedDrvAppl_D_Actl": 1, "CcStat_D_Actl": 4})
@@ -181,31 +195,8 @@ class TestFordSafetyBase(common.CarSafetyTest):
         self.safety.set_controls_allowed(True)
         self._tx(self._lat_ctl_msg(True, 0, 0, 0, 0))
 
-        within_delta = abs(speed - speed_2) <= common.MAX_SPEED_DELTA
+        within_delta = common.speeds_within_delta(speed, speed_2)
         self.assertEqual(self.safety.get_controls_allowed(), within_delta)
-
-  def test_rx_hook(self):
-    # checksum, counter, and quality flag checks
-    for quality_flag in [True, False]:
-      for msg_type in ["speed", "speed_2", "yaw"]:
-        self.safety.set_controls_allowed(True)
-        # send multiple times to verify counter checks
-        for _ in range(10):
-          if msg_type == "speed":
-            msg = self._speed_msg(0, quality_flag=quality_flag)
-          elif msg_type == "speed_2":
-            msg = self._speed_msg_2(0, quality_flag=quality_flag)
-          elif msg_type == "yaw":
-            msg = self._yaw_rate_msg(0, 0, quality_flag=quality_flag)
-
-          self.assertEqual(quality_flag, self._rx(msg))
-          self.assertEqual(quality_flag, self.safety.get_controls_allowed())
-
-        # Mess with checksum to make it fail, checksum is not checked for 2nd speed
-        msg[0].data[3] = 0  # Speed checksum & half of yaw signal
-        should_rx = msg_type == "speed_2" and quality_flag
-        self.assertEqual(should_rx, self._rx(msg))
-        self.assertEqual(should_rx, self.safety.get_controls_allowed())
 
   def test_angle_measurements(self):
     """Tests rx hook correctly parses the curvature measurement from the vehicle speed and yaw rate"""
@@ -453,13 +444,14 @@ class TestFordLongitudinalSafetyBase(TestFordSafetyBase):
   INACTIVE_GAS = -5.0
 
   # ACC command
-  def _acc_command_msg(self, gas: float, brake: float, brake_actuation: bool, cmbb_deny: bool = False):
+  def _acc_command_msg(self, gas: float, brake: float, brake_actuation: bool, cmbb_deny: bool = False, gas_pred: float | None = None,
+                       brake_decel: bool | None = None):
     values = {
       "AccPrpl_A_Rq": gas,                              # [-5|5.23] m/s^2
-      "AccPrpl_A_Pred": gas,                            # [-5|5.23] m/s^2
+      "AccPrpl_A_Pred": gas if gas_pred is None else gas_pred,  # [-5|5.23] m/s^2
       "AccBrkTot_A_Rq": brake,                          # [-20|11.9449] m/s^2
       "AccBrkPrchg_B_Rq": 1 if brake_actuation else 0,  # Pre-charge brake request: 0=No, 1=Yes
-      "AccBrkDecel_B_Rq": 1 if brake_actuation else 0,  # Deceleration request: 0=Inactive, 1=Active
+      "AccBrkDecel_B_Rq": 1 if (brake_actuation if brake_decel is None else brake_decel) else 0,  # Deceleration request: 0=Inactive, 1=Active
       "CmbbDeny_B_Actl": 1 if cmbb_deny else 0,         # [0|1] deny AEB actuation
     }
     return self.packer.make_can_msg_safety("ACCDATA", 0, values)
@@ -481,6 +473,9 @@ class TestFordLongitudinalSafetyBase(TestFordSafetyBase):
         gas = round(gas, 2)  # floats might not hit exact boundary conditions without rounding
         should_tx = (controls_allowed and self.MIN_GAS <= gas <= self.MAX_GAS) or gas == self.INACTIVE_GAS
         self.assertEqual(should_tx, self._tx(self._acc_command_msg(gas, self.INACTIVE_ACCEL, controls_allowed)))
+        # both gas signals are checked on their own
+        self.assertEqual(should_tx, self._tx(self._acc_command_msg(gas, self.INACTIVE_ACCEL, controls_allowed, gas_pred=self.INACTIVE_GAS)))
+        self.assertEqual(should_tx, self._tx(self._acc_command_msg(self.INACTIVE_GAS, self.INACTIVE_ACCEL, controls_allowed, gas_pred=gas)))
 
   def test_brake_safety_check(self):
     brake_values = self._boundary_values([self.MIN_ACCEL, self.MAX_ACCEL, self.INACTIVE_ACCEL],
@@ -492,6 +487,11 @@ class TestFordLongitudinalSafetyBase(TestFordSafetyBase):
           should_tx = (controls_allowed and self.MIN_ACCEL <= brake <= self.MAX_ACCEL) or brake == self.INACTIVE_ACCEL
           should_tx = should_tx and (controls_allowed or not brake_actuation)
           self.assertEqual(should_tx, self._tx(self._acc_command_msg(self.INACTIVE_GAS, brake, brake_actuation)))
+          # both brake requests are checked on their own
+          self.assertEqual(should_tx, self._tx(self._acc_command_msg(self.INACTIVE_GAS, brake, brake_actuation, brake_decel=False)))
+          self.assertEqual(should_tx, self._tx(self._acc_command_msg(self.INACTIVE_GAS, brake, False, brake_decel=brake_actuation)))
+
+
 class TestFordLongitudinalSafety(TestFordLongitudinalSafetyBase):
   # Make sure we enforce long safety even without long flag for CAN
   SAFETY_PARAM = 0

@@ -100,7 +100,7 @@ class LeadDataCarController:
       self._lead_off_counter = counter
       self._lead_on_counter = 0  # reset opposite counter
 
-  def update(self, CC_SP: structs.CarControlSP) -> None:
+  def update_lead_data(self, CC_SP: structs.CarControlSP) -> None:
     self.lead_one = CC_SP.leadOne
     self.lead_two = CC_SP.leadTwo
 
@@ -110,7 +110,7 @@ class LeadDataCarController:
     self._update_object_gap(self.lead_distance)
 
   @property
-  def lead_data(self) -> CanLeadData | CanFdLeadData:
+  def lead_data(self) -> LeadData:
     if self.CP.flags & HyundaiFlags.CANFD:
       return CanFdLeadData(self.object_gap, self.lead_distance, self.lead_rel_speed, self.lead_visible)
 

@@ -181,7 +181,7 @@ class HyundaiCarDocs(CarDocs):
 class HyundaiNonSccCarDocs(CarDocs):
   package: str = "No Smart Cruise Control (Non-SCC)"
   support_type: SupportType = SupportType.COMMUNITY
-  support_link: str = "community"
+  support_link: str | None = "community"
 
 
 @dataclass
@@ -600,6 +600,7 @@ class CAR(Platforms):
     [
       HyundaiCarDocs("Kia Carnival 2022-24", car_parts=CarParts.common([CarHarness.hyundai_a])),
       HyundaiCarDocs("Kia Carnival (China only) 2023", car_parts=CarParts.common([CarHarness.hyundai_k])),
+      HyundaiCarDocs("Kia Carnival (with HDA II) 2027", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_q])),
       HyundaiCarDocs("Kia Carnival Hybrid (with HDA II) 2025-26", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_q])),
     ],
     CarSpecs(wheelbase=3.09, steerRatio=14.23),
@@ -815,6 +816,10 @@ class CAR(Platforms):
     ],
     GENESIS_GV80.specs,
     {Bus.pt: "hyundai_canfd_generated", Bus.radar: "hyundai_radar_3a5_3c4_generated"},
+  )
+  KIA_SORENTO_2024 = HyundaiCanFDPlatformConfig(
+    [HyundaiCarDocs("Kia Sorento (without HDA II) 2024-25", car_parts=CarParts.common([CarHarness.hyundai_a]))],
+    KIA_SORENTO_4TH_GEN.specs,
   )
 
 

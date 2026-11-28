@@ -21,6 +21,8 @@ ADAS_DRV_FCA_WARNINGS = ("FCA_LO_WrnSta", "FCA_LS_WrnSta", "FCA_ESA_WrnSta", "FC
 
 
 class CarStateExt:
+  cruise_btns_msg_canfd: str
+
   def __init__(self, CP, CP_SP):
     self.CP = CP
     self.CP_SP = CP_SP
@@ -60,7 +62,7 @@ class CarStateExt:
 
     return speed_limit
 
-  def update(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser], speed_conv: float) -> None:
+  def update_ext(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser], speed_conv: float) -> None:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 
@@ -112,7 +114,9 @@ class CarStateExt:
         cp_hud = cp_cam
         self.mdps = copy.copy(cp.vl["MDPS"])
         self.cruise_info = copy.copy(cp_cam.vl["SCC_CONTROL"])
-        self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
+        # reading a message adds it to the parser, and one the car doesn't send is never valid
+        if not self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
+          self.cruise_buttons_msg = copy.copy(cp.vl["CRUISE_BUTTONS"])
         if self.CP_SP.flags & HyundaiFlagsSP.CANFD_LFA_ALT_STEER:
           self.lfa_alt = copy.copy(cp_cam.vl["LFA_ALT"])
       self.msg_161 = copy.copy(cp_hud.vl["CCNC_0x161"])

@@ -207,7 +207,7 @@ class TestAdasDrvEmergency(unittest.TestCase):
       restarted = []
       for passthrough in (False, True, True, False, False, False):
         CC.apply_angle_last, CC.apply_torque_last = 10.0, 200
-        CC.update(SimpleNamespace(adas_drv_passthrough=passthrough, out=SimpleNamespace(steeringAngleDeg=-25.0)))
+        CC.update_adas_drv_interceptor(SimpleNamespace(adas_drv_passthrough=passthrough, out=SimpleNamespace(steeringAngleDeg=-25.0)))
         restarted.append((CC.apply_angle_last, CC.angle_filter.x) == (-25.0, -25.0) if angle else CC.apply_torque_last == 0)
       self.assertEqual(restarted, [False, False, False, True, True, False], angle)
 

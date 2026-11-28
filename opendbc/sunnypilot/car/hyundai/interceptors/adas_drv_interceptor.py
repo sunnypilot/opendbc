@@ -140,7 +140,7 @@ class AdasDrvEcuInterceptorCarController(EcuInterceptorCarControllerBase):
     self.adas_drv_angle_steering = self.adas_drv_intercepted and bool(CP_SP.flags & HyundaiFlagsSP.CANFD_ANGLE_STEERING)
     self.adas_drv_resume_frames = 0
 
-  def update(self, car_state):
+  def update_adas_drv_interceptor(self, car_state):
     super().update(car_state)
     if car_state.adas_drv_passthrough:
       self.adas_drv_resume_frames = ADAS_DRV_RESUME_FRAMES

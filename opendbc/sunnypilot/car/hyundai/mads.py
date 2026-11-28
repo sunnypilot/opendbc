@@ -72,7 +72,7 @@ class MadsCarController:
 
     return lfa_icon
 
-  def update(self, CP: structs.CarParams, CC: structs.CarControl, CC_SP: structs.CarControlSP, frame: int) -> None:
+  def update_mads(self, CP: structs.CarParams, CC: structs.CarControl, CC_SP: structs.CarControlSP, frame: int) -> None:
     self.mads = self.mads_status_update(CC, CC_SP, frame)
     self.lkas_icon = self.create_lkas_icon(CP, CC.enabled)
     self.lfa_icon = self.create_lfa_icon(CC.enabled)

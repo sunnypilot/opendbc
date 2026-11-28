@@ -2250,6 +2250,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Kia Carnival (with HDA II) 2027": {
+    "platform": "KIA_CARNIVAL_4TH_GEN",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Carnival (with HDA II)",
+    "year": [
+      "2027"
+    ],
+    "package": "Highway Driving Assist II"
+  },
   "Kia Carnival Hybrid (with HDA II) 2025-26": {
     "platform": "KIA_CARNIVAL_4TH_GEN",
     "make": "Kia",
@@ -2665,6 +2675,17 @@
       "2021",
       "2022",
       "2023"
+    ],
+    "package": "Smart Cruise Control (SCC)"
+  },
+  "Kia Sorento (without HDA II) 2024-25": {
+    "platform": "KIA_SORENTO_2024",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Sorento (without HDA II)",
+    "year": [
+      "2024",
+      "2025"
     ],
     "package": "Smart Cruise Control (SCC)"
   },
@@ -4244,7 +4265,7 @@
     ],
     "package": "All"
   },
-  "Toyota Sienna 2021-23": {
+  "Toyota Sienna 2021-26": {
     "platform": "TOYOTA_SIENNA_4TH_GEN",
     "make": "Toyota",
     "brand": "toyota",
@@ -4252,7 +4273,10 @@
     "year": [
       "2021",
       "2022",
-      "2023"
+      "2023",
+      "2024",
+      "2025",
+      "2026"
     ],
     "package": "All"
   },

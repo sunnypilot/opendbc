@@ -50,7 +50,7 @@ class MadsCarController:
 
     return MadsDataSP(enable_mads, paused, CS.lkas_disabled)
 
-  def update(self, CC: structs.CarControl, CC_SP: structs.CarControlSP, CS) -> None:
+  def update_mads(self, CC: structs.CarControl, CC_SP: structs.CarControlSP, CS) -> None:
     self.mads = self.mads_status_update(CC, CC_SP, CS)
 
 
