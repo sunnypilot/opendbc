@@ -8,8 +8,7 @@ from enum import StrEnum
 
 from opendbc.can.parser import CANParser
 from opendbc.car import Bus, structs
-from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.honda.values import CAR, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_BOSCH_CANFD
+from opendbc.car.honda.values import HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_BOSCH_CANFD
 from opendbc.sunnypilot.car.honda.values_ext import HondaFlagsSP
 
 
@@ -18,7 +17,8 @@ class CarStateExt:
     self.CP = CP
     self.CP_SP = CP_SP
 
-  def update_ext(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]) -> None:
+  def update_ext(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser],
+                 speed_conv: float) -> None:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 
@@ -31,8 +31,7 @@ class CarStateExt:
       speed_scale = 5 if speed_type in (3, 6) else 10
       ret_sp.speedLimit = 0.0
       if (1 <= speed_idx <= speed_idx_max) and (speed_type != 1):
-        is_metric = self.CP.carFingerprint in (CAR.HONDA_ODYSSEY_TWN,) or not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
-        ret_sp.speedLimit = speed_idx * speed_scale * (CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS)
+        ret_sp.speedLimit = speed_idx * speed_scale * speed_conv
 
     if self.CP_SP.flags & HondaFlagsSP.NIDEC_HYBRID:
       ret.accFaulted = bool(cp.vl["HYBRID_BRAKE_ERROR"]["BRAKE_ERROR_1"] or cp.vl["HYBRID_BRAKE_ERROR"]["BRAKE_ERROR_2"])
