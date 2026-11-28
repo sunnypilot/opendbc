@@ -37,6 +37,11 @@ class CarState(CarStateBase, CarStateExt):
 
     self.brake_error_msg = "HYBRID_BRAKE_ERROR" if CP.flags & HondaFlags.HYBRID else "STANDSTILL"
 
+    if CP.carFingerprint == CAR.ACURA_MDX_3G and not (CP.flags & HondaFlags.HYBRID):
+      self.steer_status_msg = cp.vl["STEER_STATUS_LEGACY"]
+    else:
+      self.steer_status_msg = cp.vl["STEER_STATUS"]
+
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
     self.brake_switch_prev = False
@@ -99,7 +104,7 @@ class CarState(CarStateBase, CarStateExt):
 
     ret.seatbeltUnlatched = bool(cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LAMP"] or not cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LATCHED"])
 
-    steer_status = self.steer_status_values[cp.vl["STEER_STATUS"]["STEER_STATUS"]]
+    steer_status = self.steer_status_values[self.steer_status_msg["STEER_STATUS"]]
     ret.steerFaultPermanent = steer_status not in ("NORMAL", "NO_TORQUE_ALERT_1", "NO_TORQUE_ALERT_2", "LOW_SPEED_LOCKOUT", "TMP_FAULT")
     if self.CP.flags & HondaFlags.BOSCH_ALT_RADAR:
       # TODO: See if this logic works for all other Honda
@@ -162,7 +167,7 @@ class CarState(CarStateBase, CarStateExt):
 
     ret.gasPressed = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"] > 1e-5
 
-    ret.steeringTorque = cp.vl["STEER_STATUS"]["STEER_TORQUE_SENSOR"]
+    ret.steeringTorque = self.steer_status_msg["STEER_TORQUE_SENSOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
     if self.CP.flags & HondaFlags.BOSCH:
