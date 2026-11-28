@@ -167,7 +167,7 @@ class CarState(CarStateBase, CarStateExt):
 
     ret.gasPressed = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"] > 1e-5
 
-    ret.steeringTorque =  cp.vl[self.steer_status_msg]["STEER_TORQUE_SENSOR"]
+    ret.steeringTorque = cp.vl[self.steer_status_msg]["STEER_TORQUE_SENSOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
     if self.CP.flags & HondaFlags.BOSCH:
