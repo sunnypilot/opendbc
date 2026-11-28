@@ -2156,6 +2156,16 @@
     ],
     "package": "Smart Cruise Control (SCC)"
   },
+  "Kia Carnival (with HDA II, Australia only) 2025": {
+    "platform": "KIA_CARNIVAL_4TH_GEN",
+    "make": "Kia",
+    "brand": "hyundai",
+    "model": "Carnival (with HDA II, Australia only)",
+    "year": [
+      "2025"
+    ],
+    "package": "Highway Driving Assist II"
+  },
   "Kia Carnival Hybrid (with HDA II) 2025-26": {
     "platform": "KIA_CARNIVAL_4TH_GEN",
     "make": "Kia",
