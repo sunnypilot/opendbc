@@ -7,6 +7,7 @@ See the LICENSE.md file in the root directory for more details.
 from enum import StrEnum
 
 from opendbc.car import Bus, create_button_events, structs
+from opendbc.can import CANDefine
 from opendbc.can.parser import CANParser
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.tesla.values import DBC, CANBUS
@@ -16,13 +17,15 @@ ButtonType = structs.CarState.ButtonEvent.Type
 
 
 class CarStateExt:
+  can_define: CANDefine
+
   def __init__(self, CP: structs.CarParams, CP_SP: structs.CarParamsSP):
     self.CP = CP
     self.CP_SP = CP_SP
 
     self.active_touch_points = 0
 
-  def update(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]) -> None:
+  def update_ext(self, ret: structs.CarState, ret_sp: structs.CarStateSP, can_parsers: dict[StrEnum, CANParser]) -> None:
     if self.CP_SP.flags & TeslaFlagsSP.HAS_VEHICLE_BUS:
       cp_adas = can_parsers[Bus.adas]
 

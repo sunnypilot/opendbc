@@ -50,7 +50,7 @@ def auto_dataclass(cls=None, /, **kwargs):
 
 class StrEnum(_StrEnum):
   @staticmethod
-  def _generate_next_value_(name, *args):
+  def _generate_next_value_(name, start, count, last_values):
     # auto() defaults to name.lower()
     return name
 

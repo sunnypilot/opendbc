@@ -129,7 +129,7 @@ class HondaCarDocs(CarDocs):
       self.car_parts = CarParts.common([CarHarness.honda_clarity])
       self.car_parts.custom_parts_url = "https://shop.retropilot.org/product/honda-clarity-proxy-board-kit"
       self.support_type: SupportType = SupportType.COMMUNITY
-      self.support_link: str = "community"
+      self.support_link = "community"
 
 
 class Footnote(Enum):

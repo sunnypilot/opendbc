@@ -9,7 +9,6 @@ import numpy as np
 from dataclasses import dataclass
 
 from opendbc.car import structs, DT_CTRL
-from opendbc.car.interfaces import CarStateBase
 from opendbc.car.hyundai.values import CarControllerParams
 from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import get_car_config, jerk_limited_integrator
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
@@ -131,7 +130,7 @@ class LongitudinalController:
 
     return float(j_ego_upper), float(j_ego_lower)
 
-  def calculate_jerk(self, CC: structs.CarControl, CS: CarStateBase, long_control_state: LongCtrlState) -> None:
+  def calculate_jerk(self, CC: structs.CarControl, CS, long_control_state: LongCtrlState) -> None:
     """Calculate appropriate jerk limits for smooth acceleration/deceleration.
 
     Args:
@@ -206,7 +205,7 @@ class LongitudinalController:
 
     self.accel_last = self.actual_accel
 
-  def calculate_comfort_band(self, CC: structs.CarControl, CS: CarStateBase) -> None:
+  def calculate_comfort_band(self, CC: structs.CarControl, CS) -> None:
     if not self.enabled or not CC.longActive:
       self.comfort_band_upper = 0.0
       self.comfort_band_lower = 0.0
@@ -241,7 +240,7 @@ class LongitudinalController:
       stopping=self.stopping,
     )
 
-  def update(self, CC: structs.CarControl, CS: CarStateBase) -> None:
+  def update_longitudinal(self, CC: structs.CarControl, CS) -> None:
     """Update longitudinal control calculations.
 
     This is the main entry point called externally.

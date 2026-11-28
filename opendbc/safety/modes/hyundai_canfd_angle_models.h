@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SAFETY_MODES_HYUNDAI_CANFD_ANGLE_MODELS_H
+#define SAFETY_MODES_HYUNDAI_CANFD_ANGLE_MODELS_H
 
 #include "opendbc/safety/declarations.h"
 
@@ -35,8 +36,8 @@ enum {
 #define HYUNDAI_ANGLE_MODEL_SHIFT 11U
 #define HYUNDAI_ANGLE_MODEL_MASK  0xFU  // 4 bits
 
-static inline uint8_t hyundai_get_angle_model_id(uint16_t safety_param_sp) {
-  uint8_t model_id = (uint8_t)((safety_param_sp >> HYUNDAI_ANGLE_MODEL_SHIFT) & HYUNDAI_ANGLE_MODEL_MASK);
+static inline uint8_t hyundai_get_angle_model_id(uint16_t param_sp) {
+  uint8_t model_id = (uint8_t)((param_sp >> HYUNDAI_ANGLE_MODEL_SHIFT) & HYUNDAI_ANGLE_MODEL_MASK);
   return (model_id >= HYUNDAI_ANGLE_MODEL_COUNT) ? HYUNDAI_ANGLE_MODEL_BASELINE : model_id;
 }
 
@@ -138,3 +139,5 @@ static const AngleSteeringParams *hyundai_get_angle_params(uint8_t model_id) {
   
   return &HYUNDAI_ANGLE_MODELS[model_id];
 }
+
+#endif  // SAFETY_MODES_HYUNDAI_CANFD_ANGLE_MODELS_H
